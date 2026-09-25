@@ -1,0 +1,1702 @@
+[
+  {
+    "id": "easy-walk-10",
+    "name_en": "Easy Walk (10 min)",
+    "name_mr": "सोपे चालणे (१० मिनिटे)",
+    "name_hi": "आसान चलना (10 मिनट)",
+    "category": "walk",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 600,
+    "default_sets": 1,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand tall and start walking at a comfortable pace.",
+      "Keep your arms relaxed and swing them gently.",
+      "Breathe normally and land softly on your heels.",
+      "Slow down or stop if you feel out of breath."
+    ],
+    "instructions_mr": [
+      "ताठ उभे राहा आणि आरामदायक वेगाने चालायला सुरुवात करा.",
+      "हात मोकळे ठेवा आणि हळुवार हलवा.",
+      "सामान्यपणे श्वास घ्या आणि टाचेवर हळुवार पाऊल टाका.",
+      "दम लागल्यास वेग कमी करा किंवा थांबा."
+    ],
+    "instructions_hi": [
+      "सीधे खड़े हों और आरामदायक गति से चलना शुरू करें।",
+      "हाथों को ढीला रखें और धीरे झुलाएं।",
+      "सामान्य रूप से सांस लें और एड़ी पर धीरे कदम रखें।",
+      "सांस फूलने पर गति धीमी करें या रुक जाएं।"
+    ],
+    "safety_en": "Stop if you feel chest pain, dizziness, or severe joint pain.",
+    "muscles": ["legs", "calves", "heart"]
+  },
+  {
+    "id": "brisk-walk-15",
+    "name_en": "Brisk Walk (15 min)",
+    "name_mr": "जलद चालणे (१५ मिनिटे)",
+    "name_hi": "तेज़ चलना (15 मिनट)",
+    "category": "walk",
+    "impact": "low",
+    "level": 2,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 900,
+    "default_sets": 1,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Warm up with 2 minutes of easy walking.",
+      "Pick up the pace so you breathe a little harder but can still talk.",
+      "Keep your posture upright and core gently engaged.",
+      "Cool down with slower walking for the last 2 minutes."
+    ],
+    "instructions_mr": [
+      "२ मिनिटे सोप्या चालण्याने सुरुवात करा (वॉर्म-अप).",
+      "वेग वाढवा जेणेकरून श्वास थोडा जलद होईल पण बोलता येईल.",
+      "शरीराची ठेवण ताठ ठेवा आणि पोट किंचित आवळलेले ठेवा.",
+      "शेवटच्या २ मिनिटांत हळू चालून थांबा (कूल-डाऊन)."
+    ],
+    "instructions_hi": [
+      "2 मिनट आसान चलने से शुरुआत करें (वार्म-अप)।",
+      "गति बढ़ाएं ताकि सांस थोड़ी तेज़ हो पर बात करना आसान रहे।",
+      "मुद्रा सीधी रखें और पेट हल्का सा टाइट रखें।",
+      "आखिरी 2 मिनट धीरे चलकर ठंडा करें (कूल-डाउन)।"
+    ],
+    "safety_en": "Ease off pace if you feel knee or hip pain; stop if breathless or dizzy.",
+    "muscles": ["legs", "calves", "heart", "core"]
+  },
+  {
+    "id": "brisk-walk-30",
+    "name_en": "Brisk Walk (30 min)",
+    "name_mr": "जलद चालणे (३० मिनिटे)",
+    "name_hi": "तेज़ चलना (30 मिनट)",
+    "category": "walk",
+    "impact": "low",
+    "level": 3,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 1800,
+    "default_sets": 1,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Warm up with 3-5 minutes of easy walking.",
+      "Walk briskly at a pace that raises your heart rate but stays comfortable.",
+      "Keep shoulders relaxed and swing arms naturally.",
+      "Sip water if needed and cool down slowly for the last 5 minutes."
+    ],
+    "instructions_mr": [
+      "३-५ मिनिटे सोप्या चालण्याने वॉर्म-अप करा.",
+      "हृदयाचे ठोके वाढतील पण आरामदायक राहील अशा वेगाने जलद चाला.",
+      "खांदे मोकळे ठेवा आणि हात नैसर्गिकपणे हलवा.",
+      "गरज वाटल्यास पाणी प्या आणि शेवटच्या ५ मिनिटांत हळूहळू थांबा."
+    ],
+    "instructions_hi": [
+      "3-5 मिनट आसान चलने से वार्म-अप करें।",
+      "ऐसी तेज़ गति से चलें जिससे दिल की धड़कन बढ़े पर आराम बना रहे।",
+      "कंधे ढीले रखें और हाथों को स्वाभाविक रूप से झुलाएं।",
+      "ज़रूरत पड़ने पर पानी पिएं और आखिरी 5 मिनट धीरे-धीरे रुकें।"
+    ],
+    "safety_en": "Stop immediately for chest pain, severe breathlessness, or joint pain.",
+    "muscles": ["legs", "calves", "heart", "core"]
+  },
+  {
+    "id": "marching-in-place",
+    "name_en": "Marching in Place",
+    "name_mr": "जागेवर मार्च करणे",
+    "name_hi": "जगह पर मार्च करना",
+    "category": "walk",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 60,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand tall holding a chair back if needed for balance.",
+      "Lift one knee up toward hip height, then lower.",
+      "Alternate legs at a steady, comfortable pace.",
+      "Keep your back straight and core lightly engaged."
+    ],
+    "instructions_mr": [
+      "गरज वाटल्यास खुर्चीचा आधार घेऊन ताठ उभे राहा.",
+      "एक गुडघा कंबरेच्या उंचीपर्यंत उचला, मग खाली आणा.",
+      "स्थिर व आरामदायक वेगाने पाय बदला.",
+      "पाठ सरळ ठेवा आणि पोट किंचित आवळलेले ठेवा."
+    ],
+    "instructions_hi": [
+      "ज़रूरत पड़ने पर कुर्सी का सहारा लेकर सीधे खड़े हों।",
+      "एक घुटने को कमर की ऊंचाई तक उठाएं, फिर नीचे लाएं।",
+      "स्थिर और आरामदायक गति से पैर बदलें।",
+      "पीठ सीधी रखें और पेट हल्का सा टाइट रखें।"
+    ],
+    "safety_en": "Hold onto a support if you feel unsteady; avoid if it strains your knees.",
+    "muscles": ["legs", "core", "heart"]
+  },
+  {
+    "id": "slow-stair-walk",
+    "name_en": "Slow Stair Walk (Holding Rail)",
+    "name_mr": "कठड्याला धरून हळू जिना चढणे-उतरणे",
+    "name_hi": "रेलिंग पकड़कर धीरे सीढ़ी चढ़ना-उतरना",
+    "category": "walk",
+    "impact": "low",
+    "level": 2,
+    "equipment": "stairs",
+    "mode": "time",
+    "default_seconds": 120,
+    "default_sets": 1,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Hold the stair rail firmly with one hand.",
+      "Step up one stair at a time, fully placing your foot.",
+      "Go slowly and pause on each step if needed.",
+      "Walk back down the same way, staying close to the rail."
+    ],
+    "instructions_mr": [
+      "एका हाताने जिन्याचा कठडा घट्ट धरा.",
+      "एका वेळी एक पायरी चढा, संपूर्ण पाय ठेवून.",
+      "हळू जा आणि गरज वाटल्यास प्रत्येक पायरीवर थांबा.",
+      "त्याच पद्धतीने कठड्याजवळ राहून खाली उतरा."
+    ],
+    "instructions_hi": [
+      "एक हाथ से सीढ़ी की रेलिंग को मज़बूती से पकड़ें।",
+      "एक बार में एक सीढ़ी चढ़ें, पूरा पैर रखते हुए।",
+      "धीरे चलें और ज़रूरत पड़ने पर हर सीढ़ी पर रुकें।",
+      "उसी तरह रेलिंग के पास रहते हुए नीचे उतरें।"
+    ],
+    "safety_en": "Skip this if you have knee pain going downstairs or feel unsteady on stairs.",
+    "muscles": ["legs", "glutes", "calves", "heart"]
+  },
+  {
+    "id": "neck-rolls",
+    "name_en": "Neck Rolls",
+    "name_mr": "मानेची गोलाकार हालचाल",
+    "name_hi": "गर्दन घुमाना",
+    "category": "mobility",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Sit or stand tall with shoulders relaxed.",
+      "Slowly drop your ear toward one shoulder.",
+      "Gently roll your head forward and to the other side.",
+      "Keep the movement slow and pain-free."
+    ],
+    "instructions_mr": [
+      "खांदे सैल ठेवून ताठ बसा किंवा उभे राहा.",
+      "हळूहळू एक कान खांद्याकडे न्या.",
+      "डोके हळुवारपणे पुढे आणि दुसऱ्या बाजूला फिरवा.",
+      "हालचाल हळू आणि वेदनारहित ठेवा."
+    ],
+    "instructions_hi": [
+      "कंधे ढीले रखते हुए सीधे बैठें या खड़े हों।",
+      "धीरे-धीरे एक कान को कंधे की ओर लाएं।",
+      "सिर को धीरे से आगे और दूसरी तरफ घुमाएं।",
+      "हरकत धीमी और दर्द रहित रखें।"
+    ],
+    "safety_en": "Stop if you feel dizzy or neck pain; never force the stretch.",
+    "muscles": ["back", "shoulders"]
+  },
+  {
+    "id": "shoulder-rolls",
+    "name_en": "Shoulder Rolls",
+    "name_mr": "खांद्यांची गोलाकार हालचाल",
+    "name_hi": "कंधे घुमाना",
+    "category": "mobility",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Stand or sit tall with arms relaxed at your sides.",
+      "Lift shoulders up toward your ears.",
+      "Roll them back and down in a circle.",
+      "Repeat, then reverse direction halfway through."
+    ],
+    "instructions_mr": [
+      "हात बाजूला सैल ठेवून ताठ उभे राहा किंवा बसा.",
+      "खांदे कानांच्या दिशेने वर उचला.",
+      "त्यांना मागे आणि खाली वर्तुळाकार फिरवा.",
+      "पुन्हा करा, अर्ध्यावर दिशा बदला."
+    ],
+    "instructions_hi": [
+      "हाथों को बगल में ढीला रखते हुए सीधे खड़े हों या बैठें।",
+      "कंधों को कानों की ओर ऊपर उठाएं।",
+      "उन्हें पीछे और नीचे गोल घुमाएं।",
+      "दोहराएं, आधे में दिशा बदल दें।"
+    ],
+    "safety_en": "Keep movements gentle if you have shoulder pain or a rotator cuff issue.",
+    "muscles": ["shoulders", "back"]
+  },
+  {
+    "id": "arm-circles",
+    "name_en": "Arm Circles",
+    "name_mr": "हातांचे वर्तुळाकार फिरवणे",
+    "name_hi": "भुजाओं को गोल घुमाना",
+    "category": "mobility",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Stand with feet hip-width apart and arms out to the sides.",
+      "Make small circles with your arms, palms facing down.",
+      "Gradually make the circles bigger.",
+      "Reverse direction halfway through."
+    ],
+    "instructions_mr": [
+      "पाय कंबरेच्या रुंदीत ठेवून उभे राहा आणि हात बाजूला पसरवा.",
+      "तळहात खाली ठेवून हातांनी लहान वर्तुळे करा.",
+      "हळूहळू वर्तुळे मोठी करा.",
+      "अर्ध्यावर दिशा बदला."
+    ],
+    "instructions_hi": [
+      "पैरों को कमर जितना चौड़ा रखते हुए खड़े हों और हाथ बगल में फैलाएं।",
+      "हथेलियां नीचे रखते हुए हाथों से छोटे गोल बनाएं।",
+      "धीरे-धीरे गोल बड़े करें।",
+      "आधे में दिशा बदल दें।"
+    ],
+    "safety_en": "Reduce range if you feel shoulder pinching or shoulder pain.",
+    "muscles": ["shoulders", "arms"]
+  },
+  {
+    "id": "standing-cat-cow",
+    "name_en": "Standing Cat-Cow",
+    "name_mr": "उभे राहून मांजर-गाय स्ट्रेच",
+    "name_hi": "खड़े होकर कैट-काउ स्ट्रेच",
+    "category": "mobility",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Stand with feet hip-width apart, hands resting on your thighs.",
+      "Arch your back and look up gently (cow).",
+      "Round your back and tuck your chin (cat).",
+      "Move slowly between the two positions with your breath."
+    ],
+    "instructions_mr": [
+      "पाय कंबरेच्या रुंदीत ठेवून उभे राहा, हात मांड्यांवर ठेवा.",
+      "पाठ किंचित मागे वाकवा आणि वर हळुवार बघा (काऊ).",
+      "पाठ गोलाकार करा आणि हनुवटी आत घ्या (कॅट).",
+      "श्वासासोबत या दोन स्थितींमध्ये हळूहळू फिरा."
+    ],
+    "instructions_hi": [
+      "पैरों को कमर जितना चौड़ा रखते हुए खड़े हों, हाथ जांघों पर रखें।",
+      "पीठ को हल्का पीछे मोड़ें और ऊपर धीरे देखें (काउ)।",
+      "पीठ गोल करें और ठुड्डी अंदर लाएं (कैट)।",
+      "सांस के साथ धीरे-धीरे इन दोनों स्थितियों में जाएं।"
+    ],
+    "safety_en": "Keep the arch and round gentle if you have lower back pain.",
+    "muscles": ["back", "core"]
+  },
+  {
+    "id": "hip-circles",
+    "name_en": "Hip Circles",
+    "name_mr": "कंबरेची गोलाकार हालचाल",
+    "name_hi": "कमर को गोल घुमाना",
+    "category": "mobility",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Stand with feet hip-width apart, hands on your hips.",
+      "Hold a chair with one hand if you need balance support.",
+      "Slowly circle your hips clockwise.",
+      "Repeat circling counter-clockwise."
+    ],
+    "instructions_mr": [
+      "पाय कंबरेच्या रुंदीत ठेवून उभे राहा, हात कंबरेवर ठेवा.",
+      "समतोलासाठी गरज वाटल्यास एका हाताने खुर्ची धरा.",
+      "हळूहळू कंबर घड्याळाच्या दिशेने फिरवा.",
+      "उलट दिशेने पुन्हा फिरवा."
+    ],
+    "instructions_hi": [
+      "पैरों को कमर जितना चौड़ा रखते हुए खड़े हों, हाथ कमर पर रखें।",
+      "संतुलन के लिए ज़रूरत पड़ने पर एक हाथ से कुर्सी पकड़ें।",
+      "धीरे-धीरे कमर को घड़ी की दिशा में घुमाएं।",
+      "विपरीत दिशा में फिर से घुमाएं।"
+    ],
+    "safety_en": "Keep circles small and pain-free if you have lower back or hip issues.",
+    "muscles": ["hips", "core"]
+  },
+  {
+    "id": "ankle-circles",
+    "name_en": "Ankle Circles",
+    "name_mr": "घोट्याची गोलाकार हालचाल",
+    "name_hi": "टखने को गोल घुमाना",
+    "category": "mobility",
+    "impact": "low",
+    "level": 1,
+    "equipment": "chair",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Sit on a chair with one leg lifted slightly off the floor.",
+      "Rotate your ankle slowly in a full circle.",
+      "Complete the reps, then switch direction.",
+      "Repeat with the other ankle."
+    ],
+    "instructions_mr": [
+      "खुर्चीवर बसा आणि एक पाय जमिनीपासून किंचित वर उचला.",
+      "घोटा हळूहळू पूर्ण वर्तुळात फिरवा.",
+      "पुनरावृत्ती पूर्ण करा, मग दिशा बदला.",
+      "दुसऱ्या घोट्यानेही पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "कुर्सी पर बैठें और एक पैर को फर्श से थोड़ा ऊपर उठाएं।",
+      "टखने को धीरे-धीरे पूरे गोल में घुमाएं।",
+      "दोहराव पूरे करें, फिर दिशा बदलें।",
+      "दूसरे टखने से भी दोहराएं।"
+    ],
+    "safety_en": "Move gently if you have ankle swelling or a recent sprain.",
+    "muscles": ["calves", "legs"]
+  },
+  {
+    "id": "seated-spinal-twist",
+    "name_en": "Seated Spinal Twist",
+    "name_mr": "बसून मणक्याचे वळण",
+    "name_hi": "बैठकर रीढ़ को मोड़ना",
+    "category": "mobility",
+    "impact": "low",
+    "level": 1,
+    "equipment": "chair",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Sit tall toward the front edge of a sturdy chair.",
+      "Place one hand on the outside of the opposite knee.",
+      "Gently twist your torso toward the back of the chair.",
+      "Hold, breathe, then repeat on the other side."
+    ],
+    "instructions_mr": [
+      "भक्कम खुर्चीच्या पुढच्या कडेला ताठ बसा.",
+      "एक हात विरुद्ध गुडघ्याच्या बाहेरील बाजूला ठेवा.",
+      "धड हळुवारपणे खुर्चीच्या मागील बाजूकडे वळवा.",
+      "थांबा, श्वास घ्या, मग दुसऱ्या बाजूने पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "मज़बूत कुर्सी के अगले किनारे पर सीधे बैठें।",
+      "एक हाथ विपरीत घुटने के बाहरी हिस्से पर रखें।",
+      "धड़ को धीरे से कुर्सी के पीछे की ओर मोड़ें।",
+      "रुकें, सांस लें, फिर दूसरी तरफ से दोहराएं।"
+    ],
+    "safety_en": "Twist gently and stop if you feel lower back pain.",
+    "muscles": ["back", "core"]
+  },
+  {
+    "id": "chair-squat",
+    "name_en": "Chair Squat (Sit-to-Stand)",
+    "name_mr": "खुर्चीवर बसणे-उठणे (चेअर स्क्वॅट)",
+    "name_hi": "कुर्सी पर बैठना-उठना (चेयर स्क्वाट)",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "chair",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Stand in front of a sturdy chair with feet shoulder-width apart.",
+      "Slowly lower your hips back and down to lightly touch the seat.",
+      "Keep your knees behind your toes and chest lifted.",
+      "Push through your heels to stand back up."
+    ],
+    "instructions_mr": [
+      "भक्कम खुर्चीसमोर पाय खांद्याइतक्या रुंदीत ठेवून उभे राहा.",
+      "हळूहळू कंबर मागे व खाली नेत खुर्चीच्या सीटला हलकेच स्पर्श करा.",
+      "गुडघे पायाच्या बोटांच्या मागे ठेवा आणि छाती वर ठेवा.",
+      "टाचांवर जोर देऊन परत उभे राहा."
+    ],
+    "instructions_hi": [
+      "मज़बूत कुर्सी के सामने पैरों को कंधे जितना चौड़ा रखकर खड़े हों।",
+      "धीरे-धीरे कमर पीछे व नीचे ले जाकर कुर्सी की सीट को हल्का छुएं।",
+      "घुटनों को पैर की उंगलियों के पीछे रखें और छाती ऊपर रखें।",
+      "एड़ियों पर ज़ोर देकर वापस खड़े हों।"
+    ],
+    "safety_en": "Keep knees behind toes; stop if you feel sharp knee pain.",
+    "muscles": ["legs", "glutes", "core"]
+  },
+  {
+    "id": "wall-push-up",
+    "name_en": "Wall Push-Up",
+    "name_mr": "भिंतीवर पुश-अप",
+    "name_hi": "दीवार पर पुश-अप",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "wall",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Stand facing a wall, arm's length away.",
+      "Place palms on the wall at chest height, slightly wider than shoulders.",
+      "Bend your elbows to bring your chest toward the wall.",
+      "Push back to the starting position, keeping your body straight."
+    ],
+    "instructions_mr": [
+      "भिंतीसमोर हाताच्या लांबीइतक्या अंतरावर उभे राहा.",
+      "तळहात छातीच्या उंचीवर, खांद्यांपेक्षा थोडे रुंद ठेवून भिंतीवर ठेवा.",
+      "कोपर वाकवून छाती भिंतीकडे न्या.",
+      "शरीर सरळ ठेवत सुरुवातीच्या स्थितीत परत या."
+    ],
+    "instructions_hi": [
+      "दीवार के सामने हाथ की लंबाई जितनी दूरी पर खड़े हों।",
+      "हथेलियों को छाती की ऊंचाई पर, कंधों से थोड़ा चौड़ा रखते हुए दीवार पर रखें।",
+      "कोहनियां मोड़कर छाती को दीवार की ओर लाएं।",
+      "शरीर सीधा रखते हुए शुरुआती स्थिति में वापस आएं।"
+    ],
+    "safety_en": "Stop if you feel wrist or shoulder pain; keep elbows close to body.",
+    "muscles": ["chest", "shoulders", "arms"]
+  },
+  {
+    "id": "standing-calf-raise",
+    "name_en": "Standing Calf Raise (Wall Support)",
+    "name_mr": "भिंतीचा आधार घेऊन पिंडरी उचलणे",
+    "name_hi": "दीवार का सहारा लेकर पिंडली उठाना",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "wall",
+    "mode": "reps",
+    "default_reps": 12,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand facing a wall, fingertips resting on it for balance.",
+      "Slowly rise up onto your toes.",
+      "Hold briefly at the top, then lower with control.",
+      "Keep your knees soft, not locked."
+    ],
+    "instructions_mr": [
+      "भिंतीसमोर उभे राहा, समतोलासाठी बोटांचा हलका आधार घ्या.",
+      "हळूहळू पायाच्या चवड्यांवर उभे राहा.",
+      "वरच्या स्थितीत क्षणभर थांबा, मग नियंत्रित पद्धतीने खाली या.",
+      "गुडघे थोडे मोकळे ठेवा, ताठ करू नका."
+    ],
+    "instructions_hi": [
+      "दीवार के सामने खड़े हों, संतुलन के लिए उंगलियां हल्के से टिकाएं।",
+      "धीरे-धीरे पंजों पर खड़े हों।",
+      "ऊपर की स्थिति में थोड़ा रुकें, फिर नियंत्रण से नीचे आएं।",
+      "घुटनों को हल्का ढीला रखें, बिल्कुल सीधा न करें।"
+    ],
+    "safety_en": "Stop if you feel calf cramps or ankle pain.",
+    "muscles": ["calves", "legs"]
+  },
+  {
+    "id": "seated-knee-extension",
+    "name_en": "Seated Knee Extension",
+    "name_mr": "बसून गुडघा सरळ करणे",
+    "name_hi": "बैठकर घुटना सीधा करना",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "chair",
+    "mode": "reps",
+    "default_reps": 12,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Sit tall in a chair with feet flat on the floor.",
+      "Slowly straighten one knee, lifting your foot up.",
+      "Hold for a second at the top.",
+      "Lower with control and repeat with the other leg."
+    ],
+    "instructions_mr": [
+      "खुर्चीत ताठ बसा, पाय जमिनीवर सपाट ठेवा.",
+      "हळूहळू एक गुडघा सरळ करा, पाय वर उचला.",
+      "वरच्या स्थितीत एक सेकंद थांबा.",
+      "नियंत्रित पद्धतीने खाली आणा आणि दुसऱ्या पायाने पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "कुर्सी पर सीधे बैठें, पैर फर्श पर सपाट रखें।",
+      "धीरे-धीरे एक घुटना सीधा करें, पैर ऊपर उठाएं।",
+      "ऊपर की स्थिति में एक सेकंड रुकें।",
+      "नियंत्रण से नीचे लाएं और दूसरे पैर से दोहराएं।"
+    ],
+    "safety_en": "Avoid locking the knee hard; stop if you feel sharp knee pain.",
+    "muscles": ["legs"]
+  },
+  {
+    "id": "glute-bridge",
+    "name_en": "Glute Bridge (On Mat)",
+    "name_mr": "चटईवर हिप ब्रिज",
+    "name_hi": "चटाई पर हिप ब्रिज",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "mat",
+    "mode": "reps",
+    "default_reps": 12,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Lie on your back on a mat, knees bent, feet flat.",
+      "Press through your heels to lift your hips up.",
+      "Squeeze your glutes at the top without arching your lower back too much.",
+      "Lower slowly and repeat."
+    ],
+    "instructions_mr": [
+      "चटईवर पाठीवर झोपा, गुडघे वाकवा, पाय सपाट ठेवा.",
+      "टाचांवर जोर देऊन कंबर वर उचला.",
+      "वरच्या स्थितीत नितंब आवळा, पाठीच्या खालच्या भागाला जास्त वाकवू नका.",
+      "हळूहळू खाली या आणि पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "चटाई पर पीठ के बल लेटें, घुटने मोड़ें, पैर सपाट रखें।",
+      "एड़ियों पर ज़ोर देकर कमर ऊपर उठाएं।",
+      "ऊपर की स्थिति में ग्लूट्स को कसें, पीठ के निचले हिस्से को ज़्यादा न मोड़ें।",
+      "धीरे-धीरे नीचे आएं और दोहराएं।"
+    ],
+    "safety_en": "Stop if you feel lower back pain; keep the lift gentle.",
+    "muscles": ["glutes", "legs", "core", "back"]
+  },
+  {
+    "id": "seated-leg-lift",
+    "name_en": "Seated Leg Lift",
+    "name_mr": "बसून पाय वर उचलणे",
+    "name_hi": "बैठकर पैर ऊपर उठाना",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "chair",
+    "mode": "reps",
+    "default_reps": 12,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Sit tall in a chair, holding the sides for stability.",
+      "Lift one knee up toward your chest as high as comfortable.",
+      "Lower slowly with control.",
+      "Repeat, then switch legs."
+    ],
+    "instructions_mr": [
+      "खुर्चीत ताठ बसा, स्थिरतेसाठी बाजू धरा.",
+      "आरामदायक वाटेल तितका एक गुडघा छातीकडे वर उचला.",
+      "नियंत्रित पद्धतीने हळू खाली आणा.",
+      "पुन्हा करा, मग पाय बदला."
+    ],
+    "instructions_hi": [
+      "कुर्सी पर सीधे बैठें, स्थिरता के लिए किनारे पकड़ें।",
+      "जितना आरामदायक हो उतना एक घुटना छाती की ओर ऊपर उठाएं।",
+      "नियंत्रण से धीरे नीचे लाएं।",
+      "दोहराएं, फिर पैर बदलें।"
+    ],
+    "safety_en": "Avoid if it strains your hip; keep the range comfortable.",
+    "muscles": ["core", "hips", "legs"]
+  },
+  {
+    "id": "standing-hip-abduction",
+    "name_en": "Standing Hip Abduction (Chair Support)",
+    "name_mr": "खुर्चीचा आधार घेऊन पाय बाजूला उचलणे",
+    "name_hi": "कुर्सी का सहारा लेकर पैर बगल में उठाना",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "chair",
+    "mode": "reps",
+    "default_reps": 12,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand sideways behind a chair, holding the back for support.",
+      "Keep your leg straight and lift it out to the side.",
+      "Keep your torso upright, without leaning.",
+      "Lower slowly and repeat, then switch sides."
+    ],
+    "instructions_mr": [
+      "खुर्चीच्या मागे बाजूला उभे राहा, आधारासाठी पाठ धरा.",
+      "पाय सरळ ठेवून तो बाजूला उचला.",
+      "धड ताठ ठेवा, कलू देऊ नका.",
+      "हळू खाली आणा आणि पुन्हा करा, मग बाजू बदला."
+    ],
+    "instructions_hi": [
+      "कुर्सी के पीछे बगल में खड़े हों, सहारे के लिए पीठ पकड़ें।",
+      "पैर सीधा रखते हुए उसे बगल में उठाएं।",
+      "धड़ को सीधा रखें, झुकने न दें।",
+      "धीरे नीचे लाएं और दोहराएं, फिर तरफ बदलें।"
+    ],
+    "safety_en": "Keep the lift small if you feel hip pinching.",
+    "muscles": ["hips", "glutes", "legs"]
+  },
+  {
+    "id": "short-wall-sit",
+    "name_en": "Short Wall Sit",
+    "name_mr": "लहान वॉल सीट",
+    "name_hi": "छोटा वॉल सिट",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "wall",
+    "mode": "time",
+    "default_seconds": 20,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Stand with your back against a wall, feet shoulder-width apart.",
+      "Slide down slightly, bending knees to a small angle.",
+      "Keep knees behind your toes and back flat on the wall.",
+      "Hold the position, breathing normally, then slide back up."
+    ],
+    "instructions_mr": [
+      "भिंतीला पाठ टेकवून उभे राहा, पाय खांद्याइतक्या रुंदीत ठेवा.",
+      "थोडे खाली सरका, गुडघे थोड्याशा कोनात वाका.",
+      "गुडघे बोटांच्या मागे आणि पाठ भिंतीला सपाट ठेवा.",
+      "सामान्य श्वास घेत ही स्थिती धरा, मग परत वर सरका."
+    ],
+    "instructions_hi": [
+      "दीवार से पीठ टिकाकर खड़े हों, पैर कंधे जितने चौड़े रखें।",
+      "थोड़ा नीचे खिसकें, घुटनों को हल्के कोण पर मोड़ें।",
+      "घुटने उंगलियों के पीछे और पीठ दीवार पर सपाट रखें।",
+      "सामान्य सांस लेते हुए यह स्थिति बनाए रखें, फिर वापस ऊपर खिसकें।"
+    ],
+    "safety_en": "Only go into a shallow bend; stop if knees hurt.",
+    "muscles": ["legs", "glutes", "core"]
+  },
+  {
+    "id": "bottle-bicep-curl",
+    "name_en": "Bottle Bicep Curl",
+    "name_mr": "बाटलीने बायसेप कर्ल",
+    "name_hi": "बोतल से बाइसेप कर्ल",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "bottle",
+    "mode": "reps",
+    "default_reps": 12,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand or sit holding a water bottle in each hand, palms facing forward.",
+      "Keep elbows close to your body.",
+      "Curl the bottles up toward your shoulders.",
+      "Lower slowly and repeat."
+    ],
+    "instructions_mr": [
+      "प्रत्येक हातात पाण्याची बाटली धरून उभे राहा किंवा बसा, तळहात पुढे ठेवा.",
+      "कोपर शरीराजवळ ठेवा.",
+      "बाटल्या खांद्यांकडे वर उचला.",
+      "हळू खाली आणा आणि पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "हर हाथ में पानी की बोतल पकड़कर खड़े हों या बैठें, हथेलियां आगे रखें।",
+      "कोहनियां शरीर के पास रखें।",
+      "बोतलों को कंधों की ओर ऊपर उठाएं।",
+      "धीरे नीचे लाएं और दोहराएं।"
+    ],
+    "safety_en": "Use a lighter bottle if you feel elbow or wrist strain.",
+    "muscles": ["arms"]
+  },
+  {
+    "id": "bottle-shoulder-press",
+    "name_en": "Bottle Shoulder Press",
+    "name_mr": "बाटलीने शोल्डर प्रेस",
+    "name_hi": "बोतल से शोल्डर प्रेस",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "bottle",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Sit or stand holding a bottle in each hand at shoulder height.",
+      "Press the bottles straight up overhead.",
+      "Avoid locking your elbows fully at the top.",
+      "Lower with control back to shoulder height."
+    ],
+    "instructions_mr": [
+      "प्रत्येक हातात बाटली खांद्याच्या उंचीवर धरून बसा किंवा उभे राहा.",
+      "बाटल्या डोक्यावर सरळ वर ढकला.",
+      "वरच्या स्थितीत कोपर पूर्ण ताठ करू नका.",
+      "नियंत्रित पद्धतीने खांद्याच्या उंचीपर्यंत खाली आणा."
+    ],
+    "instructions_hi": [
+      "हर हाथ में बोतल कंधे की ऊंचाई पर पकड़कर बैठें या खड़े हों।",
+      "बोतलों को सिर के ऊपर सीधा धकेलें।",
+      "ऊपर कोहनियों को पूरी तरह सीधा न करें।",
+      "नियंत्रण से कंधे की ऊंचाई तक वापस लाएं।"
+    ],
+    "safety_en": "Stop if you feel shoulder pinching; keep movement pain-free.",
+    "muscles": ["shoulders", "arms"]
+  },
+  {
+    "id": "band-standing-row",
+    "name_en": "Band Standing Row",
+    "name_mr": "रेझिस्टन्स बँडने उभे राहून रो",
+    "name_hi": "रेज़िस्टेंस बैंड से खड़े होकर रो",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "band",
+    "mode": "reps",
+    "default_reps": 12,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Loop a resistance band around a sturdy anchor at chest height.",
+      "Stand tall holding both ends, arms extended forward.",
+      "Pull the band toward your waist, squeezing shoulder blades together.",
+      "Slowly return to the starting position."
+    ],
+    "instructions_mr": [
+      "छातीच्या उंचीवर भक्कम आधाराभोवती रेझिस्टन्स बँड गुंडाळा.",
+      "दोन्ही टोके धरून ताठ उभे राहा, हात पुढे सरळ ठेवा.",
+      "खांद्याची हाडे एकत्र आणत बँड कंबरेकडे ओढा.",
+      "हळूहळू सुरुवातीच्या स्थितीत परत या."
+    ],
+    "instructions_hi": [
+      "छाती की ऊंचाई पर किसी मज़बूत सहारे के चारों ओर रेज़िस्टेंस बैंड लपेटें।",
+      "दोनों सिरे पकड़कर सीधे खड़े हों, हाथ आगे सीधे रखें।",
+      "कंधे की हड्डियों को पास लाते हुए बैंड को कमर की ओर खींचें।",
+      "धीरे-धीरे शुरुआती स्थिति में वापस आएं।"
+    ],
+    "safety_en": "Choose a light band and stop if you feel shoulder or back strain.",
+    "muscles": ["back", "shoulders", "arms"]
+  },
+  {
+    "id": "dead-bug",
+    "name_en": "Dead Bug",
+    "name_mr": "डेड बग व्यायाम",
+    "name_hi": "डेड बग एक्सरसाइज़",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "mat",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Lie on your back on a mat, arms up and knees bent at 90 degrees.",
+      "Slowly lower one arm and the opposite leg toward the floor.",
+      "Keep your lower back pressed into the mat.",
+      "Return to start and repeat on the other side."
+    ],
+    "instructions_mr": [
+      "चटईवर पाठीवर झोपा, हात वर आणि गुडघे ९० अंशात वाकवा.",
+      "हळूहळू एक हात आणि विरुद्ध पाय जमिनीकडे खाली आणा.",
+      "पाठीचा खालचा भाग चटईवर दाबलेला ठेवा.",
+      "सुरुवातीच्या स्थितीत परत या आणि दुसऱ्या बाजूने पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "चटाई पर पीठ के बल लेटें, हाथ ऊपर और घुटने 90 डिग्री पर मोड़ें।",
+      "धीरे-धीरे एक हाथ और विपरीत पैर फर्श की ओर नीचे लाएं।",
+      "पीठ के निचले हिस्से को चटाई पर दबाए रखें।",
+      "शुरुआती स्थिति में लौटें और दूसरी तरफ से दोहराएं।"
+    ],
+    "safety_en": "Keep the movement small if your lower back arches off the mat.",
+    "muscles": ["core", "back"]
+  },
+  {
+    "id": "bird-dog",
+    "name_en": "Bird Dog",
+    "name_mr": "बर्ड डॉग व्यायाम",
+    "name_hi": "बर्ड डॉग एक्सरसाइज़",
+    "category": "strength",
+    "impact": "low",
+    "level": 1,
+    "equipment": "mat",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Start on hands and knees on a mat, wrists under shoulders.",
+      "Extend one arm forward and the opposite leg back.",
+      "Keep your back flat and hips level.",
+      "Hold briefly, return, and repeat on the other side."
+    ],
+    "instructions_mr": [
+      "चटईवर हात आणि गुडघ्यांवर या, मनगटे खांद्यांच्या खाली ठेवा.",
+      "एक हात पुढे आणि विरुद्ध पाय मागे सरळ करा.",
+      "पाठ सपाट आणि कंबर समतल ठेवा.",
+      "क्षणभर थांबा, परत या आणि दुसऱ्या बाजूने पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "चटाई पर हाथ और घुटनों के बल आएं, कलाइयां कंधों के नीचे रखें।",
+      "एक हाथ आगे और विपरीत पैर पीछे सीधा करें।",
+      "पीठ सपाट और कमर समतल रखें।",
+      "थोड़ा रुकें, वापस आएं और दूसरी तरफ से दोहराएं।"
+    ],
+    "safety_en": "Keep wrists and knees cushioned on a soft mat; stop if wrists hurt.",
+    "muscles": ["core", "back", "shoulders", "glutes"]
+  },
+  {
+    "id": "incline-push-up",
+    "name_en": "Incline Push-Up (Table Edge)",
+    "name_mr": "टेबलावर इन्क्लाइन पुश-अप",
+    "name_hi": "मेज़ पर इनक्लाइन पुश-अप",
+    "category": "strength",
+    "impact": "low",
+    "level": 2,
+    "equipment": "chair",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Place both hands on the edge of a sturdy table or counter, slightly wider than shoulders.",
+      "Walk your feet back so your body forms a straight line.",
+      "Bend your elbows to lower your chest toward the edge.",
+      "Push back up, keeping your core engaged."
+    ],
+    "instructions_mr": [
+      "भक्कम टेबल किंवा काउंटरच्या कडेवर दोन्ही हात, खांद्यांपेक्षा थोडे रुंद ठेवा.",
+      "पाय मागे नेऊन शरीर सरळ रेषेत ठेवा.",
+      "कोपर वाकवून छाती कडेकडे खाली न्या.",
+      "पोट आवळून परत वर ढकला."
+    ],
+    "instructions_hi": [
+      "मज़बूत मेज़ या काउंटर के किनारे पर दोनों हाथ, कंधों से थोड़े चौड़े रखें।",
+      "पैर पीछे ले जाकर शरीर को सीधी रेखा में रखें।",
+      "कोहनियां मोड़कर छाती को किनारे की ओर नीचे लाएं।",
+      "पेट कसते हुए वापस ऊपर धकेलें।"
+    ],
+    "safety_en": "Ensure the table is stable and won't slide; stop for wrist pain.",
+    "muscles": ["chest", "shoulders", "arms", "core"]
+  },
+  {
+    "id": "low-step-up",
+    "name_en": "Low Step-Up (Holding Rail)",
+    "name_mr": "कठड्याला धरून लो स्टेप-अप",
+    "name_hi": "रेलिंग पकड़कर लो स्टेप-अप",
+    "category": "strength",
+    "impact": "low",
+    "level": 2,
+    "equipment": "stairs",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Stand at the bottom of a staircase, holding the rail.",
+      "Step one foot up onto the first stair.",
+      "Press through that foot to bring your other foot up beside it.",
+      "Step back down with control and repeat, alternating lead leg."
+    ],
+    "instructions_mr": [
+      "जिन्याच्या तळाशी कठडा धरून उभे राहा.",
+      "एक पाय पहिल्या पायरीवर ठेवा.",
+      "त्या पायावर जोर देऊन दुसरा पाय शेजारी आणा.",
+      "नियंत्रित पद्धतीने खाली या आणि आघाडीचा पाय बदलत पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "सीढ़ी के नीचे रेलिंग पकड़कर खड़े हों।",
+      "एक पैर पहली सीढ़ी पर रखें।",
+      "उस पैर पर ज़ोर देकर दूसरा पैर उसके बगल में लाएं।",
+      "नियंत्रण से नीचे आएं और अगला पैर बदलते हुए दोहराएं।"
+    ],
+    "safety_en": "Use a low, stable step and hold the rail if you feel unsteady.",
+    "muscles": ["legs", "glutes"]
+  },
+  {
+    "id": "assisted-split-squat",
+    "name_en": "Assisted Split Squat",
+    "name_mr": "आधार घेऊन स्प्लिट स्क्वॅट",
+    "name_hi": "सहारा लेकर स्प्लिट स्क्वाट",
+    "category": "strength",
+    "impact": "low",
+    "level": 2,
+    "equipment": "chair",
+    "mode": "reps",
+    "default_reps": 8,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Stand in a split stance with one foot forward, holding a chair for balance.",
+      "Lower your back knee toward the floor, keeping front knee behind toes.",
+      "Keep most of your weight through the front heel.",
+      "Push back up and repeat, then switch legs."
+    ],
+    "instructions_mr": [
+      "एक पाय पुढे ठेवून उभे राहा, समतोलासाठी खुर्ची धरा.",
+      "मागचा गुडघा जमिनीकडे खाली न्या, पुढचा गुडघा बोटांच्या मागे ठेवा.",
+      "बहुतांश वजन पुढच्या टाचेवर ठेवा.",
+      "परत वर ढकला आणि पुन्हा करा, मग पाय बदला."
+    ],
+    "instructions_hi": [
+      "एक पैर आगे रखकर खड़े हों, संतुलन के लिए कुर्सी पकड़ें।",
+      "पिछले घुटने को फर्श की ओर नीचे लाएं, अगला घुटना उंगलियों के पीछे रखें।",
+      "ज़्यादातर वज़न अगली एड़ी पर रखें।",
+      "वापस ऊपर धकेलें और दोहराएं, फिर पैर बदलें।"
+    ],
+    "safety_en": "Keep the range small and stop if front knee hurts.",
+    "muscles": ["legs", "glutes", "core"]
+  },
+  {
+    "id": "band-squat",
+    "name_en": "Band Squat",
+    "name_mr": "रेझिस्टन्स बँडने स्क्वॅट",
+    "name_hi": "रेज़िस्टेंस बैंड से स्क्वाट",
+    "category": "strength",
+    "impact": "low",
+    "level": 2,
+    "equipment": "band",
+    "mode": "reps",
+    "default_reps": 12,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Stand on the middle of a resistance band, feet shoulder-width apart.",
+      "Hold the ends at shoulder height, palms facing in.",
+      "Bend your knees and hips to squat down, keeping chest lifted.",
+      "Press through your heels to stand back up."
+    ],
+    "instructions_mr": [
+      "रेझिस्टन्स बँडच्या मध्यावर पाय खांद्याइतक्या रुंदीत ठेवून उभे राहा.",
+      "टोके खांद्याच्या उंचीवर धरा, तळहात आतल्या बाजूला ठेवा.",
+      "छाती वर ठेवत गुडघे व कंबर वाकवून खाली बसा.",
+      "टाचांवर जोर देऊन परत उभे राहा."
+    ],
+    "instructions_hi": [
+      "रेज़िस्टेंस बैंड के बीच में पैर कंधे जितने चौड़े रखकर खड़े हों।",
+      "सिरों को कंधे की ऊंचाई पर पकड़ें, हथेलियां अंदर की ओर रखें।",
+      "छाती ऊपर रखते हुए घुटने और कमर मोड़कर नीचे बैठें।",
+      "एड़ियों पर ज़ोर देकर वापस खड़े हों।"
+    ],
+    "safety_en": "Use a light band and stop if you feel knee pain.",
+    "muscles": ["legs", "glutes", "core"]
+  },
+  {
+    "id": "plank-on-knees",
+    "name_en": "Plank on Knees",
+    "name_mr": "गुडघ्यांवर प्लँक",
+    "name_hi": "घुटनों पर प्लैंक",
+    "category": "strength",
+    "impact": "low",
+    "level": 2,
+    "equipment": "mat",
+    "mode": "time",
+    "default_seconds": 20,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Kneel on a mat, then place forearms on the floor under shoulders.",
+      "Keep knees on the mat and form a straight line from head to knees.",
+      "Engage your core and keep hips level, not sagging.",
+      "Hold, breathing steadily, then release."
+    ],
+    "instructions_mr": [
+      "चटईवर गुडघे टेकून, कोपर खांद्यांच्या खाली जमिनीवर ठेवा.",
+      "गुडघे चटईवर ठेवून डोक्यापासून गुडघ्यांपर्यंत सरळ रेषा तयार करा.",
+      "पोट आवळा आणि कंबर समतल ठेवा, खाली झुकू देऊ नका.",
+      "स्थिर श्वास घेत ही स्थिती धरा, मग सोडून द्या."
+    ],
+    "instructions_hi": [
+      "चटाई पर घुटनों के बल आएं, फिर कोहनियां कंधों के नीचे फर्श पर रखें।",
+      "घुटने चटाई पर रखते हुए सिर से घुटनों तक सीधी रेखा बनाएं।",
+      "पेट कसें और कमर समतल रखें, नीचे झुकने न दें।",
+      "स्थिर सांस लेते हुए यह स्थिति बनाए रखें, फिर छोड़ें।"
+    ],
+    "safety_en": "Stop if you feel lower back sagging or wrist pain.",
+    "muscles": ["core", "shoulders", "back"]
+  },
+  {
+    "id": "side-plank-on-knees",
+    "name_en": "Side Plank on Knees",
+    "name_mr": "गुडघ्यांवर साइड प्लँक",
+    "name_hi": "घुटनों पर साइड प्लैंक",
+    "category": "strength",
+    "impact": "low",
+    "level": 2,
+    "equipment": "mat",
+    "mode": "time",
+    "default_seconds": 15,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Lie on your side on a mat with knees bent behind you.",
+      "Prop yourself up on one forearm, elbow under shoulder.",
+      "Lift your hips to form a straight line from head to knees.",
+      "Hold, then lower and repeat on the other side."
+    ],
+    "instructions_mr": [
+      "चटईवर कुशीवर झोपा, गुडघे मागे वाकवा.",
+      "एका कोपरावर, खांद्याच्या खाली ठेवून शरीर वर उचला.",
+      "डोक्यापासून गुडघ्यांपर्यंत सरळ रेषा तयार करत कंबर वर उचला.",
+      "थांबा, मग खाली या आणि दुसऱ्या बाजूने पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "चटाई पर करवट लेकर लेटें, घुटने पीछे मोड़ें।",
+      "एक कोहनी पर, कंधे के नीचे रखते हुए शरीर ऊपर उठाएं।",
+      "सिर से घुटनों तक सीधी रेखा बनाते हुए कमर ऊपर उठाएं।",
+      "रुकें, फिर नीचे आएं और दूसरी तरफ से दोहराएं।"
+    ],
+    "safety_en": "Stop if you feel shoulder or hip pain; keep the hold short.",
+    "muscles": ["core", "hips", "shoulders"]
+  },
+  {
+    "id": "assisted-reverse-lunge",
+    "name_en": "Assisted Reverse Lunge",
+    "name_mr": "आधार घेऊन रिव्हर्स लंज",
+    "name_hi": "सहारा लेकर रिवर्स लंज",
+    "category": "strength",
+    "impact": "low",
+    "level": 2,
+    "equipment": "chair",
+    "mode": "reps",
+    "default_reps": 8,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Stand tall holding a chair back with one hand.",
+      "Step one leg back and lower your back knee toward the floor.",
+      "Keep your front knee behind your toes.",
+      "Push through your front heel to return to standing, then switch legs."
+    ],
+    "instructions_mr": [
+      "एका हाताने खुर्चीची पाठ धरून ताठ उभे राहा.",
+      "एक पाय मागे टाका आणि मागचा गुडघा जमिनीकडे खाली न्या.",
+      "पुढचा गुडघा बोटांच्या मागे ठेवा.",
+      "पुढच्या टाचेवर जोर देऊन उभे राहा, मग पाय बदला."
+    ],
+    "instructions_hi": [
+      "एक हाथ से कुर्सी की पीठ पकड़कर सीधे खड़े हों।",
+      "एक पैर पीछे ले जाएं और पिछले घुटने को फर्श की ओर नीचे लाएं।",
+      "अगला घुटना उंगलियों के पीछे रखें।",
+      "अगली एड़ी पर ज़ोर देकर खड़े हों, फिर पैर बदलें।"
+    ],
+    "safety_en": "Keep steps short and stop if front knee pain occurs.",
+    "muscles": ["legs", "glutes", "core"]
+  },
+  {
+    "id": "farmer-carry-bottles",
+    "name_en": "Farmer Carry (With Bottles)",
+    "name_mr": "बाटल्या घेऊन फार्मर कॅरी",
+    "name_hi": "बोतलों के साथ फार्मर कैरी",
+    "category": "strength",
+    "impact": "low",
+    "level": 3,
+    "equipment": "bottle",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 2,
+    "rest_seconds": 45,
+    "instructions_en": [
+      "Hold a filled water bottle in each hand at your sides.",
+      "Stand tall with shoulders back and core engaged.",
+      "Walk forward slowly with steady, even steps.",
+      "Keep grip firm and put the bottles down if you feel unsteady."
+    ],
+    "instructions_mr": [
+      "प्रत्येक हातात भरलेली पाण्याची बाटली बाजूला धरा.",
+      "खांदे मागे आणि पोट आवळून ताठ उभे राहा.",
+      "स्थिर व समान पावलांनी हळू पुढे चाला.",
+      "पकड घट्ट ठेवा आणि अस्थिर वाटल्यास बाटल्या खाली ठेवा."
+    ],
+    "instructions_hi": [
+      "हर हाथ में भरी हुई पानी की बोतल बगल में पकड़ें।",
+      "कंधे पीछे और पेट कसकर सीधे खड़े हों।",
+      "स्थिर और बराबर कदमों से धीरे आगे चलें।",
+      "पकड़ मज़बूत रखें और अस्थिर महसूस होने पर बोतलें नीचे रखें।"
+    ],
+    "safety_en": "Stop if you feel lower back strain or grip giving out.",
+    "muscles": ["arms", "core", "back", "legs"]
+  },
+  {
+    "id": "step-touch",
+    "name_en": "Step Touch",
+    "name_mr": "स्टेप टच",
+    "name_hi": "स्टेप टच",
+    "category": "cardio_low",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 45,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand tall with feet together.",
+      "Step your right foot out to the side, then bring left foot to meet it.",
+      "Step your left foot out to the side, then bring right foot to meet it.",
+      "Keep arms moving gently and knees soft."
+    ],
+    "instructions_mr": [
+      "पाय एकत्र ठेवून ताठ उभे राहा.",
+      "उजवा पाय बाजूला टाका, मग डावा पाय जवळ आणा.",
+      "डावा पाय बाजूला टाका, मग उजवा पाय जवळ आणा.",
+      "हात हळुवारपणे हलवत राहा आणि गुडघे मोकळे ठेवा."
+    ],
+    "instructions_hi": [
+      "पैर साथ रखते हुए सीधे खड़े हों।",
+      "दायां पैर बगल में रखें, फिर बायां पैर पास लाएं।",
+      "बायां पैर बगल में रखें, फिर दायां पैर पास लाएं।",
+      "हाथों को धीरे हिलाते रहें और घुटने ढीले रखें।"
+    ],
+    "safety_en": "Keep steps small and stop if knees or ankles hurt.",
+    "muscles": ["legs", "heart", "core"]
+  },
+  {
+    "id": "side-steps",
+    "name_en": "Side Steps",
+    "name_mr": "बाजूला पावले टाकणे",
+    "name_hi": "बगल में कदम चलना",
+    "category": "cardio_low",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 45,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand with feet hip-width apart, knees soft.",
+      "Step sideways to the right several steps.",
+      "Then step sideways to the left back to start.",
+      "Keep your chest up and movements controlled."
+    ],
+    "instructions_mr": [
+      "पाय कंबरेच्या रुंदीत ठेवून उभे राहा, गुडघे मोकळे ठेवा.",
+      "उजव्या बाजूला काही पावले टाका.",
+      "मग डाव्या बाजूला सुरुवातीच्या स्थितीत परत या.",
+      "छाती वर ठेवा आणि हालचाली नियंत्रित ठेवा."
+    ],
+    "instructions_hi": [
+      "पैरों को कमर जितना चौड़ा रखते हुए खड़े हों, घुटने ढीले रखें।",
+      "दाईं तरफ कुछ कदम चलें।",
+      "फिर बाईं तरफ शुरुआती स्थिति में वापस आएं।",
+      "छाती ऊपर रखें और हरकतें नियंत्रित रखें।"
+    ],
+    "safety_en": "Keep a clear path to avoid tripping; stop if unsteady.",
+    "muscles": ["legs", "hips", "heart"]
+  },
+  {
+    "id": "standing-punches",
+    "name_en": "Standing Punches (Shadow)",
+    "name_mr": "उभे राहून हवेत मुक्के मारणे",
+    "name_hi": "खड़े होकर हवा में मुक्के मारना",
+    "category": "cardio_low",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 45,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand tall with feet hip-width apart, knees soft.",
+      "Make loose fists and punch forward one arm at a time.",
+      "Twist gently through your torso with each punch.",
+      "Keep a steady, comfortable rhythm."
+    ],
+    "instructions_mr": [
+      "पाय कंबरेच्या रुंदीत ठेवून ताठ उभे राहा, गुडघे मोकळे ठेवा.",
+      "हलक्या मुठी करून एका वेळी एक हात पुढे मारा.",
+      "प्रत्येक ठोश्यासोबत धड हळुवारपणे फिरवा.",
+      "स्थिर आणि आरामदायक गती ठेवा."
+    ],
+    "instructions_hi": [
+      "पैरों को कमर जितना चौड़ा रखते हुए सीधे खड़े हों, घुटने ढीले रखें।",
+      "ढीली मुट्ठी बनाकर एक बार में एक हाथ आगे मारें।",
+      "हर मुक्के के साथ धड़ को हल्का घुमाएं।",
+      "स्थिर और आरामदायक लय बनाए रखें।"
+    ],
+    "safety_en": "Avoid locking elbows fully; stop if shoulder pain occurs.",
+    "muscles": ["shoulders", "arms", "core", "heart"]
+  },
+  {
+    "id": "seated-marching",
+    "name_en": "Seated Marching",
+    "name_mr": "बसून मार्च करणे",
+    "name_hi": "बैठकर मार्च करना",
+    "category": "cardio_low",
+    "impact": "low",
+    "level": 1,
+    "equipment": "chair",
+    "mode": "time",
+    "default_seconds": 45,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Sit tall toward the front of a chair, feet flat on the floor.",
+      "Lift one knee up, then lower it back down.",
+      "Alternate legs at a steady pace like marching.",
+      "Swing your arms gently for extra effort if comfortable."
+    ],
+    "instructions_mr": [
+      "खुर्चीच्या पुढच्या भागात ताठ बसा, पाय जमिनीवर सपाट ठेवा.",
+      "एक गुडघा वर उचला, मग परत खाली आणा.",
+      "मार्च केल्यासारखे स्थिर वेगाने पाय बदला.",
+      "आरामदायक वाटल्यास अतिरिक्त प्रयत्नासाठी हात हळुवार हलवा."
+    ],
+    "instructions_hi": [
+      "कुर्सी के अगले हिस्से पर सीधे बैठें, पैर फर्श पर सपाट रखें।",
+      "एक घुटना ऊपर उठाएं, फिर वापस नीचे लाएं।",
+      "मार्च करने जैसी स्थिर गति से पैर बदलें।",
+      "आरामदायक हो तो अतिरिक्त मेहनत के लिए हाथ धीरे हिलाएं।"
+    ],
+    "safety_en": "Good option if standing exercise is uncomfortable; stop if hip pain occurs.",
+    "muscles": ["legs", "core", "heart"]
+  },
+  {
+    "id": "slow-shadow-boxing",
+    "name_en": "Slow Shadow Boxing",
+    "name_mr": "हळू शॅडो बॉक्सिंग",
+    "name_hi": "धीमी शैडो बॉक्सिंग",
+    "category": "cardio_low",
+    "impact": "low",
+    "level": 2,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 60,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand tall with feet staggered, knees soft.",
+      "Throw slow, controlled punches into the air.",
+      "Add gentle head and torso movement between punches.",
+      "Keep breathing steadily and stay light on your feet."
+    ],
+    "instructions_mr": [
+      "पाय आगेमागे ठेवून ताठ उभे राहा, गुडघे मोकळे ठेवा.",
+      "हळू, नियंत्रित ठोसे हवेत मारा.",
+      "ठोश्यांमध्ये डोके आणि धडाची हळुवार हालचाल करा.",
+      "स्थिर श्वास घ्या आणि पायांवर हलके राहा."
+    ],
+    "instructions_hi": [
+      "पैर आगे-पीछे रखते हुए सीधे खड़े हों, घुटने ढीले रखें।",
+      "धीमे, नियंत्रित मुक्के हवा में मारें।",
+      "मुक्कों के बीच सिर और धड़ की हल्की हरकत जोड़ें।",
+      "स्थिर सांस लें और पैरों पर हल्के बने रहें।"
+    ],
+    "safety_en": "Keep it slow and stop if you feel dizzy or joint pain.",
+    "muscles": ["full_body", "heart", "core"]
+  },
+  {
+    "id": "seated-hamstring-stretch",
+    "name_en": "Seated Hamstring Stretch",
+    "name_mr": "बसून हॅमस्ट्रिंग स्ट्रेच",
+    "name_hi": "बैठकर हैमस्ट्रिंग स्ट्रेच",
+    "category": "stretch",
+    "impact": "low",
+    "level": 1,
+    "equipment": "chair",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Sit toward the front edge of a chair.",
+      "Extend one leg straight out, heel on the floor, toes up.",
+      "Sit tall and hinge slightly forward from your hips.",
+      "Hold the gentle stretch, then switch legs."
+    ],
+    "instructions_mr": [
+      "खुर्चीच्या पुढच्या कडेला बसा.",
+      "एक पाय सरळ पुढे पसरवा, टाच जमिनीवर, बोटे वर ठेवा.",
+      "ताठ बसा आणि कंबरेपासून किंचित पुढे झुका.",
+      "हलक्या स्ट्रेचमध्ये थांबा, मग पाय बदला."
+    ],
+    "instructions_hi": [
+      "कुर्सी के अगले किनारे पर बैठें।",
+      "एक पैर सीधा आगे फैलाएं, एड़ी फर्श पर, उंगलियां ऊपर रखें।",
+      "सीधे बैठें और कमर से थोड़ा आगे झुकें।",
+      "हल्के स्ट्रेच में रुकें, फिर पैर बदलें।"
+    ],
+    "safety_en": "Stretch gently, never bounce; stop if you feel sharp pain.",
+    "muscles": ["legs"]
+  },
+  {
+    "id": "wall-calf-stretch",
+    "name_en": "Wall Calf Stretch",
+    "name_mr": "भिंतीवर पिंडरीचा स्ट्रेच",
+    "name_hi": "दीवार पर पिंडली का स्ट्रेच",
+    "category": "stretch",
+    "impact": "low",
+    "level": 1,
+    "equipment": "wall",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Stand facing a wall, hands resting on it.",
+      "Step one foot back, keeping it straight with heel on the floor.",
+      "Bend your front knee and lean gently into the wall.",
+      "Hold the stretch, then switch legs."
+    ],
+    "instructions_mr": [
+      "भिंतीसमोर उभे राहा, हात भिंतीवर ठेवा.",
+      "एक पाय मागे टाका, तो सरळ ठेवून टाच जमिनीवर ठेवा.",
+      "पुढचा गुडघा वाकवा आणि हळुवारपणे भिंतीकडे झुका.",
+      "स्ट्रेचमध्ये थांबा, मग पाय बदला."
+    ],
+    "instructions_hi": [
+      "दीवार के सामने खड़े हों, हाथ उस पर रखें।",
+      "एक पैर पीछे ले जाएं, उसे सीधा रखते हुए एड़ी फर्श पर रखें।",
+      "अगला घुटना मोड़ें और धीरे से दीवार की ओर झुकें।",
+      "स्ट्रेच में रुकें, फिर पैर बदलें।"
+    ],
+    "safety_en": "Stop if you feel calf cramping or Achilles pain.",
+    "muscles": ["calves"]
+  },
+  {
+    "id": "doorway-chest-stretch",
+    "name_en": "Doorway Chest Stretch",
+    "name_mr": "दरवाज्यात छातीचा स्ट्रेच",
+    "name_hi": "दरवाज़े में छाती का स्ट्रेच",
+    "category": "stretch",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Stand in a doorway with arms raised to shoulder height, forearms on the frame.",
+      "Step one foot forward through the doorway.",
+      "Let your chest gently open as you lean forward.",
+      "Hold the stretch, breathing normally."
+    ],
+    "instructions_mr": [
+      "दरवाज्यात उभे राहा, हात खांद्याच्या उंचीवर उचलून बाहू चौकटीवर ठेवा.",
+      "एक पाय दरवाज्यातून पुढे टाका.",
+      "पुढे झुकताना छाती हळुवारपणे उघडू द्या.",
+      "सामान्य श्वास घेत स्ट्रेचमध्ये थांबा."
+    ],
+    "instructions_hi": [
+      "दरवाज़े में खड़े हों, हाथ कंधे की ऊंचाई तक उठाकर बाजू चौखट पर रखें।",
+      "एक पैर दरवाज़े से आगे बढ़ाएं।",
+      "आगे झुकते हुए छाती को हल्के से खुलने दें।",
+      "सामान्य सांस लेते हुए स्ट्रेच में रुकें।"
+    ],
+    "safety_en": "Stop if you feel shoulder pain; keep the lean gentle.",
+    "muscles": ["chest", "shoulders"]
+  },
+  {
+    "id": "standing-hip-flexor-stretch",
+    "name_en": "Standing Hip Flexor Stretch",
+    "name_mr": "उभे राहून हिप फ्लेक्सर स्ट्रेच",
+    "name_hi": "खड़े होकर हिप फ्लेक्सर स्ट्रेच",
+    "category": "stretch",
+    "impact": "low",
+    "level": 1,
+    "equipment": "chair",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Stand holding a chair for balance, feet in a split stance.",
+      "Bend your front knee slightly, keeping back leg straight.",
+      "Gently push your hips forward until you feel a stretch in the back hip.",
+      "Hold, then switch legs."
+    ],
+    "instructions_mr": [
+      "समतोलासाठी खुर्ची धरून उभे राहा, पाय आगेमागे ठेवा.",
+      "पुढचा गुडघा थोडा वाका, मागचा पाय सरळ ठेवा.",
+      "मागच्या नितंबात स्ट्रेच जाणवेपर्यंत कंबर हळुवारपणे पुढे ढकला.",
+      "थांबा, मग पाय बदला."
+    ],
+    "instructions_hi": [
+      "संतुलन के लिए कुर्सी पकड़कर खड़े हों, पैर आगे-पीछे रखें।",
+      "अगला घुटना थोड़ा मोड़ें, पिछला पैर सीधा रखें।",
+      "पिछले हिप में स्ट्रेच महसूस होने तक कमर को धीरे आगे धकेलें।",
+      "रुकें, फिर पैर बदलें।"
+    ],
+    "safety_en": "Stop if you feel lower back or hip pain.",
+    "muscles": ["hips", "legs"]
+  },
+  {
+    "id": "childs-pose",
+    "name_en": "Child's Pose",
+    "name_mr": "बालासन",
+    "name_hi": "बालासन",
+    "category": "stretch",
+    "impact": "low",
+    "level": 1,
+    "equipment": "mat",
+    "mode": "time",
+    "default_seconds": 45,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Kneel on a mat with big toes touching and knees wide.",
+      "Sit your hips back toward your heels.",
+      "Walk your hands forward and lower your chest toward the mat.",
+      "Rest your forehead down and breathe deeply."
+    ],
+    "instructions_mr": [
+      "चटईवर गुडघे टेकून बसा, अंगठे एकत्र आणि गुडघे रुंद ठेवा.",
+      "कंबर टाचांकडे मागे न्या.",
+      "हात पुढे नेत छाती चटईकडे खाली आणा.",
+      "कपाळ खाली टेकवा आणि दीर्घ श्वास घ्या."
+    ],
+    "instructions_hi": [
+      "चटाई पर घुटनों के बल बैठें, अंगूठे साथ और घुटने चौड़े रखें।",
+      "कमर को एड़ियों की ओर पीछे ले जाएं।",
+      "हाथों को आगे बढ़ाते हुए छाती को चटाई की ओर नीचे लाएं।",
+      "माथा नीचे टिकाएं और गहरी सांस लें।"
+    ],
+    "safety_en": "Skip or modify if it strains your knees; place a cushion under knees if needed.",
+    "muscles": ["back", "hips"]
+  },
+  {
+    "id": "seated-figure-4-stretch",
+    "name_en": "Seated Figure-4 Stretch",
+    "name_mr": "बसून फिगर-४ स्ट्रेच",
+    "name_hi": "बैठकर फिगर-4 स्ट्रेच",
+    "category": "stretch",
+    "impact": "low",
+    "level": 1,
+    "equipment": "chair",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Sit tall in a chair with feet flat on the floor.",
+      "Cross one ankle over the opposite knee.",
+      "Sit tall and lean forward slightly from your hips.",
+      "Hold the stretch, then switch sides."
+    ],
+    "instructions_mr": [
+      "खुर्चीत ताठ बसा, पाय जमिनीवर सपाट ठेवा.",
+      "एक घोटा विरुद्ध गुडघ्यावर ठेवा.",
+      "ताठ बसा आणि कंबरेपासून किंचित पुढे झुका.",
+      "स्ट्रेचमध्ये थांबा, मग बाजू बदला."
+    ],
+    "instructions_hi": [
+      "कुर्सी पर सीधे बैठें, पैर फर्श पर सपाट रखें।",
+      "एक टखना विपरीत घुटने पर रखें।",
+      "सीधे बैठें और कमर से थोड़ा आगे झुकें।",
+      "स्ट्रेच में रुकें, फिर तरफ बदलें।"
+    ],
+    "safety_en": "Stop if you feel knee or hip pain; keep the stretch gentle.",
+    "muscles": ["hips", "glutes"]
+  },
+  {
+    "id": "quad-stretch-wall",
+    "name_en": "Quad Stretch (Holding Wall)",
+    "name_mr": "भिंतीचा आधार घेऊन क्वाड स्ट्रेच",
+    "name_hi": "दीवार का सहारा लेकर क्वाड स्ट्रेच",
+    "category": "stretch",
+    "impact": "low",
+    "level": 1,
+    "equipment": "wall",
+    "mode": "time",
+    "default_seconds": 30,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Stand beside a wall, one hand resting on it for balance.",
+      "Bend one knee and hold your ankle behind you.",
+      "Keep your knees close together and stand tall.",
+      "Hold the stretch gently, then switch legs."
+    ],
+    "instructions_mr": [
+      "भिंतीच्या बाजूला उभे राहा, समतोलासाठी एक हात भिंतीवर ठेवा.",
+      "एक गुडघा वाका आणि तो घोटा मागे धरा.",
+      "गुडघे जवळ ठेवा आणि ताठ उभे राहा.",
+      "हलक्या स्ट्रेचमध्ये थांबा, मग पाय बदला."
+    ],
+    "instructions_hi": [
+      "दीवार के बगल में खड़े हों, संतुलन के लिए एक हाथ उस पर रखें।",
+      "एक घुटना मोड़ें और उस टखने को पीछे पकड़ें।",
+      "घुटनों को पास रखें और सीधे खड़े रहें।",
+      "हल्के स्ट्रेच में रुकें, फिर पैर बदलें।"
+    ],
+    "safety_en": "Stop if you feel knee pain; hold a wall if balance is unsteady.",
+    "muscles": ["legs"]
+  },
+  {
+    "id": "box-breathing",
+    "name_en": "Box Breathing (4-4-4-4)",
+    "name_mr": "बॉक्स ब्रीदिंग (४-४-४-४)",
+    "name_hi": "बॉक्स ब्रीदिंग (4-4-4-4)",
+    "category": "breathing",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 120,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Sit comfortably with your back straight.",
+      "Inhale slowly through your nose for 4 counts.",
+      "Hold your breath for 4 counts, then exhale for 4 counts.",
+      "Hold empty for 4 counts, then repeat the cycle."
+    ],
+    "instructions_mr": [
+      "पाठ सरळ ठेवून आरामात बसा.",
+      "नाकातून हळूहळू ४ मोजत श्वास आत घ्या.",
+      "४ मोजत श्वास रोखा, मग ४ मोजत बाहेर सोडा.",
+      "४ मोजत रिकामे राहा, मग चक्र पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "पीठ सीधी रखते हुए आराम से बैठें।",
+      "नाक से धीरे-धीरे 4 गिनते हुए सांस अंदर लें।",
+      "4 गिनते हुए सांस रोकें, फिर 4 गिनते हुए बाहर छोड़ें।",
+      "4 गिनते हुए खाली रहें, फिर चक्र दोहराएं।"
+    ],
+    "safety_en": "Stop and breathe normally if you feel lightheaded.",
+    "muscles": ["heart"]
+  },
+  {
+    "id": "belly-breathing",
+    "name_en": "Belly Breathing",
+    "name_mr": "पोटातून श्वासोच्छ्वास",
+    "name_hi": "पेट से सांस लेना",
+    "category": "breathing",
+    "impact": "low",
+    "level": 1,
+    "equipment": "none",
+    "mode": "time",
+    "default_seconds": 180,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Sit or lie down comfortably with one hand on your belly.",
+      "Breathe in slowly through your nose, letting your belly rise.",
+      "Breathe out slowly through pursed lips, feeling your belly fall.",
+      "Keep your shoulders relaxed throughout."
+    ],
+    "instructions_mr": [
+      "आरामात बसा किंवा झोपा, एक हात पोटावर ठेवा.",
+      "नाकातून हळूहळू श्वास घ्या, पोट वर येऊ द्या.",
+      "ओठ आवळून हळूहळू श्वास सोडा, पोट खाली येताना जाणवा.",
+      "संपूर्ण वेळ खांदे मोकळे ठेवा."
+    ],
+    "instructions_hi": [
+      "आराम से बैठें या लेटें, एक हाथ पेट पर रखें।",
+      "नाक से धीरे-धीरे सांस लें, पेट को ऊपर उठने दें।",
+      "होंठ सिकोड़कर धीरे-धीरे सांस छोड़ें, पेट को नीचे जाते महसूस करें।",
+      "पूरे समय कंधे ढीले रखें।"
+    ],
+    "safety_en": "Stop if you feel dizzy; breathe at your own comfortable pace.",
+    "muscles": ["heart", "core"]
+  },
+  {
+    "id": "breathing-4-7-8",
+    "name_en": "4-7-8 Breathing",
+    "name_mr": "४-७-८ श्वासोच्छ्वास",
+    "name_hi": "4-7-8 श्वास तकनीक",
+    "category": "breathing",
+    "impact": "low",
+    "level": 2,
+    "equipment": "none",
+    "mode": "reps",
+    "default_reps": 4,
+    "default_sets": 1,
+    "rest_seconds": 20,
+    "instructions_en": [
+      "Sit comfortably with your back straight.",
+      "Inhale quietly through your nose for 4 counts.",
+      "Hold your breath for 7 counts.",
+      "Exhale completely through your mouth for 8 counts."
+    ],
+    "instructions_mr": [
+      "पाठ सरळ ठेवून आरामात बसा.",
+      "नाकातून शांतपणे ४ मोजत श्वास आत घ्या.",
+      "७ मोजत श्वास रोखा.",
+      "तोंडातून ८ मोजत पूर्ण श्वास बाहेर सोडा."
+    ],
+    "instructions_hi": [
+      "पीठ सीधी रखते हुए आराम से बैठें।",
+      "नाक से शांति से 4 गिनते हुए सांस अंदर लें।",
+      "7 गिनते हुए सांस रोकें।",
+      "मुंह से 8 गिनते हुए पूरी सांस बाहर छोड़ें।"
+    ],
+    "safety_en": "Stop this pattern if you feel dizzy; do not force the hold.",
+    "muscles": ["heart"]
+  },
+  {
+    "id": "single-leg-stand",
+    "name_en": "Single-Leg Stand (Holding Chair)",
+    "name_mr": "खुर्चीचा आधार घेऊन एका पायावर उभे राहणे",
+    "name_hi": "कुर्सी का सहारा लेकर एक पैर पर खड़े होना",
+    "category": "balance",
+    "impact": "low",
+    "level": 2,
+    "equipment": "chair",
+    "mode": "time",
+    "default_seconds": 20,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand behind a chair, holding the back with both hands.",
+      "Shift your weight onto one leg and lift the other foot slightly off the floor.",
+      "Hold the position, keeping your gaze forward.",
+      "Lower down and repeat on the other leg."
+    ],
+    "instructions_mr": [
+      "खुर्चीच्या मागे उभे राहा, दोन्ही हातांनी पाठ धरा.",
+      "एका पायावर वजन टाका आणि दुसरा पाय जमिनीपासून किंचित उचला.",
+      "नजर समोर ठेवत ही स्थिती धरा.",
+      "खाली या आणि दुसऱ्या पायाने पुन्हा करा."
+    ],
+    "instructions_hi": [
+      "कुर्सी के पीछे खड़े हों, दोनों हाथों से पीठ पकड़ें।",
+      "एक पैर पर वज़न डालें और दूसरा पैर फर्श से थोड़ा ऊपर उठाएं।",
+      "नज़र सामने रखते हुए यह स्थिति बनाए रखें।",
+      "नीचे आएं और दूसरे पैर से दोहराएं।"
+    ],
+    "safety_en": "Always keep a hand on the chair; stop if you feel dizzy or unsteady.",
+    "muscles": ["legs", "core", "hips"]
+  },
+  {
+    "id": "heel-to-toe-walk",
+    "name_en": "Heel-to-Toe Walk",
+    "name_mr": "टाच-पायाचे चालणे (हील-टू-टो वॉक)",
+    "name_hi": "एड़ी-पंजा चलना (हील-टू-टो वॉक)",
+    "category": "balance",
+    "impact": "low",
+    "level": 2,
+    "equipment": "none",
+    "mode": "reps",
+    "default_reps": 10,
+    "default_sets": 2,
+    "rest_seconds": 30,
+    "instructions_en": [
+      "Stand near a wall for support if needed.",
+      "Place one foot directly in front of the other, heel touching toes.",
+      "Walk forward slowly in a straight line, step by step.",
+      "Keep your arms out slightly for balance."
+    ],
+    "instructions_mr": [
+      "गरज वाटल्यास आधारासाठी भिंतीजवळ उभे राहा.",
+      "एक पाय दुसऱ्यासमोर थेट ठेवा, टाच बोटांना टेकवून.",
+      "सरळ रेषेत हळूहळू, पाऊल-पाऊल पुढे चाला.",
+      "समतोलासाठी हात थोडे बाजूला पसरवा."
+    ],
+    "instructions_hi": [
+      "ज़रूरत पड़ने पर सहारे के लिए दीवार के पास खड़े हों।",
+      "एक पैर दूसरे के ठीक सामने रखें, एड़ी को पंजों से छूते हुए।",
+      "सीधी रेखा में धीरे-धीरे, कदम दर कदम आगे चलें।",
+      "संतुलन के लिए हाथों को थोड़ा बगल में फैलाएं।"
+    ],
+    "safety_en": "Stop and hold a support if you feel unsteady or dizzy.",
+    "muscles": ["legs", "core"]
+  }
+]
