@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bmi, bmiBand, budget, dailyTargets, healthyWeightRange, kcalForGrams, mealTypeForHour, mealsRemaining, tdee, bmr, KCAL_FLOOR } from '../nutrition';
+import { suggestMeals } from '../foods';
 import type { Profile } from '../types';
 
 const varad: Profile = {
@@ -113,5 +114,28 @@ describe('kcalForGrams', () => {
   it('scales per 100 g values', () => {
     const poha = { kcal_100g: 130, protein_100g: 2.5, carbs_100g: 24, fat_100g: 3 };
     expect(kcalForGrams(poha, 200)).toEqual({ kcal: 260, protein: 5, carbs: 48, fat: 6 });
+  });
+});
+
+describe('suggestMeals dietary filters', () => {
+  const foods = [
+    { id: 'dal', name_en: 'Dal Tadka', name_mr: 'डाळ', name_hi: 'दाल', category: 'dal', kcal_100g: 120, protein_100g: 6, carbs_100g: 15, fat_100g: 4, portions: [{ unit: 'katori', label_en: '1 katori', label_mr: '१ वाटी', label_hi: '1 कटोरी', grams: 150 }], default_portion: 'katori', tags: ['veg'], source: 'IFCT2017' },
+    { id: 'chicken-sukka', name_en: 'Chicken Sukka', name_mr: 'चिकन सुके', name_hi: 'चिकन सुखा', category: 'nonveg', kcal_100g: 200, protein_100g: 22, carbs_100g: 4, fat_100g: 11, portions: [{ unit: 'katori', label_en: '1 katori', label_mr: '१ वाटी', label_hi: '1 कटोरी', grams: 150 }], default_portion: 'katori', tags: ['nonveg'], source: 'estimate' },
+    { id: 'egg-bhurji', name_en: 'Egg Bhurji', name_mr: 'अंडा भुर्जी', name_hi: 'अंडा भुर्जी', category: 'nonveg', kcal_100g: 180, protein_100g: 13, carbs_100g: 4, fat_100g: 13, portions: [{ unit: 'katori', label_en: '1 katori', label_mr: '१ वाटी', label_hi: '1 कटोरी', grams: 150 }], default_portion: 'katori', tags: ['egg'], source: 'estimate' },
+  ];
+
+  it('offers everything when there is no rule', () => {
+    expect(suggestMeals(foods as never, 900).map((o) => o.food.id)).toContain('chicken-sukka');
+  });
+
+  it('never offers meat to a vegetarian', () => {
+    const ids = suggestMeals(foods as never, 900, { vegOnly: true }).map((o) => o.food.id);
+    expect(ids).not.toContain('chicken-sukka');
+    expect(ids).toContain('dal');
+  });
+
+  it('drops egg dishes when eggs are refused', () => {
+    const ids = suggestMeals(foods as never, 900, { noEgg: true }).map((o) => o.food.id);
+    expect(ids).not.toContain('egg-bhurji');
   });
 });

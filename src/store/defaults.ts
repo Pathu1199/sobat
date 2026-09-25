@@ -1,3 +1,4 @@
+import { DEFAULT_BREAK_SETTINGS } from '../core/breaks';
 import type { AppState, Profile, Settings } from '../core/types';
 
 export const DEFAULT_PROFILE: Profile = {
@@ -41,4 +42,9 @@ export const EMPTY_STATE: AppState = {
   nudges: [],
   chat: [],
   customFoods: [],
+  memory: [],
+  usage: [],
+  breaks: [],
+  breakSettings: DEFAULT_BREAK_SETTINGS,
+  tips: [],
 };

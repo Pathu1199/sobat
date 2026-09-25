@@ -1,14 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, View } from 'react-native';
 import { NudgeToast } from '../../components/NudgeToast';
+import { Sidebar } from '../../components/Sidebar';
+import { useIsWide } from '../../ui/useBreakpoint';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { C } from '../../ui/theme';
 
 export default function TabsLayout() {
   const { state, ready } = useApp();
+  const wide = useIsWide();
   const router = useRouter();
   const t = makeT(state.profile.lang);
 
@@ -19,7 +22,9 @@ export default function TabsLayout() {
       </View>
     );
   }
-  if (!state.profile.onboarded) return <Redirect href="/onboarding" />;
+  // On the web a first-time visitor gets the landing page; on a phone the app
+  // is already installed, so go straight to setup.
+  if (!state.profile.onboarded) return <Redirect href={Platform.OS === 'web' ? '/welcome' : '/onboarding'} />;
 
   const settingsButton = () => (
     <Pressable onPress={() => router.push('/settings')} style={{ paddingHorizontal: 12 }} accessibilityLabel={t('settings')}>
@@ -28,13 +33,17 @@ export default function TabsLayout() {
   );
 
   return (
-    <>
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: C.bg }}>
+      {wide ? <Sidebar /> : null}
+      <View style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
         headerStyle: { backgroundColor: C.bgAlt },
         headerTintColor: C.text,
         headerRight: settingsButton,
-        tabBarStyle: { backgroundColor: C.bgAlt, borderTopColor: C.border },
+        // On a wide screen the sidebar replaces the bottom bar entirely.
+        tabBarStyle: wide ? { display: 'none' } : { backgroundColor: C.bgAlt, borderTopColor: C.border },
+        headerShown: !wide,
         tabBarActiveTintColor: C.teal,
         tabBarInactiveTintColor: C.textFaint,
         sceneStyle: { backgroundColor: C.bg },
@@ -46,6 +55,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="log"
         options={{ title: t('tab_log'), tabBarIcon: ({ color, size }) => <Ionicons name="add-circle-outline" color={color} size={size} /> }}
+      />
+      <Tabs.Screen
+        name="growth"
+        options={{ title: t('growth'), tabBarIcon: ({ color, size }) => <Ionicons name="trending-up-outline" color={color} size={size} /> }}
       />
       <Tabs.Screen
         name="fit"
@@ -61,6 +74,7 @@ export default function TabsLayout() {
       />
     </Tabs>
     <NudgeToast />
-    </>
+      </View>
+    </View>
   );
 }

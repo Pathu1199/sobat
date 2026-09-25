@@ -1,10 +1,12 @@
+import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
-import { factsFrom, systemPrompt } from '../../ai/prompts';
+import { factsFrom, memoryExtractionPrompt, MEMORY_SCHEMA, systemPrompt } from '../../ai/prompts';
 import { AIBadge } from '../../components/AIBadge';
 import { guardAdvice, HELPLINES, isCrisisText } from '../../core/guardrails';
 import { KCAL_FLOOR } from '../../core/nutrition';
 import { suggestMeals } from '../../core/foods';
+import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
 import { makeT } from '../../i18n';
 import { useAI } from '../../services/useAI';
 import { useApp } from '../../store/AppProvider';
@@ -13,7 +15,8 @@ import { C, F } from '../../ui/theme';
 
 export default function CoachScreen() {
   const app = useApp();
-  const { ai, ask, online } = useAI();
+  const { ai, ask, askJSON, online } = useAI();
+  const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const [input, setInput] = useState('');
@@ -57,7 +60,8 @@ export default function CoachScreen() {
       });
 
       // Give the model real options from the food list so it cannot invent numbers.
-      const options = suggestMeals(app.foods, Math.max(app.budget.perMeal, 300));
+      const diet = dietFrom(app.state.memory);
+      const options = suggestMeals(app.foods, Math.max(app.budget.perMeal, 300), diet);
       if (options.length > 0) {
         facts.push(
           'Meal options that fit the remaining budget: ' +
@@ -65,15 +69,42 @@ export default function CoachScreen() {
         );
       }
 
+      // What it learned on earlier days, ranked for this question.
+      const remembered = contextFor(app.state.memory, clean, app.today, 10);
+      facts.push(...toPromptLines(remembered));
+
       const history = app.state.chat.slice(-8).map((m) => ({ role: m.role, content: m.text }));
       const raw = await ask([{ role: 'system', content: systemPrompt(lang, facts) }, ...history, { role: 'user', content: clean }]);
       const guarded = guardAdvice(raw, floor);
-      app.addChat({ id: String(Date.now() + 1), role: 'assistant', text: guarded.text.trim(), at: new Date().toISOString() });
+      const reply = guarded.text.trim();
+      app.addChat({ id: String(Date.now() + 1), role: 'assistant', text: reply, at: new Date().toISOString() });
+      learn(clean, reply);
     } catch {
       app.addChat({ id: String(Date.now() + 1), role: 'assistant', text: t('ai_offline_hint'), at: new Date().toISOString() });
     } finally {
       setBusy(false);
       setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 50);
+    }
+  }
+
+  /**
+   * Pull durable facts out of the exchange in the background. Failures are
+   * silent on purpose: remembering is a bonus, never something that can break
+   * the conversation.
+   */
+  async function learn(userText: string, assistantText: string) {
+    try {
+      const out = await askJSON<{ memories?: { text: string; type: string }[] }>(
+        [{ role: 'user', content: memoryExtractionPrompt(userText, assistantText) }],
+        MEMORY_SCHEMA,
+      );
+      for (const m of out.memories ?? []) {
+        const type = m.type === 'preference' || m.type === 'goal' ? m.type : 'fact';
+        // The model often tries to store today's numbers. Code decides what lasts.
+        if (m.text && isDurableMemory(m.text)) app.rememberText(m.text, type, 'auto');
+      }
+    } catch {
+      // Nothing learned this time.
     }
   }
 
@@ -86,7 +117,12 @@ export default function CoachScreen() {
         keyboardShouldPersistTaps="handled">
         <Row style={{ justifyContent: 'space-between' }}>
           <H3>{t('coach_title')}</H3>
-          <AIBadge route={ai.route} lang={lang} />
+          <Row style={{ gap: 12 }}>
+            <Pressable onPress={() => router.push('/memory')}>
+              <Small color={C.teal}>{app.state.memory.length} {t('mem_fact').toLowerCase()}</Small>
+            </Pressable>
+            <AIBadge route={ai.route} lang={lang} />
+          </Row>
         </Row>
 
         {crisis ? (
@@ -131,6 +167,11 @@ export default function CoachScreen() {
               padding: 12,
             }}>
             <Text style={{ color: C.text, fontSize: F.body, lineHeight: 22 }}>{m.text}</Text>
+            {m.role === 'assistant' ? (
+              <Pressable onPress={() => app.rememberText(m.text, 'preference', 'user')} style={{ marginTop: 8 }}>
+                <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{t('remember_this')}</Text>
+              </Pressable>
+            ) : null}
           </View>
         ))}
 

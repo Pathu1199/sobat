@@ -98,3 +98,51 @@ export function foodPhotoPrompt(examples: { predicted: string; corrected: string
   }
   return lines.join('\n');
 }
+
+
+/** Extract only durable facts from a conversation turn, never today's numbers. */
+export const MEMORY_SCHEMA = {
+  type: 'object',
+  properties: {
+    memories: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          text: { type: 'string' },
+          type: { type: 'string', enum: ['fact', 'preference', 'goal'] },
+        },
+        required: ['text', 'type'],
+      },
+    },
+  },
+  required: ['memories'],
+} as const;
+
+export function memoryExtractionPrompt(userText: string, assistantText: string): string {
+  return [
+    'Read this exchange and pull out anything worth remembering about the person for future days.',
+    '',
+    `Person: ${userText}`,
+    `Assistant: ${assistantText}`,
+    '',
+    'Only keep things that stay true beyond today: diet rules, allergies, injuries, dislikes, ',
+    'work patterns, equipment they own, goals they state.',
+    "Never store today's calories, weight, mood or any number that changes daily.",
+    'Write each one as a short first-person sentence, as the person would say it.',
+    'If there is nothing durable, return an empty list. Do not invent anything.',
+  ].join('\n');
+}
+
+export function dailyTipPrompt(lang: Lang, focus: string[]): string {
+  return [
+    'Give this person one small, specific thing to try today.',
+    focus.length > 0 ? `What stands out in their data right now: ${focus.join('; ')}.` : '',
+    '',
+    'Rules: two sentences at most. Something they can do today with what they already have.',
+    'No generic advice like "eat healthy" or "exercise more". No numbers you were not given.',
+    'Do not repeat the calorie target back at them.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}

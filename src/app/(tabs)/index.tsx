@@ -3,7 +3,9 @@ import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { AIBadge } from '../../components/AIBadge';
+import { BreakCard } from '../../components/BreakCard';
 import { DecisionCard } from '../../components/DecisionCard';
+import { TipCard } from '../../components/TipCard';
 import { toISODate } from '../../core/date';
 import { decide } from '../../core/decide';
 import { findPatterns, scoreDay, weeklyStats } from '../../core/insights';
@@ -122,6 +124,10 @@ export default function TodayScreen() {
         </Card>
 
         <DecisionCard decision={decision} lang={lang} />
+
+        <TipCard />
+
+        <BreakCard />
 
         {needsSleepCheckin ? (
           <Pressable onPress={() => router.push('/sleep')}>

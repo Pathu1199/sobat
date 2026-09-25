@@ -1,0 +1,148 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState as RNAppState, Platform } from 'react-native';
+import {
+  breakRemainingSeconds, inQuiet, isBreakOver, minutesUntilBreak, resetPointFor,
+  shouldStartBreak, suggestLongerInterval, workedMinutes,
+} from '../core/breaks';
+import { useApp } from '../store/AppProvider';
+import { notifyNow } from './notify';
+
+export type BreakPhase = 'working' | 'warning' | 'breaking';
+
+const TICK_MS = 1000;
+const WARNING_SECONDS = 60;
+
+/**
+ * Starts the moment the app opens and runs for as long as it is open, which on
+ * the desktop build means from when the PC starts. Counts a stretch of work,
+ * warns a minute before, then takes the screen for the pause.
+ */
+export function useBreakMonitor() {
+  const app = useApp();
+  const settings = app.state.breakSettings;
+
+  const [phase, setPhase] = useState<BreakPhase>('working');
+  const [remaining, setRemaining] = useState(settings.breakSeconds);
+  const [minutesLeft, setMinutesLeft] = useState(settings.workMinutes);
+
+  const workingSince = useRef(Date.now());
+  const breakStartedAt = useRef<number | null>(null);
+  const lastActivity = useRef(Date.now());
+  const warnedForStretch = useRef(false);
+
+  // Any input counts as being at the desk.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const touch = () => {
+      lastActivity.current = Date.now();
+    };
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach((e) => window.addEventListener(e, touch, { passive: true }));
+    return () => events.forEach((e) => window.removeEventListener(e, touch));
+  }, []);
+
+  useEffect(() => {
+    const sub = RNAppState.addEventListener('change', (s) => {
+      if (s === 'active') lastActivity.current = Date.now();
+    });
+    return () => sub.remove();
+  }, []);
+
+  const endBreak = useCallback(
+    (action: 'taken' | 'skipped') => {
+      const worked = workedMinutes({
+        nowMs: breakStartedAt.current ?? Date.now(),
+        workingSinceMs: workingSince.current,
+        idleSeconds: 0,
+        hour: new Date().getHours(),
+        settings,
+      });
+      app.logBreak(action, worked);
+      breakStartedAt.current = null;
+      workingSince.current = Date.now();
+      warnedForStretch.current = false;
+      setPhase('working');
+    },
+    [app, settings],
+  );
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = Date.now();
+      const idleSeconds = Math.round((now - lastActivity.current) / 1000);
+      const hour = new Date().getHours();
+      const ctx = { nowMs: now, workingSinceMs: workingSince.current, idleSeconds, hour, settings };
+
+      if (breakStartedAt.current !== null) {
+        setRemaining(breakRemainingSeconds(breakStartedAt.current, now, settings.breakSeconds));
+        if (isBreakOver(breakStartedAt.current, now, settings.breakSeconds)) {
+          // The pause is over, but leaving is the person's choice.
+          setPhase('breaking');
+        }
+        return;
+      }
+
+      // Stepping away already gave the eyes their rest, so restart the clock.
+      const reset = resetPointFor(ctx);
+      if (reset !== null) {
+        workingSince.current = reset;
+        warnedForStretch.current = false;
+        setMinutesLeft(settings.workMinutes);
+        setPhase('working');
+        return;
+      }
+
+      if (!settings.enabled || inQuiet(hour, settings.quietStartHour, settings.quietEndHour)) {
+        setPhase('working');
+        return;
+      }
+
+      const left = minutesUntilBreak(ctx);
+      setMinutesLeft(left);
+
+      if (shouldStartBreak(ctx)) {
+        breakStartedAt.current = now;
+        setRemaining(settings.breakSeconds);
+        setPhase('breaking');
+        return;
+      }
+
+      if (left * 60 <= WARNING_SECONDS) {
+        if (!warnedForStretch.current) {
+          warnedForStretch.current = true;
+          notifyNow('Break in 1 minute', 'Finish what you are typing.').catch(() => {});
+        }
+        setPhase('warning');
+      } else {
+        setPhase('working');
+      }
+    }, TICK_MS);
+    return () => clearInterval(id);
+  }, [settings]);
+
+  const snooze = useCallback(
+    (minutes: number) => {
+      workingSince.current = Date.now() - Math.max(0, settings.workMinutes - minutes) * 60000;
+      warnedForStretch.current = false;
+      setPhase('working');
+    },
+    [settings.workMinutes],
+  );
+
+  const suggestion = suggestLongerInterval(app.state.breaks, settings.workMinutes);
+
+  return {
+    phase,
+    remaining,
+    minutesLeft,
+    enabled: settings.enabled,
+    allowSkip: settings.allowSkip,
+    breakSeconds: settings.breakSeconds,
+    workMinutes: settings.workMinutes,
+    takenToday: app.state.breaks.filter((b) => b.date === app.today).length,
+    suggestion,
+    finish: () => endBreak('taken'),
+    skip: () => endBreak('skipped'),
+    snooze,
+  };
+}

@@ -1,3 +1,7 @@
+import type { BreakLog, BreakSettings } from './breaks';
+import type { MemoryItem } from './memory';
+import type { UsageBucket } from './usage';
+
 export type Lang = 'en' | 'mr' | 'hi';
 export type ISODate = string;
 
@@ -122,6 +126,8 @@ export type Exercise = {
   muscles: string[];
 };
 
+export type DailyTip = { date: ISODate; text: string; lang: Lang };
+
 export type AppState = {
   version: number;
   profile: Profile;
@@ -135,4 +141,9 @@ export type AppState = {
   nudges: NudgeLog[];
   chat: ChatMsg[];
   customFoods: FoodItem[];
+  memory: MemoryItem[];
+  usage: UsageBucket[];
+  breaks: BreakLog[];
+  breakSettings: BreakSettings;
+  tips: DailyTip[];
 };

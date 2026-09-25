@@ -5,8 +5,12 @@ import exercisesJson from '../data/exercises.json';
 import { toISODate } from '../core/date';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
 import { streak } from '../core/insights';
+import { minutesOn } from '../core/usage';
 import { lastNDates } from '../core/date';
-import type { AppState, ChatMsg, Exercise, FoodItem, Meal, MoodLog, Profile, Settings, SleepLog, WaterLog, WeightLog, WorkoutLog } from '../core/types';
+import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryItem, type MemoryType } from '../core/memory';
+import { addActive, pruneUsage, type UsageBucket } from '../core/usage';
+import type { BreakLog, BreakSettings } from '../core/breaks';
+import type { AppState, ChatMsg, DailyTip, Exercise, FoodItem, Meal, MoodLog, Profile, Settings, SleepLog, WaterLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
 
 const KEY = 'sobat.state.v1';
@@ -38,6 +42,14 @@ type Ctx = {
   addChat: (m: ChatMsg) => void;
   clearChat: () => void;
   addCustomFood: (f: FoodItem) => void;
+  rememberText: (text: string, type?: MemoryType, source?: 'user' | 'auto') => void;
+  forgetMemory: (id: string) => void;
+  trackActive: (minutes: number) => void;
+  logBreak: (action: 'taken' | 'skipped', workedMinutes: number) => void;
+  setBreakSettings: (s: Partial<BreakSettings>) => void;
+  setTip: (text: string) => void;
+  tipToday: string | null;
+  screenMinutesToday: number;
   resetAll: () => void;
   exportJSON: () => string;
 };
@@ -93,6 +105,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const dates = lastNDates(60, today);
     const mealDates = new Set(state.meals.map((m) => m.date));
     const streakDays = streak(dates, (d) => mealDates.has(d));
+    const screenMinutesToday = minutesOn(state.usage, today);
+    // A tip is only today's if it was also written in the language now selected.
+    const tipRecord = state.tips.find((t) => t.date === today && t.lang === state.profile.lang);
 
     return {
       ready,
@@ -104,6 +119,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       budget,
       waterToday,
       streakDays,
+      tipToday: tipRecord?.text ?? null,
+      screenMinutesToday,
       setProfile: (p) => update((s) => ({ ...s, profile: { ...s.profile, ...p } })),
       setSettings: (x) => update((s) => ({ ...s, settings: { ...s.settings, ...x } })),
       addMeal: (m) => update((s) => ({ ...s, meals: [...s.meals, m] })),
@@ -126,6 +143,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addChat: (m) => update((s) => ({ ...s, chat: [...s.chat.slice(-60), m] })),
       clearChat: () => update((s) => ({ ...s, chat: [] })),
       addCustomFood: (f) => update((s) => ({ ...s, customFoods: [...s.customFoods, f] })),
+      rememberText: (text, type = 'fact', source = 'user') =>
+        update((s) => {
+          const clean = text.trim();
+          if (!clean) return s;
+          const next = addMemory(s.memory, makeMemory({ text: clean, type, date: today, source }));
+          return { ...s, memory: pruneMemory(next, today) };
+        }),
+      forgetMemory: (id) => update((s) => ({ ...s, memory: removeMemory(s.memory, id) })),
+      trackActive: (minutes) =>
+        update((s) => {
+          const now = new Date();
+          const next = addActive(s.usage, toISODate(now), now.getHours(), minutes);
+          // 90 days is plenty of history and keeps the store small.
+          return { ...s, usage: pruneUsage(next, 90, toISODate(now)) };
+        }),
+      logBreak: (action, workedMinutes) =>
+        update((s) => ({
+          ...s,
+          breaks: [...s.breaks.slice(-500), { id: String(Date.now()), date: toISODate(), at: new Date().toISOString(), action, workedMinutes }],
+        })),
+      setBreakSettings: (b) => update((s) => ({ ...s, breakSettings: { ...s.breakSettings, ...b } })),
+      setTip: (text) =>
+        update((s) => ({ ...s, tips: [...s.tips.filter((t) => t.date !== today).slice(-30), { date: today, text, lang: s.profile.lang }] })),
       resetAll: () => {
         setState(EMPTY_STATE);
         AsyncStorage.removeItem(KEY).catch(() => {});

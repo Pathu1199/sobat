@@ -70,11 +70,17 @@ export function resolveByName(foods: FoodItem[], name: string): FoodItem | null 
 }
 
 /** Meal options that fit inside the remaining budget, best protein first. */
-export function suggestMeals(foods: FoodItem[], kcalMax: number, opts: { vegOnly?: boolean; minKcal?: number } = {}): { food: FoodItem; grams: number; kcal: number; protein: number }[] {
+export function suggestMeals(
+  foods: FoodItem[],
+  kcalMax: number,
+  opts: { vegOnly?: boolean; noEgg?: boolean; minKcal?: number } = {},
+): { food: FoodItem; grams: number; kcal: number; protein: number }[] {
   const minKcal = opts.minKcal ?? 150;
   const out: { food: FoodItem; grams: number; kcal: number; protein: number }[] = [];
   for (const f of foods) {
-    if (opts.vegOnly && f.tags.includes('nonveg')) continue;
+    // Category matters as much as the tag: a dish can be nonveg without being tagged.
+    if (opts.vegOnly && (f.tags.includes('nonveg') || f.category === 'nonveg')) continue;
+    if (opts.noEgg && (f.tags.includes('egg') || /\begg\b|अंड/i.test(f.name_en + f.name_mr + f.name_hi))) continue;
     if (['beverage', 'sweet'].includes(f.category)) continue;
     const p = defaultPortion(f);
     if (!p) continue;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addMemory, contextFor, findDuplicate, makeMemory, MAX_MEMORIES, prune, removeMemory, retrieve, similarity, toPromptLines, tokenize } from '../memory';
+import { addMemory, contextFor, dietFrom, findDuplicate, isDurableMemory, makeMemory, MAX_MEMORIES, prune, removeMemory, retrieve, similarity, toPromptLines, tokenize } from '../memory';
 import type { MemoryItem } from '../memory';
 
 const TODAY = '2026-09-25';
@@ -132,5 +132,81 @@ describe('tokenize across scripts', () => {
 
   it('matches the same Marathi fact written twice', () => {
     expect(similarity('मी शाकाहारी आहे', 'मी शाकाहारी आहे, अंडी खात नाही')).toBeGreaterThan(0.4);
+  });
+});
+
+describe('dietFrom', () => {
+  it('finds a vegetarian rule in English and Marathi', () => {
+    expect(dietFrom([mem('I am vegetarian')]).vegOnly).toBe(true);
+    expect(dietFrom([mem('मी शाकाहारी आहे')]).vegOnly).toBe(true);
+    expect(dietFrom([mem('मैं शाकाहारी हूँ')]).vegOnly).toBe(true);
+  });
+
+  it('finds an egg rule', () => {
+    expect(dietFrom([mem('I do not eat eggs')]).noEgg).toBe(true);
+    expect(dietFrom([mem('मी अंडी खात नाही')]).noEgg).toBe(true);
+  });
+
+  it('does not assume vegetarian from nothing', () => {
+    expect(dietFrom([]).vegOnly).toBe(false);
+    expect(dietFrom([mem('I like dal')]).vegOnly).toBe(false);
+  });
+
+  it('is not fooled by the word non-vegetarian', () => {
+    expect(dietFrom([mem('I am non-vegetarian')]).vegOnly).toBe(false);
+  });
+});
+
+describe('dietFrom egg phrasings', () => {
+  it('catches the common ways people say it', () => {
+    for (const phrase of ['I do not eat eggs', "I don't eat eggs", 'no eggs for me', 'I never eat egg', 'eggless please']) {
+      expect(dietFrom([mem(phrase)]).noEgg).toBe(true);
+    }
+  });
+
+  it('does not fire on someone who likes eggs', () => {
+    expect(dietFrom([mem('I eat eggs every morning')]).noEgg).toBe(false);
+  });
+});
+
+describe('isDurableMemory', () => {
+  it('keeps facts that stay true', () => {
+    for (const good of [
+      'I am vegetarian',
+      'My knee hurts on stairs',
+      'I work night shifts',
+      'I do not like oats',
+      'मी शाकाहारी आहे',
+      'I have a resistance band at home',
+    ]) {
+      expect(isDurableMemory(good)).toBe(true);
+    }
+  });
+
+  it("rejects today's numbers, which the app already tracks", () => {
+    for (const bad of [
+      'I have to maintain a balanced diet of 1508 kcal.',
+      'I weigh 100 kg',
+      'I ate 40 g protein',
+      'I drank 2000 ml today',
+      'आज 1508 कॅलरी शिल्लक आहेत',
+    ]) {
+      expect(isDurableMemory(bad)).toBe(false);
+    }
+  });
+
+  it('rejects the model echoing its own suggestions back', () => {
+    for (const bad of [
+      'I can choose from three options: misal pav, chole, or usal.',
+      'You should eat more protein',
+      'Suggested meals for the evening',
+    ]) {
+      expect(isDurableMemory(bad)).toBe(false);
+    }
+  });
+
+  it('rejects empty and rambling text', () => {
+    expect(isDurableMemory('ok')).toBe(false);
+    expect(isDurableMemory('a'.repeat(200))).toBe(false);
   });
 });

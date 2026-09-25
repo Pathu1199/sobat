@@ -3,6 +3,7 @@ import { Platform, Text, View } from 'react-native';
 import { isUp, listModels, normalizeUrl } from '../ai/ollama';
 import type { Lang } from '../core/types';
 import { LANG_NAMES, makeT } from '../i18n';
+import { useRouter } from 'expo-router';
 import { requestPermission } from '../services/notify';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Divider, Field, H3, P, Pill, Row, Screen, Small } from '../ui/components';
@@ -17,6 +18,8 @@ export default function SettingsScreen() {
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const router = useRouter();
+  const br = app.state.breakSettings;
 
   async function test() {
     setTesting(true);
@@ -59,6 +62,59 @@ export default function SettingsScreen() {
       </Card>
 
       <Card>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <H3>{t('break_monitor')}</H3>
+          <Pill label={br.enabled ? 'On' : 'Off'} active={br.enabled} onPress={() => app.setBreakSettings({ enabled: !br.enabled })} />
+        </Row>
+        <Small color={C.textFaint}>
+          Starts when the app opens and counts how long you have been at the screen. It skips itself when you are away from the
+          desk and stays quiet during quiet hours.
+        </Small>
+
+        <Small>{t('break_every')}</Small>
+        <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+          {[15, 20, 30, 45, 60].map((m) => (
+            <Pill key={m} label={`${m} ${t('minutes')}`} active={br.workMinutes === m} onPress={() => app.setBreakSettings({ workMinutes: m })} />
+          ))}
+        </Row>
+
+        <Small>{t('break_length')}</Small>
+        <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+          {[30, 60, 120, 300].map((sec) => (
+            <Pill
+              key={sec}
+              label={sec >= 60 ? `${sec / 60} ${t('minutes')}` : `${sec}s`}
+              active={br.breakSeconds === sec}
+              onPress={() => app.setBreakSettings({ breakSeconds: sec })}
+            />
+          ))}
+        </Row>
+
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Small>{t('break_allow_skip')}</Small>
+          <Pill label={br.allowSkip ? 'On' : 'Off'} active={br.allowSkip} onPress={() => app.setBreakSettings({ allowSkip: !br.allowSkip })} />
+        </Row>
+
+        <Divider />
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Small>{t('break_compliance')}</Small>
+          <Small color={C.textDim}>
+            {app.state.breaks.filter((b) => b.action === 'taken').length} / {app.state.breaks.length}
+          </Small>
+        </Row>
+      </Card>
+
+      <Card>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <H3>{t('memory_title')}</H3>
+            <Small>{app.state.memory.length} remembered</Small>
+          </View>
+          <Btn small tone="soft" label={t('edit')} onPress={() => router.push('/memory')} />
+        </Row>
+      </Card>
+
+      <Card>
         <H3>{t('nudge_every')}</H3>
         <Row style={{ gap: 6, flexWrap: 'wrap' }}>
           {[15, 30, 45, 60, 90].map((m) => (
@@ -90,6 +146,8 @@ export default function SettingsScreen() {
         <H3>{t('export_data')}</H3>
         <Small>
           {app.state.meals.length} meals · {app.state.weights.length} weights · {app.state.sleep.length} sleep · {app.state.workouts.length} workouts
+          {' · '}
+          {app.state.memory.length} memories · {app.state.usage.length} usage buckets
         </Small>
         <Btn
           small

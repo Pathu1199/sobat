@@ -158,3 +158,64 @@ export function prune(list: MemoryItem[], today: ISODate, keepEpisodeDays = 60):
     return daysBetween(m.date, today) <= keepEpisodeDays;
   });
 }
+
+
+export type Diet = { vegOnly: boolean; noEgg: boolean };
+
+const VEG_PATTERNS = [/\bvegetarian\b/i, /\bveg only\b/i, /\bno meat\b/i, /शाकाहारी/, /मांस\s*खात\s*नाही/, /नॉनव्हेज\s*खात\s*नाही/];
+const NON_VEG_NEGATION = [/\bnon.?vegetarian\b/i, /\bi eat meat\b/i, /मांसाहारी/];
+const NO_EGG_PATTERNS = [/\bno eggs?\b/i, /\b(?:do ?n[o']?t|do not|never) eat eggs?\b/i, /\beggless\b/i, /अंडी\s*खात\s*नाही/, /अंडे\s*नहीं\s*खाता/];
+
+/**
+ * Read dietary rules out of what the person has told the app, so the meal
+ * options handed to the model never contradict them. A model that suggests
+ * chicken to a vegetarian loses trust in one message.
+ */
+export function dietFrom(list: MemoryItem[]): Diet {
+  let vegOnly = false;
+  let noEgg = false;
+  for (const m of list) {
+    if (NON_VEG_NEGATION.some((p) => p.test(m.text))) {
+      vegOnly = false;
+      continue;
+    }
+    if (VEG_PATTERNS.some((p) => p.test(m.text))) vegOnly = true;
+    if (NO_EGG_PATTERNS.some((p) => p.test(m.text))) noEgg = true;
+  }
+  return { vegOnly, noEgg };
+}
+
+
+const MAX_MEMORY_CHARS = 140;
+
+/** Numbers that belong to one day, not to the person. */
+const TRANSIENT_PATTERNS = [
+  /\d+\s*(kcal|calorie|calories|कॅलरी|कैलोरी)/i,
+  /\d+\s*(g|gram|grams|ग्रॅ|ग्राम)\b/i,
+  /\d+\s*(kg|किलो)\b/i,
+  /\d+\s*(ml|glass|glasses|ग्लास)\b/i,
+  /\d+\s*(steps|पावले)/i,
+  /\btoday\b|\bright now\b|\bthis morning\b|\btonight\b/i,
+  /\bआज\b|\bआत्ता\b|\bअभी\b/,
+];
+
+/** Phrasing that shows the model is echoing the conversation, not learning. */
+const ECHO_PATTERNS = [
+  /\b(can choose|options?|suggest(ed|ion)?s?|recommend(ed|ation)?s?)\b/i,
+  /\bI (have|need) to (maintain|balance|eat)\b/i,
+  /\byou (should|can|could)\b/i,
+  /\bassistant\b/i,
+];
+
+/**
+ * The model was told to extract only durable facts and does not always listen,
+ * so nothing reaches the store without passing this. Same rule as everywhere
+ * else here: the model proposes, code decides.
+ */
+export function isDurableMemory(text: string): boolean {
+  const clean = text.trim();
+  if (clean.length < 4 || clean.length > MAX_MEMORY_CHARS) return false;
+  if (TRANSIENT_PATTERNS.some((p) => p.test(clean))) return false;
+  if (ECHO_PATTERNS.some((p) => p.test(clean))) return false;
+  return true;
+}

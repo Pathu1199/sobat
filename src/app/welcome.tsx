@@ -1,0 +1,148 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { makeT } from '../i18n';
+import { useApp } from '../store/AppProvider';
+import { C, F, S } from '../ui/theme';
+import { useBreakpoint } from '../ui/useBreakpoint';
+
+const FEATURES: { icon: keyof typeof Ionicons.glyphMap; titleKey: string; bodyKey: string }[] = [
+  { icon: 'restaurant-outline', titleKey: 'w_f1_t', bodyKey: 'w_f1_b' },
+  { icon: 'camera-outline', titleKey: 'w_f2_t', bodyKey: 'w_f2_b' },
+  { icon: 'moon-outline', titleKey: 'w_f3_t', bodyKey: 'w_f3_b' },
+  { icon: 'walk-outline', titleKey: 'w_f4_t', bodyKey: 'w_f4_b' },
+  { icon: 'timer-outline', titleKey: 'w_f5_t', bodyKey: 'w_f5_b' },
+  { icon: 'chatbubble-ellipses-outline', titleKey: 'w_f6_t', bodyKey: 'w_f6_b' },
+];
+
+export default function Welcome() {
+  const router = useRouter();
+  const { state } = useApp();
+  const bp = useBreakpoint();
+  const t = makeT(state.profile.lang);
+  const wide = bp !== 'mobile';
+
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingBottom: 60 }}>
+      <View style={{ maxWidth: 1100, width: '100%', alignSelf: 'center', paddingHorizontal: wide ? 40 : 20 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 20 }}>
+          <Text style={{ color: C.text, fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>{t('app_name')}</Text>
+          <Pressable
+            onPress={() => router.replace('/onboarding')}
+            style={{ backgroundColor: C.teal, paddingVertical: 9, paddingHorizontal: 18, borderRadius: 999 }}>
+            <Text style={{ color: C.white, fontWeight: '600', fontSize: F.small }}>{t('w_cta')}</Text>
+          </Pressable>
+        </View>
+
+        <View style={{ paddingTop: wide ? 60 : 32, paddingBottom: 44, maxWidth: 680 }}>
+          <Text style={{ color: C.teal, fontSize: F.small, marginBottom: 14 }}>{t('w_eyebrow')}</Text>
+          <Text style={{ color: C.text, fontSize: wide ? 52 : 34, fontWeight: '300', lineHeight: wide ? 60 : 42, letterSpacing: -1 }}>
+            {t('w_headline')}
+          </Text>
+          <Text style={{ color: C.textDim, fontSize: wide ? F.h3 : F.body, lineHeight: 26, marginTop: 18 }}>{t('w_sub')}</Text>
+
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 30, flexWrap: 'wrap' }}>
+            <Pressable
+              onPress={() => router.replace('/onboarding')}
+              style={{ backgroundColor: C.teal, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999 }}>
+              <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.replace('/onboarding')}
+              style={{ borderWidth: 1, borderColor: C.border, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999 }}>
+              <Text style={{ color: C.textDim, fontSize: F.body }}>{t('w_cta2')}</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: wide ? 48 : 24,
+            paddingVertical: 26,
+            borderTopWidth: 1,
+            borderBottomWidth: 1,
+            borderColor: C.border,
+          }}>
+          <Stat value="209" label={t('w_stat1')} />
+          <Stat value="50" label={t('w_stat2')} />
+          <Stat value="0" label={t('w_stat3')} accent />
+          <Stat value="3" label={t('w_stat4')} />
+        </View>
+
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingTop: 44 }}>
+          {FEATURES.map((f) => (
+            <View
+              key={f.titleKey}
+              style={{
+                flexGrow: 1,
+                flexBasis: wide ? '30%' : '100%',
+                backgroundColor: C.card,
+                borderWidth: 1,
+                borderColor: C.border,
+                borderRadius: S.radius,
+                padding: 20,
+                gap: 10,
+              }}>
+              <Ionicons name={f.icon} size={22} color={C.teal} />
+              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t(f.titleKey)}</Text>
+              <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 20 }}>{t(f.bodyKey)}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View
+          style={{
+            marginTop: 40,
+            backgroundColor: C.cardAlt,
+            borderWidth: 1,
+            borderColor: C.tealSoft,
+            borderRadius: S.radius,
+            padding: wide ? 32 : 22,
+            flexDirection: wide ? 'row' : 'column',
+            alignItems: wide ? 'center' : 'flex-start',
+            gap: 18,
+          }}>
+          <Ionicons name="lock-closed-outline" size={26} color={C.teal} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600' }}>{t('w_privacy_t')}</Text>
+            <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: 23 }}>{t('w_privacy_b')}</Text>
+          </View>
+        </View>
+
+        <View style={{ paddingTop: 44, gap: 16 }}>
+          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600' }}>{t('w_how')}</Text>
+          <View style={{ flexDirection: wide ? 'row' : 'column', gap: 14 }}>
+            {[1, 2, 3].map((n) => (
+              <View key={n} style={{ flex: 1, gap: 8 }}>
+                <Text style={{ color: C.teal, fontSize: 28, fontWeight: '200' }}>{n}</Text>
+                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t(`w_step${n}_t`)}</Text>
+                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 20 }}>{t(`w_step${n}_b`)}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={{ paddingTop: 44, alignItems: 'flex-start', gap: 12 }}>
+          <Pressable
+            onPress={() => router.replace('/onboarding')}
+            style={{ backgroundColor: C.teal, paddingVertical: 15, paddingHorizontal: 34, borderRadius: 999 }}>
+            <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
+          </Pressable>
+          <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{t('w_footer')}</Text>
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+function Stat({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
+  return (
+    <View style={{ minWidth: 120 }}>
+      <Text style={{ color: accent ? C.teal : C.text, fontSize: 30, fontWeight: '200', letterSpacing: -0.8 }}>{value}</Text>
+      <Text style={{ color: C.textDim, fontSize: F.tiny, marginTop: 2 }}>{label}</Text>
+    </View>
+  );
+}
