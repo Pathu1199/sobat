@@ -1,7 +1,17 @@
 import { lastNDates } from './date';
+import { expectedKcalByHour } from './nutrition';
 import type { ISODate, Meal, MoodLog, SleepLog, WaterLog, WeightLog, WorkoutLog } from './types';
 
-export type DayScore = { date: ISODate; eating: number; movement: number; water: number; sleep: number; mood: number; total: number };
+/** null means 'not known yet today', which is different from a score of zero. */
+export type DayScore = {
+  date: ISODate;
+  eating: number | null;
+  movement: number;
+  water: number;
+  sleep: number | null;
+  mood: number | null;
+  total: number;
+};
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, Math.round(n)));
@@ -17,19 +27,32 @@ export function scoreDay(input: {
   workoutMinutes: number;
   sleepScore?: number;
   moodScore?: number;
+  /** Hour of day when the day is still running. Omit to score a finished day. */
+  hour?: number;
 }): DayScore {
-  // Eating scores best near the target, and punishes over more than under.
-  const ratio = input.kcalTarget > 0 ? input.kcal / input.kcalTarget : 0;
-  let eating = 0;
-  if (input.kcal === 0) eating = 0;
-  else if (ratio <= 1) eating = clamp100(100 - Math.abs(1 - ratio) * 120);
-  else eating = clamp100(100 - (ratio - 1) * 220);
+  // Mid-day, judge against what a normal eater would have had by now. Judging a
+  // half-eaten day against the full target reads as failure at breakfast.
+  const running = input.hour !== undefined && input.hour < 21;
+  const denominator = running ? Math.max(expectedKcalByHour(input.kcalTarget, input.hour!), 1) : input.kcalTarget;
+
+  let eating: number | null;
+  if (input.kcal === 0) {
+    eating = running ? null : 0;
+  } else if (denominator <= 0) {
+    eating = null;
+  } else {
+    const ratio = input.kcal / denominator;
+    // Over the target hurts more than under it, in both modes.
+    eating = ratio <= 1 ? clamp100(100 - Math.abs(1 - ratio) * 120) : clamp100(100 - (ratio - 1) * 220);
+  }
 
   const movement = clamp100(input.workedOut ? 60 + Math.min(input.workoutMinutes, 40) : 0);
   const water = clamp100((input.waterMl / Math.max(input.waterGoalMl, 1)) * 100);
-  const sleep = clamp100(input.sleepScore ?? 0);
-  const mood = clamp100(input.moodScore ? ((input.moodScore - 1) / 4) * 100 : 0);
-  const total = clamp100((eating + movement + water + sleep + mood) / 5);
+  const sleep = input.sleepScore === undefined ? null : clamp100(input.sleepScore);
+  const mood = input.moodScore === undefined ? null : clamp100(((input.moodScore - 1) / 4) * 100);
+
+  const known = [eating, movement, water, sleep, mood].filter((n): n is number => n !== null);
+  const total = known.length > 0 ? clamp100(known.reduce((a, b) => a + b, 0) / known.length) : 0;
   return { date: input.date, eating, movement, water, sleep, mood, total };
 }
 

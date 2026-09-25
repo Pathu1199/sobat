@@ -25,6 +25,9 @@ const MEDICAL_CLAIM_PATTERNS = [
   /\bcure[sd]?\b/i,
 ];
 
+/** Words that mark a calorie figure as a whole-day total rather than one meal. */
+const DAY_CONTEXT = /(per day|a day|daily|today|whole day|entire day|in a day|\u0926\u093f\u0935\u0938|\u0930\u094b\u091c|\u092a\u094d\u0930\u0924\u093f\u0926\u093f\u0928|\u0906\u091c)/i;
+
 export type GuardResult = { ok: boolean; reasons: string[]; text: string };
 
 /**
@@ -42,8 +45,16 @@ export function guardAdvice(text: string, kcalFloor: number): GuardResult {
     }
   }
 
-  const kcalMentions = [...text.matchAll(/(\d{3,4})\s*(?:kcal|calorie|calories)/gi)].map((m) => Number(m[1]));
-  const suggestsTooLow = kcalMentions.some((n) => n >= 400 && n < kcalFloor);
+  // The floor is a DAILY figure. A 500 kcal meal is perfectly normal, so a
+  // number only counts as too low when the surrounding words are about a day.
+  const kcalMatches = [...text.matchAll(/(\d{3,4})\s*(?:kcal|calorie|calories|\u0915\u0945\u0932\u0930\u0940|\u0915\u0948\u0932\u094b\u0930\u0940)/gi)];
+  const suggestsTooLow = kcalMatches.some((m) => {
+    const n = Number(m[1]);
+    if (!(n >= 400 && n < kcalFloor)) return false;
+    const at = m.index ?? 0;
+    const around = text.slice(Math.max(0, at - 70), at + 70);
+    return DAY_CONTEXT.test(around);
+  });
   if (suggestsTooLow) reasons.push('below_floor');
 
   if (/\b(fast(ing)? for|skip (dinner|lunch|breakfast)|don'?t eat|starve)\b/i.test(text)) {

@@ -58,6 +58,7 @@ export default function TodayScreen() {
     workoutMinutes: workoutToday?.minutes ?? 0,
     sleepScore: sleepLast?.date === today ? sleepLast.score : undefined,
     moodScore: moodToday?.score,
+    hour,
   });
 
   const week = weeklyStats({
@@ -211,12 +212,14 @@ function StatLine({ label, value, sub }: { label: string; value: string; sub?: s
   );
 }
 
-function ScorePill({ label, value }: { label: string; value: number }) {
-  const color = value >= 70 ? C.teal : value >= 40 ? C.amber : C.textFaint;
+function ScorePill({ label, value }: { label: string; value: number | null }) {
+  // A dash means 'nothing logged yet', which should not look like a zero.
+  const known = value !== null;
+  const color = !known ? C.textFaint : value >= 70 ? C.teal : value >= 40 ? C.amber : C.textFaint;
   return (
     <View style={{ alignItems: 'center', gap: 6, minWidth: 56 }}>
-      <Ring value={value} max={100} size={48} stroke={5} color={color}>
-        <Text style={{ color: C.text, fontSize: F.tiny }}>{value}</Text>
+      <Ring value={known ? value : 0} max={100} size={48} stroke={5} color={color}>
+        <Text style={{ color: known ? C.text : C.textFaint, fontSize: F.tiny }}>{known ? value : '-'}</Text>
       </Ring>
       <Text style={{ color: C.textDim, fontSize: F.tiny }}>{label}</Text>
     </View>

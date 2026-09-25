@@ -50,3 +50,23 @@ describe('guardAdvice', () => {
     expect(r.ok).toBe(true);
   });
 });
+
+describe('guardAdvice calorie context', () => {
+  it('allows a normal meal-sized number', () => {
+    const r = guardAdvice('Your next meal can be 500 to 700 kcal, something like dal and rice.', 1500);
+    expect(r.ok).toBe(true);
+  });
+
+  it('still catches a low number meant for the whole day', () => {
+    expect(guardAdvice('Try to stay under 900 kcal per day this week.', 1500).reasons).toContain('below_floor');
+    expect(guardAdvice('Eat only 1200 calories today to make up for it.', 1500).reasons).toContain('below_floor');
+  });
+
+  it('catches a low daily figure written in Devanagari', () => {
+    expect(guardAdvice('आज फक्त 800 कॅलरी खा.', 1500).reasons).toContain('below_floor');
+  });
+
+  it('leaves a 400 kcal snack suggestion alone', () => {
+    expect(guardAdvice('A 400 kcal snack is fine here.', 1500).ok).toBe(true);
+  });
+});

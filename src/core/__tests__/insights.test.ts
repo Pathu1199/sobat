@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { findPatterns, scoreDay, streak, weightTrend } from '../insights';
 import { lastNDates } from '../date';
+import { expectedKcalByHour } from '../nutrition';
 import type { Meal, MoodLog, SleepLog, WorkoutLog } from '../types';
 
 describe('scoreDay', () => {
@@ -13,13 +14,55 @@ describe('scoreDay', () => {
   });
 
   it('punishes overeating harder than undereating', () => {
-    const over = scoreDay({ ...b, kcal: 2340, waterMl: 0 }).eating;
-    const under = scoreDay({ ...b, kcal: 1260, waterMl: 0 }).eating;
+    const over = scoreDay({ ...b, kcal: 2340, waterMl: 0 }).eating!;
+    const under = scoreDay({ ...b, kcal: 1260, waterMl: 0 }).eating!;
     expect(over).toBeLessThan(under);
   });
 
-  it('gives zero for an unlogged day', () => {
+  it('gives zero for a finished day with nothing logged', () => {
     expect(scoreDay({ ...b, kcal: 0, waterMl: 0 }).eating).toBe(0);
+  });
+
+  it('does not punish a day that is still running', () => {
+    // 11am, breakfast only: that is on pace, not a failure.
+    const s = scoreDay({ ...b, kcal: 450, waterMl: 750, hour: 11 });
+    expect(s.eating).toBeGreaterThan(70);
+  });
+
+  it('shows nothing rather than zero before the first meal', () => {
+    expect(scoreDay({ ...b, kcal: 0, waterMl: 0, hour: 9 }).eating).toBeNull();
+  });
+
+  it('still catches overeating early in the day', () => {
+    const s = scoreDay({ ...b, kcal: 1700, waterMl: 0, hour: 11 });
+    expect(s.eating!).toBeLessThan(30);
+  });
+
+  it('leaves sleep and mood unknown until they are logged', () => {
+    const s = scoreDay({ ...b, kcal: 1800, waterMl: 3000 });
+    expect(s.sleep).toBeNull();
+    expect(s.mood).toBeNull();
+    // The total averages only what is known, so a blank does not drag it down.
+    expect(s.total).toBe(100);
+  });
+});
+
+describe('expectedKcalByHour', () => {
+  it('rises through the day and reaches the full target by night', () => {
+    expect(expectedKcalByHour(1800, 4)).toBe(0);
+    expect(expectedKcalByHour(1800, 6)).toBeLessThan(150);
+    expect(expectedKcalByHour(1800, 11)).toBe(450);
+    expect(expectedKcalByHour(1800, 16)).toBe(1080);
+    expect(expectedKcalByHour(1800, 23)).toBe(1800);
+  });
+
+  it('never goes backwards', () => {
+    let prev = -1;
+    for (let h = 0; h <= 23; h++) {
+      const v = expectedKcalByHour(1800, h);
+      expect(v).toBeGreaterThanOrEqual(prev);
+      prev = v;
+    }
   });
 });
 

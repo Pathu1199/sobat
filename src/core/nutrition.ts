@@ -127,6 +127,20 @@ export function mealsRemaining(hour: number): MealType[] {
   return MEAL_WINDOWS.filter((w) => hour < w.endHour).map((w) => w.type);
 }
 
+/**
+ * How much of the day's target a normal eater would have had by this hour.
+ * Used to judge a day that is still running, instead of comparing a half-eaten
+ * day against a full-day target.
+ */
+export function expectedKcalByHour(target: number, hour: number): number {
+  let share = 0;
+  for (const w of MEAL_WINDOWS) {
+    if (hour >= w.endHour) share += w.share;
+    else if (hour > w.startHour) share += w.share * ((hour - w.startHour) / (w.endHour - w.startHour));
+  }
+  return Math.round(target * Math.min(1, share));
+}
+
 export type Budget = {
   target: number;
   consumed: number;
