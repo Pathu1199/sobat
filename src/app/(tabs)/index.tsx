@@ -163,8 +163,8 @@ export default function TodayScreen() {
 
   const rightColumn = (
     <>
-      <BreakCard />
-      <NowStrip wide />
+      {isToday ? <BreakCard /> : null}
+      {isToday ? <NowStrip wide /> : null}
       <DayScoreCard score={score} />
     </>
   );
@@ -180,8 +180,8 @@ export default function TodayScreen() {
           </>
           <>
             {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
-            <TipCard />
-            <DayReview />
+            {isToday ? <TipCard /> : null}
+            {isToday ? <DayReview /> : null}
           </>
           {rightColumn}
         </Cols>
