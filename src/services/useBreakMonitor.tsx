@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
 import {
   breakRemainingSeconds, inQuiet, isBreakOver, minutesUntilBreak, resetPointFor,
@@ -18,7 +18,7 @@ const WARNING_SECONDS = 60;
  * the desktop build means from when the PC starts. Counts a stretch of work,
  * warns a minute before, then takes the screen for the pause.
  */
-export function useBreakMonitor() {
+function useBreakClock() {
   const app = useApp();
   const settings = app.state.breakSettings;
 
@@ -161,4 +161,19 @@ export function useBreakMonitor() {
     skip: () => endBreak('skipped'),
     snooze,
   };
+}
+
+type Monitor = ReturnType<typeof useBreakClock>;
+const Ctx = createContext<Monitor | null>(null);
+
+/** Mount once, above every screen. The clock runs here and nowhere else. */
+export function BreakMonitorProvider({ children }: { children: React.ReactNode }) {
+  const monitor = useBreakClock();
+  return <Ctx.Provider value={monitor}>{children}</Ctx.Provider>;
+}
+
+export function useBreakMonitor(): Monitor {
+  const c = useContext(Ctx);
+  if (!c) throw new Error('useBreakMonitor must be used inside BreakMonitorProvider');
+  return c;
 }

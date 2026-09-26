@@ -4,6 +4,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
 import { FeedbackProvider } from '../services/feedback';
+import { BreakMonitorProvider } from '../services/useBreakMonitor';
 import { usePhotoQueue } from '../services/usePhotoQueue';
 import { useScheduledReminders } from '../services/useScheduledReminders';
 import { useSteps } from '../services/useSteps';
@@ -15,7 +16,9 @@ export default function RootLayout() {
   return (
     <AppProvider>
       <FeedbackProvider>
-        <AppShell />
+        <BreakMonitorProvider>
+          <AppShell />
+        </BreakMonitorProvider>
       </FeedbackProvider>
     </AppProvider>
   );
