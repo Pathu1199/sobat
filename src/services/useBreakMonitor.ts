@@ -6,6 +6,7 @@ import {
 } from '../core/breaks';
 import { useApp } from '../store/AppProvider';
 import { notifyNow } from './notify';
+import { systemIdleSeconds } from './platform';
 
 export type BreakPhase = 'working' | 'warning' | 'breaking';
 
@@ -66,10 +67,25 @@ export function useBreakMonitor() {
     [app, settings],
   );
 
+  // On the Windows shell this is replaced every second by real system idle
+  // time, so switching to another program still counts as being at the desk.
+  const systemIdle = useRef<number | null>(null);
+  useEffect(() => {
+    const id = setInterval(() => {
+      systemIdleSeconds()
+        .then((v) => {
+          systemIdle.current = v;
+        })
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
+
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
-      const idleSeconds = Math.round((now - lastActivity.current) / 1000);
+      const windowIdle = Math.round((now - lastActivity.current) / 1000);
+      const idleSeconds = systemIdle.current ?? windowIdle;
       const hour = new Date().getHours();
       const ctx = { nowMs: now, workingSinceMs: workingSince.current, idleSeconds, hour, settings };
 

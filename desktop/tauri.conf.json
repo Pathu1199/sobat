@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Sobat",
+  "version": "0.1.0",
+  "identifier": "com.varad.sobat",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:8082"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Sobat",
+        "width": 1180,
+        "height": 820,
+        "minWidth": 380,
+        "minHeight": 560,
+        "resizable": true,
+        "theme": "Dark",
+        "backgroundColor": "#0B1412"
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "trayIcon": {
+      "id": "sobat-tray",
+      "iconPath": "icons/icon.png",
+      "tooltip": "Sobat",
+      "menuOnLeftClick": false
+    }
+  },
+  "plugins": {
+    "autostart": {
+      "macos": false
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": ["icons/icon.png"],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  }
+}

@@ -155,12 +155,23 @@ Everything sits in local storage on the device. Nothing is uploaded. There is no
 account and no analytics. Settings has a one-click JSON export and an erase
 button.
 
+## Windows
+
+The desktop app is a thin Tauri shell around this same web build. It adds
+autostart at login, a tray icon, and real system-wide idle detection, which is
+what makes the break monitor skip itself when you have already stepped away.
+It has to be built on the PC: see [desktop/README.md](desktop/README.md).
+
 ## Status
 
-v0.1. Working: onboarding, calorie logging, food search, photo recognition,
-decisions, sleep check-in, fitness plan, mind tools, coach chat, reminders,
-three languages. Not built yet: the Windows tray shell, phone-to-PC sync,
-barcode scanning, Health Connect.
+v0.2. Working: landing page, onboarding and permissions, calorie logging, food
+search, photo recognition, decision cards, sleep check-in, readiness-based
+fitness plan with a guided session runner, mind tools, coach chat with memory,
+break monitor, screen-time tracking, growth section with weekly report, daily
+tips, three languages, desktop and mobile layouts.
+
+Not built yet: phone-to-PC sync, barcode scanning, Health Connect, and the
+Windows installer itself, which needs to be produced on the PC.
 
 ## Licence
 
