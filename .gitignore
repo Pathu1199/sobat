@@ -45,3 +45,6 @@ example
 # Sobat
 dist/
 .DS_Store
+
+# Subagent-driven-development scratch (briefs, reports, diffs)
+.superpowers/
