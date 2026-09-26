@@ -20,6 +20,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const [items, setItems] = useState<MealItem[]>(meal?.items ?? []);
+  const [opened, setOpened] = useState<number[]>([]);
   const [openId, setOpenId] = useState<string | null>(meal?.id ?? null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -30,6 +31,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
   if (mealId !== openId) {
     setOpenId(mealId);
     setItems(meal?.items ?? []);
+    setOpened((meal?.items ?? []).map((i) => i.grams));
     setConfirmDelete(false);
   }
 
@@ -37,10 +39,6 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
   // Narrowed once so the closures below (which TS otherwise treats as possibly
   // seeing `meal` turn null before they run) can use it directly.
   const current = meal;
-  // The pills multiply the weight this line had when the sheet opened. Look that
-  // up by identity: a live index would point at the wrong item once a line is removed.
-  const openedGrams = (it: MealItem) =>
-    current.items.find((o) => o.foodId === it.foodId && o.name_en === it.name_en)?.grams ?? it.grams;
 
   const kcal = items.reduce((a, i) => a + i.kcal, 0);
   const protein = Math.round(items.reduce((a, i) => a + i.protein, 0));
@@ -75,7 +73,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
       {items.map((it, idx) => {
         const food = it.foodId ? app.foods.find((f) => f.id === it.foodId) : undefined;
         const portion = food ? defaultPortion(food) : undefined;
-        const unitGrams = portion?.grams ?? openedGrams(it);
+        const unitGrams = portion?.grams ?? opened[idx] ?? it.grams;
         return (
           <View key={`${it.name_en}-${idx}`} style={{ gap: 8 }}>
             {idx > 0 ? <Divider /> : null}
@@ -88,7 +86,13 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
                 {it.kcal}
                 <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '400' }}> kcal</Text>
               </Text>
-              <Pressable onPress={() => setItems((l) => l.filter((_, i) => i !== idx))} hitSlop={8} accessibilityLabel={t('delete')}>
+              <Pressable
+                onPress={() => {
+                  setItems((l) => l.filter((_, i) => i !== idx));
+                  setOpened((l) => l.filter((_, i) => i !== idx));
+                }}
+                hitSlop={8}
+                accessibilityLabel={t('delete')}>
                 <Ionicons name="close" size={17} color={C.textFaint} />
               </Pressable>
             </Row>
