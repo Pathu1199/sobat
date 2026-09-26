@@ -96,17 +96,27 @@ export default function LogScreen() {
 
   const quickRow = (
     <Row style={{ gap: 10, alignItems: 'stretch' }}>
-      <Pressable
-        onPress={addGlass}
-        style={({ pressed }) => ({ flex: 1, backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, borderRadius: S.radius, padding: 14, gap: 4, opacity: pressed ? 0.7 : 1 })}>
-        <Row style={{ gap: 6 }}>
-          <Ionicons name="water-outline" size={15} color={C.cyan} />
-          <Micro>{en('water')}</Micro>
-        </Row>
-        <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '300' }}>
-          +1 <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${glasses} / ${glassGoal}`}</Text>
-        </Text>
-      </Pressable>
+      <View style={{ flex: 1, backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, borderRadius: S.radius, padding: 14, gap: 6 }}>
+        <Pressable onPress={addGlass} style={({ pressed }) => ({ gap: 4, opacity: pressed ? 0.7 : 1 })}>
+          <Row style={{ gap: 6 }}>
+            <Ionicons name="water-outline" size={15} color={C.cyan} />
+            <Micro>{en('water')}</Micro>
+          </Row>
+          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '300' }}>
+            +1 <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${glasses} / ${glassGoal}`}</Text>
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            app.undoWater();
+            fb.notify(t('undo'));
+          }}
+          disabled={app.waterToday === 0}
+          accessibilityLabel={t('undo')}
+          style={({ pressed }) => ({ opacity: app.waterToday === 0 ? 0.3 : pressed ? 0.6 : 1, alignSelf: 'flex-start' })}>
+          <Micro color={C.textDim}>{t('undo')}</Micro>
+        </Pressable>
+      </View>
       <View style={{ flex: 1, backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, borderRadius: S.radius, padding: 14, gap: 6 }}>
         <Micro>{en('add_weight')}</Micro>
         <Row style={{ gap: 8 }}>
