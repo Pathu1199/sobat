@@ -39,6 +39,7 @@ export default function SessionScreen() {
   const [finished, setFinished] = useState(false);
   const [felt, setFelt] = useState(3);
   const [pain, setPain] = useState(false);
+  const [elapsedMinutes, setElapsedMinutes] = useState(0);
   const startedAt = useRef(Date.now());
 
   const step = steps[index];
@@ -62,6 +63,11 @@ export default function SessionScreen() {
     return () => clearTimeout(id);
   }, [running, left, done, finished]);
 
+  // Freeze the duration the moment the session ends, so the summary does not drift.
+  useEffect(() => {
+    if (done || finished) setElapsedMinutes((m) => (m > 0 ? m : Math.max(1, Math.round((Date.now() - startedAt.current) / 60000))));
+  }, [done, finished]);
+
   function buzz() {
     if (Platform.OS === 'web') return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -69,6 +75,7 @@ export default function SessionScreen() {
 
   function finish(status: 'done' | 'skipped') {
     const minutes = Math.max(1, Math.round((Date.now() - startedAt.current) / 60000));
+    setElapsedMinutes(minutes);
     app.addWorkout({
       id: app.today,
       date: app.today,
@@ -78,7 +85,6 @@ export default function SessionScreen() {
       felt,
       pain,
     });
-    if (status === 'done') { fb.haptic('success'); fb.notify(t('toast_session_done')); }
     router.replace('/fit');
   }
 
@@ -107,7 +113,7 @@ export default function SessionScreen() {
             {reached}
             <Text style={{ color: C.textFaint, fontSize: F.h2 }}> / {session.exercises.length}</Text>
           </Text>
-          <Micro>{`${Math.max(1, Math.round((Date.now() - startedAt.current) / 60000))} min`}</Micro>
+          <Micro>{`${elapsedMinutes} min`}</Micro>
           <Divider />
           <Micro>{en('how_did_it_feel')}</Micro>
           <Row style={{ gap: 6 }}>
@@ -120,7 +126,17 @@ export default function SessionScreen() {
             <Pill label={pain ? t('done') : t('cancel')} active={pain} onPress={() => setPain(!pain)} />
           </Row>
           {pain ? <Small color={C.amber}>{t('pain_note')}</Small> : null}
-          <Btn label={t('save')} onPress={() => finish(done ? 'done' : 'skipped')} />
+          <Btn
+            label={t('save')}
+            onPress={() => {
+              const status = done ? 'done' : 'skipped';
+              if (status === 'done') {
+                fb.haptic('success');
+                fb.notify(t('toast_session_done'));
+              }
+              finish(status);
+            }}
+          />
         </Card>
       </Screen>
     );

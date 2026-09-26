@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, M, S } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
@@ -22,9 +23,8 @@ export function useFeedback(): Feedback {
 async function vibrate(kind: 'light' | 'success') {
   if (Platform.OS === 'web') return;
   try {
-    const H = require('expo-haptics') as typeof import('expo-haptics');
-    if (kind === 'success') await H.notificationAsync(H.NotificationFeedbackType.Success);
-    else await H.impactAsync(H.ImpactFeedbackStyle.Light);
+    if (kind === 'success') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    else await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   } catch {
     // No haptics engine. Nothing to do.
   }
