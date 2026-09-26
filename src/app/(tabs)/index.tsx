@@ -10,6 +10,7 @@ import { TipCard } from '../../components/TipCard';
 import { toISODate } from '../../core/date';
 import { decide } from '../../core/decide';
 import { findPatterns, scoreDay, weeklyStats } from '../../core/insights';
+import { pendingCount } from '../../core/queue';
 import { sleepFlags } from '../../core/sleep';
 import { makeT } from '../../i18n';
 import { useAI } from '../../services/useAI';
@@ -96,6 +97,14 @@ export default function TodayScreen() {
         </Row>
 
         {!ai.checking && ai.route === 'offline' ? <Small color={C.textFaint}>{t('ai_offline_hint')}</Small> : null}
+        {pendingCount(state.photoQueue) > 0 ? (
+          <Small color={C.blue}>
+            {(pendingCount(state.photoQueue) === 1 ? t('photos_queued') : t('photos_queued_plural')).replace(
+              '{n}',
+              String(pendingCount(state.photoQueue)),
+            )}
+          </Small>
+        ) : null}
 
         <Card>
           <Row style={{ justifyContent: 'space-around', alignItems: 'center' }}>
@@ -113,6 +122,7 @@ export default function TodayScreen() {
                 <StatLine label={t('water')} value={`${Math.round(waterToday / 250)}`} sub={`/ ${Math.round(state.settings.waterGoalMl / 250)} ${t('glasses')}`} />
                 <Bar value={waterToday} max={state.settings.waterGoalMl} color={C.blue} />
               </View>
+              {app.stepsToday > 0 ? <StatLine label={t('steps_today')} value={`${app.stepsToday}`} sub="" /> : null}
             </View>
           </Row>
 
@@ -195,7 +205,9 @@ export default function TodayScreen() {
               <Row key={m.id} style={{ justifyContent: 'space-between' }}>
                 <View style={{ flex: 1 }}>
                   <P>{m.items.map((i) => (lang === 'mr' ? i.name_mr || i.name_en : i.name_en)).join(', ') || t(m.type)}</P>
-                  <Small>{t(m.type)} · {m.at.slice(11, 16)}</Small>
+                  <Small color={m.note === 'needs_review' ? C.amber : undefined}>
+                    {m.note === 'needs_review' ? t('needs_review') : `${t(m.type)} · ${m.at.slice(11, 16)}`}
+                  </Small>
                 </View>
                 <Text style={{ color: C.text, fontWeight: '600' }}>{m.kcal}</Text>
               </Row>

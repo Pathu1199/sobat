@@ -8,7 +8,8 @@ import { mealTypeForHour } from '../../core/nutrition';
 import type { FoodItem, MealItem, MealType } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
-import { Btn, Card, Divider, Empty, Field, H2, H3, P, Pill, Row, Screen, Small } from '../../ui/components';
+import { CustomFoodForm } from '../../components/CustomFoodForm';
+import { Btn, Card, Divider, Empty, Field, H3, P, Pill, Row, Screen, Small } from '../../ui/components';
 import { C, F } from '../../ui/theme';
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner'];
@@ -23,6 +24,7 @@ export default function LogScreen() {
   const [mealType, setMealType] = useState<MealType>(mealTypeForHour(new Date().getHours()));
   const [basket, setBasket] = useState<{ food: FoodItem; count: number; unit: string }[]>([]);
   const [weightInput, setWeightInput] = useState('');
+  const [customOpen, setCustomOpen] = useState(false);
 
   const results = useMemo(() => searchFoods(app.foods, query, 30), [app.foods, query]);
   const todayMeals = app.state.meals.filter((m) => m.date === app.today);
@@ -68,9 +70,28 @@ export default function LogScreen() {
   return (
     <Screen>
       <Row style={{ gap: 8 }}>
-        <Btn label={`📷 ${t('add_photo')}`} tone="soft" onPress={() => router.push('/photo')} style={{ flex: 1 }} />
-        <Btn label={`+ ${t('add_water')}`} tone="soft" onPress={() => app.addWater(app.state.settings.glassMl)} style={{ flex: 1 }} />
+        <Btn label={t('add_photo')} tone="soft" onPress={() => router.push('/photo')} style={{ flex: 1 }} />
+        <Btn label={t('scan_barcode')} tone="soft" onPress={() => router.push('/scan')} style={{ flex: 1 }} />
       </Row>
+
+      <Card>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <H3>{t('add_water')}</H3>
+          <Small>
+            {Math.round(app.waterToday / 250)} / {Math.round(app.state.settings.waterGoalMl / 250)} {t('glasses')}
+          </Small>
+        </Row>
+        <Row style={{ gap: 8 }}>
+          <Btn label={`+ 1 ${t('glasses')}`} onPress={() => app.addWater(app.state.settings.glassMl)} style={{ flex: 1 }} />
+          <Btn
+            tone="ghost"
+            label={t('undo')}
+            onPress={app.undoWater}
+            disabled={app.waterToday === 0}
+            style={{ flex: 1 }}
+          />
+        </Row>
+      </Card>
 
       <Card>
         <H3>{t('add_weight')}</H3>
@@ -129,9 +150,29 @@ export default function LogScreen() {
         ) : null}
       </Card>
 
+      {customOpen ? (
+        <CustomFoodForm
+          initialName={query}
+          onSaved={(f) => {
+            setCustomOpen(false);
+            addToBasket(f);
+            setQuery('');
+          }}
+          onCancel={() => setCustomOpen(false)}
+        />
+      ) : null}
+
       <Card>
         {results.length === 0 ? (
-          <Empty text={t('no_results')} />
+          <View style={{ gap: 10 }}>
+            <Empty text={t('no_results')} />
+            <Btn
+              small
+              tone="soft"
+              label={query.trim() ? t('add_as_custom').replace('{q}', query.trim()) : t('custom_food')}
+              onPress={() => setCustomOpen(true)}
+            />
+          </View>
         ) : (
           results.slice(0, 20).map((f) => {
             const p = defaultPortion(f);
@@ -150,6 +191,12 @@ export default function LogScreen() {
             );
           })
         )}
+        {results.length > 0 ? (
+          <>
+            <Divider />
+            <Btn small tone="ghost" label={t('custom_food')} onPress={() => setCustomOpen(true)} />
+          </>
+        ) : null}
       </Card>
 
       <Card>

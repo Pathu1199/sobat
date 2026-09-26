@@ -1,5 +1,6 @@
 import type { BreakLog, BreakSettings } from './breaks';
 import type { MemoryItem } from './memory';
+import type { QueuedPhoto } from './queue';
 import type { UsageBucket } from './usage';
 
 export type Lang = 'en' | 'mr' | 'hi';
@@ -146,4 +147,8 @@ export type AppState = {
   breaks: BreakLog[];
   breakSettings: BreakSettings;
   tips: DailyTip[];
+  photoQueue: QueuedPhoto[];
+  steps: StepLog[];
 };
+
+export type StepLog = { date: ISODate; count: number };

@@ -52,6 +52,12 @@
           "cameraPermission": "Sobat needs the camera to read the food on your plate.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Sobat uses the camera to read a barcode or the food on your plate."
+        }
       ]
     ],
     "experiments": {

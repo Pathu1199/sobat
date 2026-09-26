@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 import { toISODate } from '../../core/date';
 import { HELPLINES, isCrisisText } from '../../core/guardrails';
+import { CravingSOS } from '../../components/CravingSOS';
+import { Reframe } from '../../components/Reframe';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { Btn, Card, Divider, Field, H2, H3, P, Pill, Ring, Row, Screen, Small } from '../../ui/components';
@@ -82,6 +84,10 @@ export default function MindScreen() {
         <Btn small tone="soft" label={t('grounding')} onPress={() => setTool(tool === 'grounding' ? null : 'grounding')} style={{ flex: 1 }} />
         <Btn small tone="soft" label={t('gratitude')} onPress={() => setTool(tool === 'gratitude' ? null : 'gratitude')} style={{ flex: 1 }} />
       </Row>
+
+      <CravingSOS />
+
+      <Reframe onCrisis={() => setCrisis(true)} />
 
       {tool === 'breathe' ? <BreatheBox lang={lang} /> : null}
       {tool === 'grounding' ? <Grounding lang={lang} /> : null}

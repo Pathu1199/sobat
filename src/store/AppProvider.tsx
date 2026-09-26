@@ -9,8 +9,9 @@ import { minutesOn } from '../core/usage';
 import { lastNDates } from '../core/date';
 import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryItem, type MemoryType } from '../core/memory';
 import { addActive, pruneUsage, type UsageBucket } from '../core/usage';
+import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
 import type { BreakLog, BreakSettings } from '../core/breaks';
-import type { AppState, ChatMsg, DailyTip, Exercise, FoodItem, Meal, MoodLog, Profile, Settings, SleepLog, WaterLog, WeightLog, WorkoutLog } from '../core/types';
+import type { AppState, ChatMsg, DailyTip, Exercise, FoodItem, Meal, MoodLog, Profile, Settings, SleepLog, StepLog, WaterLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
 
 const KEY = 'sobat.state.v1';
@@ -48,6 +49,12 @@ type Ctx = {
   logBreak: (action: 'taken' | 'skipped', workedMinutes: number) => void;
   setBreakSettings: (s: Partial<BreakSettings>) => void;
   setTip: (text: string) => void;
+  queuePhoto: (p: QueuedPhoto) => void;
+  unqueuePhoto: (id: string) => void;
+  failPhoto: (id: string, error: string) => void;
+  setSteps: (count: number) => void;
+  stepsToday: number;
+  importState: (json: string) => { ok: boolean; error?: string };
   tipToday: string | null;
   screenMinutesToday: number;
   resetAll: () => void;
@@ -121,6 +128,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       streakDays,
       tipToday: tipRecord?.text ?? null,
       screenMinutesToday,
+      stepsToday: state.steps.find((x) => x.date === today)?.count ?? 0,
       setProfile: (p) => update((s) => ({ ...s, profile: { ...s.profile, ...p } })),
       setSettings: (x) => update((s) => ({ ...s, settings: { ...s.settings, ...x } })),
       addMeal: (m) => update((s) => ({ ...s, meals: [...s.meals, m] })),
@@ -164,6 +172,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           breaks: [...s.breaks.slice(-500), { id: String(Date.now()), date: toISODate(), at: new Date().toISOString(), action, workedMinutes }],
         })),
       setBreakSettings: (b) => update((s) => ({ ...s, breakSettings: { ...s.breakSettings, ...b } })),
+      queuePhoto: (p) => update((s) => ({ ...s, photoQueue: enqueue(s.photoQueue, p) })),
+      unqueuePhoto: (id) => update((s) => ({ ...s, photoQueue: dequeue(s.photoQueue, id) })),
+      failPhoto: (id, error) => update((s) => ({ ...s, photoQueue: markFailed(s.photoQueue, id, error) })),
+      setSteps: (count) =>
+        update((s) => ({ ...s, steps: [...s.steps.filter((x) => x.date !== today), { date: today, count }] })),
+      importState: (json) => {
+        try {
+          const parsed = JSON.parse(json) as Partial<AppState>;
+          // A file from another app would quietly wipe everything, so check shape first.
+          if (typeof parsed !== 'object' || parsed === null || !parsed.profile || !Array.isArray(parsed.meals)) {
+            return { ok: false, error: 'not_sobat_file' };
+          }
+          setState({
+            ...EMPTY_STATE,
+            ...parsed,
+            profile: { ...EMPTY_STATE.profile, ...parsed.profile },
+            settings: { ...EMPTY_STATE.settings, ...parsed.settings },
+            breakSettings: { ...EMPTY_STATE.breakSettings, ...parsed.breakSettings },
+          } as AppState);
+          return { ok: true };
+        } catch {
+          return { ok: false, error: 'bad_json' };
+        }
+      },
       setTip: (text) =>
         update((s) => ({ ...s, tips: [...s.tips.filter((t) => t.date !== today).slice(-30), { date: today, text, lang: s.profile.lang }] })),
       resetAll: () => {

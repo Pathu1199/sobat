@@ -7,6 +7,7 @@ import { FOOD_PHOTO_SCHEMA, foodPhotoPrompt } from '../ai/prompts';
 import { toISODate } from '../core/date';
 import { defaultPortion, foodName, resolveByName, searchFoods, toMealItem } from '../core/foods';
 import { mealTypeForHour } from '../core/nutrition';
+import { pendingCount } from '../core/queue';
 import type { FoodItem, MealItem, MealType } from '../core/types';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
@@ -86,13 +87,14 @@ export default function PhotoScreen() {
     const asset = res.assets[0];
     setUri(asset.uri);
     setDrafts([]);
-    if (asset.base64) analyse(asset.base64);
+    if (asset.base64) analyse(asset.base64, asset.uri);
     else setError('Could not read the image');
   }
 
-  async function analyse(base64: string) {
+  async function analyse(base64: string, sourceUri?: string) {
     if (!online) {
-      setError(t('queued'));
+      // The screen has always said "queued"; this is what makes that true.
+      queue(base64, sourceUri);
       return;
     }
     setBusy(true);
@@ -119,10 +121,27 @@ export default function PhotoScreen() {
       setDrafts(next);
       if (next.length === 0) setError(t('no_results'));
     } catch (e) {
-      setError(online ? 'The model did not return a readable answer. Try again or log by hand.' : t('queued'));
+      if (online) {
+        setError('The model did not return a readable answer. Try again or log by hand.');
+      } else {
+        queue(base64, uri ?? undefined);
+      }
     } finally {
       setBusy(false);
     }
+  }
+
+  function queue(base64: string, sourceUri?: string) {
+    const now = new Date();
+    app.queuePhoto({
+      id: String(now.getTime()),
+      uri: sourceUri ?? uri ?? '',
+      base64,
+      at: now.toISOString(),
+      date: toISODate(now),
+      attempts: 0,
+    });
+    setError(t('queued'));
   }
 
   function swap(key: string, food: FoodItem) {
@@ -164,6 +183,14 @@ export default function PhotoScreen() {
           <Btn label={t('pick_photo')} tone="soft" onPress={() => pick(false)} style={{ flex: 1 }} />
         </Row>
         {!online ? <Small color={C.amber}>{t('ai_offline_hint')}</Small> : null}
+        {pendingCount(app.state.photoQueue) > 0 ? (
+          <Small color={C.blue}>
+            {(pendingCount(app.state.photoQueue) === 1 ? t('photos_queued') : t('photos_queued_plural')).replace(
+              '{n}',
+              String(pendingCount(app.state.photoQueue)),
+            )}
+          </Small>
+        ) : null}
       </Card>
 
       {uri ? (

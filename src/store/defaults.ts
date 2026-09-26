@@ -47,4 +47,6 @@ export const EMPTY_STATE: AppState = {
   breaks: [],
   breakSettings: DEFAULT_BREAK_SETTINGS,
   tips: [],
+  photoQueue: [],
+  steps: [],
 };

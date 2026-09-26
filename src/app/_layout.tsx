@@ -3,7 +3,9 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
+import { usePhotoQueue } from '../services/usePhotoQueue';
 import { useScheduledReminders } from '../services/useScheduledReminders';
+import { useSteps } from '../services/useSteps';
 import { useUsageTracker } from '../services/useUsageTracker';
 import { AppProvider } from '../store/AppProvider';
 import { C } from '../ui/theme';
@@ -20,6 +22,8 @@ export default function RootLayout() {
 function AppShell() {
   useUsageTracker();
   useScheduledReminders();
+  useSteps();
+  usePhotoQueue();
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <StatusBar style="light" />
@@ -38,6 +42,7 @@ function AppShell() {
         <Stack.Screen name="sleep" options={{ title: 'Sleep' }} />
         <Stack.Screen name="memory" options={{ title: 'Memory' }} />
         <Stack.Screen name="session" options={{ title: 'Session' }} />
+        <Stack.Screen name="scan" options={{ title: 'Scan' }} />
         <Stack.Screen name="permissions" options={{ headerShown: false }} />
       </Stack>
       <BreakOverlay />

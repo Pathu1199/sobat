@@ -20,6 +20,7 @@ export default function SettingsScreen() {
   const [confirmReset, setConfirmReset] = useState(false);
   const router = useRouter();
   const br = app.state.breakSettings;
+  const [importMsg, setImportMsg] = useState<string | null>(null);
 
   async function test() {
     setTesting(true);
@@ -166,6 +167,33 @@ export default function SettingsScreen() {
             }
           }}
         />
+        {Platform.OS === 'web' ? (
+          <Btn
+            small
+            tone="soft"
+            label={t('import_data')}
+            onPress={() => {
+              if (typeof document === 'undefined') return;
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'application/json,.json';
+              input.onchange = () => {
+                const file = input.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const res = app.importState(String(reader.result));
+                  setImportMsg(res.ok ? t('import_ok') : t('import_bad'));
+                };
+                reader.readAsText(file);
+              };
+              input.click();
+            }}
+          />
+        ) : null}
+        <Small color={C.textFaint}>{t('import_hint')}</Small>
+        {importMsg ? <Small color={importMsg === t('import_ok') ? C.teal : C.amber}>{importMsg}</Small> : null}
+
         <Divider />
         {confirmReset ? (
           <Row style={{ gap: 8 }}>
