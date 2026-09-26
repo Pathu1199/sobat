@@ -20,7 +20,7 @@ export function TopBarActions({ streak }: { streak?: number }) {
 
   return (
     <Row style={{ gap: 4 }}>
-      {streak && streak > 0 ? <StatusChip label={`${streak}d`} color={C.amber} /> : null}
+      {wide && streak && streak > 0 ? <StatusChip label={`${streak}d`} color={C.amber} /> : null}
       <View
         accessibilityLabel={online ? t('ai_lan') : t('ai_offline')}
         style={{ width: 7, height: 7, borderRadius: 4, marginHorizontal: 6, backgroundColor: online ? C.accent : C.textGhost }}
