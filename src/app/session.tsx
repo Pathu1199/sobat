@@ -9,6 +9,7 @@ import { buildSession, readiness } from '../core/fitness';
 import { weeksSince } from '../core/fitness';
 import type { Exercise } from '../core/types';
 import { makeT } from '../i18n';
+import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { BiText, Bar, Btn, Card, Divider, Micro, Pill, Row, Screen, SectionHeader, Small } from '../ui/components';
 import { C, F, S } from '../ui/theme';
@@ -17,6 +18,7 @@ import { C, F, S } from '../ui/theme';
 export default function SessionScreen() {
   const app = useApp();
   const router = useRouter();
+  const fb = useFeedback();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const en = makeT('en');
@@ -76,6 +78,7 @@ export default function SessionScreen() {
       felt,
       pain,
     });
+    if (status === 'done') { fb.haptic('success'); fb.notify(t('toast_session_done')); }
     router.replace('/fit');
   }
 

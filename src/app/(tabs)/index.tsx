@@ -13,6 +13,7 @@ import { expectedWaterByHour } from '../../core/nudge';
 import { pendingCount } from '../../core/queue';
 import { sleepFlags } from '../../core/sleep';
 import { makeT } from '../../i18n';
+import { useFeedback } from '../../services/feedback';
 import { useAI } from '../../services/useAI';
 import { useApp } from '../../store/AppProvider';
 import { Card, Divider, H1, ListRow, MeterRow, Micro, Ring, RingStat, Row, Screen, SectionHeader, Small, StatusChip } from '../../ui/components';
@@ -23,6 +24,7 @@ export default function TodayScreen() {
   const app = useApp();
   const { ai } = useAI();
   const router = useRouter();
+  const fb = useFeedback();
   const { state, budget, targets, waterToday, streakDays, today } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
@@ -153,7 +155,7 @@ export default function TodayScreen() {
         <Row style={{ gap: 8 }}>
           <QuickAction icon="add" label={t('add_food')} onPress={() => router.push('/log')} />
           <QuickAction icon="camera-outline" label={t('add_photo')} onPress={() => router.push('/photo')} />
-          <QuickAction icon="water-outline" label={t('add_water')} onPress={() => app.addWater(state.settings.glassMl)} />
+          <QuickAction icon="water-outline" label={t('add_water')} onPress={() => { app.addWater(state.settings.glassMl); fb.haptic('light'); fb.notify(t('toast_water_added')); }} />
         </Row>
       </Card>
   );

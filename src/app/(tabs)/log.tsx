@@ -8,6 +8,7 @@ import { defaultPortion, foodName, portionLabel, searchFoods, toMealItem } from 
 import { mealTypeForHour } from '../../core/nutrition';
 import type { FoodItem, MealItem, MealType } from '../../core/types';
 import { makeT } from '../../i18n';
+import { useFeedback } from '../../services/feedback';
 import { useApp } from '../../store/AppProvider';
 import { BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Segmented, Small } from '../../ui/components';
 import { C, F, S } from '../../ui/theme';
@@ -17,6 +18,7 @@ const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner'];
 export default function LogScreen() {
   const app = useApp();
   const router = useRouter();
+  const fb = useFeedback();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const en = makeT('en');
@@ -59,6 +61,8 @@ export default function LogScreen() {
     });
     setBasket([]);
     setQuery('');
+    fb.haptic('success');
+    fb.notify(t('toast_meal_saved').replace('{kcal}', String(basketKcal)));
   }
 
   function saveWeight() {
@@ -90,7 +94,7 @@ export default function LogScreen() {
           </Text>
         </Row>
         <Row style={{ gap: 8 }}>
-          <Btn label={`+ 1 ${t('glasses')}`} onPress={() => app.addWater(app.state.settings.glassMl)} style={{ flex: 1 }} />
+          <Btn label={`+ 1 ${t('glasses')}`} onPress={() => { app.addWater(app.state.settings.glassMl); fb.haptic('light'); fb.notify(t('toast_water_added')); }} style={{ flex: 1 }} />
           <Btn tone="ghost" label={t('undo')} onPress={app.undoWater} disabled={app.waterToday === 0} style={{ flex: 1 }} />
         </Row>
       </Card>

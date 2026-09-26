@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
+import { FeedbackProvider } from '../services/feedback';
 import { usePhotoQueue } from '../services/usePhotoQueue';
 import { useScheduledReminders } from '../services/useScheduledReminders';
 import { useSteps } from '../services/useSteps';
@@ -13,7 +14,9 @@ import { C } from '../ui/theme';
 export default function RootLayout() {
   return (
     <AppProvider>
-      <AppShell />
+      <FeedbackProvider>
+        <AppShell />
+      </FeedbackProvider>
     </AppProvider>
   );
 }

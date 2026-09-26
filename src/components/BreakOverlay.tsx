@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { makeT } from '../i18n';
+import { useFeedback } from '../services/feedback';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
 import { C, F, MICRO, S } from '../ui/theme';
@@ -19,6 +20,7 @@ const SUGGESTIONS: Record<string, string[]> = {
 export function BreakOverlay() {
   const monitor = useBreakMonitor();
   const { state } = useApp();
+  const fb = useFeedback();
   const lang = state.profile.lang;
   const t = makeT(lang);
   const { width, height } = useWindowDimensions();
@@ -115,7 +117,7 @@ export function BreakOverlay() {
         )}
         {over ? (
           <Pressable
-            onPress={monitor.finish}
+            onPress={() => { monitor.finish(); fb.notify(t('toast_break_done')); }}
             style={{ backgroundColor: C.accent, paddingVertical: 12, paddingHorizontal: 28, borderRadius: 999 }}>
             <Text style={{ color: C.white, fontSize: F.body, fontWeight: '600' }}>{t('break_done')}</Text>
           </Pressable>
