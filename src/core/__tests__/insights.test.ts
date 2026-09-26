@@ -144,7 +144,9 @@ describe('findPatterns', () => {
       { id: '4', at: '2026-09-20T13:00', date: '2026-09-20', type: 'lunch', items: [], kcal: 1750, protein: 60 },
     ];
     const p = findPatterns({ meals, sleep, moods: [], workouts: [], kcalTarget: 1800 });
-    expect(p.some((x) => x.key === 'sleep_vs_kcal')).toBe(true);
+    const hit = p.find((x) => x.key === 'sleep_vs_kcal');
+    expect(hit).toBeDefined();
+    expect(String(hit!.params.diff)).toMatch(/^\+\d+$/);
   });
 
   it('spots a repeated snack hour', () => {
@@ -158,7 +160,9 @@ describe('findPatterns', () => {
       protein: 5,
     }));
     const p = findPatterns({ meals, sleep: [], moods: [], workouts: [], kcalTarget: 1800 });
-    expect(p.some((x) => x.key === 'snack_hour')).toBe(true);
+    const hit = p.find((x) => x.key === 'snack_hour');
+    expect(hit).toBeDefined();
+    expect(hit!.params).toEqual({ h: 16, n: 3 });
   });
 
   it('spots better mood on workout days', () => {
@@ -168,10 +172,12 @@ describe('findPatterns', () => {
       { id: '2', at: '', date: '2026-09-22', score: 5 },
       { id: '3', at: '', date: '2026-09-23', score: 4 },
       { id: '4', at: '', date: '2026-09-24', score: 2 },
-      { id: '5', at: '', date: '2026-09-25', score: 2 },
+      { id: '5', at: '', date: '2026-09-25', score: 0 },
     ];
     const p = findPatterns({ meals: [], sleep: [], moods, workouts, kcalTarget: 1800 });
-    expect(p.some((x) => x.key === 'move_vs_mood')).toBe(true);
+    const hit = p.find((x) => x.key === 'move_vs_mood');
+    expect(hit).toBeDefined();
+    expect(hit!.params.d).toBe('1.5');
   });
 
   it('finds nothing in an empty log', () => {

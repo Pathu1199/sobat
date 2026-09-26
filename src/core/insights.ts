@@ -113,7 +113,7 @@ export function weightTrend(logs: WeightLog[]): { current: number; change7: numb
   };
 }
 
-export type Correlation = { key: string; strength: number; detail: string };
+export type Correlation = { key: string; strength: number; params: Record<string, string | number> };
 
 /**
  * Very simple pattern spotting on small data. Not statistics, just enough
@@ -142,13 +142,13 @@ export function findPatterns(input: {
   if (shortDays.length >= 2 && okDays.length >= 2) {
     const diff = Math.round(shortDays.reduce((a, b) => a + b.kcal, 0) / shortDays.length - okDays.reduce((a, b) => a + b.kcal, 0) / okDays.length);
     if (Math.abs(diff) >= 150) {
-      out.push({ key: 'sleep_vs_kcal', strength: Math.min(1, Math.abs(diff) / 600), detail: `${diff > 0 ? '+' : ''}${diff} kcal after short sleep` });
+      out.push({ key: 'sleep_vs_kcal', strength: Math.min(1, Math.abs(diff) / 600), params: { diff: `${diff > 0 ? '+' : ''}${diff}` } });
     }
   }
 
   // Late-night eating.
   const lateCount = input.meals.filter((m) => localHour(m.at) >= 22).length;
-  if (lateCount >= 3) out.push({ key: 'late_eating', strength: Math.min(1, lateCount / 10), detail: `${lateCount} meals after 10pm` });
+  if (lateCount >= 3) out.push({ key: 'late_eating', strength: Math.min(1, lateCount / 10), params: { n: lateCount } });
 
   // A repeated snack hour.
   const hourCounts = new Map<number, number>();
@@ -164,7 +164,7 @@ export function findPatterns(input: {
       topHour = k;
     }
   });
-  if (topCount >= 3) out.push({ key: 'snack_hour', strength: Math.min(1, topCount / 7), detail: `snack around ${topHour}:00 on ${topCount} days` });
+  if (topCount >= 3) out.push({ key: 'snack_hour', strength: Math.min(1, topCount / 7), params: { h: topHour, n: topCount } });
 
   // Movement and mood.
   const moodByDate = new Map<ISODate, number>();
@@ -174,7 +174,7 @@ export function findPatterns(input: {
   if (moved.length >= 3 && allMoods.length >= 5) {
     const a = moved.reduce((x, y) => x + y, 0) / moved.length;
     const b = allMoods.reduce((x, y) => x + y, 0) / allMoods.length;
-    if (a - b >= 0.4) out.push({ key: 'move_vs_mood', strength: Math.min(1, (a - b) / 2), detail: `mood ${(a - b).toFixed(1)} higher on workout days` });
+    if (a - b >= 0.4) out.push({ key: 'move_vs_mood', strength: Math.min(1, (a - b) / 2), params: { d: (a - b).toFixed(1) } });
   }
 
   return out.sort((x, y) => y.strength - x.strength);

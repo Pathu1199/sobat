@@ -145,7 +145,7 @@ export default function SessionScreen() {
 
       <Card tone={accent}>
         <View style={{ alignItems: 'center', gap: 14, paddingVertical: 10 }}>
-          <Micro color={accent}>{isRest ? en('rest') : current.category.replace('_', ' ')}</Micro>
+          <Micro color={accent}>{isRest ? en('rest') : t(`cat_${current.category}`)}</Micro>
           <BiText
             en={isRest ? `${en('next')}: ${current.name_en}` : current.name_en}
             alt={lang === 'en' ? undefined : name(current)}

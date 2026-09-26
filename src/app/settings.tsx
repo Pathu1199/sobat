@@ -194,7 +194,7 @@ export default function SettingsScreen() {
         <Card>
           <Row style={{ flexWrap: 'wrap', rowGap: 14 }}>
             <Count label={en('logged_intake')} value={app.state.meals.length} />
-            <Count label="kg" value={app.state.weights.length} />
+            <Count label={t('unit_kg')} value={app.state.weights.length} />
             <Count label={en('sleep_title')} value={app.state.sleep.length} />
             <Count label={en('mem_fact')} value={app.state.memory.length} />
           </Row>

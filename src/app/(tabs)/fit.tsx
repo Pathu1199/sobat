@@ -56,7 +56,7 @@ export default function FitScreen() {
             {r.reasons.length > 0 ? (
               <Row style={{ flexWrap: 'wrap', gap: 6 }}>
                 {r.reasons.slice(0, 3).map((x) => (
-                  <Pill key={x} label={x.replace(/_/g, ' ')} />
+                  <Pill key={x} label={t(`reason_${x}`)} />
                 ))}
               </Row>
             ) : null}
@@ -115,7 +115,7 @@ export default function FitScreen() {
                     {en('rest')} {e.rest_seconds}s
                   </Micro>
                 </View>
-                <Pill label={e.category.replace('_', ' ')} />
+                <Pill label={t(`cat_${e.category}`)} />
                 <Ionicons name={open === e.id ? 'chevron-up' : 'chevron-down'} size={16} color={C.textFaint} />
               </Row>
             </Pressable>

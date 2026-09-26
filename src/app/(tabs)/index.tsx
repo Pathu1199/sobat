@@ -128,7 +128,7 @@ export default function TodayScreen() {
           <View style={{ flex: 1, gap: 14 }}>
             <MeterRow label={en('eaten')} alt={lang === 'en' ? undefined : t('eaten')} value={budget.consumed} total={budget.target} unit="kcal" color={C.accent} />
             <MeterRow
-              label="Protein"
+              label={en('protein')}
               alt={lang === 'en' ? undefined : t('protein')}
               value={budget.proteinConsumed}
               total={budget.proteinTarget}
@@ -136,7 +136,7 @@ export default function TodayScreen() {
               color={C.violet}
             />
             <MeterRow
-              label="Water"
+              label={en('water')}
               alt={lang === 'en' ? undefined : t('water')}
               value={waterToday}
               total={state.settings.waterGoalMl}
@@ -188,7 +188,7 @@ export default function TodayScreen() {
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: scoreColor(sleepLast.score), fontSize: F.h2, fontWeight: '500' }}>{sleepLast.score}</Text>
-                <Micro>Score</Micro>
+                <Micro>{t('score')}</Micro>
               </View>
               <Ionicons name="chevron-forward" size={17} color={C.textFaint} />
             </Row>
@@ -264,7 +264,7 @@ export default function TodayScreen() {
             <Metric label={t('avg_sleep')} value={week.avgSleepMinutes ? formatMinutes(week.avgSleepMinutes) : '--'} />
             {week.trend ? (
               <Metric
-                label="kg"
+                label={t('unit_kg')}
                 value={`${week.trend.current}`}
                 delta={week.trend.change7 !== null ? `${week.trend.change7 > 0 ? '+' : ''}${week.trend.change7}` : undefined}
                 deltaGood={week.trend.change7 !== null ? week.trend.change7 <= 0 : undefined}
@@ -281,7 +281,7 @@ export default function TodayScreen() {
         <SectionHeader title={t('patterns')} />
         <Card>
           {patterns.slice(0, 3).map((p) => (
-            <Small key={p.key}>{p.detail}</Small>
+            <Small key={p.key}>{fill(t(`pattern_${p.key}`), p.params)}</Small>
           ))}
         </Card>
       </View>
@@ -365,4 +365,8 @@ function Metric({ label, value, delta, deltaGood }: { label: string; value: stri
       </Row>
     </View>
   );
+}
+
+function fill(template: string, params: Record<string, string | number>): string {
+  return Object.entries(params).reduce((s, [k, v]) => s.replace(`{${k}}`, String(v)), template);
 }
