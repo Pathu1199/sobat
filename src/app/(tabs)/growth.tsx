@@ -2,15 +2,18 @@ import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { TopBarActions } from '../../components/TopBarActions';
 import { WeeklyReport } from '../../components/WeeklyReport';
-import { formatMinutes } from '../../core/date';
+import { formatDayLabel, formatMinutes } from '../../core/date';
 import { changePct, isImprovement, summarize, type Metric, type Period } from '../../core/growth';
+import { findPatterns, weeklyStats } from '../../core/insights';
 import { hourlyProfile, longestStretchMinutes, minutesOn } from '../../core/usage';
-import { makeT } from '../../i18n';
+import { fill, makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { BarChart, ConsistencyStrip, HourStrip, LineChart } from '../../ui/charts';
 import { Bar, Card, Divider, Micro, Row, SectionHeader, Segmented, Small } from '../../ui/components';
-import { C, F, S } from '../../ui/theme';
 import { Page } from '../../ui/TopBar';
+import { Cols } from '../../ui/tiles';
+import { C, F, S } from '../../ui/theme';
+import { useBreakpoint } from '../../ui/useBreakpoint';
 
 const METRIC_LABEL: Record<string, string> = {
   avg_kcal: 'avg_kcal_m',
@@ -32,6 +35,7 @@ export default function GrowthScreen() {
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const en = makeT('en');
+  const wide = useBreakpoint() === 'desktop';
   const [period, setPeriod] = useState<Period>('week');
 
   const summary = useMemo(
@@ -50,6 +54,26 @@ export default function GrowthScreen() {
     [period, app.today, app.state, app.targets.kcal],
   );
 
+  const week = useMemo(
+    () =>
+      weeklyStats({
+        today: app.today,
+        meals: app.state.meals,
+        water: app.state.water,
+        workouts: app.state.workouts,
+        sleep: app.state.sleep,
+        weights: app.state.weights,
+        kcalTarget: app.targets.kcal,
+        waterGoalMl: app.state.settings.waterGoalMl,
+      }),
+    [app.today, app.state.meals, app.state.water, app.state.workouts, app.state.sleep, app.state.weights, app.targets.kcal, app.state.settings.waterGoalMl],
+  );
+
+  const patterns = useMemo(
+    () => findPatterns({ meals: app.state.meals, sleep: app.state.sleep, moods: app.state.moods, workouts: app.state.workouts, kcalTarget: app.targets.kcal }),
+    [app.state.meals, app.state.sleep, app.state.moods, app.state.workouts, app.targets.kcal],
+  );
+
   const weightMetric = summary.metrics.find((m) => m.key === 'weight_change')!;
   const hasAnything = summary.metrics.some((m) => m.value !== 0);
   const screenToday = minutesOn(app.state.usage, app.today);
@@ -62,126 +86,215 @@ export default function GrowthScreen() {
   const totalToLose = Math.max(1, startWeight - app.state.profile.goalWeightKg);
   const progressed = Math.max(0, startWeight - app.state.profile.weightKg);
 
-  const key = (m: Metric) => t(METRIC_LABEL[m.key] ?? m.key);
+  const label = (m: Metric) => t(METRIC_LABEL[m.key] ?? m.key);
+  // Weekday letters for a week; day-of-month every fifth day for a month.
+  const barLabels = summary.kcalSeries.map((d, i) =>
+    summary.kcalSeries.length <= 7 ? WEEKDAY[(new Date(d.date + 'T12:00:00').getDay() + 6) % 7] : i % 5 === 0 ? d.date.slice(8) : '',
+  );
+  const dayLabel = (d: string) => formatDayLabel(d, lang);
+
+  const periodSwitch = (
+    <Segmented
+      value={period}
+      onChange={setPeriod}
+      options={[
+        { key: 'today', label: en('period_today') },
+        { key: 'week', label: en('period_week') },
+        { key: 'month', label: en('period_month') },
+      ]}
+    />
+  );
+
+  const headline = (
+    <Card>
+      <Row style={{ justifyContent: 'space-between' }}>
+        <Micro>{`${en('weight_change')} · ${en(`period_${period}`)}`}</Micro>
+        <Micro color={weightMetric.value <= 0 ? C.cyan : C.amber}>{weightMetric.value <= 0 ? en('on_track_short') : en('watch_short')}</Micro>
+      </Row>
+      <Row style={{ alignItems: 'flex-end', gap: 8 }}>
+        <Text style={{ color: C.text, fontSize: 42, fontWeight: '200', letterSpacing: -1.5 }}>
+          {weightMetric.value > 0 ? '+' : ''}
+          {weightMetric.value.toFixed(1)}
+        </Text>
+        <Text style={{ color: C.textDim, fontSize: F.h2, marginBottom: 8 }}>{t('unit_kg')}</Text>
+      </Row>
+      <View style={{ gap: 7 }}>
+        <Bar value={progressed} max={totalToLose} color={C.accent} height={5} />
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Micro>{`${app.state.profile.weightKg} ${t('unit_kg')} ${en('now')}`}</Micro>
+          <Micro>{`${toGoal} ${t('unit_kg')} ${en('to_goal')}`}</Micro>
+        </Row>
+      </View>
+    </Card>
+  );
+
+  const consistency = (
+    <View style={{ gap: 10 }}>
+      <SectionHeader title={`${en('consistency')} · ${en(`period_${period}`)}`} meta={`${summary.consistency.filter((c) => c.onTarget).length}/${summary.consistency.length}`} />
+      <Card>
+        <ConsistencyStrip data={summary.consistency} labels={period === 'week' ? WEEKDAY : undefined} />
+      </Card>
+    </View>
+  );
+
+  const tiles = (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+      {summary.metrics
+        .filter((m) => m.key !== 'weight_change')
+        .map((m) => (
+          <MetricTile key={m.key} metric={m} label={label(m)} lang={lang} wide={wide} />
+        ))}
+    </View>
+  );
+
+  const weightChart = (
+    <View style={{ gap: 10 }}>
+      <SectionHeader title={en('weight_trend')} meta={lang === 'en' ? undefined : t('weight_trend')} />
+      <Card>
+        {summary.weightSeries.length >= 2 ? (
+          <LineChart data={summary.weightSeries} goal={app.state.profile.goalWeightKg} format={(v) => `${v.toFixed(1)} ${t('unit_kg')}`} dateLabel={dayLabel} />
+        ) : (
+          <Small color={C.textGhost}>{t('log_more_days')}</Small>
+        )}
+      </Card>
+    </View>
+  );
+
+  const kcalChart = (
+    <View style={{ gap: 10 }}>
+      <SectionHeader title={en('calories_vs_target')} meta={`${app.targets.kcal} kcal`} />
+      <Card>
+        <BarChart data={summary.kcalSeries} target={app.targets.kcal} format={(v) => `${v} kcal`} labels={barLabels} />
+      </Card>
+    </View>
+  );
+
+  const sleepChart = (
+    <View style={{ gap: 10 }}>
+      <SectionHeader title={en('sleep_hours')} meta="7h 30m" />
+      <Card>
+        <BarChart data={summary.sleepSeries} target={450} color={C.violet} format={(v) => formatMinutes(v)} labels={barLabels} />
+      </Card>
+    </View>
+  );
+
+  const screenCard = (
+    <View style={{ gap: 10 }}>
+      <SectionHeader title={en('screen_time')} meta={formatMinutes(screenToday)} />
+      <Card>
+        <HourStrip hours={hourlyProfile(app.state.usage, app.today)} />
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Micro>00</Micro>
+          <Micro>12</Micro>
+          <Micro>23</Micro>
+        </Row>
+        <Divider />
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Micro>{en('longest_sitting')}</Micro>
+          <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
+        </Row>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Micro>{en('break_compliance')}</Micro>
+          <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
+            {breaksTaken}
+            <Text style={{ color: C.textFaint, fontWeight: '400' }}> / {breaksToday.length}</Text>
+          </Text>
+        </Row>
+      </Card>
+    </View>
+  );
+
+  const weekCard = (
+    <View style={{ gap: 10 }}>
+      <SectionHeader title={t('week_summary')} meta={`${week.loggedDays}/7`} />
+      <Card>
+        <Row style={{ flexWrap: 'wrap', rowGap: 18 }}>
+          <Stat label={t('avg_kcal')} value={String(week.avgKcal)} />
+          <Stat label={t('over_days')} value={String(week.overDays)} />
+          <Stat label={t('workout_days')} value={String(week.workoutDays)} />
+          <Stat label={t('avg_sleep')} value={week.avgSleepMinutes ? formatMinutes(week.avgSleepMinutes) : '--'} />
+          {week.trend ? (
+            <Stat
+              label={t('unit_kg')}
+              value={`${week.trend.current}`}
+              delta={week.trend.change7 !== null ? `${week.trend.change7 > 0 ? '+' : ''}${week.trend.change7}` : undefined}
+              deltaGood={week.trend.change7 !== null ? week.trend.change7 <= 0 : undefined}
+            />
+          ) : null}
+        </Row>
+      </Card>
+    </View>
+  );
+
+  const patternsCard = (
+    <View style={{ gap: 10 }}>
+      <SectionHeader title={t('patterns')} />
+      <Card>
+        {patterns.length === 0 ? (
+          <Small color={C.textGhost}>{t('no_patterns')}</Small>
+        ) : (
+          patterns.slice(0, 4).map((p) => <Small key={p.key}>{fill(t(`pattern_${p.key}`), p.params)}</Small>)
+        )}
+      </Card>
+    </View>
+  );
+
+  const empty = !hasAnything ? (
+    <Card>
+      <Small>{t('log_more_days')}</Small>
+    </Card>
+  ) : null;
+
+  if (wide) {
+    return (
+      <Page title={en('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />} wide>
+        <View style={{ maxWidth: 420 }}>{periodSwitch}</View>
+        {empty}
+        <Cols weights={[1.2, 1]}>
+          {headline}
+          {consistency}
+        </Cols>
+        {tiles}
+        <Cols weights={[1, 1]}>
+          {weightChart}
+          {kcalChart}
+        </Cols>
+        <Cols weights={[1, 1]}>
+          {sleepChart}
+          {screenCard}
+        </Cols>
+        <Cols weights={[1, 1]}>
+          {weekCard}
+          {patternsCard}
+        </Cols>
+        {period !== 'today' ? <WeeklyReport summary={summary} /> : null}
+      </Page>
+    );
+  }
 
   return (
     <Page title={en('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />}>
-      <Segmented
-        value={period}
-        onChange={setPeriod}
-        options={[
-          { key: 'today', label: en('period_today') },
-          { key: 'week', label: en('period_week') },
-          { key: 'month', label: en('period_month') },
-        ]}
-      />
-
-      <Card>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Micro>{`${en('weight_change')} · ${en(`period_${period}`)}`}</Micro>
-          <Micro color={weightMetric.value <= 0 ? C.cyan : C.amber}>{weightMetric.value <= 0 ? en('on_track_short') : en('watch_short')}</Micro>
-        </Row>
-        <Row style={{ alignItems: 'flex-end', gap: 8 }}>
-          <Text style={{ color: C.text, fontSize: 42, fontWeight: '200', letterSpacing: -1.5 }}>
-            {weightMetric.value > 0 ? '+' : ''}
-            {weightMetric.value.toFixed(1)}
-          </Text>
-          <Text style={{ color: C.textDim, fontSize: F.h2, marginBottom: 8 }}>kg</Text>
-        </Row>
-
-        <View style={{ gap: 7 }}>
-          <Bar value={progressed} max={totalToLose} color={C.accent} height={5} />
-          <Row style={{ justifyContent: 'space-between' }}>
-            <Micro>{`${app.state.profile.weightKg} kg ${en('now')}`}</Micro>
-            <Micro>{`${toGoal} kg ${en('to_goal')}`}</Micro>
-          </Row>
-        </View>
-      </Card>
-
-      {!hasAnything ? (
-        <Card>
-          <Small>{t('log_more_days')}</Small>
-        </Card>
-      ) : null}
-
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-        {summary.metrics
-          .filter((m) => m.key !== 'weight_change')
-          .map((m) => (
-            <MetricTile key={m.key} metric={m} label={key(m)} lang={lang} />
-          ))}
-      </View>
-
-      <View style={{ gap: 10 }}>
-        <SectionHeader
-          title={`${en('consistency')} · ${en(`period_${period}`)}`}
-          meta={`${summary.consistency.filter((c) => c.onTarget).length}/${summary.consistency.length}`}
-        />
-        <Card>
-          <ConsistencyStrip data={summary.consistency} labels={period === 'week' ? WEEKDAY : undefined} />
-        </Card>
-      </View>
-
+      {periodSwitch}
+      {headline}
+      {empty}
+      {tiles}
+      {consistency}
       {period !== 'today' ? <WeeklyReport summary={summary} /> : null}
-
-      <View style={{ gap: 10 }}>
-        <SectionHeader title={en('weight_trend')} meta={lang === 'en' ? undefined : t('weight_trend')} />
-        <Card>
-          {summary.weightSeries.length >= 2 ? (
-            <LineChart data={summary.weightSeries} goal={app.state.profile.goalWeightKg} format={(v) => `${v.toFixed(1)} kg`} />
-          ) : (
-            <Small color={C.textGhost}>{t('log_more_days')}</Small>
-          )}
-        </Card>
-      </View>
-
-      <View style={{ gap: 10 }}>
-        <SectionHeader title={en('calories_vs_target')} meta={`${app.targets.kcal} kcal`} />
-        <Card>
-          <BarChart data={summary.kcalSeries} target={app.targets.kcal} format={(v) => `${v} kcal`} />
-        </Card>
-      </View>
-
-      <View style={{ gap: 10 }}>
-        <SectionHeader title={en('sleep_hours')} meta="7h 30m" />
-        <Card>
-          <BarChart data={summary.sleepSeries} target={450} color={C.violet} format={(v) => formatMinutes(v)} />
-        </Card>
-      </View>
-
-      <View style={{ gap: 10 }}>
-        <SectionHeader title={en('screen_time')} meta={formatMinutes(screenToday)} />
-        <Card>
-          <HourStrip hours={hourlyProfile(app.state.usage, app.today)} />
-          <Row style={{ justifyContent: 'space-between' }}>
-            <Micro>00</Micro>
-            <Micro>12</Micro>
-            <Micro>23</Micro>
-          </Row>
-          <Divider />
-          <Row style={{ justifyContent: 'space-between' }}>
-            <Micro>{en('longest_sitting')}</Micro>
-            <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
-          </Row>
-          <Row style={{ justifyContent: 'space-between' }}>
-            <Micro>{en('break_compliance')}</Micro>
-            <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
-              {breaksTaken}
-              <Text style={{ color: C.textFaint, fontWeight: '400' }}> / {breaksToday.length}</Text>
-            </Text>
-          </Row>
-        </Card>
-      </View>
+      {weightChart}
+      {kcalChart}
+      {sleepChart}
+      {screenCard}
+      {weekCard}
+      {patternsCard}
     </Page>
   );
 }
 
-function MetricTile({ metric, label, lang }: { metric: Metric; label: string; lang: any }) {
+function MetricTile({ metric, label, lang, wide }: { metric: Metric; label: string; lang: 'en' | 'mr' | 'hi'; wide: boolean }) {
   const t = makeT(lang);
   const isTime = metric.unit === 'min' && metric.value >= 60;
   const value = isTime ? formatMinutes(metric.value) : metric.decimals ? metric.value.toFixed(metric.decimals) : String(metric.value);
   const unit = isTime ? '' : metric.unit;
-
   const pct = changePct(metric);
   const good = isImprovement(metric);
   const deltaColor = good === null ? C.textGhost : good ? C.cyan : C.amber;
@@ -190,7 +303,7 @@ function MetricTile({ metric, label, lang }: { metric: Metric; label: string; la
     <View
       style={{
         flexGrow: 1,
-        flexBasis: '46%',
+        flexBasis: wide ? '18%' : '46%',
         backgroundColor: C.card,
         borderWidth: S.hairline,
         borderColor: C.border,
@@ -203,20 +316,21 @@ function MetricTile({ metric, label, lang }: { metric: Metric; label: string; la
         <Text style={{ color: C.text, fontSize: 24, fontWeight: '300', letterSpacing: -0.5 }}>{value}</Text>
         {unit ? <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{unit}</Text> : null}
       </Row>
-      <View
-        style={{
-          alignSelf: 'flex-start',
-          backgroundColor: C.cardAlt,
-          borderRadius: 999,
-          paddingHorizontal: 8,
-          paddingVertical: 3,
-          borderWidth: S.hairline,
-          borderColor: C.border,
-        }}>
-        <Text style={{ color: deltaColor, fontSize: F.micro, fontWeight: '500' }}>
-          {pct === null ? t('vs_previous') : `${pct > 0 ? '+' : ''}${pct}% ${t('vs_previous')}`}
-        </Text>
+      <View style={{ alignSelf: 'flex-start', backgroundColor: C.cardAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, borderWidth: S.hairline, borderColor: C.border }}>
+        <Text style={{ color: deltaColor, fontSize: F.micro, fontWeight: '500' }}>{pct === null ? t('vs_previous') : `${pct > 0 ? '+' : ''}${pct}% ${t('vs_previous')}`}</Text>
       </View>
+    </View>
+  );
+}
+
+function Stat({ label, value, delta, deltaGood }: { label: string; value: string; delta?: string; deltaGood?: boolean }) {
+  return (
+    <View style={{ minWidth: 76, flexGrow: 1, gap: 5 }}>
+      <Micro>{label}</Micro>
+      <Row style={{ gap: 6, alignItems: 'baseline' }}>
+        <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>{value}</Text>
+        {delta ? <Text style={{ color: deltaGood ? C.cyan : C.amber, fontSize: F.tiny }}>{delta}</Text> : null}
+      </Row>
     </View>
   );
 }

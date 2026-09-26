@@ -10,12 +10,14 @@ export function LineChart({
   color = C.accent,
   goal,
   format = (v: number) => String(v),
+  dateLabel,
 }: {
   data: { date: string; value: number }[];
   height?: number;
   color?: string;
   goal?: number;
   format?: (v: number) => string;
+  dateLabel?: (date: string) => string;
 }) {
   const [width, setWidth] = React.useState(300);
   const points = data.filter((d) => d.value > 0);
@@ -49,8 +51,14 @@ export function LineChart({
         ))}
       </Svg>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-        <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{format(points[0].value)}</Text>
-        <Text style={{ color: C.text, fontSize: F.tiny }}>{format(points[points.length - 1].value)}</Text>
+        <Text style={{ color: C.textFaint, fontSize: F.tiny }}>
+          {dateLabel ? `${dateLabel(points[0].date)} · ` : ''}
+          {format(points[0].value)}
+        </Text>
+        <Text style={{ color: C.text, fontSize: F.tiny }}>
+          {dateLabel ? `${dateLabel(points[points.length - 1].date)} · ` : ''}
+          {format(points[points.length - 1].value)}
+        </Text>
       </View>
     </View>
   );
@@ -64,6 +72,7 @@ export function BarChart({
   color = C.accent,
   overColor = C.cyan,
   format = (v: number) => String(v),
+  labels,
 }: {
   data: { date: string; value: number }[];
   height?: number;
@@ -71,6 +80,7 @@ export function BarChart({
   color?: string;
   overColor?: string;
   format?: (v: number) => string;
+  labels?: string[];
 }) {
   const [width, setWidth] = React.useState(300);
   if (data.length === 0) return <ChartEmpty height={height} />;
@@ -108,6 +118,15 @@ export function BarChart({
           );
         })}
       </Svg>
+      {labels && labels.length === data.length ? (
+        <View style={{ flexDirection: 'row', paddingHorizontal: pad, marginTop: 4 }}>
+          {labels.map((l, i) => (
+            <Text key={data[i].date} style={[MICRO, { color: C.textGhost, flex: 1, textAlign: 'center', fontSize: 9 }]} numberOfLines={1}>
+              {l}
+            </Text>
+          ))}
+        </View>
+      ) : null}
       {target !== undefined ? (
         <Text style={{ color: C.textFaint, fontSize: F.tiny, marginTop: 4 }}>{format(target)}</Text>
       ) : null}

@@ -776,3 +776,8 @@ export function makeT(lang: Lang) {
 }
 
 export const LANG_NAMES: Record<Lang, string> = { en: 'English', mr: 'मराठी', hi: 'हिंदी' };
+
+/** Replaces {name} placeholders. Used for every sentence that carries a number. */
+export function fill(template: string, params: Record<string, string | number>): string {
+  return Object.entries(params).reduce((s, [k, v]) => s.split(`{${k}}`).join(String(v)), template);
+}
