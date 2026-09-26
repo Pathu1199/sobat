@@ -146,3 +146,29 @@ export function dailyTipPrompt(lang: Lang, focus: string[]): string {
     .filter(Boolean)
     .join('\n');
 }
+
+
+export function dayReviewPrompt(lang: Lang, lines: string[]): string {
+  return [
+    "Write this person's day back to them in at most five short lines.",
+    '',
+    'What happened today:',
+    ...lines.map((l) => `- ${l}`),
+    '',
+    'Rules: warm and plain, like a friend recapping. Name one thing that went well and at most',
+    'one thing to watch. No score, no lecture, no bullet list, no repeating every number back.',
+    'End with one sentence about tomorrow.',
+  ].join('\n');
+}
+
+export function weeklyReportPrompt(lang: Lang, lines: string[]): string {
+  return [
+    "Write a short weekly review of this person's health data.",
+    '',
+    'The week in numbers:',
+    ...lines.map((l) => `- ${l}`),
+    '',
+    'Rules: about 120 words. Say what actually changed and what it means, not what the numbers are.',
+    'Name one win and one thing to adjust next week. Be specific and kind. No medical claims.',
+  ].join('\n');
+}

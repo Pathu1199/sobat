@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { buildSession, phaseForWeek, readiness, shouldEasePlan, weeksSince } from '../../core/fitness';
@@ -9,6 +10,7 @@ import { C, F, readinessColor } from '../../ui/theme';
 
 export default function FitScreen() {
   const app = useApp();
+  const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const [open, setOpen] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export default function FitScreen() {
           </Small>
         ) : (
           <Row style={{ gap: 8 }}>
-            <Btn label={t('start_session')} onPress={() => complete('done')} style={{ flex: 1 }} />
+            <Btn label={t('start_session')} onPress={() => router.push('/session')} style={{ flex: 1 }} />
             <Btn label={t('skip_session')} tone="ghost" onPress={() => complete('skipped')} style={{ flex: 1 }} />
           </Row>
         )}

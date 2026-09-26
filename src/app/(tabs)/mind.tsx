@@ -180,16 +180,35 @@ function Grounding({ lang }: { lang: any }) {
 }
 
 function Gratitude({ lang }: { lang: any }) {
+  const app = useApp();
   const t = makeT(lang);
   const [lines, setLines] = useState(['', '', '']);
   const [saved, setSaved] = useState(false);
+
+  function save() {
+    const written = lines.map((l) => l.trim()).filter(Boolean);
+    if (written.length === 0) return;
+    // Stored as a day note, so it is still there tomorrow.
+    app.rememberText(`grateful for: ${written.join('; ')}`, 'episode', 'user');
+    setSaved(true);
+  }
+
   return (
     <Card>
       <H3>{t('gratitude')}</H3>
       {lines.map((l, i) => (
-        <Field key={i} value={l} onChangeText={(v) => setLines((x) => x.map((y, j) => (j === i ? v : y)))} placeholder={`${i + 1}`} />
+        <Field
+          key={i}
+          value={l}
+          onChangeText={(v) => {
+            setSaved(false);
+            setLines((x) => x.map((y, j) => (j === i ? v : y)));
+          }}
+          placeholder={`${i + 1}`}
+        />
       ))}
-      <Btn small label={saved ? t('done') : t('save')} onPress={() => setSaved(true)} />
+      <Btn small label={t('save')} onPress={save} disabled={lines.every((l) => !l.trim())} />
+      {saved ? <Small color={C.teal}>{t('gratitude_saved')}</Small> : null}
     </Card>
   );
 }

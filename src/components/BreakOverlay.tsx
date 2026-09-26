@@ -47,7 +47,7 @@ export function BreakOverlay() {
 
   if (!showing) return active ? <BreakWarning monitor={monitor} lang={lang} /> : null;
 
-  const size = Math.min(260, Math.min(width, height) * 0.55);
+  const size = Math.max(160, Math.min(260, Math.min(width, height) * 0.55));
   const stroke = 3;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;

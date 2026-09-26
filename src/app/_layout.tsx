@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
+import { useScheduledReminders } from '../services/useScheduledReminders';
 import { useUsageTracker } from '../services/useUsageTracker';
 import { AppProvider } from '../store/AppProvider';
 import { C } from '../ui/theme';
@@ -18,6 +19,7 @@ export default function RootLayout() {
 /** Inside the provider, so the trackers can reach the store. */
 function AppShell() {
   useUsageTracker();
+  useScheduledReminders();
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <StatusBar style="light" />
@@ -35,6 +37,8 @@ function AppShell() {
         <Stack.Screen name="photo" options={{ title: 'Photo' }} />
         <Stack.Screen name="sleep" options={{ title: 'Sleep' }} />
         <Stack.Screen name="memory" options={{ title: 'Memory' }} />
+        <Stack.Screen name="session" options={{ title: 'Session' }} />
+        <Stack.Screen name="permissions" options={{ headerShown: false }} />
       </Stack>
       <BreakOverlay />
     </View>

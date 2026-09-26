@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { formatMinutes } from '../../core/date';
 import { changePct, isImprovement, summarize, type Metric, type Period } from '../../core/growth';
 import { hourlyProfile, longestStretchMinutes, minutesOn } from '../../core/usage';
+import { WeeklyReport } from '../../components/WeeklyReport';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { BarChart, ConsistencyStrip, HourStrip, LineChart } from '../../ui/charts';
@@ -105,6 +106,8 @@ export default function GrowthScreen() {
             <MetricTile key={m.key} metric={m} label={t(METRIC_LABEL[m.key] ?? m.key)} lang={lang} />
           ))}
       </View>
+
+      {period !== 'today' ? <WeeklyReport summary={summary} /> : null}
 
       <Card>
         <H3>{t('calories_vs_target')}</H3>

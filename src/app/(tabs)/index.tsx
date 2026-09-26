@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { AIBadge } from '../../components/AIBadge';
 import { BreakCard } from '../../components/BreakCard';
+import { DayReview } from '../../components/DayReview';
 import { DecisionCard } from '../../components/DecisionCard';
 import { TipCard } from '../../components/TipCard';
 import { toISODate } from '../../core/date';
@@ -126,6 +127,8 @@ export default function TodayScreen() {
         <DecisionCard decision={decision} lang={lang} />
 
         <TipCard />
+
+        <DayReview />
 
         <BreakCard />
 
