@@ -237,9 +237,11 @@ export function MeterRow({
 }) {
   return (
     <View style={{ gap: 7 }}>
-      <View style={[st.row, { justifyContent: 'space-between' }]}>
-        <BiText en={label} alt={alt} size={F.small} color={C.textDim} weight="400" />
-        <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
+      <View style={[st.row, { justifyContent: 'space-between', gap: 10 }]}>
+        <View style={{ flexShrink: 1, minWidth: 0 }}>
+          <BiText en={label} alt={alt} size={F.small} color={C.textDim} weight="400" />
+        </View>
+        <Text numberOfLines={1} style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
           {value.toLocaleString()}
           <Text style={{ color: C.textFaint, fontWeight: '400' }}>
             {' / '}

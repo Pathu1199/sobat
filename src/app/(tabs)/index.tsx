@@ -112,7 +112,7 @@ export default function TodayScreen() {
         <HeroRing
           value={dayBudget.consumed}
           max={dayBudget.target}
-          size={wide ? 176 : 148}
+          size={wide ? 176 : 128}
           color={over ? C.red : C.accent}
           big={String(Math.abs(dayBudget.remaining))}
           caption={over ? t('kcal_over') : t('kcal_left')}
@@ -189,7 +189,7 @@ export default function TodayScreen() {
   }
 
   return (
-    <Page title={titleName} alt={greetingAlt} subtitle={subtitle} right={<TopBarActions streak={streakDays} />}>
+    <Page title={titleName} alt={undefined} subtitle={subtitle} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
       {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
