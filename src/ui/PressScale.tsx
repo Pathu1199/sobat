@@ -27,8 +27,8 @@ export function PressScale({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       disabled={disabled}
-      style={{ opacity: disabled ? 0.4 : 1 }}>
-      <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
+      style={[style, { opacity: disabled ? 0.4 : 1 }]}>
+      <Animated.View style={{ transform: [{ scale }] }}>{children}</Animated.View>
     </Pressable>
   );
 }
