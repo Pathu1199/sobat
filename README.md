@@ -164,13 +164,11 @@ It has to be built on the PC: see [desktop/README.md](desktop/README.md).
 
 ## Status
 
-v0.3. Working: landing page, onboarding and permissions, calorie logging with
-custom foods and barcode scanning, photo recognition with an offline queue,
-decision cards, sleep check-in, readiness-based fitness plan with a guided
-session runner, mind tools including craving SOS and thought reframing, coach
-chat with persistent memory, break monitor, screen-time and step tracking,
-growth section with a weekly report, daily tips, data export and import, three
-languages, desktop and mobile layouts.
+v0.4 part 1. Working: everything in v0.3, plus one compact top bar per tab, a
+five-slot phone tab bar with a centre "+", a Today screen with a hero ring,
+decision checklist, Now strip and day score, tappable and editable meals with
+a yesterday view, desktop layouts for every tab, local-time clocks, and toasts
+on every save.
 
 Not built yet: phone-to-PC sync, Health Connect, and the Windows installer
 itself, which has to be produced on the PC.
