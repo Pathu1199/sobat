@@ -108,22 +108,22 @@ export default function TodayScreen() {
 
   const heroCard = (
     <Card>
-      <Row style={{ gap: 18, alignItems: 'center' }}>
+      <View style={wide ? { flexDirection: 'row', gap: 18, alignItems: 'center' } : { alignItems: 'center', gap: 16 }}>
         <HeroRing
           value={dayBudget.consumed}
           max={dayBudget.target}
-          size={wide ? 176 : 128}
+          size={wide ? 176 : 150}
           color={over ? C.red : C.accent}
           big={String(Math.abs(dayBudget.remaining))}
           caption={over ? t('kcal_over') : t('kcal_left')}
         />
-        <View style={{ flex: 1, gap: 13 }}>
+        <View style={{ flex: wide ? 1 : undefined, alignSelf: 'stretch', gap: 13 }}>
           <MeterRow label={en('eaten')} alt={lang === 'en' ? undefined : t('eaten')} value={dayBudget.consumed} total={dayBudget.target} unit="kcal" color={C.accent} />
           <MeterRow label={en('protein')} alt={lang === 'en' ? undefined : t('protein')} value={dayBudget.proteinConsumed} total={dayBudget.proteinTarget} unit="g" color={C.violet} />
           <MeterRow label={en('water')} alt={lang === 'en' ? undefined : t('water')} value={dayWater} total={state.settings.waterGoalMl} unit="ml" color={C.cyan} marker={waterMarker} />
           {daySteps > 0 ? <MeterRow label={en('steps_today')} alt={lang === 'en' ? undefined : t('steps_today')} value={daySteps} total={8000} color={C.green} /> : null}
         </View>
-      </Row>
+      </View>
       {isToday ? (
         <>
           <Divider />
