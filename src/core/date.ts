@@ -37,3 +37,30 @@ export function formatMinutes(mins: number): string {
   const m = Math.round(mins % 60);
   return `${h}h ${String(m).padStart(2, '0')}m`;
 }
+
+/** Clock time of an ISO timestamp in the device's own zone. Never slice the string. */
+export function localHHMM(iso: string): string {
+  return hhmm(new Date(iso));
+}
+
+export function localHour(iso: string): number {
+  return new Date(iso).getHours();
+}
+
+/** Calendar date of an ISO timestamp in the device's own zone. */
+export function localDate(iso: string): ISODate {
+  return toISODate(new Date(iso));
+}
+
+const LOCALE: Record<string, string> = { en: 'en-IN', mr: 'mr-IN', hi: 'hi-IN' };
+
+/** "Sat 26 Sep" in the chosen language. Falls back to the ISO date if Intl is missing. */
+export function formatDayLabel(date: ISODate, lang: string): string {
+  try {
+    const d = new Date(date + 'T12:00:00');
+    const s = d.toLocaleDateString(LOCALE[lang] ?? 'en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+    return s && s !== 'Invalid Date' ? s : date;
+  } catch {
+    return date;
+  }
+}

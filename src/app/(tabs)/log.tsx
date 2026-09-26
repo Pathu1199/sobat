@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { CustomFoodForm } from '../../components/CustomFoodForm';
-import { toISODate } from '../../core/date';
+import { localHHMM, toISODate } from '../../core/date';
 import { defaultPortion, foodName, portionLabel, searchFoods, toMealItem } from '../../core/foods';
 import { mealTypeForHour } from '../../core/nutrition';
 import type { FoodItem, MealItem, MealType } from '../../core/types';
@@ -226,7 +226,7 @@ export default function LogScreen() {
                   icon={<Ionicons name="restaurant-outline" size={15} color={C.textDim} />}
                   title={t(m.type)}
                   alt={m.items[0]?.name_en ? `· ${m.items.map((x) => x.name_en).slice(0, 2).join(', ')}` : undefined}
-                  sub={m.at.slice(11, 16)}
+                  sub={localHHMM(m.at)}
                   value={String(m.kcal)}
                   valueUnit="kcal"
                   trailing={

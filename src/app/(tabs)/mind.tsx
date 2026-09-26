@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
-import { toISODate } from '../../core/date';
+import { localHHMM, toISODate } from '../../core/date';
 import { HELPLINES, isCrisisText } from '../../core/guardrails';
 import { CravingSOS } from '../../components/CravingSOS';
 import { Reframe } from '../../components/Reframe';
@@ -104,7 +104,7 @@ export default function MindScreen() {
                 <ListRow
                   icon={<Text style={{ fontSize: 17 }}>{MOODS[m.score - 1]}</Text>}
                   title={m.note || `${m.score} / 5`}
-                  sub={m.at.slice(11, 16)}
+                  sub={localHHMM(m.at)}
                 />
               </View>
             ))}

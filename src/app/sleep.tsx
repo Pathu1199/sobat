@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
-import { formatMinutes, minutesBetween } from '../core/date';
+import { formatMinutes, localDate, localHHMM, minutesBetween } from '../core/date';
 import { buildSleepLog, prefillAnswers, sleepDebt, sleepFlags, sleepScore } from '../core/sleep';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -17,9 +17,9 @@ export default function SleepScreen() {
   // Guess from the last thing logged yesterday and the first thing today.
   const guess = useMemo(() => {
     const all = [...app.state.meals.map((m) => m.at), ...app.state.water.map((w) => w.at), ...app.state.moods.map((m) => m.at)].sort();
-    const yesterdayLast = all.filter((a) => a.slice(0, 10) < app.today).slice(-1)[0];
-    const todayFirst = all.filter((a) => a.slice(0, 10) === app.today)[0];
-    return prefillAnswers(yesterdayLast ? yesterdayLast.slice(11, 16) : null, todayFirst ? todayFirst.slice(11, 16) : null);
+    const yesterdayLast = all.filter((a) => localDate(a) < app.today).slice(-1)[0];
+    const todayFirst = all.filter((a) => localDate(a) === app.today)[0];
+    return prefillAnswers(yesterdayLast ? localHHMM(yesterdayLast) : null, todayFirst ? localHHMM(todayFirst) : null);
   }, [app.state.meals, app.state.water, app.state.moods, app.today]);
 
   const [bed, setBed] = useState(guess.bed);

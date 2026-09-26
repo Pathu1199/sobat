@@ -1,4 +1,4 @@
-import { lastNDates } from './date';
+import { addDays, lastNDates, localHour } from './date';
 import { expectedKcalByHour } from './nutrition';
 import type { ISODate, Meal, MoodLog, SleepLog, WaterLog, WeightLog, WorkoutLog } from './types';
 
@@ -101,9 +101,7 @@ export function findPatterns(input: {
   // Short sleep, then more calories the next day.
   const pairs: { short: boolean; kcal: number }[] = [];
   for (const s of input.sleep) {
-    const next = new Date(s.date + 'T12:00:00');
-    next.setDate(next.getDate() + 1);
-    const key = next.toISOString().slice(0, 10);
+    const key = addDays(s.date, 1);
     const kcal = byDate.get(key);
     if (kcal !== undefined) pairs.push({ short: s.minutes < 360, kcal });
   }
@@ -117,13 +115,13 @@ export function findPatterns(input: {
   }
 
   // Late-night eating.
-  const lateCount = input.meals.filter((m) => Number(m.at.slice(11, 13)) >= 22).length;
+  const lateCount = input.meals.filter((m) => localHour(m.at) >= 22).length;
   if (lateCount >= 3) out.push({ key: 'late_eating', strength: Math.min(1, lateCount / 10), detail: `${lateCount} meals after 10pm` });
 
   // A repeated snack hour.
   const hourCounts = new Map<number, number>();
   for (const m of input.meals.filter((x) => x.type === 'snack')) {
-    const h = Number(m.at.slice(11, 13));
+    const h = localHour(m.at);
     hourCounts.set(h, (hourCounts.get(h) ?? 0) + 1);
   }
   let topHour = -1;

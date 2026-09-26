@@ -6,7 +6,7 @@ import { BreakCard } from '../../components/BreakCard';
 import { DayReview } from '../../components/DayReview';
 import { DecisionCard } from '../../components/DecisionCard';
 import { TipCard } from '../../components/TipCard';
-import { formatMinutes } from '../../core/date';
+import { formatMinutes, localHHMM, localHour } from '../../core/date';
 import { decide } from '../../core/decide';
 import { findPatterns, scoreDay, weeklyStats } from '../../core/insights';
 import { pendingCount } from '../../core/queue';
@@ -42,7 +42,7 @@ export default function TodayScreen() {
   const sleepLast = sleepAll[sleepAll.length - 1];
 
   const lateMealDays = useMemo(
-    () => new Set(state.meals.filter((m) => Number(m.at.slice(11, 13)) >= 22).map((m) => m.date)).size,
+    () => new Set(state.meals.filter((m) => localHour(m.at) >= 22).map((m) => m.date)).size,
     [state.meals],
   );
 
@@ -238,7 +238,7 @@ export default function TodayScreen() {
                     sub={
                       m.note === 'needs_review'
                         ? t('needs_review')
-                        : `${m.at.slice(11, 16)} · ${m.items.some((x) => x.estimated) ? t('estimated') : t('verified_record')}`
+                        : `${localHHMM(m.at)} · ${m.items.some((x) => x.estimated) ? t('estimated') : t('verified_record')}`
                     }
                     value={String(m.kcal)}
                     valueUnit="kcal"
