@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { localHHMM, toISODate } from '../../core/date';
 import { HELPLINES, isCrisisText } from '../../core/guardrails';
 import { CravingSOS } from '../../components/CravingSOS';
@@ -7,11 +8,13 @@ import { Reframe } from '../../components/Reframe';
 import { TopBarActions } from '../../components/TopBarActions';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
+import { Face } from '../../ui/Face';
 import { Btn, Card, Divider, Field, ListRow, Micro, P, Pill, Row, SectionHeader, Small } from '../../ui/components';
+import { PressScale } from '../../ui/PressScale';
 import { C, F, S } from '../../ui/theme';
+import { Cols } from '../../ui/tiles';
 import { Page } from '../../ui/TopBar';
-
-const MOODS = ['😞', '🙁', '😐', '🙂', '😄'];
+import { useBreakpoint } from '../../ui/useBreakpoint';
 
 export default function MindScreen() {
   const app = useApp();
@@ -22,6 +25,7 @@ export default function MindScreen() {
   const [note, setNote] = useState('');
   const [crisis, setCrisis] = useState(false);
   const [tool, setTool] = useState<'breathe' | 'grounding' | 'gratitude' | null>(null);
+  const wide = useBreakpoint() === 'desktop';
 
   const todayMoods = app.state.moods.filter((m) => m.date === app.today);
 
@@ -36,83 +40,132 @@ export default function MindScreen() {
     setScore(null);
   }
 
-  return (
-    <Page title={en('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />}>
-      {crisis ? (
-        <Card tone={C.red}>
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('helpline_title')}</Text>
-          <P>{t('helpline_body')}</P>
-          {HELPLINES.map((h) => (
-            <Pressable key={h.number} onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}>
-              <Row style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{h.name}</Text>
-                  <Small>{h.note}</Small>
-                </View>
-                <Text style={{ color: C.cyan, fontWeight: '600' }}>{h.number}</Text>
-              </Row>
-            </Pressable>
-          ))}
-          <Btn small tone="ghost" label={t('done')} onPress={() => setCrisis(false)} />
-        </Card>
-      ) : null}
+  const crisisCard = crisis ? (
+    <Card tone={C.red}>
+      <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('helpline_title')}</Text>
+      <P>{t('helpline_body')}</P>
+      {HELPLINES.map((h) => (
+        <Pressable key={h.number} onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}>
+          <Row style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{h.name}</Text>
+              <Small>{h.note}</Small>
+            </View>
+            <Text style={{ color: C.cyan, fontWeight: '600' }}>{h.number}</Text>
+          </Row>
+        </Pressable>
+      ))}
+      <Btn small tone="ghost" label={t('done')} onPress={() => setCrisis(false)} />
+    </Card>
+  ) : null;
 
-      <Card>
-        <Micro>{en('mood_q')}</Micro>
-        <Row style={{ justifyContent: 'space-between' }}>
-          {MOODS.map((m, i) => (
-            <Pressable key={m} onPress={() => setScore(i + 1)} accessibilityLabel={`mood ${i + 1}`}>
-              <View
-                style={{
-                  width: 50,
-                  height: 50,
-                  borderRadius: 25,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: score === i + 1 ? C.accentDim : C.cardAlt,
-                  borderWidth: S.hairline,
-                  borderColor: score === i + 1 ? C.accent : C.border,
-                }}>
-                <Text style={{ fontSize: 22 }}>{m}</Text>
-              </View>
-            </Pressable>
-          ))}
-        </Row>
-        <Field value={note} onChangeText={setNote} placeholder={t('mood_note')} multiline />
-        <Btn label={t('save')} onPress={save} disabled={score === null} />
-      </Card>
-
-      <Row style={{ gap: 8, flexWrap: 'wrap' }}>
-        <Btn small tone="soft" label={t('breathe')} onPress={() => setTool(tool === 'breathe' ? null : 'breathe')} style={{ flex: 1 }} />
-        <Btn small tone="soft" label={t('grounding')} onPress={() => setTool(tool === 'grounding' ? null : 'grounding')} style={{ flex: 1 }} />
-        <Btn small tone="soft" label={t('gratitude')} onPress={() => setTool(tool === 'gratitude' ? null : 'gratitude')} style={{ flex: 1 }} />
+  const checkIn = (
+    <Card>
+      <Micro>{en('mood_q')}</Micro>
+      <Row style={{ justifyContent: 'space-between' }}>
+        {[1, 2, 3, 4, 5].map((n, i) => (
+          <Pressable key={n} onPress={() => setScore(i + 1)} accessibilityLabel={`mood ${i + 1}`}>
+            <View
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: score === i + 1 ? C.accentDim : C.cardAlt,
+                borderWidth: S.hairline,
+                borderColor: score === i + 1 ? C.accent : C.border,
+              }}>
+              <Face score={i + 1} size={26} color={score === i + 1 ? C.accent : C.textDim} />
+            </View>
+          </Pressable>
+        ))}
       </Row>
+      <Field value={note} onChangeText={setNote} placeholder={t('mood_note')} multiline />
+      <Btn label={t('save')} onPress={save} disabled={score === null} />
+    </Card>
+  );
 
-      <CravingSOS />
+  const toolTiles = (
+    <Row style={{ gap: 8 }}>
+      {(
+        [
+          { key: 'breathe', icon: 'cloud-outline', label: t('breathe') },
+          { key: 'grounding', icon: 'hand-left-outline', label: t('grounding') },
+          { key: 'gratitude', icon: 'sparkles-outline', label: t('gratitude') },
+        ] as const
+      ).map((x) => (
+        <PressScale key={x.key} onPress={() => setTool(tool === x.key ? null : x.key)} style={{ flex: 1 }}>
+          <View
+            style={{
+              backgroundColor: tool === x.key ? C.accentDim : C.card,
+              borderWidth: S.hairline,
+              borderColor: tool === x.key ? C.accent : C.border,
+              borderRadius: S.radius,
+              paddingVertical: 16,
+              alignItems: 'center',
+              gap: 8,
+            }}>
+            <Ionicons name={x.icon} size={20} color={tool === x.key ? C.accent : C.textDim} />
+            <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{x.label}</Text>
+          </View>
+        </PressScale>
+      ))}
+    </Row>
+  );
 
-      <Reframe onCrisis={() => setCrisis(true)} />
-
+  const toolPanel = (
+    <>
       {tool === 'breathe' ? <BreatheBox lang={lang} /> : null}
       {tool === 'grounding' ? <Grounding lang={lang} /> : null}
       {tool === 'gratitude' ? <Gratitude lang={lang} /> : null}
+    </>
+  );
 
-      {todayMoods.length > 0 ? (
-        <View style={{ gap: 10 }}>
-          <SectionHeader title={en('tab_today')} meta={`${todayMoods.length}`} />
-          <Card>
-            {todayMoods.map((m, i) => (
-              <View key={m.id}>
-                {i > 0 ? <Divider /> : null}
-                <ListRow
-                  icon={<Text style={{ fontSize: 17 }}>{MOODS[m.score - 1]}</Text>}
-                  title={m.note || `${m.score} / 5`}
-                  sub={localHHMM(m.at)}
-                />
-              </View>
-            ))}
-          </Card>
-        </View>
-      ) : null}
+  const entries =
+    todayMoods.length > 0 ? (
+      <View style={{ gap: 10 }}>
+        <SectionHeader title={en('tab_today')} meta={`${todayMoods.length}`} />
+        <Card>
+          {todayMoods.map((m, i) => (
+            <View key={m.id}>
+              {i > 0 ? <Divider /> : null}
+              <ListRow icon={<Face score={m.score} size={20} />} title={m.note || `${m.score} / 5`} sub={localHHMM(m.at)} />
+            </View>
+          ))}
+        </Card>
+      </View>
+    ) : null;
+
+  if (wide) {
+    return (
+      <Page title={en('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />} wide>
+        {crisisCard}
+        <Cols weights={[1.1, 1]}>
+          <>
+            {checkIn}
+            {toolTiles}
+            {toolPanel}
+          </>
+          <>
+            {entries}
+            <CravingSOS />
+            <Reframe onCrisis={() => setCrisis(true)} />
+          </>
+        </Cols>
+      </Page>
+    );
+  }
+
+  return (
+    <Page title={en('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />}>
+      {crisisCard}
+      {checkIn}
+      {toolTiles}
+      {toolPanel}
+      <CravingSOS />
+      <Reframe onCrisis={() => setCrisis(true)} />
+      {entries}
     </Page>
   );
 }
