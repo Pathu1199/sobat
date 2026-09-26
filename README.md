@@ -164,14 +164,16 @@ It has to be built on the PC: see [desktop/README.md](desktop/README.md).
 
 ## Status
 
-v0.2. Working: landing page, onboarding and permissions, calorie logging, food
-search, photo recognition, decision cards, sleep check-in, readiness-based
-fitness plan with a guided session runner, mind tools, coach chat with memory,
-break monitor, screen-time tracking, growth section with weekly report, daily
-tips, three languages, desktop and mobile layouts.
+v0.3. Working: landing page, onboarding and permissions, calorie logging with
+custom foods and barcode scanning, photo recognition with an offline queue,
+decision cards, sleep check-in, readiness-based fitness plan with a guided
+session runner, mind tools including craving SOS and thought reframing, coach
+chat with persistent memory, break monitor, screen-time and step tracking,
+growth section with a weekly report, daily tips, data export and import, three
+languages, desktop and mobile layouts.
 
-Not built yet: phone-to-PC sync, barcode scanning, Health Connect, and the
-Windows installer itself, which needs to be produced on the PC.
+Not built yet: phone-to-PC sync, Health Connect, and the Windows installer
+itself, which has to be produced on the PC.
 
 ## Licence
 
