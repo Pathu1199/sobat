@@ -338,16 +338,6 @@ export function Quote({ children, color = C.cyan }: { children: React.ReactNode;
   );
 }
 
-/** A bulleted point with a small dot, as used in the advice list. */
-export function Bullet({ children, color = C.accent }: { children: React.ReactNode; color?: string }) {
-  return (
-    <View style={[st.row, { alignItems: 'flex-start', gap: 9 }]}>
-      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: color, marginTop: 8 }} />
-      <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 20, flex: 1 }}>{children}</Text>
-    </View>
-  );
-}
-
 /** A list row: leading icon, title with subtitle, trailing value. */
 export function ListRow({
   icon,

@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CustomFoodForm } from '../components/CustomFoodForm';
 import { IconButton } from '../components/TopBarActions';
 import { addDays, localHHMM, toISODate } from '../core/date';
-import { defaultPortion, portionLabel, recentFoodIds, searchFoods, toMealItem } from '../core/foods';
+import { defaultPortion, foodName, portionLabel, recentFoodIds, searchFoods, toMealItem } from '../core/foods';
 import { mealTypeForHour } from '../core/nutrition';
 import type { FoodItem, MealItem, MealType } from '../core/types';
 import { makeT } from '../i18n';
@@ -147,7 +147,7 @@ export default function LogScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
             {yesterdaySame ? <Pill label={`↻ ${t('same_as_yesterday')} · ${yesterdaySame.kcal} kcal`} tone={C.accent} textColor={C.text} onPress={repeatYesterday} /> : null}
             {recents.map((f) => (
-              <Pill key={f.id} label={lang === 'en' ? f.name_en : f.name_mr || f.name_en} onPress={() => addToBasket(f)} />
+              <Pill key={f.id} label={lang === 'en' ? f.name_en : `${f.name_en} · ${foodName(f, lang)}`} onPress={() => addToBasket(f)} />
             ))}
           </ScrollView>
         </View>

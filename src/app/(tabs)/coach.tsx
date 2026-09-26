@@ -172,7 +172,7 @@ export default function CoachScreen() {
       <TopBar
         title={en('coach_title')}
         alt={lang === 'en' ? undefined : t('coach_title')}
-        left={wide ? undefined : <IconButton name="chevron-back" label={t('cancel')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />}
+        left={wide ? undefined : <IconButton name="chevron-back" label={t('close')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />}
         right={<TopBarActions />}
       />
       <View style={{ flex: 1, flexDirection: 'row', maxWidth: S.maxWide, width: '100%', alignSelf: 'center' }}>

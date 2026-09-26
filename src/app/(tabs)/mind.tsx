@@ -64,7 +64,7 @@ export default function MindScreen() {
       <Micro>{en('mood_q')}</Micro>
       <Row style={{ justifyContent: 'space-between' }}>
         {[1, 2, 3, 4, 5].map((n, i) => (
-          <Pressable key={n} onPress={() => setScore(i + 1)} accessibilityLabel={`mood ${i + 1}`}>
+          <Pressable key={n} onPress={() => setScore(i + 1)} accessibilityLabel={`${t('mood_q')} ${n}`}>
             <View
               style={{
                 width: 50,

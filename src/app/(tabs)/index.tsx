@@ -40,8 +40,11 @@ export default function TodayScreen() {
   const wide = useBreakpoint() === 'desktop';
 
   // Today by default; the chevrons under the meals walk back a day at a time.
-  const [viewDate, setViewDate] = useState(today);
-  const isToday = viewDate === today;
+  // Held as an offset, not a date: the day can roll over while the app is open
+  // (the desktop build starts with the machine), and an offset follows it.
+  const [dayOffset, setDayOffset] = useState(0);
+  const viewDate = dayOffset === 0 ? today : addDays(today, dayOffset);
+  const isToday = dayOffset === 0;
   const [openMeal, setOpenMeal] = useState<Meal | null>(null);
 
   const greetKey = hour < 12 ? 'good_morning' : hour < 17 ? 'good_afternoon' : 'good_evening';
@@ -145,9 +148,9 @@ export default function TodayScreen() {
     <View style={{ gap: 10 }}>
       <Row style={{ justifyContent: 'space-between' }}>
         <Row style={{ gap: 0 }}>
-          <IconButton name="chevron-back" label={t('yesterday')} onPress={() => setViewDate(addDays(viewDate, -1))} />
+          <IconButton name="chevron-back" label={t('yesterday')} onPress={() => setDayOffset((d) => d - 1)} />
           <Micro color={C.textDim}>{`${t('logged_intake')} · ${dayLabel}`}</Micro>
-          <IconButton name="chevron-forward" label={t('tab_today')} disabled={isToday} onPress={() => setViewDate(addDays(viewDate, 1))} />
+          <IconButton name="chevron-forward" label={t('tab_today')} disabled={isToday} onPress={() => setDayOffset((d) => Math.min(0, d + 1))} />
         </Row>
         <Micro>{`${dayMeals.length} ${dayMeals.length === 1 ? t('session_one') : t('session_many')}`}</Micro>
       </Row>
