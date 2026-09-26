@@ -6,6 +6,7 @@ import { BreakCard } from '../../components/BreakCard';
 import { DayReview } from '../../components/DayReview';
 import { DayScoreCard } from '../../components/DayScore';
 import { DecisionCard } from '../../components/DecisionCard';
+import { MealSheet } from '../../components/MealSheet';
 import { NowStrip } from '../../components/NowStrip';
 import { TipCard } from '../../components/TipCard';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
@@ -41,6 +42,7 @@ export default function TodayScreen() {
   // Today by default; the chevrons under the meals walk back a day at a time.
   const [viewDate, setViewDate] = useState(today);
   const isToday = viewDate === today;
+  const [openMeal, setOpenMeal] = useState<Meal | null>(null);
 
   const greetKey = hour < 12 ? 'good_morning' : hour < 17 ? 'good_afternoon' : 'good_evening';
   const greeting = en(greetKey);
@@ -153,7 +155,7 @@ export default function TodayScreen() {
         {dayMeals.length === 0 ? (
           <Small color={C.textGhost}>{t('nothing_logged')}</Small>
         ) : (
-          dayMeals.map((m, i) => <MealRow key={m.id} meal={m} first={i === 0} lang={lang} onPress={() => {}} />)
+          dayMeals.map((m, i) => <MealRow key={m.id} meal={m} first={i === 0} lang={lang} onPress={() => setOpenMeal(m)} />)
         )}
       </Card>
     </View>
@@ -184,6 +186,7 @@ export default function TodayScreen() {
           {rightColumn}
         </Cols>
         <Small color={C.textGhost}>{t('medical_note')}</Small>
+        <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
       </Page>
     );
   }
@@ -199,6 +202,7 @@ export default function TodayScreen() {
       {isToday ? <DayReview /> : null}
       {mealsBlock}
       <Small color={C.textGhost}>{t('medical_note')}</Small>
+      <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
     </Page>
   );
 }

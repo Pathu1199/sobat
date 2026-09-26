@@ -33,6 +33,7 @@ type Ctx = {
   setSettings: (s: Partial<Settings>) => void;
   addMeal: (m: Meal) => void;
   removeMeal: (id: string) => void;
+  updateMeal: (m: Meal) => void;
   addWater: (ml: number) => void;
   undoWater: () => void;
   addWeight: (w: WeightLog) => void;
@@ -136,6 +137,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSettings: (x) => update((s) => ({ ...s, settings: { ...s.settings, ...x } })),
       addMeal: (m) => update((s) => ({ ...s, meals: [...s.meals, m] })),
       removeMeal: (id) => update((s) => ({ ...s, meals: s.meals.filter((m) => m.id !== id) })),
+      updateMeal: (m) => update((s) => ({ ...s, meals: s.meals.map((x) => (x.id === m.id ? m : x)) })),
       addWater: (ml) =>
         update((s) => ({ ...s, water: [...s.water, { id: String(Date.now()), at: new Date().toISOString(), date: toISODate(), ml }] })),
       undoWater: () =>

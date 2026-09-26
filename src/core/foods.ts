@@ -69,6 +69,13 @@ export function resolveByName(foods: FoodItem[], name: string): FoodItem | null 
   return hits[0] ?? null;
 }
 
+/** The same item at a different weight. Used when a logged line has no database food behind it. */
+export function scaleMealItem(item: MealItem, grams: number): MealItem {
+  const ratio = item.grams > 0 ? grams / item.grams : 0;
+  const r1 = (n: number) => Math.round(n * ratio * 10) / 10;
+  return { ...item, grams: Math.round(grams), kcal: Math.round(item.kcal * ratio), protein: r1(item.protein), carbs: r1(item.carbs), fat: r1(item.fat) };
+}
+
 /** Meal options that fit inside the remaining budget, best protein first. */
 export function suggestMeals(
   foods: FoodItem[],
