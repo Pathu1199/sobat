@@ -1,30 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { decisionPrompt, factsFrom, systemPrompt } from '../ai/prompts';
 import type { Decision } from '../core/decide';
 import { guardAdvice } from '../core/guardrails';
-import { KCAL_FLOOR } from '../core/nutrition';
+import { contextFor, toPromptLines } from '../core/memory';
+import { KCAL_FLOOR, type Budget, type Targets } from '../core/nutrition';
 import type { Lang } from '../core/types';
 import { makeT } from '../i18n';
-import { useApp } from '../store/AppProvider';
-import { Card, H3, Pill, Row, Small, P } from '../ui/components';
-import { C, severityColor } from '../ui/theme';
 import { useAI } from '../services/useAI';
+import { useApp } from '../store/AppProvider';
+import { Bullet, Card, Divider, Micro, Quote, Row, StatQuad } from '../ui/components';
+import { C, F, severityColor } from '../ui/theme';
 
 /**
- * The rules produce the advice. The model only rewrites it in a friendlier
- * voice, and its output is checked before it is shown. If the model is off,
- * the card still works.
+ * The rules produce the advice; the model only rewrites it in a warmer voice,
+ * and its output is checked before it is shown. With the model off, the card
+ * still says everything that matters.
  */
-export function DecisionCard({ decision, lang }: { decision: Decision; lang: Lang }) {
+export function DecisionCard({ decision, lang, targets, budget }: { decision: Decision; lang: Lang; targets: Targets; budget: Budget }) {
   const t = makeT(lang);
   const { ask, online } = useAI();
-  const { state, budget, waterToday, streakDays, targets } = useApp();
+  const app = useApp();
+  const { state, waterToday, streakDays } = app;
   const [words, setWords] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const actionText = decision.actionKeys.map((k) => t(`act_${k}`));
   const tone = severityColor(decision.severity);
+  const floor = KCAL_FLOOR[state.profile.sex];
 
   useEffect(() => {
     let cancelled = false;
@@ -37,19 +40,20 @@ export function DecisionCard({ decision, lang }: { decision: Decision; lang: Lan
       budget,
       weightKg: state.profile.weightKg,
       goalWeightKg: state.profile.goalWeightKg,
-      kcalFloor: KCAL_FLOOR[state.profile.sex],
+      kcalFloor: floor,
       waterMl: waterToday,
       waterGoalMl: state.settings.waterGoalMl,
       streak: streakDays,
     });
+    facts.push(...toPromptLines(contextFor(state.memory, decision.situation, app.today, 6)));
+
     ask([
       { role: 'system', content: systemPrompt(lang, facts) },
       { role: 'user', content: decisionPrompt(decision, lang, actionText) },
     ])
       .then((raw) => {
         if (cancelled) return;
-        const guarded = guardAdvice(raw, KCAL_FLOOR[state.profile.sex]);
-        setWords(guarded.text.trim());
+        setWords(guardAdvice(raw, floor).text.trim());
       })
       .catch(() => {
         if (!cancelled) setWords(null);
@@ -61,31 +65,51 @@ export function DecisionCard({ decision, lang }: { decision: Decision; lang: Lan
     // Re-word only when the situation itself changes, not on every render.
   }, [decision.situation, decision.severity, online, lang]);
 
+  // An energy breakdown the user can check the advice against.
+  const activeBurn = Math.max(0, targets.tdee - targets.bmr);
+  const quad = [
+    { label: t('bmr'), value: targets.bmr.toLocaleString() },
+    { label: t('active_burn'), value: String(activeBurn) },
+    { label: t('deficit'), value: `${budget.remaining >= 0 ? '-' : '+'}${Math.abs(targets.deficit)}`, color: C.cyan },
+    { label: t('tdee'), value: targets.tdee.toLocaleString() },
+  ];
+
   return (
-    <Card tone={tone}>
+    <Card>
       <Row style={{ justifyContent: 'space-between' }}>
-        <H3>{t(`sit_${decision.situation}`)}</H3>
-        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: tone }} />
+        <Row style={{ gap: 8 }}>
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: tone }} />
+          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t(`sit_${decision.situation}`)}</Text>
+        </Row>
+        <Micro>{`${t('metabolic_rule')} ${decision.situation.length}`}</Micro>
       </Row>
 
-      {loading ? <ActivityIndicator color={C.teal} /> : null}
-      {words ? <P>{words}</P> : null}
+      {loading && !words ? <ActivityIndicator color={C.accent} /> : null}
 
-      <View style={{ gap: 6 }}>
+      {words ? (
+        lang === 'en' ? (
+          <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: 21 }}>{words}</Text>
+        ) : (
+          <Quote>{words}</Quote>
+        )
+      ) : (
+        <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: 21 }}>
+          {budget.remaining >= 0
+            ? t('under_by').replace('{n}', String(Math.abs(budget.remaining)))
+            : t('over_by').replace('{n}', String(Math.abs(budget.remaining)))}
+        </Text>
+      )}
+
+      <View style={{ gap: 4 }}>
         {actionText.map((a, i) => (
-          <Row key={i}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: tone }} />
-            <P style={{ flex: 1 }}>{a}</P>
-          </Row>
+          <Bullet key={i} color={tone}>
+            {a}
+          </Bullet>
         ))}
       </View>
 
-      <Small color={C.textFaint}>{t('why')}</Small>
-      <Row style={{ flexWrap: 'wrap', gap: 6 }}>
-        {decision.facts.map((f) => (
-          <Pill key={f.label} label={`${t(f.label === 'protein' ? 'protein' : f.label === 'target' ? 'target' : f.label === 'eaten' ? 'eaten' : 'kcal_left')} ${f.value}`} />
-        ))}
-      </Row>
+      <Divider />
+      <StatQuad items={quad} />
     </Card>
   );
 }

@@ -2,15 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { CustomFoodForm } from '../../components/CustomFoodForm';
 import { toISODate } from '../../core/date';
 import { defaultPortion, foodName, portionLabel, searchFoods, toMealItem } from '../../core/foods';
 import { mealTypeForHour } from '../../core/nutrition';
 import type { FoodItem, MealItem, MealType } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
-import { CustomFoodForm } from '../../components/CustomFoodForm';
-import { Btn, Card, Divider, Empty, Field, H3, P, Pill, Row, Screen, Small } from '../../ui/components';
-import { C, F } from '../../ui/theme';
+import { BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Segmented, Small } from '../../ui/components';
+import { C, F, S } from '../../ui/theme';
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner'];
 
@@ -19,6 +19,7 @@ export default function LogScreen() {
   const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
+  const en = makeT('en');
 
   const [query, setQuery] = useState('');
   const [mealType, setMealType] = useState<MealType>(mealTypeForHour(new Date().getHours()));
@@ -67,88 +68,101 @@ export default function LogScreen() {
     setWeightInput('');
   }
 
+  const glasses = Math.round(app.waterToday / app.state.settings.glassMl);
+  const glassGoal = Math.round(app.state.settings.waterGoalMl / app.state.settings.glassMl);
+
   return (
     <Screen>
-      <Row style={{ gap: 8 }}>
-        <Btn label={t('add_photo')} tone="soft" onPress={() => router.push('/photo')} style={{ flex: 1 }} />
-        <Btn label={t('scan_barcode')} tone="soft" onPress={() => router.push('/scan')} style={{ flex: 1 }} />
+      <Row style={{ gap: 10 }}>
+        <Tool icon="camera-outline" label={t('add_photo')} onPress={() => router.push('/photo')} />
+        <Tool icon="barcode-outline" label={t('scan_barcode')} onPress={() => router.push('/scan')} />
       </Row>
 
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <H3>{t('add_water')}</H3>
-          <Small>
-            {Math.round(app.waterToday / 250)} / {Math.round(app.state.settings.waterGoalMl / 250)} {t('glasses')}
-          </Small>
+          <Micro>{en('water')}</Micro>
+          <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
+            {glasses}
+            <Text style={{ color: C.textFaint, fontWeight: '400' }}>
+              {' / '}
+              {glassGoal} {t('glasses')}
+            </Text>
+          </Text>
         </Row>
         <Row style={{ gap: 8 }}>
           <Btn label={`+ 1 ${t('glasses')}`} onPress={() => app.addWater(app.state.settings.glassMl)} style={{ flex: 1 }} />
-          <Btn
-            tone="ghost"
-            label={t('undo')}
-            onPress={app.undoWater}
-            disabled={app.waterToday === 0}
-            style={{ flex: 1 }}
-          />
+          <Btn tone="ghost" label={t('undo')} onPress={app.undoWater} disabled={app.waterToday === 0} style={{ flex: 1 }} />
         </Row>
       </Card>
 
       <Card>
-        <H3>{t('add_weight')}</H3>
-        <Row>
+        <Micro>{en('add_weight')}</Micro>
+        <Row style={{ gap: 10 }}>
           <Field value={weightInput} onChangeText={setWeightInput} keyboardType="numeric" placeholder={`${app.state.profile.weightKg}`} />
-          <Btn small label={t('save')} onPress={saveWeight} />
+          <Btn label={t('save')} onPress={saveWeight} disabled={!weightInput.trim()} />
         </Row>
       </Card>
 
-      <Card>
-        <H3>{t('add_food')}</H3>
-        <Row style={{ flexWrap: 'wrap', gap: 6 }}>
-          {MEAL_TYPES.map((m) => (
-            <Pill key={m} label={t(m)} active={mealType === m} onPress={() => setMealType(m)} />
-          ))}
-        </Row>
+      <View style={{ gap: 10 }}>
+        <SectionHeader title={en('add_food')} meta={t(mealType)} />
+        <Segmented value={mealType} onChange={setMealType} options={MEAL_TYPES.map((m) => ({ key: m, label: en(m) }))} />
         <Field value={query} onChangeText={setQuery} placeholder={t('search_food')} />
+      </View>
 
-        {basket.length > 0 ? (
-          <View style={{ gap: 8 }}>
-            <Divider />
-            {basket.map((b, idx) => {
-              const p = b.food.portions.find((x) => x.unit === b.unit) ?? defaultPortion(b.food);
-              const item = basketItems[idx];
-              return (
-                <View key={b.food.id} style={{ gap: 6 }}>
-                  <Row style={{ justifyContent: 'space-between' }}>
-                    <View style={{ flex: 1 }}>
-                      <P>{foodName(b.food, lang)}</P>
-                      <Small>{p ? portionLabel(p, lang) : ''} · {item.grams} g</Small>
-                    </View>
-                    <Text style={{ color: C.text, fontWeight: '600' }}>{item.kcal}</Text>
-                    <Pressable onPress={() => setBasket((x) => x.filter((y) => y.food.id !== b.food.id))} accessibilityLabel={t('delete')}>
-                      <Ionicons name="close" size={18} color={C.textFaint} />
-                    </Pressable>
-                  </Row>
-                  <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-                    {[0.5, 1, 1.5, 2, 3].map((n) => (
-                      <Pill key={n} label={`${n}`} active={b.count === n} onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, count: n } : y)))} />
-                    ))}
-                    {b.food.portions.length > 1
-                      ? b.food.portions.map((pp) => (
-                          <Pill key={pp.unit} label={pp.unit} active={b.unit === pp.unit} onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, unit: pp.unit } : y)))} />
-                        ))
-                      : null}
-                  </Row>
-                </View>
-              );
-            })}
-            <Divider />
-            <Row style={{ justifyContent: 'space-between' }}>
-              <Small>{basketKcal} kcal · {basketProtein} g {t('protein')}</Small>
-              <Btn small label={t('save')} onPress={saveMeal} />
-            </Row>
-          </View>
-        ) : null}
-      </Card>
+      {basket.length > 0 ? (
+        <Card tone={C.accent}>
+          {basket.map((b, idx) => {
+            const p = b.food.portions.find((x) => x.unit === b.unit) ?? defaultPortion(b.food);
+            const item = basketItems[idx];
+            return (
+              <View key={b.food.id} style={{ gap: 9 }}>
+                {idx > 0 ? <Divider /> : null}
+                <Row style={{ justifyContent: 'space-between' }}>
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <BiText en={b.food.name_en} alt={lang === 'en' ? undefined : b.food.name_mr} />
+                    <Micro>{`${p ? portionLabel(p, lang) : ''} · ${item.grams} g`}</Micro>
+                  </View>
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
+                    {item.kcal}
+                    <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '400' }}> kcal</Text>
+                  </Text>
+                  <Pressable onPress={() => setBasket((x) => x.filter((y) => y.food.id !== b.food.id))} hitSlop={8}>
+                    <Ionicons name="close" size={17} color={C.textFaint} />
+                  </Pressable>
+                </Row>
+                <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+                  {[0.5, 1, 1.5, 2, 3].map((n) => (
+                    <Pill
+                      key={n}
+                      label={`${n}x`}
+                      active={b.count === n}
+                      onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, count: n } : y)))}
+                    />
+                  ))}
+                  {b.food.portions.length > 1
+                    ? b.food.portions.map((pp) => (
+                        <Pill
+                          key={pp.unit}
+                          label={pp.unit}
+                          active={b.unit === pp.unit}
+                          onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, unit: pp.unit } : y)))}
+                        />
+                      ))
+                    : null}
+                </Row>
+              </View>
+            );
+          })}
+          <Divider />
+          <Row style={{ justifyContent: 'space-between' }}>
+            <View>
+              <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>{basketKcal}</Text>
+              <Micro>{`kcal · ${basketProtein} g ${en('protein')}`}</Micro>
+            </View>
+            <Btn label={t('save')} onPress={saveMeal} />
+          </Row>
+        </Card>
+      ) : null}
 
       {customOpen ? (
         <CustomFoodForm
@@ -174,50 +188,79 @@ export default function LogScreen() {
             />
           </View>
         ) : (
-          results.slice(0, 20).map((f) => {
-            const p = defaultPortion(f);
-            const kcal = p ? Math.round((f.kcal_100g * p.grams) / 100) : f.kcal_100g;
-            return (
-              <Pressable key={f.id} onPress={() => addToBasket(f)}>
-                <Row style={{ justifyContent: 'space-between', paddingVertical: 8 }}>
-                  <View style={{ flex: 1 }}>
-                    <P>{foodName(f, lang)}</P>
-                    <Small>{p ? portionLabel(p, lang) : ''}</Small>
-                  </View>
-                  <Text style={{ color: C.textDim, fontSize: F.small }}>{kcal} kcal</Text>
-                  <Ionicons name="add" size={18} color={C.teal} />
-                </Row>
-              </Pressable>
-            );
-          })
-        )}
-        {results.length > 0 ? (
           <>
+            {results.slice(0, 20).map((f, i) => {
+              const p = defaultPortion(f);
+              const kcal = p ? Math.round((f.kcal_100g * p.grams) / 100) : f.kcal_100g;
+              return (
+                <View key={f.id}>
+                  {i > 0 ? <Divider /> : null}
+                  <ListRow
+                    title={f.name_en}
+                    alt={lang === 'en' ? undefined : f.name_mr}
+                    sub={p ? portionLabel(p, lang) : undefined}
+                    value={String(kcal)}
+                    valueUnit="kcal"
+                    onPress={() => addToBasket(f)}
+                    trailing={<Ionicons name="add" size={17} color={C.accent} />}
+                  />
+                </View>
+              );
+            })}
             <Divider />
             <Btn small tone="ghost" label={t('custom_food')} onPress={() => setCustomOpen(true)} />
           </>
-        ) : null}
-      </Card>
-
-      <Card>
-        <H3>{t('tab_today')}</H3>
-        {todayMeals.length === 0 ? (
-          <Empty text={t('nothing_logged')} />
-        ) : (
-          todayMeals.map((m) => (
-            <Row key={m.id} style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
-              <View style={{ flex: 1 }}>
-                <P>{m.items.map((i) => (lang === 'mr' ? i.name_mr || i.name_en : i.name_en)).join(', ') || t(m.type)}</P>
-                <Small>{t(m.type)} · {m.at.slice(11, 16)}</Small>
-              </View>
-              <Text style={{ color: C.text, fontWeight: '600' }}>{m.kcal}</Text>
-              <Pressable onPress={() => app.removeMeal(m.id)} accessibilityLabel={t('delete')}>
-                <Ionicons name="trash-outline" size={18} color={C.textFaint} />
-              </Pressable>
-            </Row>
-          ))
         )}
       </Card>
+
+      <View style={{ gap: 10 }}>
+        <SectionHeader title={en('logged_intake')} meta={`${todayMeals.length}`} />
+        <Card>
+          {todayMeals.length === 0 ? (
+            <Empty text={t('nothing_logged')} />
+          ) : (
+            todayMeals.map((m, i) => (
+              <View key={m.id}>
+                {i > 0 ? <Divider /> : null}
+                <ListRow
+                  icon={<Ionicons name="restaurant-outline" size={15} color={C.textDim} />}
+                  title={t(m.type)}
+                  alt={m.items[0]?.name_en ? `· ${m.items.map((x) => x.name_en).slice(0, 2).join(', ')}` : undefined}
+                  sub={m.at.slice(11, 16)}
+                  value={String(m.kcal)}
+                  valueUnit="kcal"
+                  trailing={
+                    <Pressable onPress={() => app.removeMeal(m.id)} hitSlop={8}>
+                      <Ionicons name="trash-outline" size={16} color={C.textGhost} />
+                    </Pressable>
+                  }
+                />
+              </View>
+            ))
+          )}
+        </Card>
+      </View>
     </Screen>
+  );
+}
+
+function Tool({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        backgroundColor: C.card,
+        borderWidth: S.hairline,
+        borderColor: C.border,
+        borderRadius: S.radius,
+        paddingVertical: 18,
+        alignItems: 'center',
+        gap: 8,
+        opacity: pressed ? 0.7 : 1,
+      })}>
+      <Ionicons name={icon} size={20} color={C.accent} />
+      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{label}</Text>
+    </Pressable>
   );
 }

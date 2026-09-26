@@ -71,7 +71,7 @@ export function TipCard() {
     return (
       <Card>
         <Row>
-          <ActivityIndicator color={C.teal} />
+          <ActivityIndicator color={C.accent} />
           <Small>{t('daily_tip')}</Small>
         </Row>
       </Card>

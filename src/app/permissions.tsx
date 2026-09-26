@@ -77,9 +77,9 @@ export default function PermissionsScreen() {
         </Row>
       </Card>
 
-      <Card tone={C.tealSoft}>
+      <Card tone={C.accentDim}>
         <Row style={{ gap: 10, alignItems: 'flex-start' }}>
-          <Ionicons name="lock-closed-outline" size={20} color={C.teal} />
+          <Ionicons name="lock-closed-outline" size={20} color={C.accent} />
           <View style={{ flex: 1 }}>
             <Small>{t('w_privacy_b')}</Small>
           </View>
@@ -109,7 +109,7 @@ function PermissionRow({
   t: (k: string) => string;
   deferred?: boolean;
 }) {
-  const color = state === 'granted' ? C.teal : state === 'denied' ? C.amber : C.textFaint;
+  const color = state === 'granted' ? C.accent : state === 'denied' ? C.amber : C.textFaint;
   return (
     <Card>
       <Row style={{ gap: 10, alignItems: 'flex-start' }}>

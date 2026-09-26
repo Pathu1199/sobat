@@ -184,7 +184,7 @@ export default function PhotoScreen() {
         </Row>
         {!online ? <Small color={C.amber}>{t('ai_offline_hint')}</Small> : null}
         {pendingCount(app.state.photoQueue) > 0 ? (
-          <Small color={C.blue}>
+          <Small color={C.cyan}>
             {(pendingCount(app.state.photoQueue) === 1 ? t('photos_queued') : t('photos_queued_plural')).replace(
               '{n}',
               String(pendingCount(app.state.photoQueue)),
@@ -198,7 +198,7 @@ export default function PhotoScreen() {
           <Image source={{ uri }} style={{ width: '100%', height: 200, borderRadius: 10 }} resizeMode="cover" />
           {busy ? (
             <Row>
-              <ActivityIndicator color={C.teal} />
+              <ActivityIndicator color={C.accent} />
               <Small>{t('analysing')}</Small>
             </Row>
           ) : null}
@@ -224,7 +224,7 @@ export default function PhotoScreen() {
                 <Row style={{ justifyContent: 'space-between' }}>
                   <View style={{ flex: 1 }}>
                     <P>{displayEn}</P>
-                    {displayMr ? <Small color={C.teal}>{displayMr}</Small> : null}
+                    {displayMr ? <Small color={C.accent}>{displayMr}</Small> : null}
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={{ color: C.text, fontWeight: '600' }}>{item.kcal} kcal</Text>

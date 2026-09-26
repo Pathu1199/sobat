@@ -37,7 +37,7 @@ export function NudgeToast() {
         bottom: 88,
         backgroundColor: C.cardAlt,
         borderWidth: 1,
-        borderColor: C.teal,
+        borderColor: C.accent,
         borderRadius: S.radius,
         padding: S.pad,
         gap: 10,
@@ -46,7 +46,7 @@ export function NudgeToast() {
       }}>
       <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{current.title}</Text>
       <Text style={{ color: C.text, fontSize: F.body }}>{current.body}</Text>
-      <Small color={C.teal}>{current.task}</Small>
+      <Small color={C.accent}>{current.task}</Small>
 
       {running && !finished ? (
         <Text style={{ color: C.text, fontSize: 28, fontWeight: '600', textAlign: 'center' }}>{left}</Text>

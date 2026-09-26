@@ -70,13 +70,13 @@ export function Reframe({ onCrisis }: { onCrisis: () => void }) {
   return (
     <Card>
       <Row style={{ gap: 8 }}>
-        <Ionicons name="repeat-outline" size={18} color={C.purple} />
+        <Ionicons name="repeat-outline" size={18} color={C.violet} />
         <H3>{t('reframe')}</H3>
       </Row>
       <Field value={thought} onChangeText={setThought} placeholder={t('reframe_input')} multiline />
       {answer ? <P>{answer}</P> : null}
       {busy ? (
-        <ActivityIndicator color={C.teal} />
+        <ActivityIndicator color={C.accent} />
       ) : online ? (
         <Btn small tone="soft" label={t('reframe_ask')} onPress={go} disabled={!thought.trim()} />
       ) : (

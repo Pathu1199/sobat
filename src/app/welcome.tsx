@@ -30,13 +30,13 @@ export default function Welcome() {
           <Text style={{ color: C.text, fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>{t('app_name')}</Text>
           <Pressable
             onPress={() => router.replace('/onboarding')}
-            style={{ backgroundColor: C.teal, paddingVertical: 9, paddingHorizontal: 18, borderRadius: 999 }}>
+            style={{ backgroundColor: C.accent, paddingVertical: 9, paddingHorizontal: 18, borderRadius: 999 }}>
             <Text style={{ color: C.white, fontWeight: '600', fontSize: F.small }}>{t('w_cta')}</Text>
           </Pressable>
         </View>
 
         <View style={{ paddingTop: wide ? 60 : 32, paddingBottom: 44, maxWidth: 680 }}>
-          <Text style={{ color: C.teal, fontSize: F.small, marginBottom: 14 }}>{t('w_eyebrow')}</Text>
+          <Text style={{ color: C.accent, fontSize: F.small, marginBottom: 14 }}>{t('w_eyebrow')}</Text>
           <Text style={{ color: C.text, fontSize: wide ? 52 : 34, fontWeight: '300', lineHeight: wide ? 60 : 42, letterSpacing: -1 }}>
             {t('w_headline')}
           </Text>
@@ -45,7 +45,7 @@ export default function Welcome() {
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 30, flexWrap: 'wrap' }}>
             <Pressable
               onPress={() => router.replace('/onboarding')}
-              style={{ backgroundColor: C.teal, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999 }}>
+              style={{ backgroundColor: C.accent, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999 }}>
               <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
             </Pressable>
             <Pressable
@@ -86,7 +86,7 @@ export default function Welcome() {
                 padding: 20,
                 gap: 10,
               }}>
-              <Ionicons name={f.icon} size={22} color={C.teal} />
+              <Ionicons name={f.icon} size={22} color={C.accent} />
               <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t(f.titleKey)}</Text>
               <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 20 }}>{t(f.bodyKey)}</Text>
             </View>
@@ -98,14 +98,14 @@ export default function Welcome() {
             marginTop: 40,
             backgroundColor: C.cardAlt,
             borderWidth: 1,
-            borderColor: C.tealSoft,
+            borderColor: C.accentDim,
             borderRadius: S.radius,
             padding: wide ? 32 : 22,
             flexDirection: wide ? 'row' : 'column',
             alignItems: wide ? 'center' : 'flex-start',
             gap: 18,
           }}>
-          <Ionicons name="lock-closed-outline" size={26} color={C.teal} />
+          <Ionicons name="lock-closed-outline" size={26} color={C.accent} />
           <View style={{ flex: 1, gap: 6 }}>
             <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600' }}>{t('w_privacy_t')}</Text>
             <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: 23 }}>{t('w_privacy_b')}</Text>
@@ -117,7 +117,7 @@ export default function Welcome() {
           <View style={{ flexDirection: wide ? 'row' : 'column', gap: 14 }}>
             {[1, 2, 3].map((n) => (
               <View key={n} style={{ flex: 1, gap: 8 }}>
-                <Text style={{ color: C.teal, fontSize: 28, fontWeight: '200' }}>{n}</Text>
+                <Text style={{ color: C.accent, fontSize: 28, fontWeight: '200' }}>{n}</Text>
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t(`w_step${n}_t`)}</Text>
                 <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 20 }}>{t(`w_step${n}_b`)}</Text>
               </View>
@@ -128,7 +128,7 @@ export default function Welcome() {
         <View style={{ paddingTop: 44, alignItems: 'flex-start', gap: 12 }}>
           <Pressable
             onPress={() => router.replace('/onboarding')}
-            style={{ backgroundColor: C.teal, paddingVertical: 15, paddingHorizontal: 34, borderRadius: 999 }}>
+            style={{ backgroundColor: C.accent, paddingVertical: 15, paddingHorizontal: 34, borderRadius: 999 }}>
             <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
           </Pressable>
           <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{t('w_footer')}</Text>
@@ -141,7 +141,7 @@ export default function Welcome() {
 function Stat({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
     <View style={{ minWidth: 120 }}>
-      <Text style={{ color: accent ? C.teal : C.text, fontSize: 30, fontWeight: '200', letterSpacing: -0.8 }}>{value}</Text>
+      <Text style={{ color: accent ? C.accent : C.text, fontSize: 30, fontWeight: '200', letterSpacing: -0.8 }}>{value}</Text>
       <Text style={{ color: C.textDim, fontSize: F.tiny, marginTop: 2 }}>{label}</Text>
     </View>
   );

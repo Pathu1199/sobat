@@ -6,8 +6,8 @@ import { CravingSOS } from '../../components/CravingSOS';
 import { Reframe } from '../../components/Reframe';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
-import { Btn, Card, Divider, Field, H2, H3, P, Pill, Ring, Row, Screen, Small } from '../../ui/components';
-import { C, F } from '../../ui/theme';
+import { Btn, Card, Divider, Field, ListRow, Micro, P, Pill, Row, Screen, SectionHeader, Small } from '../../ui/components';
+import { C, F, S } from '../../ui/theme';
 
 const MOODS = ['😞', '🙁', '😐', '🙂', '😄'];
 
@@ -15,6 +15,7 @@ export default function MindScreen() {
   const app = useApp();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
+  const en = makeT('en');
   const [score, setScore] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [crisis, setCrisis] = useState(false);
@@ -37,16 +38,16 @@ export default function MindScreen() {
     <Screen>
       {crisis ? (
         <Card tone={C.red}>
-          <H3>{t('helpline_title')}</H3>
+          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('helpline_title')}</Text>
           <P>{t('helpline_body')}</P>
           {HELPLINES.map((h) => (
             <Pressable key={h.number} onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}>
               <Row style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
                 <View style={{ flex: 1 }}>
-                  <P>{h.name}</P>
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{h.name}</Text>
                   <Small>{h.note}</Small>
                 </View>
-                <Text style={{ color: C.teal, fontWeight: '600' }}>{h.number}</Text>
+                <Text style={{ color: C.cyan, fontWeight: '600' }}>{h.number}</Text>
               </Row>
             </Pressable>
           ))}
@@ -55,22 +56,22 @@ export default function MindScreen() {
       ) : null}
 
       <Card>
-        <H3>{t('mood_q')}</H3>
+        <Micro>{en('mood_q')}</Micro>
         <Row style={{ justifyContent: 'space-between' }}>
           {MOODS.map((m, i) => (
             <Pressable key={m} onPress={() => setScore(i + 1)} accessibilityLabel={`mood ${i + 1}`}>
               <View
                 style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 26,
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: score === i + 1 ? C.tealSoft : C.cardAlt,
-                  borderWidth: 1,
-                  borderColor: score === i + 1 ? C.teal : C.border,
+                  backgroundColor: score === i + 1 ? C.accentDim : C.cardAlt,
+                  borderWidth: S.hairline,
+                  borderColor: score === i + 1 ? C.accent : C.border,
                 }}>
-                <Text style={{ fontSize: 24 }}>{m}</Text>
+                <Text style={{ fontSize: 22 }}>{m}</Text>
               </View>
             </Pressable>
           ))}
@@ -94,18 +95,21 @@ export default function MindScreen() {
       {tool === 'gratitude' ? <Gratitude lang={lang} /> : null}
 
       {todayMoods.length > 0 ? (
-        <Card>
-          <H3>{t('tab_today')}</H3>
-          {todayMoods.map((m) => (
-            <Row key={m.id} style={{ justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 20 }}>{MOODS[m.score - 1]}</Text>
-              <View style={{ flex: 1 }}>
-                <Small>{m.note ?? ''}</Small>
+        <View style={{ gap: 10 }}>
+          <SectionHeader title={en('tab_today')} meta={`${todayMoods.length}`} />
+          <Card>
+            {todayMoods.map((m, i) => (
+              <View key={m.id}>
+                {i > 0 ? <Divider /> : null}
+                <ListRow
+                  icon={<Text style={{ fontSize: 17 }}>{MOODS[m.score - 1]}</Text>}
+                  title={m.note || `${m.score} / 5`}
+                  sub={m.at.slice(11, 16)}
+                />
               </View>
-              <Small>{m.at.slice(11, 16)}</Small>
-            </Row>
-          ))}
-        </Card>
+            ))}
+          </Card>
+        </View>
       ) : null}
     </Screen>
   );
@@ -147,15 +151,15 @@ function BreatheBox({ lang }: { lang: any }) {
             width: 140 * size,
             height: 140 * size,
             borderRadius: 999,
-            backgroundColor: C.tealSoft,
+            backgroundColor: C.accentDim,
             borderWidth: 2,
-            borderColor: C.teal,
+            borderColor: C.accent,
             alignItems: 'center',
             justifyContent: 'center',
           }}>
           <Text style={{ color: C.text, fontSize: 28, fontWeight: '600' }}>{count}</Text>
         </View>
-        <H3>{labels[phase]}</H3>
+        <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{labels[phase]}</Text>
         <Btn small label={running ? t('stop') : t('start')} onPress={() => setRunning((r) => !r)} />
       </View>
     </Card>
@@ -173,7 +177,7 @@ function Grounding({ lang }: { lang: any }) {
   const [step, setStep] = useState(0);
   return (
     <Card>
-      <H3>{t('grounding')}</H3>
+      <Micro>{t('grounding')}</Micro>
       <P>{prompts[step]}</P>
       <Row style={{ gap: 8 }}>
         <Btn small tone="ghost" label={t('next')} onPress={() => setStep((s) => (s + 1) % prompts.length)} />
@@ -201,7 +205,7 @@ function Gratitude({ lang }: { lang: any }) {
 
   return (
     <Card>
-      <H3>{t('gratitude')}</H3>
+      <Micro>{t('gratitude')}</Micro>
       {lines.map((l, i) => (
         <Field
           key={i}
@@ -214,7 +218,7 @@ function Gratitude({ lang }: { lang: any }) {
         />
       ))}
       <Btn small label={t('save')} onPress={save} disabled={lines.every((l) => !l.trim())} />
-      {saved ? <Small color={C.teal}>{t('gratitude_saved')}</Small> : null}
+      {saved ? <Small color={C.accent}>{t('gratitude_saved')}</Small> : null}
     </Card>
   );
 }

@@ -56,7 +56,7 @@ export default function SettingsScreen() {
           <Field label={t('vision_model')} value={s.visionModel} onChangeText={(v) => app.setSettings({ visionModel: v })} />
         </Row>
         <Btn small label={testing ? '...' : t('test_connection')} onPress={test} tone="soft" />
-        {result ? <Small color={result.startsWith(t('connected')) ? C.teal : C.amber}>{result}</Small> : null}
+        {result ? <Small color={result.startsWith(t('connected')) ? C.accent : C.amber}>{result}</Small> : null}
         <Small color={C.textFaint}>
           On the PC run: setx OLLAMA_HOST 0.0.0.0 then restart Ollama, and allow port 11434 on the private network.
         </Small>
@@ -192,7 +192,7 @@ export default function SettingsScreen() {
           />
         ) : null}
         <Small color={C.textFaint}>{t('import_hint')}</Small>
-        {importMsg ? <Small color={importMsg === t('import_ok') ? C.teal : C.amber}>{importMsg}</Small> : null}
+        {importMsg ? <Small color={importMsg === t('import_ok') ? C.accent : C.amber}>{importMsg}</Small> : null}
 
         <Divider />
         {confirmReset ? (

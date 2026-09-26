@@ -69,14 +69,14 @@ export function WeeklyReport({ summary }: { summary: GrowthSummary }) {
   return (
     <Card>
       <Row style={{ gap: 8 }}>
-        <Ionicons name="document-text-outline" size={18} color={C.purple} />
+        <Ionicons name="document-text-outline" size={18} color={C.violet} />
         <H3>{t('weekly_report')}</H3>
       </Row>
       {text ? (
         <P>{text}</P>
       ) : busy ? (
         <Row>
-          <ActivityIndicator color={C.teal} />
+          <ActivityIndicator color={C.accent} />
           <Small>{t('generate')}</Small>
         </Row>
       ) : online ? (

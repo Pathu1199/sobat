@@ -80,7 +80,7 @@ export function BreakOverlay() {
             cx={size / 2}
             cy={size / 2}
             r={r}
-            stroke={C.teal}
+            stroke={C.accent}
             strokeWidth={stroke}
             fill="none"
             strokeDasharray={`${circ}`}
@@ -116,7 +116,7 @@ export function BreakOverlay() {
         {over ? (
           <Pressable
             onPress={monitor.finish}
-            style={{ backgroundColor: C.teal, paddingVertical: 12, paddingHorizontal: 28, borderRadius: 999 }}>
+            style={{ backgroundColor: C.accent, paddingVertical: 12, paddingHorizontal: 28, borderRadius: 999 }}>
             <Text style={{ color: C.white, fontSize: F.body, fontWeight: '600' }}>{t('break_done')}</Text>
           </Pressable>
         ) : (
@@ -159,7 +159,7 @@ function BreakWarning({ monitor, lang }: { monitor: ReturnType<typeof useBreakMo
       <Text style={{ color: C.textDim, fontSize: F.small }}>{t('break_soon_hint')}</Text>
       <View style={{ flexDirection: 'row', gap: 16, marginTop: 6 }}>
         <Pressable onPress={() => monitor.snooze(10)}>
-          <Text style={{ color: C.teal, fontSize: F.small, fontWeight: '600' }}>{t('break_snooze')}</Text>
+          <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '600' }}>{t('break_snooze')}</Text>
         </Pressable>
         {monitor.allowSkip ? (
           <Pressable onPress={monitor.skip}>

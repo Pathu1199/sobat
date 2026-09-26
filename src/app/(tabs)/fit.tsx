@@ -1,11 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { buildSession, phaseForWeek, readiness, shouldEasePlan, weeksSince } from '../../core/fitness';
+import { totalSeconds, buildSteps } from '../../core/session';
 import type { Exercise } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
-import { Bar, Btn, Card, Divider, H2, H3, P, Pill, Ring, Row, Screen, Small } from '../../ui/components';
+import { BiText, Btn, Card, Divider, Micro, P, Pill, Ring, Row, Screen, SectionHeader, Small, StatQuad } from '../../ui/components';
 import { C, F, readinessColor } from '../../ui/theme';
 
 export default function FitScreen() {
@@ -13,6 +15,7 @@ export default function FitScreen() {
   const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
+  const en = makeT('en');
   const [open, setOpen] = useState<string | null>(null);
 
   const startDate = app.state.weights[0]?.date ?? app.today;
@@ -23,109 +26,138 @@ export default function FitScreen() {
   const lastWorkout = [...app.state.workouts].sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0];
   const moodToday = app.state.moods.filter((m) => m.date === app.today).slice(-1)[0];
 
-  const r = useMemo(
-    () => readiness({ lastSleep, lastWorkout, moodScore: moodToday?.score }),
-    [lastSleep, lastWorkout, moodToday],
-  );
-
+  const r = useMemo(() => readiness({ lastSleep, lastWorkout, moodScore: moodToday?.score }), [lastSleep, lastWorkout, moodToday]);
   const eased = shouldEasePlan(app.state.workouts);
-  const session = useMemo(
-    () => buildSession(app.exercises, eased ? Math.max(1, week - 2) : week, r),
-    [app.exercises, week, r, eased],
-  );
+  const session = useMemo(() => buildSession(app.exercises, eased ? Math.max(1, week - 2) : week, r), [app.exercises, week, r, eased]);
+  const steps = useMemo(() => buildSteps(session.exercises), [session.exercises]);
 
   const doneToday = app.state.workouts.find((w) => w.date === app.today);
-
-  function complete(status: 'done' | 'skipped') {
-    app.addWorkout({
-      id: app.today,
-      date: app.today,
-      exerciseIds: session.exercises.map((e) => e.id),
-      minutes: status === 'done' ? session.totalMinutes : 0,
-      status,
-    });
-  }
+  const doneCount = app.state.workouts.filter((w) => w.status === 'done').length;
 
   const name = (e: Exercise) => (lang === 'mr' ? e.name_mr : lang === 'hi' ? e.name_hi : e.name_en);
-  const steps = (e: Exercise) => (lang === 'mr' ? e.instructions_mr : lang === 'hi' ? e.instructions_hi : e.instructions_en);
+  const instructions = (e: Exercise) => (lang === 'mr' ? e.instructions_mr : lang === 'hi' ? e.instructions_hi : e.instructions_en);
 
   return (
     <Screen>
       <Card>
-        <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ gap: 4 }}>
-            <H2>{t(session.title)}</H2>
-            <Small>{t('readiness')} {r.score} · week {week} · phase {phase.phase}</Small>
-            <Small>{session.totalMinutes} min · {session.exercises.length} moves</Small>
-          </View>
-          <Ring value={r.score} max={100} size={84} stroke={8} color={readinessColor(r.level)}>
-            <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{r.score}</Text>
-          </Ring>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Micro>{`${en('readiness')} · ${en('period_today')}`}</Micro>
+          <Micro color={readinessColor(r.level)}>{en(session.title)}</Micro>
         </Row>
-        <P dim>{t(session.note)}</P>
-        {r.reasons.length > 0 ? (
-          <Row style={{ flexWrap: 'wrap', gap: 6 }}>
-            {r.reasons.map((x) => (
-              <Pill key={x} label={x.replace(/_/g, ' ')} />
-            ))}
-          </Row>
-        ) : null}
-        {eased ? <Small color={C.amber}>Plan eased after 3 missed days.</Small> : null}
+
+        <Row style={{ gap: 20, alignItems: 'center' }}>
+          <Ring value={r.score} max={100} size={96} stroke={6} color={readinessColor(r.level)}>
+            <Text style={{ color: C.text, fontSize: 26, fontWeight: '300' }}>{r.score}</Text>
+            <Micro>{en('readiness')}</Micro>
+          </Ring>
+          <View style={{ flex: 1, gap: 9 }}>
+            <BiText en={en(session.title)} alt={lang === 'en' ? undefined : t(session.title)} size={F.h2} weight="600" />
+            <Small>{t(session.note)}</Small>
+            {r.reasons.length > 0 ? (
+              <Row style={{ flexWrap: 'wrap', gap: 6 }}>
+                {r.reasons.slice(0, 3).map((x) => (
+                  <Pill key={x} label={x.replace(/_/g, ' ')} />
+                ))}
+              </Row>
+            ) : null}
+          </View>
+        </Row>
+
+        <Divider />
+        <StatQuad
+          items={[
+            { label: en('week_label'), value: String(week) },
+            { label: en('phase_label'), value: String(phase.phase) },
+            { label: en('minutes'), value: String(Math.round(totalSeconds(steps) / 60)) },
+            { label: en('moves'), value: String(session.exercises.length) },
+          ]}
+        />
+
+        {eased ? <Small color={C.amber}>{en('plan_eased')}</Small> : null}
 
         <Divider />
         {doneToday ? (
-          <Small color={doneToday.status === 'done' ? C.teal : C.textFaint}>
-            {doneToday.status === 'done' ? `${t('done')} · ${doneToday.minutes} min` : t('skip_session')}
-          </Small>
+          <Row style={{ gap: 8 }}>
+            <Ionicons
+              name={doneToday.status === 'done' ? 'checkmark-circle' : 'remove-circle-outline'}
+              size={17}
+              color={doneToday.status === 'done' ? C.accent : C.textGhost}
+            />
+            <Small color={doneToday.status === 'done' ? C.accent : C.textFaint}>
+              {doneToday.status === 'done' ? `${t('done')} · ${doneToday.minutes} min` : t('skip_session')}
+            </Small>
+          </Row>
         ) : (
           <Row style={{ gap: 8 }}>
             <Btn label={t('start_session')} onPress={() => router.push('/session')} style={{ flex: 1 }} />
-            <Btn label={t('skip_session')} tone="ghost" onPress={() => complete('skipped')} style={{ flex: 1 }} />
+            <Btn
+              tone="ghost"
+              label={t('skip_session')}
+              onPress={() =>
+                app.addWorkout({ id: app.today, date: app.today, exerciseIds: [], minutes: 0, status: 'skipped' })
+              }
+              style={{ flex: 1 }}
+            />
           </Row>
         )}
       </Card>
 
-      {session.exercises.map((e) => (
-        <Card key={e.id}>
-          <Row style={{ justifyContent: 'space-between' }}>
-            <View style={{ flex: 1 }}>
-              <H3>{name(e)}</H3>
-              <Small>
-                {e.mode === 'time' ? `${e.default_seconds}${t('seconds')}` : `${e.default_reps} ${t('reps')}`} × {e.default_sets} {t('sets')} · {t('rest')} {e.rest_seconds}s
-              </Small>
-            </View>
-            <Pill label={e.category.replace('_', ' ')} />
-          </Row>
-          <Btn small tone="ghost" label={open === e.id ? t('done') : t('why')} onPress={() => setOpen(open === e.id ? null : e.id)} />
-          {open === e.id ? (
-            <View style={{ gap: 6 }}>
-              {steps(e).map((s, i) => (
-                <Row key={i}>
-                  <Text style={{ color: C.teal, fontSize: F.small }}>{i + 1}</Text>
-                  <P style={{ flex: 1 }}>{s}</P>
-                </Row>
-              ))}
-              <Small color={C.amber}>{e.safety_en}</Small>
-              <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-                {e.muscles.map((m) => (
-                  <Pill key={m} label={m} />
-                ))}
-                <Pill label={e.equipment} />
-                <Pill label={`${e.impact} impact`} />
+      <View style={{ gap: 10 }}>
+        <SectionHeader title={en('todays_moves')} meta={`${session.exercises.length}`} />
+        {session.exercises.map((e) => (
+          <Card key={e.id}>
+            <Pressable onPress={() => setOpen(open === e.id ? null : e.id)}>
+              <Row style={{ justifyContent: 'space-between' }}>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <BiText en={e.name_en} alt={lang === 'en' ? undefined : name(e)} />
+                  <Micro>
+                    {e.mode === 'time' ? `${e.default_seconds}s` : `${e.default_reps} ${en('reps')}`} · {e.default_sets} {en('sets')} ·{' '}
+                    {en('rest')} {e.rest_seconds}s
+                  </Micro>
+                </View>
+                <Pill label={e.category.replace('_', ' ')} />
+                <Ionicons name={open === e.id ? 'chevron-up' : 'chevron-down'} size={16} color={C.textFaint} />
               </Row>
-            </View>
-          ) : null}
+            </Pressable>
+
+            {open === e.id ? (
+              <View style={{ gap: 9 }}>
+                <Divider />
+                {instructions(e).map((s, i) => (
+                  <Row key={i} style={{ alignItems: 'flex-start', gap: 10 }}>
+                    <Text style={{ color: C.accent, fontSize: F.tiny, width: 12, marginTop: 3 }}>{i + 1}</Text>
+                    <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 19, flex: 1 }}>{s}</Text>
+                  </Row>
+                ))}
+                <Small color={C.amber}>{e.safety_en}</Small>
+                <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+                  {e.muscles.map((m) => (
+                    <Pill key={m} label={m} />
+                  ))}
+                  <Pill label={e.equipment} />
+                  <Pill label={`${e.impact} impact`} />
+                </Row>
+              </View>
+            ) : null}
+          </Card>
+        ))}
+      </View>
+
+      <View style={{ gap: 10 }}>
+        <SectionHeader title={en('week_summary')} meta={`${doneCount} ${en('total')}`} />
+        <Card>
+          <StatQuad
+            items={[
+              { label: en('workout_days_m'), value: String(doneCount) },
+              { label: en('walk_target'), value: `${phase.walkMinutes}m` },
+              { label: en('strength_days'), value: String(phase.strengthDays) },
+              { label: en('phase_label'), value: String(phase.phase) },
+            ]}
+          />
         </Card>
-      ))}
+      </View>
 
-      <Card>
-        <H3>{t('week_summary')}</H3>
-        <Small>{t('workout_days')}: {app.state.workouts.filter((w) => w.status === 'done').length}</Small>
-        <Bar value={phase.walkMinutes} max={35} color={C.teal} />
-        <Small>Walking target this week: {phase.walkMinutes} min</Small>
-      </Card>
-
-      <Small color={C.textFaint}>{t('medical_note')}</Small>
+      <Small color={C.textGhost}>{t('medical_note')}</Small>
     </Screen>
   );
 }

@@ -3,11 +3,12 @@ import { Redirect, Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, Platform, Pressable, View } from 'react-native';
 import { NudgeToast } from '../../components/NudgeToast';
+import { TabBar } from '../../components/TabBar';
 import { Sidebar } from '../../components/Sidebar';
 import { useIsWide } from '../../ui/useBreakpoint';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
-import { C } from '../../ui/theme';
+import { C, F, S } from '../../ui/theme';
 
 export default function TabsLayout() {
   const { state, ready } = useApp();
@@ -18,7 +19,7 @@ export default function TabsLayout() {
   if (!ready) {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={C.teal} />
+        <ActivityIndicator color={C.accent} />
       </View>
     );
   }
@@ -35,16 +36,17 @@ export default function TabsLayout() {
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: C.bg }}>
       {wide ? <Sidebar /> : null}
-      <View style={{ flex: 1 }}>
-    <Tabs
-      screenOptions={{
+        <View style={{ flex: 1 }}>
+        <Tabs
+          tabBar={wide ? () => null : (props) => <TabBar {...props} />}
+          screenOptions={{
         headerStyle: { backgroundColor: C.bgAlt },
         headerTintColor: C.text,
         headerRight: settingsButton,
-        // On a wide screen the sidebar replaces the bottom bar entirely.
-        tabBarStyle: wide ? { display: 'none' } : { backgroundColor: C.bgAlt, borderTopColor: C.border },
         headerShown: !wide,
-        tabBarActiveTintColor: C.teal,
+        headerTitleStyle: { fontWeight: '600', fontSize: F.h2, letterSpacing: -0.3 },
+        headerShadowVisible: false,
+        tabBarActiveTintColor: C.accent,
         tabBarInactiveTintColor: C.textFaint,
         sceneStyle: { backgroundColor: C.bg },
       }}>

@@ -8,8 +8,8 @@ import { C, F } from '../ui/theme';
 export function AIBadge({ route, lang }: { route: AIRoute; lang: Lang }) {
   const t = makeT(lang);
   const map: Record<AIRoute, { label: string; color: string }> = {
-    primary: { label: t('ai_lan'), color: C.teal },
-    fallback: { label: t('ai_remote'), color: C.blue },
+    primary: { label: t('ai_lan'), color: C.accent },
+    fallback: { label: t('ai_remote'), color: C.cyan },
     offline: { label: t('ai_offline'), color: C.textFaint },
     checking: { label: t('ai_checking'), color: C.textFaint },
   };

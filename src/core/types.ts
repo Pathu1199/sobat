@@ -86,7 +86,16 @@ export type WorkoutLog = {
 };
 
 export type NudgeLog = { id: string; at: string; date: ISODate; type: string; action: 'done' | 'snooze' | 'skip' };
-export type ChatMsg = { id: string; role: 'user' | 'assistant'; text: string; at: string };
+export type ChatOption = { foodId: string; name_en: string; name_mr: string; grams: number; kcal: number; protein: number };
+
+export type ChatMsg = {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  at: string;
+  /** Real options from the food database, so a suggestion can be logged in one tap. */
+  options?: ChatOption[];
+};
 
 export type FoodPortion = { unit: string; label_en: string; label_mr: string; label_hi: string; grams: number };
 

@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { C, F, S } from '../ui/theme';
+import { C, F, MICRO, S } from '../ui/theme';
 
 type Item = { href: string; icon: keyof typeof Ionicons.glyphMap; labelKey: string };
 
@@ -40,9 +40,9 @@ export function Sidebar() {
         justifyContent: 'space-between',
       }}>
       <View style={{ gap: 4 }}>
-        <View style={{ paddingHorizontal: 12, paddingBottom: 22 }}>
-          <Text style={{ color: C.text, fontSize: 22, fontWeight: '600', letterSpacing: -0.4 }}>{t('app_name')}</Text>
-          <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{t('tagline')}</Text>
+        <View style={{ paddingHorizontal: 12, paddingBottom: 24, gap: 3 }}>
+          <Text style={{ color: C.text, fontSize: 21, fontWeight: '600', letterSpacing: -0.4 }}>{t('app_name')}</Text>
+          <Text style={[MICRO, { color: C.textGhost }]}>{t('tagline')}</Text>
         </View>
 
         {ITEMS.map((item) => {
@@ -59,8 +59,10 @@ export function Sidebar() {
                 paddingHorizontal: 12,
                 borderRadius: S.radiusSm,
                 backgroundColor: active ? C.cardAlt : 'transparent',
+                borderWidth: S.hairline,
+                borderColor: active ? C.border : 'transparent',
               }}>
-              <Ionicons name={item.icon} size={19} color={active ? C.teal : C.textFaint} />
+              <Ionicons name={item.icon} size={18} color={active ? C.accent : C.textFaint} />
               <Text style={{ color: active ? C.text : C.textDim, fontSize: F.body, fontWeight: active ? '600' : '400' }}>
                 {t(item.labelKey)}
               </Text>
@@ -83,8 +85,8 @@ export function Sidebar() {
           <Text style={{ color: C.textDim, fontSize: F.body }}>{t('settings')}</Text>
         </Pressable>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 10 }}>
-          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: online ? C.teal : C.textFaint }} />
-          <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{online ? t('ai_lan') : t('ai_offline')}</Text>
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: online ? C.accent : C.textFaint }} />
+          <Text style={[MICRO, { color: C.textFaint }]}>{online ? t('ai_lan') : t('ai_offline')}</Text>
         </View>
       </View>
     </View>

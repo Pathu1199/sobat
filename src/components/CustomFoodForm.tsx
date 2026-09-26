@@ -67,7 +67,7 @@ export function CustomFoodForm({ initialName, onSaved, onCancel }: { initialName
   }
 
   return (
-    <Card tone={C.teal}>
+    <Card tone={C.accent}>
       <H3>{t('custom_food')}</H3>
       <Small>{t('custom_food_hint')}</Small>
 

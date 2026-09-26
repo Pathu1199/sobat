@@ -2,12 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { AIBadge } from '../../components/AIBadge';
 import { BreakCard } from '../../components/BreakCard';
 import { DayReview } from '../../components/DayReview';
 import { DecisionCard } from '../../components/DecisionCard';
 import { TipCard } from '../../components/TipCard';
-import { toISODate } from '../../core/date';
+import { formatMinutes } from '../../core/date';
 import { decide } from '../../core/decide';
 import { findPatterns, scoreDay, weeklyStats } from '../../core/insights';
 import { pendingCount } from '../../core/queue';
@@ -15,8 +14,8 @@ import { sleepFlags } from '../../core/sleep';
 import { makeT } from '../../i18n';
 import { useAI } from '../../services/useAI';
 import { useApp } from '../../store/AppProvider';
-import { Bar, Btn, Card, Divider, H1, H3, P, Ring, Row, Screen, Small } from '../../ui/components';
-import { C, F } from '../../ui/theme';
+import { Card, Divider, H1, ListRow, MeterRow, Micro, Ring, RingStat, Row, Screen, SectionHeader, Small, StatusChip } from '../../ui/components';
+import { C, F, S, scoreColor } from '../../ui/theme';
 
 export default function TodayScreen() {
   const app = useApp();
@@ -25,19 +24,24 @@ export default function TodayScreen() {
   const { state, budget, targets, waterToday, streakDays, today } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
+  // The design leads in English with the chosen language underneath.
+  const en = makeT('en');
   const hour = new Date().getHours();
 
-  const greeting = hour < 12 ? t('good_morning') : hour < 17 ? t('good_afternoon') : t('good_evening');
+  const greetKey = hour < 12 ? 'good_morning' : hour < 17 ? 'good_afternoon' : 'good_evening';
+  const greeting = en(greetKey);
+  const greetingAlt = lang === 'en' ? null : t(greetKey);
 
   const todayMeals = state.meals.filter((m) => m.date === today);
   const workoutToday = state.workouts.find((w) => w.date === today && w.status === 'done');
   const moodToday = state.moods.filter((m) => m.date === today).slice(-1)[0];
-  const sleepLast = [...state.sleep].sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0];
+  const sleepAll = [...state.sleep].sort((a, b) => a.date.localeCompare(b.date));
+  const sleepLast = sleepAll[sleepAll.length - 1];
 
-  const lateMealDays = useMemo(() => {
-    const days = new Set(state.meals.filter((m) => Number(m.at.slice(11, 13)) >= 22).map((m) => m.date));
-    return days.size;
-  }, [state.meals]);
+  const lateMealDays = useMemo(
+    () => new Set(state.meals.filter((m) => Number(m.at.slice(11, 13)) >= 22).map((m) => m.date)).size,
+    [state.meals],
+  );
 
   const decision = useMemo(
     () =>
@@ -84,175 +88,230 @@ export default function TodayScreen() {
   const flags = sleepFlags(state.sleep);
   const over = budget.remaining < 0;
   const needsSleepCheckin = !state.sleep.some((s) => s.date === today);
+  const online = ai.route === 'primary' || ai.route === 'fallback';
+  const queued = pendingCount(state.photoQueue);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <Screen>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <View>
-            <H1>{greeting}{state.profile.name ? `, ${state.profile.name}` : ''}</H1>
-            {streakDays > 0 ? <Small color={C.teal}>{streakDays} {t('streak_days')}</Small> : null}
+    <Screen>
+      <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <View style={{ flex: 1 }}>
+          <H1>
+            {greeting}, {state.profile.name || 'there'}
+          </H1>
+          {greetingAlt ? <Small color={C.textFaint}>{greetingAlt}</Small> : null}
+        </View>
+        <Row style={{ gap: 7 }}>
+          {streakDays > 0 ? <StatusChip label={`${streakDays}d`} color={C.amber} /> : null}
+          <StatusChip label={online ? t('ai_lan') : t('ai_offline')} color={online ? C.accent : C.textGhost} />
+        </Row>
+      </Row>
+
+      {queued > 0 ? (
+        <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small>
+      ) : null}
+
+      <Card>
+        <Row style={{ gap: 20, alignItems: 'center' }}>
+          <Ring value={budget.consumed} max={budget.target} size={116} stroke={7} color={over ? C.red : C.accent}>
+            <Text style={{ color: C.text, fontSize: 27, fontWeight: '300', letterSpacing: -0.8 }}>{Math.abs(budget.remaining)}</Text>
+            <Micro>{over ? t('kcal_over') : t('kcal_left')}</Micro>
+          </Ring>
+
+          <View style={{ flex: 1, gap: 14 }}>
+            <MeterRow label={en('eaten')} alt={lang === 'en' ? undefined : t('eaten')} value={budget.consumed} total={budget.target} unit="kcal" color={C.accent} />
+            <MeterRow
+              label="Protein"
+              alt={lang === 'en' ? undefined : t('protein')}
+              value={budget.proteinConsumed}
+              total={budget.proteinTarget}
+              unit="g"
+              color={C.violet}
+            />
+            <MeterRow
+              label="Water"
+              alt={lang === 'en' ? undefined : t('water')}
+              value={waterToday}
+              total={state.settings.waterGoalMl}
+              unit="ml"
+              color={C.cyan}
+            />
+            {app.stepsToday > 0 ? (
+              <MeterRow label={en('steps_today')} alt={lang === 'en' ? undefined : t('steps_today')} value={app.stepsToday} total={8000} color={C.green} />
+            ) : null}
           </View>
-          <AIBadge route={ai.route} lang={lang} />
         </Row>
 
-        {!ai.checking && ai.route === 'offline' ? <Small color={C.textFaint}>{t('ai_offline_hint')}</Small> : null}
-        {pendingCount(state.photoQueue) > 0 ? (
-          <Small color={C.blue}>
-            {(pendingCount(state.photoQueue) === 1 ? t('photos_queued') : t('photos_queued_plural')).replace(
-              '{n}',
-              String(pendingCount(state.photoQueue)),
-            )}
-          </Small>
-        ) : null}
+        <Divider />
+        <Row style={{ gap: 8 }}>
+          <QuickAction icon="add" label={t('add_food')} onPress={() => router.push('/log')} />
+          <QuickAction icon="camera-outline" label={t('add_photo')} onPress={() => router.push('/photo')} />
+          <QuickAction icon="water-outline" label={t('add_water')} onPress={() => app.addWater(state.settings.glassMl)} />
+        </Row>
+      </Card>
 
+      <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} />
+
+      {needsSleepCheckin ? (
         <Card>
-          <Row style={{ justifyContent: 'space-around', alignItems: 'center' }}>
-            <Ring value={budget.consumed} max={budget.target} color={over ? C.red : C.teal} size={150}>
-              <Text style={{ color: C.text, fontSize: 30, fontWeight: '600' }}>{Math.abs(budget.remaining)}</Text>
-              <Text style={{ color: C.textDim, fontSize: F.small }}>{over ? t('kcal_over') : t('kcal_left')}</Text>
-            </Ring>
-            <View style={{ gap: 12, flex: 1, maxWidth: 220 }}>
-              <StatLine label={t('eaten')} value={`${budget.consumed}`} sub={`/ ${budget.target}`} />
-              <View style={{ gap: 4 }}>
-                <StatLine label={t('protein')} value={`${budget.proteinConsumed}`} sub={`/ ${budget.proteinTarget} g`} />
-                <Bar value={budget.proteinConsumed} max={budget.proteinTarget} color={C.purple} />
-              </View>
-              <View style={{ gap: 4 }}>
-                <StatLine label={t('water')} value={`${Math.round(waterToday / 250)}`} sub={`/ ${Math.round(state.settings.waterGoalMl / 250)} ${t('glasses')}`} />
-                <Bar value={waterToday} max={state.settings.waterGoalMl} color={C.blue} />
-              </View>
-              {app.stepsToday > 0 ? <StatLine label={t('steps_today')} value={`${app.stepsToday}`} sub="" /> : null}
-            </View>
-          </Row>
-
-          <Divider />
-          <Row style={{ gap: 8 }}>
-            <Btn small label={`+ ${t('add_food')}`} onPress={() => router.push('/log')} style={{ flex: 1 }} />
-            <Btn small tone="soft" label={`+ ${t('add_photo')}`} onPress={() => router.push('/photo')} style={{ flex: 1 }} />
-            <Btn small tone="soft" label={`+ ${t('add_water')}`} onPress={() => app.addWater(state.settings.glassMl)} style={{ flex: 1 }} />
-          </Row>
+          <ListRow
+            icon={<Ionicons name="moon-outline" size={17} color={C.cyan} />}
+            title={t('sleep_checkin')}
+            sub={t('sleep_title')}
+            onPress={() => router.push('/sleep')}
+            trailing={<Ionicons name="chevron-forward" size={17} color={C.textFaint} />}
+          />
         </Card>
-
-        <DecisionCard decision={decision} lang={lang} />
-
-        <TipCard />
-
-        <DayReview />
-
-        <BreakCard />
-
-        {needsSleepCheckin ? (
+      ) : sleepLast ? (
+        <Card>
           <Pressable onPress={() => router.push('/sleep')}>
-            <Card tone={C.blue}>
-              <Row style={{ justifyContent: 'space-between' }}>
-                <View style={{ flex: 1 }}>
-                  <H3>{t('sleep_checkin')}</H3>
-                  <Small>{t('sleep_title')}</Small>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={C.textDim} />
-              </Row>
-            </Card>
-          </Pressable>
-        ) : sleepLast ? (
-          <Card>
-            <Row style={{ justifyContent: 'space-between' }}>
-              <H3>{t('sleep_title')}</H3>
-              <Small>{Math.floor(sleepLast.minutes / 60)}h {sleepLast.minutes % 60}m · {t('sleep_score')} {sleepLast.score}</Small>
+            <Row style={{ gap: 12 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="moon-outline" size={17} color={C.cyan} />
+              </View>
+              <View style={{ flex: 1, gap: 3 }}>
+                <Row style={{ gap: 8, alignItems: 'baseline' }}>
+                  <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{formatMinutes(sleepLast.minutes)}</Text>
+                  <Micro>{t('sleep_title')}</Micro>
+                </Row>
+                <Text style={{ color: C.textFaint, fontSize: F.tiny }}>
+                  {sleepLast.bed} - {sleepLast.wake} · {sleepLast.wakeups} {t('wakeups').toLowerCase()}
+                </Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ color: scoreColor(sleepLast.score), fontSize: F.h2, fontWeight: '500' }}>{sleepLast.score}</Text>
+                <Micro>Score</Micro>
+              </View>
+              <Ionicons name="chevron-forward" size={17} color={C.textFaint} />
             </Row>
-            {flags.map((f) => (
-              <Small key={f} color={f === 'apnea_screen' ? C.amber : C.textDim}>{t(`flag_${f}`)}</Small>
-            ))}
-          </Card>
-        ) : null}
+          </Pressable>
+          {flags.map((f) => (
+            <Small key={f} color={f === 'apnea_screen' ? C.amber : C.textFaint}>
+              {t(`flag_${f}`)}
+            </Small>
+          ))}
+        </Card>
+      ) : null}
 
+      <View style={{ gap: 10 }}>
+        <SectionHeader title={t('today_plan')} meta={t('daily_aggregate')} />
         <Card>
-          <H3>{t('today_plan')}</H3>
-          <Row style={{ flexWrap: 'wrap', gap: 14 }}>
-            <ScorePill label={t('eaten')} value={score.eating} />
-            <ScorePill label={t('burned')} value={score.movement} />
-            <ScorePill label={t('water')} value={score.water} />
-            <ScorePill label={t('sleep_title')} value={score.sleep} />
-            <ScorePill label={t('mind_title')} value={score.mood} />
+          <Row style={{ justifyContent: 'space-between' }}>
+            <RingStat label={t('eaten')} value={score.eating} color={scoreColor(score.eating)} />
+            <RingStat label={t('burned')} value={score.movement} color={scoreColor(score.movement)} />
+            <RingStat label={t('water')} value={score.water} color={scoreColor(score.water)} />
+            <RingStat label={t('sleep_title')} value={score.sleep} color={scoreColor(score.sleep)} />
+            <RingStat label={t('mind_title')} value={score.mood} color={scoreColor(score.mood)} />
           </Row>
         </Card>
+      </View>
 
+      <TipCard />
+
+      <DayReview />
+
+      <BreakCard />
+
+      <View style={{ gap: 10 }}>
+        <SectionHeader
+          title={t('logged_intake')}
+          meta={`${todayMeals.length} ${todayMeals.length === 1 ? t('session_one') : t('session_many')}`}
+        />
         <Card>
-          <H3>{t('week_summary')}</H3>
-          <Row style={{ flexWrap: 'wrap', gap: 16 }}>
-            <Metric label={t('logged_days')} value={`${week.loggedDays}/7`} />
-            <Metric label={t('over_days')} value={`${week.overDays}`} />
-            <Metric label={t('workout_days')} value={`${week.workoutDays}`} />
-            <Metric label={t('avg_kcal')} value={`${week.avgKcal}`} />
-            <Metric label={t('avg_sleep')} value={week.avgSleepMinutes ? `${Math.floor(week.avgSleepMinutes / 60)}h` : '-'} />
-            {week.trend ? <Metric label="kg" value={`${week.trend.current}${week.trend.change7 !== null ? ` (${week.trend.change7 > 0 ? '+' : ''}${week.trend.change7})` : ''}`} /> : null}
+          {todayMeals.length === 0 ? (
+            <Small color={C.textGhost}>{t('nothing_logged')}</Small>
+          ) : (
+            todayMeals.map((m, i) => {
+              const names = m.items.map((x) => x.name_en).filter(Boolean);
+              const alt = lang !== 'en' ? m.items.map((x) => x.name_mr).filter(Boolean)[0] : undefined;
+              return (
+                <View key={m.id}>
+                  {i > 0 ? <Divider /> : null}
+                  <ListRow
+                    icon={<Ionicons name="restaurant-outline" size={15} color={C.textDim} />}
+                    title={t(m.type)}
+                    alt={names[0] ? `· ${names.slice(0, 2).join(', ')}` : alt}
+                    sub={
+                      m.note === 'needs_review'
+                        ? t('needs_review')
+                        : `${m.at.slice(11, 16)} · ${m.items.some((x) => x.estimated) ? t('estimated') : t('verified_record')}`
+                    }
+                    value={String(m.kcal)}
+                    valueUnit="kcal"
+                  />
+                </View>
+              );
+            })
+          )}
+        </Card>
+      </View>
+
+      <View style={{ gap: 10 }}>
+        <SectionHeader title={t('week_summary')} meta={`${week.loggedDays}/7`} />
+        <Card>
+          <Row style={{ flexWrap: 'wrap', rowGap: 18 }}>
+            <Metric label={t('avg_kcal')} value={String(week.avgKcal)} />
+            <Metric label={t('over_days')} value={String(week.overDays)} />
+            <Metric label={t('workout_days')} value={String(week.workoutDays)} />
+            <Metric label={t('avg_sleep')} value={week.avgSleepMinutes ? formatMinutes(week.avgSleepMinutes) : '--'} />
+            {week.trend ? (
+              <Metric
+                label="kg"
+                value={`${week.trend.current}`}
+                delta={week.trend.change7 !== null ? `${week.trend.change7 > 0 ? '+' : ''}${week.trend.change7}` : undefined}
+                deltaGood={week.trend.change7 !== null ? week.trend.change7 <= 0 : undefined}
+              />
+            ) : null}
           </Row>
         </Card>
+      </View>
 
-        {patterns.length > 0 ? (
+      {patterns.length > 0 ? (
+        <View style={{ gap: 10 }}>
+          <SectionHeader title={t('patterns')} />
           <Card>
-            <H3>{t('patterns')}</H3>
             {patterns.slice(0, 3).map((p) => (
               <Small key={p.key}>{p.detail}</Small>
             ))}
           </Card>
-        ) : null}
+        </View>
+      ) : null}
 
-        {todayMeals.length > 0 ? (
-          <Card>
-            <H3>{t('tab_log')}</H3>
-            {todayMeals.map((m) => (
-              <Row key={m.id} style={{ justifyContent: 'space-between' }}>
-                <View style={{ flex: 1 }}>
-                  <P>{m.items.map((i) => (lang === 'mr' ? i.name_mr || i.name_en : i.name_en)).join(', ') || t(m.type)}</P>
-                  <Small color={m.note === 'needs_review' ? C.amber : undefined}>
-                    {m.note === 'needs_review' ? t('needs_review') : `${t(m.type)} · ${m.at.slice(11, 16)}`}
-                  </Small>
-                </View>
-                <Text style={{ color: C.text, fontWeight: '600' }}>{m.kcal}</Text>
-              </Row>
-            ))}
-          </Card>
-        ) : null}
+      <Small color={C.textGhost}>{t('medical_note')}</Small>
+    </Screen>
+  );
+}
 
-        <Small color={C.textFaint}>{t('medical_note')}</Small>
-      </Screen>
+function QuickAction({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        backgroundColor: C.cardAlt,
+        borderWidth: S.hairline,
+        borderColor: C.border,
+        borderRadius: S.radiusSm,
+        paddingVertical: 13,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 7,
+        opacity: pressed ? 0.7 : 1,
+      })}>
+      <Ionicons name={icon} size={15} color={C.textDim} />
+      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function Metric({ label, value, delta, deltaGood }: { label: string; value: string; delta?: string; deltaGood?: boolean }) {
+  return (
+    <View style={{ minWidth: 76, flexGrow: 1, gap: 5 }}>
+      <Micro>{label}</Micro>
+      <Row style={{ gap: 6, alignItems: 'baseline' }}>
+        <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>{value}</Text>
+        {delta ? <Text style={{ color: deltaGood ? C.cyan : C.amber, fontSize: F.tiny }}>{delta}</Text> : null}
+      </Row>
     </View>
   );
 }
-
-function StatLine({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <Row style={{ justifyContent: 'space-between' }}>
-      <Text style={{ color: C.textDim, fontSize: F.small }}>{label}</Text>
-      <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
-        {value}
-        <Text style={{ color: C.textFaint, fontWeight: '400', fontSize: F.small }}> {sub}</Text>
-      </Text>
-    </Row>
-  );
-}
-
-function ScorePill({ label, value }: { label: string; value: number | null }) {
-  // A dash means 'nothing logged yet', which should not look like a zero.
-  const known = value !== null;
-  const color = !known ? C.textFaint : value >= 70 ? C.teal : value >= 40 ? C.amber : C.textFaint;
-  return (
-    <View style={{ alignItems: 'center', gap: 6, minWidth: 56 }}>
-      <Ring value={known ? value : 0} max={100} size={48} stroke={5} color={color}>
-        <Text style={{ color: known ? C.text : C.textFaint, fontSize: F.tiny }}>{known ? value : '-'}</Text>
-      </Ring>
-      <Text style={{ color: C.textDim, fontSize: F.tiny }}>{label}</Text>
-    </View>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ minWidth: 70 }}>
-      <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{value}</Text>
-      <Text style={{ color: C.textDim, fontSize: F.tiny }}>{label}</Text>
-    </View>
-  );
-}
-

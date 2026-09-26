@@ -1,13 +1,13 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
-import { C, F } from './theme';
+import { C, F, MICRO } from './theme';
 
 /** A thin line with a soft fill, for weight over time. */
 export function LineChart({
   data,
   height = 120,
-  color = C.teal,
+  color = C.accent,
   goal,
   format = (v: number) => String(v),
 }: {
@@ -61,8 +61,8 @@ export function BarChart({
   data,
   height = 120,
   target,
-  color = C.teal,
-  overColor = C.amber,
+  color = C.accent,
+  overColor = C.cyan,
   format = (v: number) => String(v),
 }: {
   data: { date: string; value: number }[];
@@ -116,27 +116,43 @@ export function BarChart({
 }
 
 /** One small square per day: filled when logged, ringed when on target. */
-export function ConsistencyStrip({ data }: { data: { date: string; logged: boolean; onTarget: boolean; moved: boolean }[] }) {
-  const cell = data.length > 10 ? 14 : 26;
-  const gap = data.length > 10 ? 4 : 6;
+export function ConsistencyStrip({ data, labels }: { data: { date: string; logged: boolean; onTarget: boolean; moved: boolean }[]; labels?: string[] }) {
+  const big = data.length <= 7;
+  const gap = big ? 6 : 4;
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap }}>
-      {data.map((d) => (
-        <View
-          key={d.date}
-          style={{
-            width: cell,
-            height: cell,
-            borderRadius: 4,
-            backgroundColor: d.onTarget ? C.teal : d.logged ? C.tealSoft : 'transparent',
-            borderWidth: 1,
-            borderColor: d.logged ? 'transparent' : C.border,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-          {d.moved ? <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: C.white }} /> : null}
+    <View style={{ gap: 6 }}>
+      <View style={{ flexDirection: 'row', flexWrap: big ? 'nowrap' : 'wrap', gap }}>
+        {data.map((d, i) => {
+          const today = i === data.length - 1;
+          return (
+            <View
+              key={d.date}
+              style={{
+                flex: big ? 1 : undefined,
+                width: big ? undefined : 15,
+                aspectRatio: big ? 1 : undefined,
+                height: big ? undefined : 15,
+                borderRadius: big ? 10 : 4,
+                backgroundColor: today && d.logged ? C.cyan : d.onTarget ? C.accent : d.logged ? C.accentDim : C.cardAlt,
+                borderWidth: 1,
+                borderColor: today ? C.cyan : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              {d.moved ? <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.white, opacity: 0.85 }} /> : null}
+            </View>
+          );
+        })}
+      </View>
+      {labels && big ? (
+        <View style={{ flexDirection: 'row', gap }}>
+          {labels.map((l, i) => (
+            <Text key={i} style={[MICRO, { color: C.textGhost, flex: 1, textAlign: 'center' }]}>
+              {l}
+            </Text>
+          ))}
         </View>
-      ))}
+      ) : null}
     </View>
   );
 }
@@ -153,7 +169,7 @@ export function HourStrip({ hours }: { hours: number[] }) {
             flex: 1,
             height: Math.max(2, (m / max) * 44),
             borderRadius: 2,
-            backgroundColor: m >= 45 ? C.amber : m > 0 ? C.teal : C.cardAlt,
+            backgroundColor: m >= 45 ? C.cyan : m > 0 ? C.accent : C.cardAlt,
             opacity: m > 0 ? 1 : 0.4,
           }}
         />

@@ -79,7 +79,7 @@ export default function SleepScreen() {
 
         <Divider />
         <Row style={{ justifyContent: 'space-around', alignItems: 'center' }}>
-          <Ring value={score} max={100} size={90} stroke={8} color={score >= 70 ? C.teal : score >= 45 ? C.amber : C.red}>
+          <Ring value={score} max={100} size={90} stroke={8} color={score >= 70 ? C.accent : score >= 45 ? C.amber : C.red}>
             <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600' }}>{score}</Text>
           </Ring>
           <View>
@@ -118,7 +118,7 @@ export default function SleepScreen() {
               <Row key={s.date} style={{ justifyContent: 'space-between' }}>
                 <Small>{s.date}</Small>
                 <Small>{formatMinutes(s.minutes)}</Small>
-                <Small color={s.score >= 70 ? C.teal : C.textDim}>{s.score}</Small>
+                <Small color={s.score >= 70 ? C.accent : C.textDim}>{s.score}</Small>
               </Row>
             ))}
         </Card>

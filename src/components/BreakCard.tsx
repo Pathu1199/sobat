@@ -28,7 +28,7 @@ export function BreakCard() {
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
         <Row style={{ gap: 8 }}>
-          <Ionicons name="timer-outline" size={18} color={C.teal} />
+          <Ionicons name="timer-outline" size={18} color={C.accent} />
           <H3>{t('break_monitor')}</H3>
         </Row>
         <Small color={C.textFaint}>{formatMinutes(screen)}</Small>
@@ -42,7 +42,7 @@ export function BreakCard() {
               {t('minutes')} · {t('break_next').toLowerCase()}
             </Text>
           </Row>
-          <Bar value={elapsed} max={monitor.workMinutes} color={left <= 1 ? C.amber : C.teal} />
+          <Bar value={elapsed} max={monitor.workMinutes} color={left <= 1 ? C.amber : C.accent} />
         </>
       ) : (
         <Small color={C.textFaint}>{t('break_off')}</Small>
@@ -50,7 +50,7 @@ export function BreakCard() {
 
       <Row style={{ justifyContent: 'space-between' }}>
         <Small>{t('break_compliance')}</Small>
-        <Small color={stats.compliancePct >= 60 ? C.teal : C.textDim}>
+        <Small color={stats.compliancePct >= 60 ? C.accent : C.textDim}>
           {stats.taken} / {todayBreaks.length || 0}
         </Small>
       </Row>

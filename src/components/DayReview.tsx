@@ -93,14 +93,14 @@ export function DayReview() {
   return (
     <Card>
       <Row style={{ gap: 8 }}>
-        <Ionicons name="moon-outline" size={18} color={C.blue} />
+        <Ionicons name="moon-outline" size={18} color={C.cyan} />
         <H3>{t('day_review')}</H3>
       </Row>
 
       {text ? (
         <>
           <P>{text}</P>
-          <Small color={C.teal}>{t('review_saved')}</Small>
+          <Small color={C.accent}>{t('review_saved')}</Small>
         </>
       ) : existing ? (
         <>
@@ -109,7 +109,7 @@ export function DayReview() {
         </>
       ) : busy ? (
         <Row>
-          <ActivityIndicator color={C.teal} />
+          <ActivityIndicator color={C.accent} />
           <Small>{t('write_review')}</Small>
         </Row>
       ) : (

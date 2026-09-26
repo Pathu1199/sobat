@@ -103,7 +103,7 @@ export default function Onboarding() {
         </View>
       </Card>
 
-      <Card tone={C.teal}>
+      <Card tone={C.accent}>
         <H2>{targets.kcal} kcal</H2>
         <Small>
           {t('target')} · {targets.proteinG} g {t('protein')}
@@ -111,7 +111,7 @@ export default function Onboarding() {
         <Divider />
         <Row style={{ justifyContent: 'space-between' }}>
           <Small>{t('bmi_label')}</Small>
-          <Small color={targets.band === 'normal' ? C.teal : C.amber}>
+          <Small color={targets.band === 'normal' ? C.accent : C.amber}>
             {targets.bmi} ({targets.band})
           </Small>
         </Row>

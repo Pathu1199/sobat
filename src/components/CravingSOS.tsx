@@ -72,7 +72,7 @@ export function CravingSOS() {
                 cx={size / 2}
                 cy={size / 2}
                 r={rad}
-                stroke={done ? C.teal : C.amber}
+                stroke={done ? C.accent : C.amber}
                 strokeWidth={stroke}
                 fill="none"
                 strokeDasharray={`${circ}`}

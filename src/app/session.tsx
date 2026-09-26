@@ -97,7 +97,7 @@ export default function SessionScreen() {
     const reached = completedExerciseIds(steps, index).length;
     return (
       <Screen>
-        <Card tone={C.teal}>
+        <Card tone={C.accent}>
           <H2>{done ? t('session_complete') : t('session_stopped')}</H2>
           <Small>
             {reached} / {session.exercises.length} · {Math.max(1, Math.round((Date.now() - startedAt.current) / 60000))} min
@@ -130,11 +130,11 @@ export default function SessionScreen() {
   const pct = total > 0 ? left / total : 0;
   const isRest = step.kind === 'rest';
   const current = isRest ? step.nextExercise : step.exercise;
-  const accent = isRest ? C.blue : C.teal;
+  const accent = isRest ? C.cyan : C.accent;
 
   return (
     <Screen>
-      <Bar value={progressAt(steps, index)} max={1} color={C.teal} />
+      <Bar value={progressAt(steps, index)} max={1} color={C.accent} />
       <Row style={{ justifyContent: 'space-between' }}>
         <Small>
           {index + 1} / {steps.length}
@@ -192,7 +192,7 @@ export default function SessionScreen() {
           <H3>{name(current)}</H3>
           {instructions(current).map((line, i) => (
             <Row key={i} style={{ alignItems: 'flex-start' }}>
-              <Text style={{ color: C.teal, fontSize: F.small, width: 16 }}>{i + 1}</Text>
+              <Text style={{ color: C.accent, fontSize: F.small, width: 16 }}>{i + 1}</Text>
               <P style={{ flex: 1 }}>{line}</P>
             </Row>
           ))}

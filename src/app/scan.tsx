@@ -111,8 +111,8 @@ export default function ScanScreen() {
     const n = kcalForGrams(found, per.grams);
     return (
       <Screen>
-        <Card tone={C.teal}>
-          <Small color={C.teal}>{t('barcode_found')}</Small>
+        <Card tone={C.accent}>
+          <Small color={C.accent}>{t('barcode_found')}</Small>
           <H2>{found.name_en}</H2>
           <Divider />
           <Row style={{ justifyContent: 'space-between' }}>
