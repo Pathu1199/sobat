@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { factsFrom, memoryExtractionPrompt, MEMORY_SCHEMA, systemPrompt } from '../../ai/prompts';
+import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { toISODate } from '../../core/date';
 import { suggestMeals, toMealItem } from '../../core/foods';
 import { guardAdvice, HELPLINES, isCrisisText } from '../../core/guardrails';
@@ -12,16 +13,19 @@ import type { ChatOption } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useAI } from '../../services/useAI';
 import { useApp } from '../../store/AppProvider';
-import { BiText, Btn, Card, Divider, Micro, Pill, Row, Small, StatusChip } from '../../ui/components';
+import { BiText, Btn, Card, Divider, Micro, Pill, Row, Small } from '../../ui/components';
 import { C, F, S } from '../../ui/theme';
+import { TopBar } from '../../ui/TopBar';
+import { useBreakpoint } from '../../ui/useBreakpoint';
 
 export default function CoachScreen() {
   const app = useApp();
-  const { ai, ask, askJSON, online } = useAI();
+  const { ai, ask, askJSON } = useAI();
   const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const en = makeT('en');
+  const wide = useBreakpoint() === 'desktop';
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [crisis, setCrisis] = useState(false);
@@ -133,18 +137,21 @@ export default function CoachScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <TopBar
+        title={en('coach_title')}
+        alt={lang === 'en' ? undefined : t('coach_title')}
+        left={wide ? undefined : <IconButton name="chevron-back" label={t('cancel')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />}
+        right={<TopBarActions />}
+      />
       <ScrollView
         ref={scroller}
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: S.pad, gap: 14, maxWidth: 780, width: '100%', alignSelf: 'center' }}
         keyboardShouldPersistTaps="handled">
         <Row style={{ justifyContent: 'space-between' }}>
-          <Row style={{ gap: 8 }}>
-            <StatusChip label={online ? en('ai_lan') : en('ai_offline')} color={online ? C.accent : C.textGhost} />
-            <Pressable onPress={() => router.push('/memory')}>
-              <Micro color={C.textDim}>{`${app.state.memory.length} ${en('mem_fact')}`}</Micro>
-            </Pressable>
-          </Row>
+          <Pressable onPress={() => router.push('/memory')}>
+            <Micro color={C.textDim}>{`${app.state.memory.length} ${en('mem_fact')}`}</Micro>
+          </Pressable>
           {app.state.chat.length > 0 ? (
             <Pressable onPress={app.clearChat}>
               <Micro color={C.accent}>{`+ ${en('new_chat')}`}</Micro>

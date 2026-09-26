@@ -6,7 +6,8 @@ import { BreakCard } from '../../components/BreakCard';
 import { DayReview } from '../../components/DayReview';
 import { DecisionCard } from '../../components/DecisionCard';
 import { TipCard } from '../../components/TipCard';
-import { formatMinutes, localHHMM, localHour } from '../../core/date';
+import { TopBarActions } from '../../components/TopBarActions';
+import { formatDayLabel, formatMinutes, localHHMM, localHour } from '../../core/date';
 import { decide } from '../../core/decide';
 import { findPatterns, scoreDay, weeklyStats } from '../../core/insights';
 import { expectedWaterByHour } from '../../core/nudge';
@@ -14,15 +15,14 @@ import { pendingCount } from '../../core/queue';
 import { sleepFlags } from '../../core/sleep';
 import { makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
-import { useAI } from '../../services/useAI';
 import { useApp } from '../../store/AppProvider';
-import { Card, Divider, H1, ListRow, MeterRow, Micro, Ring, RingStat, Row, Screen, SectionHeader, Small, StatusChip } from '../../ui/components';
+import { Card, Divider, ListRow, MeterRow, Micro, Ring, RingStat, Row, SectionHeader, Small } from '../../ui/components';
 import { C, F, S, scoreColor } from '../../ui/theme';
+import { Page } from '../../ui/TopBar';
 import { useBreakpoint } from '../../ui/useBreakpoint';
 
 export default function TodayScreen() {
   const app = useApp();
-  const { ai } = useAI();
   const router = useRouter();
   const fb = useFeedback();
   const { state, budget, targets, waterToday, streakDays, today } = app;
@@ -95,29 +95,10 @@ export default function TodayScreen() {
   const flags = sleepFlags(state.sleep);
   const over = budget.remaining < 0;
   const needsSleepCheckin = !state.sleep.some((s) => s.date === today);
-  const online = ai.route === 'primary' || ai.route === 'fallback';
   const queued = pendingCount(state.photoQueue);
 
-  const header = (
-    <>
-      <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <View style={{ flex: 1 }}>
-          <H1>
-            {greeting}, {state.profile.name || 'there'}
-          </H1>
-          {greetingAlt ? <Small color={C.textFaint}>{greetingAlt}</Small> : null}
-        </View>
-        <Row style={{ gap: 7 }}>
-          {streakDays > 0 ? <StatusChip label={`${streakDays}d`} color={C.amber} /> : null}
-          <StatusChip label={online ? t('ai_lan') : t('ai_offline')} color={online ? C.accent : C.textGhost} />
-        </Row>
-      </Row>
-
-      {queued > 0 ? (
-        <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small>
-      ) : null}
-    </>
-  );
+  const subtitle = `${formatDayLabel(today, lang)}${streakDays > 0 ? ` · ${streakDays} ${t('streak_days')}` : ''}`;
+  const titleName = `${greeting}, ${state.profile.name || 'there'}`;
 
   const heroCard = (
       <Card>
@@ -291,8 +272,10 @@ export default function TodayScreen() {
 
   if (wide) {
     return (
-      <Screen wide>
-        {header}
+      <Page title={titleName} alt={greetingAlt ?? undefined} subtitle={subtitle} right={<TopBarActions streak={streakDays} />} wide={wide}>
+        {queued > 0 ? (
+          <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small>
+        ) : null}
         <View style={{ flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
           <View style={{ flex: 1.15, gap: 14 }}>
             {heroCard}
@@ -312,13 +295,15 @@ export default function TodayScreen() {
           </View>
         </View>
         <Small color={C.textGhost}>{t('medical_note')}</Small>
-      </Screen>
+      </Page>
     );
   }
 
   return (
-    <Screen>
-      {header}
+    <Page title={titleName} alt={greetingAlt ?? undefined} subtitle={subtitle} right={<TopBarActions streak={streakDays} />} wide={wide}>
+      {queued > 0 ? (
+        <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small>
+      ) : null}
       {heroCard}
       <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} />
       {sleepCard}
@@ -330,7 +315,7 @@ export default function TodayScreen() {
       {weekBlock}
       {patternsBlock}
       <Small color={C.textGhost}>{t('medical_note')}</Small>
-    </Screen>
+    </Page>
   );
 }
 

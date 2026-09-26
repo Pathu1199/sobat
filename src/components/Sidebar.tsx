@@ -4,7 +4,9 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
+import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
+import { Ring } from '../ui/components';
 import { C, F, MICRO, S } from '../ui/theme';
 
 type Item = { href: string; icon: keyof typeof Ionicons.glyphMap; labelKey: string };
@@ -22,7 +24,9 @@ const ITEMS: Item[] = [
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { state } = useApp();
+  const monitor = useBreakMonitor();
+  const app = useApp();
+  const { state } = app;
   const { ai } = useAI();
   const t = makeT(state.profile.lang);
 
@@ -84,6 +88,24 @@ export function Sidebar() {
           <Ionicons name="settings-outline" size={19} color={C.textFaint} />
           <Text style={{ color: C.textDim, fontSize: F.body }}>{t('settings')}</Text>
         </Pressable>
+        <View style={{ paddingHorizontal: 12, paddingVertical: 10, gap: 10, borderTopWidth: S.hairline, borderTopColor: C.border, marginTop: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Ring value={monitor.enabled ? monitor.workMinutes - monitor.minutesLeft : 0} max={monitor.workMinutes} size={34} stroke={3} color={C.accent}>
+              <Text style={{ color: C.text, fontSize: F.micro, fontWeight: '600' }}>{monitor.enabled ? Math.ceil(monitor.minutesLeft) : '--'}</Text>
+            </Ring>
+            <View style={{ flex: 1 }}>
+              <Text style={[MICRO, { color: C.textFaint }]}>{t('next_break')}</Text>
+              <Text style={{ color: C.textDim, fontSize: F.small }}>{monitor.enabled ? `${Math.ceil(monitor.minutesLeft)} ${t('minutes')}` : t('break_off')}</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Ionicons name="water-outline" size={16} color={C.cyan} />
+            <Text style={{ color: C.textDim, fontSize: F.small }}>
+              {Math.round(app.waterToday / state.settings.glassMl)}
+              <Text style={{ color: C.textFaint }}> / {Math.round(state.settings.waterGoalMl / state.settings.glassMl)} {t('water_glasses')}</Text>
+            </Text>
+          </View>
+        </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 10 }}>
           <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: online ? C.accent : C.textFaint }} />
           <Text style={[MICRO, { color: C.textFaint }]}>{online ? t('ai_lan') : t('ai_offline')}</Text>

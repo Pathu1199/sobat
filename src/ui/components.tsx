@@ -8,7 +8,7 @@ export function Screen({ children, refreshing, wide }: { children: React.ReactNo
   return (
     <ScrollView
       style={st.screen}
-      contentContainerStyle={[st.screenContent, wide && { maxWidth: 1360, padding: 22 }]}
+      contentContainerStyle={[st.screenContent, wide && { maxWidth: S.maxWide, paddingHorizontal: S.gutterWide, paddingTop: 4 }]}
       keyboardShouldPersistTaps="handled">
       {refreshing ? <ActivityIndicator color={C.accent} /> : null}
       {children}

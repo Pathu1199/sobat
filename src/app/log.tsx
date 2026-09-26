@@ -2,16 +2,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { CustomFoodForm } from '../../components/CustomFoodForm';
-import { localHHMM, toISODate } from '../../core/date';
-import { defaultPortion, foodName, portionLabel, searchFoods, toMealItem } from '../../core/foods';
-import { mealTypeForHour } from '../../core/nutrition';
-import type { FoodItem, MealItem, MealType } from '../../core/types';
-import { makeT } from '../../i18n';
-import { useFeedback } from '../../services/feedback';
-import { useApp } from '../../store/AppProvider';
-import { BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Segmented, Small } from '../../ui/components';
-import { C, F, S } from '../../ui/theme';
+import { CustomFoodForm } from '../components/CustomFoodForm';
+import { IconButton } from '../components/TopBarActions';
+import { localHHMM, toISODate } from '../core/date';
+import { defaultPortion, foodName, portionLabel, searchFoods, toMealItem } from '../core/foods';
+import { mealTypeForHour } from '../core/nutrition';
+import type { FoodItem, MealItem, MealType } from '../core/types';
+import { makeT } from '../i18n';
+import { useFeedback } from '../services/feedback';
+import { useApp } from '../store/AppProvider';
+import { BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, SectionHeader, Segmented, Small } from '../ui/components';
+import { C, F, S } from '../ui/theme';
+import { Page } from '../ui/TopBar';
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner'];
 
@@ -76,7 +78,10 @@ export default function LogScreen() {
   const glassGoal = Math.round(app.state.settings.waterGoalMl / app.state.settings.glassMl);
 
   return (
-    <Screen>
+    <Page
+      title={en('tab_log')}
+      alt={lang === 'en' ? undefined : t('tab_log')}
+      right={<IconButton name="close" label={t('close')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />}>
       <Row style={{ gap: 10 }}>
         <Tool icon="camera-outline" label={t('add_photo')} onPress={() => router.push('/photo')} />
         <Tool icon="barcode-outline" label={t('scan_barcode')} onPress={() => router.push('/scan')} />
@@ -244,7 +249,7 @@ export default function LogScreen() {
           )}
         </Card>
       </View>
-    </Screen>
+    </Page>
   );
 }
 

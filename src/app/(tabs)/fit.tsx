@@ -2,13 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { TopBarActions } from '../../components/TopBarActions';
 import { buildSession, phaseForWeek, readiness, shouldEasePlan, weeksSince } from '../../core/fitness';
 import { totalSeconds, buildSteps } from '../../core/session';
 import type { Exercise } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
-import { BiText, Btn, Card, Divider, Micro, P, Pill, Ring, Row, Screen, SectionHeader, Small, StatQuad } from '../../ui/components';
+import { BiText, Btn, Card, Divider, Micro, P, Pill, Ring, Row, SectionHeader, Small, StatQuad } from '../../ui/components';
 import { C, F, readinessColor } from '../../ui/theme';
+import { Page } from '../../ui/TopBar';
 
 export default function FitScreen() {
   const app = useApp();
@@ -38,7 +40,7 @@ export default function FitScreen() {
   const instructions = (e: Exercise) => (lang === 'mr' ? e.instructions_mr : lang === 'hi' ? e.instructions_hi : e.instructions_en);
 
   return (
-    <Screen>
+    <Page title={en('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />}>
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro>{`${en('readiness')} · ${en('period_today')}`}</Micro>
@@ -158,6 +160,6 @@ export default function FitScreen() {
       </View>
 
       <Small color={C.textGhost}>{t('medical_note')}</Small>
-    </Screen>
+    </Page>
   );
 }

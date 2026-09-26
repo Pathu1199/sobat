@@ -4,10 +4,12 @@ import { localHHMM, toISODate } from '../../core/date';
 import { HELPLINES, isCrisisText } from '../../core/guardrails';
 import { CravingSOS } from '../../components/CravingSOS';
 import { Reframe } from '../../components/Reframe';
+import { TopBarActions } from '../../components/TopBarActions';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
-import { Btn, Card, Divider, Field, ListRow, Micro, P, Pill, Row, Screen, SectionHeader, Small } from '../../ui/components';
+import { Btn, Card, Divider, Field, ListRow, Micro, P, Pill, Row, SectionHeader, Small } from '../../ui/components';
 import { C, F, S } from '../../ui/theme';
+import { Page } from '../../ui/TopBar';
 
 const MOODS = ['😞', '🙁', '😐', '🙂', '😄'];
 
@@ -35,7 +37,7 @@ export default function MindScreen() {
   }
 
   return (
-    <Screen>
+    <Page title={en('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />}>
       {crisis ? (
         <Card tone={C.red}>
           <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('helpline_title')}</Text>
@@ -111,7 +113,7 @@ export default function MindScreen() {
           </Card>
         </View>
       ) : null}
-    </Screen>
+    </Page>
   );
 }
 

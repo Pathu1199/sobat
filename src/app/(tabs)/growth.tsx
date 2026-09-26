@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
+import { TopBarActions } from '../../components/TopBarActions';
 import { WeeklyReport } from '../../components/WeeklyReport';
 import { formatMinutes } from '../../core/date';
 import { changePct, isImprovement, summarize, type Metric, type Period } from '../../core/growth';
@@ -7,8 +8,9 @@ import { hourlyProfile, longestStretchMinutes, minutesOn } from '../../core/usag
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { BarChart, ConsistencyStrip, HourStrip, LineChart } from '../../ui/charts';
-import { Bar, Card, Divider, H1, Micro, Row, Screen, SectionHeader, Segmented, Small } from '../../ui/components';
+import { Bar, Card, Divider, Micro, Row, SectionHeader, Segmented, Small } from '../../ui/components';
 import { C, F, S } from '../../ui/theme';
+import { Page } from '../../ui/TopBar';
 
 const METRIC_LABEL: Record<string, string> = {
   avg_kcal: 'avg_kcal_m',
@@ -63,7 +65,7 @@ export default function GrowthScreen() {
   const key = (m: Metric) => t(METRIC_LABEL[m.key] ?? m.key);
 
   return (
-    <Screen>
+    <Page title={en('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />}>
       <Segmented
         value={period}
         onChange={setPeriod}
@@ -170,7 +172,7 @@ export default function GrowthScreen() {
           </Row>
         </Card>
       </View>
-    </Screen>
+    </Page>
   );
 }
 
