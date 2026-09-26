@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findPatterns, scoreDay, streak, weightTrend } from '../insights';
+import { biggestLever, findPatterns, scoreDay, streak, weightTrend } from '../insights';
 import { lastNDates } from '../date';
 import { expectedKcalByHour } from '../nutrition';
 import type { Meal, MoodLog, SleepLog, WorkoutLog } from '../types';
@@ -44,6 +44,34 @@ describe('scoreDay', () => {
     expect(s.mood).toBeNull();
     // The total averages only what is known, so a blank does not drag it down.
     expect(s.total).toBe(100);
+  });
+
+  it('shows movement as "later" at noon when nothing is done yet', () => {
+    const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, hour: 12 });
+    expect(s.movement).toBeNull();
+  });
+
+  it('scores movement once a session is done, even at noon', () => {
+    const s = scoreDay({ ...b, kcal: 500, waterMl: 1000, hour: 12 });
+    expect(s.movement).toBe(100);
+  });
+
+  it('scores movement as zero after 18:00 with nothing done', () => {
+    const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, hour: 19 });
+    expect(s.movement).toBe(0);
+  });
+
+  it('judges water against the pace so far, not the whole goal', () => {
+    // Noon, 1.5 L drunk, 3 L goal. Half the goal at noon is on pace.
+    const s = scoreDay({ ...b, kcal: 500, waterMl: 1500, hour: 12, expectedWaterMl: 1071 });
+    expect(s.water).toBe(100);
+    const late = scoreDay({ ...b, kcal: 1800, waterMl: 1500 });
+    expect(late.water).toBe(50);
+  });
+
+  it('leaves water unknown before the pace window opens', () => {
+    const s = scoreDay({ ...b, kcal: 0, waterMl: 0, hour: 6, expectedWaterMl: 0 });
+    expect(s.water).toBeNull();
   });
 });
 
@@ -138,5 +166,23 @@ describe('findPatterns', () => {
 
   it('finds nothing in an empty log', () => {
     expect(findPatterns({ meals: [], sleep: [], moods: [], workouts: [], kcalTarget: 1800 })).toHaveLength(0);
+  });
+});
+
+describe('biggestLever', () => {
+  it('names the lowest known metric when it is dragging', () => {
+    const s = scoreDay({ date: '2026-09-25', kcal: 1800, kcalTarget: 1800, waterMl: 600, waterGoalMl: 3000, workedOut: true, workoutMinutes: 40, sleepScore: 80, moodScore: 4 });
+    expect(biggestLever(s)).toBe('water');
+  });
+
+  it('ignores metrics that are not known yet', () => {
+    const s = scoreDay({ date: '2026-09-25', kcal: 450, kcalTarget: 1800, waterMl: 700, waterGoalMl: 3000, workedOut: false, workoutMinutes: 0, hour: 11, expectedWaterMl: 857 });
+    // Movement is null at 11am; nothing else is below 60.
+    expect(biggestLever(s)).toBeNull();
+  });
+
+  it('returns null when everything is fine', () => {
+    const s = scoreDay({ date: '2026-09-25', kcal: 1800, kcalTarget: 1800, waterMl: 3000, waterGoalMl: 3000, workedOut: true, workoutMinutes: 40, sleepScore: 90, moodScore: 5 });
+    expect(biggestLever(s)).toBeNull();
   });
 });

@@ -9,6 +9,7 @@ import { TipCard } from '../../components/TipCard';
 import { formatMinutes, localHHMM, localHour } from '../../core/date';
 import { decide } from '../../core/decide';
 import { findPatterns, scoreDay, weeklyStats } from '../../core/insights';
+import { expectedWaterByHour } from '../../core/nudge';
 import { pendingCount } from '../../core/queue';
 import { sleepFlags } from '../../core/sleep';
 import { makeT } from '../../i18n';
@@ -70,6 +71,7 @@ export default function TodayScreen() {
     sleepScore: sleepLast?.date === today ? sleepLast.score : undefined,
     moodScore: moodToday?.score,
     hour,
+    expectedWaterMl: expectedWaterByHour(hour, state.settings.waterGoalMl),
   });
 
   const week = weeklyStats({

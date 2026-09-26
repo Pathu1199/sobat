@@ -6,12 +6,17 @@ import type { ISODate, Meal, MoodLog, SleepLog, WaterLog, WeightLog, WorkoutLog 
 export type DayScore = {
   date: ISODate;
   eating: number | null;
-  movement: number;
-  water: number;
+  movement: number | null;
+  water: number | null;
   sleep: number | null;
   mood: number | null;
   total: number;
 };
+
+export type LeverKey = 'eating' | 'movement' | 'water' | 'sleep' | 'mood';
+
+/** Movement is only judged once the evening window opens, unless it already happened. */
+const MOVEMENT_JUDGED_FROM_HOUR = 18;
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, Math.round(n)));
@@ -29,6 +34,8 @@ export function scoreDay(input: {
   moodScore?: number;
   /** Hour of day when the day is still running. Omit to score a finished day. */
   hour?: number;
+  /** How much water a person on pace would have drunk by `hour`. Only used while running. */
+  expectedWaterMl?: number;
 }): DayScore {
   // Mid-day, judge against what a normal eater would have had by now. Judging a
   // half-eaten day against the full target reads as failure at breakfast.
@@ -46,14 +53,39 @@ export function scoreDay(input: {
     eating = ratio <= 1 ? clamp100(100 - Math.abs(1 - ratio) * 120) : clamp100(100 - (ratio - 1) * 220);
   }
 
-  const movement = clamp100(input.workedOut ? 60 + Math.min(input.workoutMinutes, 40) : 0);
-  const water = clamp100((input.waterMl / Math.max(input.waterGoalMl, 1)) * 100);
+  let movement: number | null;
+  if (input.workedOut) movement = clamp100(60 + Math.min(input.workoutMinutes, 40));
+  else if (running && input.hour! < MOVEMENT_JUDGED_FROM_HOUR) movement = null;
+  else movement = 0;
+
+  let water: number | null;
+  if (running && input.expectedWaterMl !== undefined) {
+    water = input.expectedWaterMl <= 0 ? null : clamp100((input.waterMl / input.expectedWaterMl) * 100);
+  } else {
+    water = clamp100((input.waterMl / Math.max(input.waterGoalMl, 1)) * 100);
+  }
+
   const sleep = input.sleepScore === undefined ? null : clamp100(input.sleepScore);
   const mood = input.moodScore === undefined ? null : clamp100(((input.moodScore - 1) / 4) * 100);
 
   const known = [eating, movement, water, sleep, mood].filter((n): n is number => n !== null);
   const total = known.length > 0 ? clamp100(known.reduce((a, b) => a + b, 0) / known.length) : 0;
   return { date: input.date, eating, movement, water, sleep, mood, total };
+}
+
+/** The one known metric doing the most damage, or null when nothing is below 60. */
+export function biggestLever(score: DayScore): LeverKey | null {
+  const keys: LeverKey[] = ['eating', 'movement', 'water', 'sleep', 'mood'];
+  let worst: LeverKey | null = null;
+  let worstValue = 60;
+  for (const k of keys) {
+    const v = score[k];
+    if (v !== null && v < worstValue) {
+      worst = k;
+      worstValue = v;
+    }
+  }
+  return worst;
 }
 
 /** Consecutive days ending today that pass the test. */
