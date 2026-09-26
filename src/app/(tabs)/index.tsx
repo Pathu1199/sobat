@@ -16,6 +16,7 @@ import { useAI } from '../../services/useAI';
 import { useApp } from '../../store/AppProvider';
 import { Card, Divider, H1, ListRow, MeterRow, Micro, Ring, RingStat, Row, Screen, SectionHeader, Small, StatusChip } from '../../ui/components';
 import { C, F, S, scoreColor } from '../../ui/theme';
+import { useBreakpoint } from '../../ui/useBreakpoint';
 
 export default function TodayScreen() {
   const app = useApp();
@@ -27,6 +28,8 @@ export default function TodayScreen() {
   // The design leads in English with the chosen language underneath.
   const en = makeT('en');
   const hour = new Date().getHours();
+  const bp = useBreakpoint();
+  const wide = bp === 'desktop';
 
   const greetKey = hour < 12 ? 'good_morning' : hour < 17 ? 'good_afternoon' : 'good_evening';
   const greeting = en(greetKey);
@@ -91,8 +94,8 @@ export default function TodayScreen() {
   const online = ai.route === 'primary' || ai.route === 'fallback';
   const queued = pendingCount(state.photoQueue);
 
-  return (
-    <Screen>
+  const header = (
+    <>
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View style={{ flex: 1 }}>
           <H1>
@@ -109,7 +112,10 @@ export default function TodayScreen() {
       {queued > 0 ? (
         <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small>
       ) : null}
+    </>
+  );
 
+  const heroCard = (
       <Card>
         <Row style={{ gap: 20, alignItems: 'center' }}>
           <Ring value={budget.consumed} max={budget.target} size={116} stroke={7} color={over ? C.red : C.accent}>
@@ -148,10 +154,11 @@ export default function TodayScreen() {
           <QuickAction icon="water-outline" label={t('add_water')} onPress={() => app.addWater(state.settings.glassMl)} />
         </Row>
       </Card>
+  );
 
-      <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} />
+  const sleepCard = (
 
-      {needsSleepCheckin ? (
+    needsSleepCheckin ? (
         <Card>
           <ListRow
             icon={<Ionicons name="moon-outline" size={17} color={C.cyan} />}
@@ -190,8 +197,10 @@ export default function TodayScreen() {
             </Small>
           ))}
         </Card>
-      ) : null}
+      ) : null
+  );
 
+  const scoresBlock = (
       <View style={{ gap: 10 }}>
         <SectionHeader title={t('today_plan')} meta={t('daily_aggregate')} />
         <Card>
@@ -204,13 +213,9 @@ export default function TodayScreen() {
           </Row>
         </Card>
       </View>
+  );
 
-      <TipCard />
-
-      <DayReview />
-
-      <BreakCard />
-
+  const intakeBlock = (
       <View style={{ gap: 10 }}>
         <SectionHeader
           title={t('logged_intake')}
@@ -244,7 +249,9 @@ export default function TodayScreen() {
           )}
         </Card>
       </View>
+  );
 
+  const weekBlock = (
       <View style={{ gap: 10 }}>
         <SectionHeader title={t('week_summary')} meta={`${week.loggedDays}/7`} />
         <Card>
@@ -264,18 +271,60 @@ export default function TodayScreen() {
           </Row>
         </Card>
       </View>
+  );
 
-      {patterns.length > 0 ? (
-        <View style={{ gap: 10 }}>
-          <SectionHeader title={t('patterns')} />
-          <Card>
-            {patterns.slice(0, 3).map((p) => (
-              <Small key={p.key}>{p.detail}</Small>
-            ))}
-          </Card>
+  const patternsBlock =
+    patterns.length > 0 ? (
+      <View style={{ gap: 10 }}>
+        <SectionHeader title={t('patterns')} />
+        <Card>
+          {patterns.slice(0, 3).map((p) => (
+            <Small key={p.key}>{p.detail}</Small>
+          ))}
+        </Card>
+      </View>
+    ) : null;
+
+  if (wide) {
+    return (
+      <Screen wide>
+        {header}
+        <View style={{ flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
+          <View style={{ flex: 1.15, gap: 14 }}>
+            {heroCard}
+            {weekBlock}
+          </View>
+          <View style={{ flex: 1, gap: 14 }}>
+            <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} />
+            <TipCard />
+            {patternsBlock}
+          </View>
+          <View style={{ flex: 0.95, gap: 14 }}>
+            <BreakCard />
+            {sleepCard}
+            {scoresBlock}
+            {intakeBlock}
+            <DayReview />
+          </View>
         </View>
-      ) : null}
+        <Small color={C.textGhost}>{t('medical_note')}</Small>
+      </Screen>
+    );
+  }
 
+  return (
+    <Screen>
+      {header}
+      {heroCard}
+      <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} />
+      {sleepCard}
+      {scoresBlock}
+      <TipCard />
+      <DayReview />
+      <BreakCard />
+      {intakeBlock}
+      {weekBlock}
+      {patternsBlock}
       <Small color={C.textGhost}>{t('medical_note')}</Small>
     </Screen>
   );

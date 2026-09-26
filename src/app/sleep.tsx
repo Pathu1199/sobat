@@ -43,7 +43,7 @@ export default function SleepScreen() {
     <Screen>
       <Card>
         <H2>{t('sleep_checkin')}</H2>
-        <Small>{t('photo_hint').includes('Check') ? 'Times are guessed from your activity. Just fix them if wrong.' : ''}</Small>
+        <Small>{t('sleep_prefill_hint')}</Small>
 
         <Row style={{ gap: 12 }}>
           <Field label={t('bed_time')} value={bed} onChangeText={setBed} placeholder="23:00" />

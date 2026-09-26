@@ -3,9 +3,12 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import Svg, { Circle } from 'react-native-svg';
 import { C, F, MICRO, S } from './theme';
 
-export function Screen({ children, refreshing }: { children: React.ReactNode; refreshing?: boolean }) {
+export function Screen({ children, refreshing, wide }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean }) {
   return (
-    <ScrollView style={st.screen} contentContainerStyle={st.screenContent} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={st.screen}
+      contentContainerStyle={[st.screenContent, wide && { maxWidth: 1360, padding: 22 }]}
+      keyboardShouldPersistTaps="handled">
       {refreshing ? <ActivityIndicator color={C.accent} /> : null}
       {children}
       <View style={{ height: 56 }} />
