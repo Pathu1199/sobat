@@ -73,6 +73,16 @@ describe('scoreDay', () => {
     const s = scoreDay({ ...b, kcal: 0, waterMl: 0, hour: 6, expectedWaterMl: 0 });
     expect(s.water).toBeNull();
   });
+
+  it('scores water part-way along the pace, not only at the cap', () => {
+    const s = scoreDay({ ...b, kcal: 500, waterMl: 500, hour: 12, expectedWaterMl: 1000 });
+    expect(s.water).toBe(50);
+  });
+
+  it('judges movement from 18:00 exactly', () => {
+    const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, hour: 18 });
+    expect(s.movement).toBe(0);
+  });
 });
 
 describe('expectedKcalByHour', () => {
@@ -184,5 +194,15 @@ describe('biggestLever', () => {
   it('returns null when everything is fine', () => {
     const s = scoreDay({ date: '2026-09-25', kcal: 1800, kcalTarget: 1800, waterMl: 3000, waterGoalMl: 3000, workedOut: true, workoutMinutes: 40, sleepScore: 90, moodScore: 5 });
     expect(biggestLever(s)).toBeNull();
+  });
+
+  it('picks the true minimum when several metrics are low, and the earlier key on a tie', () => {
+    const base = { date: '2026-09-25', kcalTarget: 1800, waterGoalMl: 3000, workedOut: true, workoutMinutes: 40 };
+    const two = scoreDay({ ...base, kcal: 1800, waterMl: 900, sleepScore: 20, moodScore: 4 });
+    expect(two.water).toBe(30);
+    expect(biggestLever(two)).toBe('sleep');
+    const tie = scoreDay({ ...base, kcal: 1800, waterMl: 600, sleepScore: 20, moodScore: 4 });
+    expect(tie.water).toBe(20);
+    expect(biggestLever(tie)).toBe('water');
   });
 });
