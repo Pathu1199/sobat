@@ -170,6 +170,7 @@ export function Field({
   keyboardType,
   placeholder,
   multiline,
+  autoFocus,
 }: {
   label?: string;
   value: string;
@@ -177,6 +178,7 @@ export function Field({
   keyboardType?: 'default' | 'numeric';
   placeholder?: string;
   multiline?: boolean;
+  autoFocus?: boolean;
 }) {
   return (
     <View style={{ gap: 7, flex: 1 }}>
@@ -188,6 +190,7 @@ export function Field({
         placeholder={placeholder}
         placeholderTextColor={C.textGhost}
         multiline={multiline}
+        autoFocus={autoFocus}
         style={[st.input, multiline && { minHeight: 78, textAlignVertical: 'top' }]}
       />
     </View>

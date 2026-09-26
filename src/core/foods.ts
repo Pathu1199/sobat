@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js';
 import { kcalForGrams } from './nutrition';
-import type { FoodItem, Lang, MealItem } from './types';
+import type { FoodItem, ISODate, Lang, Meal, MealItem } from './types';
 
 export function foodName(food: FoodItem, lang: Lang): string {
   if (lang === 'mr') return food.name_mr || food.name_en;
@@ -74,6 +74,16 @@ export function scaleMealItem(item: MealItem, grams: number): MealItem {
   const ratio = item.grams > 0 ? grams / item.grams : 0;
   const r1 = (n: number) => Math.round(n * ratio * 10) / 10;
   return { ...item, grams: Math.round(grams), kcal: Math.round(item.kcal * ratio), protein: r1(item.protein), carbs: r1(item.carbs), fat: r1(item.fat) };
+}
+
+/** Database foods logged since `sinceDate`, most often first. Feeds the "recent" row. */
+export function recentFoodIds(meals: Meal[], sinceDate: ISODate, limit = 8): string[] {
+  const counts = new Map<string, number>();
+  for (const m of meals) {
+    if (m.date < sinceDate) continue;
+    for (const it of m.items) if (it.foodId) counts.set(it.foodId, (counts.get(it.foodId) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([id]) => id);
 }
 
 /** Meal options that fit inside the remaining budget, best protein first. */
