@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { formatDayLabel, localDate, localHHMM, localHour } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
@@ -32,6 +32,22 @@ describe('local time from ISO strings', () => {
       const label = formatDayLabel('2026-09-26', lang);
       expect(label.length).toBeGreaterThan(3);
       expect(label).not.toBe('2026-09-26');
+    }
+  });
+
+  it('falls back to English for an unknown language and to the ISO date for bad input', () => {
+    expect(formatDayLabel('2026-09-26', 'xx' as never)).toBe(formatDayLabel('2026-09-26', 'en'));
+    expect(formatDayLabel('not-a-date', 'en')).toBe('not-a-date');
+  });
+
+  it('returns the ISO date when the platform cannot format', () => {
+    const spy = vi.spyOn(Date.prototype, 'toLocaleDateString').mockImplementation(() => {
+      throw new Error('no Intl');
+    });
+    try {
+      expect(formatDayLabel('2026-09-26', 'en')).toBe('2026-09-26');
+    } finally {
+      spy.mockRestore();
     }
   });
 });

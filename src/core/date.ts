@@ -1,4 +1,4 @@
-import type { ISODate } from './types';
+import type { ISODate, Lang } from './types';
 
 export function toISODate(d: Date = new Date()): ISODate {
   const y = d.getFullYear();
@@ -52,10 +52,10 @@ export function localDate(iso: string): ISODate {
   return toISODate(new Date(iso));
 }
 
-const LOCALE: Record<string, string> = { en: 'en-IN', mr: 'mr-IN', hi: 'hi-IN' };
+const LOCALE: Record<Lang, string> = { en: 'en-IN', mr: 'mr-IN', hi: 'hi-IN' };
 
 /** "Sat 26 Sep" in the chosen language. Falls back to the ISO date if Intl is missing. */
-export function formatDayLabel(date: ISODate, lang: string): string {
+export function formatDayLabel(date: ISODate, lang: Lang): string {
   try {
     const d = new Date(date + 'T12:00:00');
     const s = d.toLocaleDateString(LOCALE[lang] ?? 'en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
