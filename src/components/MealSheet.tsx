@@ -21,6 +21,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
   const t = makeT(lang);
   const [items, setItems] = useState<MealItem[]>(meal?.items ?? []);
   const [openId, setOpenId] = useState<string | null>(meal?.id ?? null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // The working copy resets whenever a different meal (or none) opens. Doing
   // this during render, rather than in an effect, keeps the first paint in
@@ -29,14 +30,17 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
   if (mealId !== openId) {
     setOpenId(mealId);
     setItems(meal?.items ?? []);
+    setConfirmDelete(false);
   }
 
   if (!meal) return null;
   // Narrowed once so the closures below (which TS otherwise treats as possibly
   // seeing `meal` turn null before they run) can use it directly.
   const current = meal;
-  // Portion pills multiply the weight the line had when the sheet opened.
-  const base = current.items.map((i) => i.grams);
+  // The pills multiply the weight this line had when the sheet opened. Look that
+  // up by identity: a live index would point at the wrong item once a line is removed.
+  const openedGrams = (it: MealItem) =>
+    current.items.find((o) => o.foodId === it.foodId && o.name_en === it.name_en)?.grams ?? it.grams;
 
   const kcal = items.reduce((a, i) => a + i.kcal, 0);
   const protein = Math.round(items.reduce((a, i) => a + i.protein, 0));
@@ -71,7 +75,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
       {items.map((it, idx) => {
         const food = it.foodId ? app.foods.find((f) => f.id === it.foodId) : undefined;
         const portion = food ? defaultPortion(food) : undefined;
-        const unitGrams = portion?.grams ?? base[idx] ?? it.grams;
+        const unitGrams = portion?.grams ?? openedGrams(it);
         return (
           <View key={`${it.name_en}-${idx}`} style={{ gap: 8 }}>
             {idx > 0 ? <Divider /> : null}
@@ -103,7 +107,14 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
           <Micro>{`kcal · ${protein} g ${t('protein')}`}</Micro>
         </View>
         <Row style={{ gap: 8 }}>
-          <Btn small tone="danger" label={t('delete')} onPress={remove} />
+          {confirmDelete ? (
+            <>
+              <Btn small tone="danger" label={t('delete')} onPress={remove} />
+              <Btn small tone="ghost" label={t('cancel')} onPress={() => setConfirmDelete(false)} />
+            </>
+          ) : (
+            <Btn small tone="ghost" label={t('delete')} onPress={() => setConfirmDelete(true)} />
+          )}
           <Btn small label={t('save')} onPress={save} disabled={!changed || items.length === 0} />
         </Row>
       </Row>
