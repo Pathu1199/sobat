@@ -55,6 +55,8 @@ type Ctx = {
   failPhoto: (id: string, error: string) => void;
   setSteps: (count: number) => void;
   stepsToday: number;
+  actionsDoneToday: string[];
+  toggleAction: (key: string) => void;
   importState: (json: string) => { ok: boolean; error?: string };
   tipToday: string | null;
   screenMinutesToday: number;
@@ -183,6 +185,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       failPhoto: (id, error) => update((s) => ({ ...s, photoQueue: markFailed(s.photoQueue, id, error) })),
       setSteps: (count) =>
         update((s) => ({ ...s, steps: [...s.steps.filter((x) => x.date !== today), { date: today, count }] })),
+      actionsDoneToday: state.actionsDone.filter((a) => a.date === today).map((a) => a.key),
+      toggleAction: (key) =>
+        update((s) => {
+          const kept = s.actionsDone.filter((a) => a.date === today);
+          const has = kept.some((a) => a.key === key);
+          return { ...s, actionsDone: has ? kept.filter((a) => a.key !== key) : [...kept, { date: today, key }] };
+        }),
       importState: (json) => {
         try {
           const parsed = JSON.parse(json) as Partial<AppState>;

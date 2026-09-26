@@ -37,10 +37,21 @@ export function TopBarActions({ streak }: { streak?: number }) {
   );
 }
 
-export function IconButton({ name, label, onPress }: { name: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) {
+export function IconButton({
+  name,
+  label,
+  onPress,
+  disabled,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={6}
@@ -51,6 +62,7 @@ export function IconButton({ name, label, onPress }: { name: keyof typeof Ionico
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: pressed ? C.cardAlt : 'transparent',
+        opacity: disabled ? 0.3 : 1,
       })}>
       <Ionicons name={name} size={20} color={C.textDim} />
     </Pressable>

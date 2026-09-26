@@ -49,4 +49,5 @@ export const EMPTY_STATE: AppState = {
   tips: [],
   photoQueue: [],
   steps: [],
+  actionsDone: [],
 };

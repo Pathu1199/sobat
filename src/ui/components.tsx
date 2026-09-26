@@ -302,7 +302,7 @@ export function RingStat({ label, value, color }: { label: string; value: number
     <View style={{ alignItems: 'center', gap: 8, minWidth: 52 }}>
       <Ring value={value ?? 0} max={100} size={44} stroke={3} color={color} track={C.cardAlt}>
         <Text style={{ color: value === null ? C.textGhost : C.text, fontSize: F.micro, fontWeight: '600' }}>
-          {value === null ? '--' : `${value}%`}
+          {value === null ? '·' : `${value}%`}
         </Text>
       </Ring>
       <Text style={[MICRO, { color: C.textFaint }]}>{label}</Text>

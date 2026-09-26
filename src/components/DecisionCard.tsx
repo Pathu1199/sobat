@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { decisionPrompt, factsFrom, systemPrompt } from '../ai/prompts';
 import type { Decision } from '../core/decide';
 import { guardAdvice } from '../core/guardrails';
@@ -9,7 +9,8 @@ import type { Lang } from '../core/types';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { Bullet, Card, Divider, Micro, Quote, Row, StatQuad } from '../ui/components';
+import { Card, Divider, Micro, Quote, Row, StatQuad } from '../ui/components';
+import { Checklist } from '../ui/tiles';
 import { C, F, severityColor } from '../ui/theme';
 
 /**
@@ -24,6 +25,7 @@ export function DecisionCard({ decision, lang, targets, budget }: { decision: De
   const { state, waterToday, streakDays } = app;
   const [words, setWords] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [why, setWhy] = useState(false);
 
   const actionText = decision.actionKeys.map((k) => t(`act_${k}`));
   const tone = severityColor(decision.severity);
@@ -75,13 +77,15 @@ export function DecisionCard({ decision, lang, targets, budget }: { decision: De
   ];
 
   return (
-    <Card>
+    <Card rail={tone}>
       <Row style={{ justifyContent: 'space-between' }}>
         <Row style={{ gap: 8 }}>
           <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: tone }} />
           <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t(`sit_${decision.situation}`)}</Text>
         </Row>
-        <Micro>{`${t('metabolic_rule')} ${decision.situation.length}`}</Micro>
+        <Pressable onPress={() => setWhy((w) => !w)} hitSlop={8} accessibilityRole="button">
+          <Micro color={why ? C.text : C.textFaint}>{t('why')}</Micro>
+        </Pressable>
       </Row>
 
       {loading && !words ? <ActivityIndicator color={C.accent} /> : null}
@@ -100,16 +104,18 @@ export function DecisionCard({ decision, lang, targets, budget }: { decision: De
         </Text>
       )}
 
-      <View style={{ gap: 4 }}>
-        {actionText.map((a, i) => (
-          <Bullet key={i} color={tone}>
-            {a}
-          </Bullet>
-        ))}
-      </View>
+      <Checklist
+        color={tone}
+        items={decision.actionKeys.map((k, i) => ({ key: k, label: actionText[i], done: app.actionsDoneToday.includes(k) }))}
+        onToggle={app.toggleAction}
+      />
 
-      <Divider />
-      <StatQuad items={quad} />
+      {why ? (
+        <>
+          <Divider />
+          <StatQuad items={quad} />
+        </>
+      ) : null}
     </Card>
   );
 }

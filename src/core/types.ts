@@ -158,6 +158,8 @@ export type AppState = {
   tips: DailyTip[];
   photoQueue: QueuedPhoto[];
   steps: StepLog[];
+  /** Decision-card actions ticked off, kept only for the day they belong to. */
+  actionsDone: { date: ISODate; key: string }[];
 };
 
 export type StepLog = { date: ISODate; count: number };
