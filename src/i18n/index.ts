@@ -257,7 +257,7 @@ const en: Dict = {
 const mr: Dict = {
   ...en,
   tagline: 'तुमचा आरोग्य सोबती',
-  tab_today: 'आज', tab_log: 'नोंद', tab_fit: 'व्यायाम', tab_mind: 'मन', tab_coach: 'मदत',
+  tab_today: 'आज', tab_log: 'नोंद', tab_fit: 'हालचाल', tab_mind: 'मन', tab_coach: 'मदत',
   good_morning: 'शुभ सकाळ', good_afternoon: 'शुभ दुपार', good_evening: 'शुभ संध्याकाळ',
   kcal_left: 'कॅलरी शिल्लक', kcal_over: 'कॅलरी जास्त', eaten: 'खाल्ले', target: 'लक्ष्य', burned: 'हालचाल',
   protein: 'प्रथिने', water: 'पाणी', glasses: 'ग्लास', steps: 'पावले',
@@ -513,7 +513,7 @@ const mr: Dict = {
 const hi: Dict = {
   ...en,
   tagline: 'आपका सेहत साथी',
-  tab_today: 'आज', tab_log: 'दर्ज', tab_fit: 'कसरत', tab_mind: 'मन', tab_coach: 'मदद',
+  tab_today: 'आज', tab_log: 'दर्ज', tab_fit: 'हलचल', tab_mind: 'मन', tab_coach: 'मदद',
   good_morning: 'सुप्रभात', good_afternoon: 'नमस्कार', good_evening: 'शुभ संध्या',
   kcal_left: 'कैलोरी बची', kcal_over: 'कैलोरी ज़्यादा', eaten: 'खाया', target: 'लक्ष्य', burned: 'हलचल',
   protein: 'प्रोटीन', water: 'पानी', glasses: 'गिलास', steps: 'कदम',

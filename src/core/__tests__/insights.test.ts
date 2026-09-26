@@ -172,12 +172,12 @@ describe('findPatterns', () => {
       { id: '2', at: '', date: '2026-09-22', score: 5 },
       { id: '3', at: '', date: '2026-09-23', score: 4 },
       { id: '4', at: '', date: '2026-09-24', score: 2 },
-      { id: '5', at: '', date: '2026-09-25', score: 0 },
+      { id: '5', at: '', date: '2026-09-25', score: 2 },
     ];
     const p = findPatterns({ meals: [], sleep: [], moods, workouts, kcalTarget: 1800 });
     const hit = p.find((x) => x.key === 'move_vs_mood');
     expect(hit).toBeDefined();
-    expect(hit!.params.d).toBe('1.5');
+    expect(hit!.params.d).toBe('1.1');
   });
 
   it('finds nothing in an empty log', () => {
