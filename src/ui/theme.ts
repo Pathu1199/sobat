@@ -37,6 +37,7 @@ export const C = {
   pink: '#EC4899',
 
   white: '#FFFFFF',
+  scrim: 'rgba(4, 6, 11, 0.7)',
 };
 
 export const S = {
@@ -47,7 +48,13 @@ export const S = {
   radiusSm: 12,
   radiusXs: 8,
   hairline: 1,
+  gutter: 16,
+  gutterWide: 24,
+  maxWide: 1360,
 };
+
+/** Durations in ms. One curve for everything, ease-out cubic. */
+export const M = { fast: 180, base: 320, slow: 600 };
 
 export const F = {
   display: 44,
@@ -58,6 +65,7 @@ export const F = {
   small: 12,
   tiny: 11,
   micro: 10,
+  hero: 56,
 };
 
 /** Tiny uppercase label style used for every section heading and stat caption. */

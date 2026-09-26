@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { useEased } from './animated';
 import { C, F, MICRO, S } from './theme';
 
 export function Screen({ children, refreshing, wide }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean }) {
@@ -16,9 +17,16 @@ export function Screen({ children, refreshing, wide }: { children: React.ReactNo
   );
 }
 
-export function Card({ children, style, tone, flat }: { children: React.ReactNode; style?: ViewStyle; tone?: string; flat?: boolean }) {
+export function Card({ children, style, tone, flat, rail }: { children: React.ReactNode; style?: ViewStyle; tone?: string; flat?: boolean; rail?: string }) {
   return (
-    <View style={[st.card, flat && { backgroundColor: 'transparent', borderColor: 'transparent', padding: 0 }, tone ? { borderColor: tone } : null, style]}>
+    <View
+      style={[
+        st.card,
+        flat && { backgroundColor: 'transparent', borderColor: 'transparent', padding: 0 },
+        tone ? { borderColor: tone } : null,
+        rail ? { borderLeftWidth: 2, borderLeftColor: rail } : null,
+        style,
+      ]}>
       {children}
     </View>
   );
@@ -186,11 +194,25 @@ export function Field({
   );
 }
 
-export function Bar({ value, max, color = C.accent, height = 4 }: { value: number; max: number; color?: string; height?: number }) {
-  const pct = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
+export function Bar({ value, max, color = C.accent, height = 4, marker }: { value: number; max: number; color?: string; height?: number; marker?: number }) {
+  const target = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
+  const pct = useEased(target);
   return (
     <View style={[st.barTrack, { height, borderRadius: height }]}>
       <View style={{ width: `${pct * 100}%`, backgroundColor: color, height, borderRadius: height }} />
+      {marker !== undefined && marker > 0 && marker < 1 ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: `${marker * 100}%`,
+            top: -2,
+            width: 2,
+            height: height + 4,
+            borderRadius: 1,
+            backgroundColor: C.textDim,
+          }}
+        />
+      ) : null}
     </View>
   );
 }
@@ -203,6 +225,7 @@ export function MeterRow({
   total,
   unit,
   color = C.accent,
+  marker,
 }: {
   label: string;
   alt?: string;
@@ -210,6 +233,7 @@ export function MeterRow({
   total: number;
   unit?: string;
   color?: string;
+  marker?: number;
 }) {
   return (
     <View style={{ gap: 7 }}>
@@ -224,7 +248,7 @@ export function MeterRow({
           </Text>
         </Text>
       </View>
-      <Bar value={value} max={total} color={color} />
+      <Bar value={value} max={total} color={color} marker={marker} />
     </View>
   );
 }
@@ -249,7 +273,8 @@ export function Ring({
   const safe = Math.max(28, size);
   const r = (safe - stroke) / 2;
   const circ = 2 * Math.PI * r;
-  const pct = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
+  const target = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
+  const pct = useEased(target);
   return (
     <View style={{ width: safe, height: safe, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={safe} height={safe} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
@@ -404,7 +429,7 @@ const st = StyleSheet.create({
     color: C.text,
     fontSize: F.body,
   },
-  barTrack: { backgroundColor: C.cardAlt, overflow: 'hidden', width: '100%' },
+  barTrack: { backgroundColor: C.cardAlt, overflow: 'visible', width: '100%' },
   divider: { height: S.hairline, backgroundColor: C.border },
   empty: { paddingVertical: 22, alignItems: 'center' },
 });
