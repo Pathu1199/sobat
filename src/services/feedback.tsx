@@ -42,7 +42,10 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
       if (timer.current) clearTimeout(timer.current);
       Animated.timing(opacity, { toValue: 1, duration: M.fast, useNativeDriver: true }).start();
       timer.current = setTimeout(() => {
-        Animated.timing(opacity, { toValue: 0, duration: M.base, useNativeDriver: true }).start(() => setText(null));
+        Animated.timing(opacity, { toValue: 0, duration: M.base, useNativeDriver: true }).start((result) => {
+          // A new toast interrupts this fade-out; its callback must not blank the new text.
+          if (result.finished) setText(null);
+        });
       }, 2000);
     },
     [opacity],
