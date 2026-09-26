@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSession, phaseForWeek, readiness, shouldEasePlan, weeksSince } from '../fitness';
+import { buildSession, phaseForWeek, phaseProgress, readiness, shouldEasePlan, weeksSince } from '../fitness';
 import type { Exercise, SleepLog, WorkoutLog } from '../types';
 
 function ex(id: string, category: Exercise['category'], level: 1 | 2 | 3, seconds?: number): Exercise {
@@ -115,5 +115,18 @@ describe('weeksSince', () => {
   it('counts from week 1', () => {
     expect(weeksSince('2026-09-25', '2026-09-25')).toBe(1);
     expect(weeksSince('2026-09-01', '2026-09-25')).toBe(4);
+  });
+});
+
+describe('phaseProgress', () => {
+  it('counts weeks inside the first two phases', () => {
+    expect(phaseProgress(1)).toEqual({ phase: 1, weekInPhase: 1, phaseWeeks: 4 });
+    expect(phaseProgress(4)).toEqual({ phase: 1, weekInPhase: 4, phaseWeeks: 4 });
+    expect(phaseProgress(5)).toEqual({ phase: 2, weekInPhase: 1, phaseWeeks: 8 });
+    expect(phaseProgress(12)).toEqual({ phase: 2, weekInPhase: 8, phaseWeeks: 8 });
+  });
+
+  it('is open-ended after week 12', () => {
+    expect(phaseProgress(15)).toEqual({ phase: 3, weekInPhase: 3, phaseWeeks: null });
   });
 });

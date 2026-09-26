@@ -58,6 +58,13 @@ export function phaseForWeek(week: number): { phase: 1 | 2 | 3; walkMinutes: num
   return { phase: 3, walkMinutes: 35, strengthDays: 3 };
 }
 
+/** Where this week sits inside its phase, for the progress line on Move. */
+export function phaseProgress(week: number): { phase: 1 | 2 | 3; weekInPhase: number; phaseWeeks: number | null } {
+  if (week <= 4) return { phase: 1, weekInPhase: week, phaseWeeks: 4 };
+  if (week <= 12) return { phase: 2, weekInPhase: week - 4, phaseWeeks: 8 };
+  return { phase: 3, weekInPhase: week - 12, phaseWeeks: null };
+}
+
 export function weeksSince(startDate: string, today: string): number {
   const a = new Date(startDate + 'T12:00:00').getTime();
   const b = new Date(today + 'T12:00:00').getTime();
