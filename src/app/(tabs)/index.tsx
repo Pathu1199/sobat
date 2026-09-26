@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { BreakCard } from '../../components/BreakCard';
+import { BreakPanel } from '../../components/BreakPanel';
 import { DayReview } from '../../components/DayReview';
 import { DayScoreCard } from '../../components/DayScore';
 import { DecisionCard } from '../../components/DecisionCard';
@@ -163,7 +163,7 @@ export default function TodayScreen() {
 
   const rightColumn = (
     <>
-      {isToday ? <BreakCard /> : null}
+      {isToday ? <BreakPanel /> : null}
       {isToday ? <NowStrip wide /> : null}
       <DayScoreCard score={score} />
     </>
