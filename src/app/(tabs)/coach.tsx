@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { factsFrom, memoryExtractionPrompt, MEMORY_SCHEMA, systemPrompt } from '../../ai/prompts';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
-import { toISODate } from '../../core/date';
+import { formatMinutes, toISODate } from '../../core/date';
 import { suggestMeals, toMealItem } from '../../core/foods';
 import { guardAdvice, HELPLINES, isCrisisText } from '../../core/guardrails';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
@@ -30,6 +30,38 @@ export default function CoachScreen() {
   const [busy, setBusy] = useState(false);
   const [crisis, setCrisis] = useState(false);
   const scroller = useRef<ScrollView>(null);
+
+  const lastSleep = [...app.state.sleep].sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0];
+  const lastOptions = [...app.state.chat].reverse().find((m) => m.role === 'assistant' && m.options && m.options.length > 0)?.options ?? [];
+
+  const rail = (
+    <View style={{ width: 300, gap: 14, paddingVertical: S.pad, paddingRight: S.gutterWide }}>
+      <Card>
+        <Micro>{t('todays_numbers')}</Micro>
+        <Stat label={t('kcal_left')} value={String(Math.max(0, app.budget.remaining))} />
+        <Stat label={t('protein')} value={`${app.budget.proteinConsumed} / ${app.budget.proteinTarget} g`} />
+        <Stat label={t('water')} value={`${app.waterToday} / ${app.state.settings.waterGoalMl} ml`} />
+        <Stat label={t('sleep_title')} value={lastSleep ? `${formatMinutes(lastSleep.minutes)} · ${lastSleep.score}` : '--'} />
+        <Divider />
+        <Pressable onPress={() => router.push('/memory')}>
+          <Small color={C.accent}>{`${app.state.memory.length} ${en('mem_fact')} ›`}</Small>
+        </Pressable>
+      </Card>
+      {lastOptions.length > 0 ? (
+        <Card>
+          <Micro>{t('offered')}</Micro>
+          {lastOptions.map((o) => (
+            <Pressable key={o.foodId} onPress={() => logOption(o)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+              <Row style={{ justifyContent: 'space-between', paddingVertical: 4 }}>
+                <BiText en={o.name_en} alt={lang === 'en' ? undefined : o.name_mr} size={F.small} />
+                <Small>{`${o.kcal} kcal`}</Small>
+              </Row>
+            </Pressable>
+          ))}
+        </Card>
+      ) : null}
+    </View>
+  );
 
   const quick =
     lang === 'mr'
@@ -143,123 +175,131 @@ export default function CoachScreen() {
         left={wide ? undefined : <IconButton name="chevron-back" label={t('cancel')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />}
         right={<TopBarActions />}
       />
-      <ScrollView
-        ref={scroller}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: S.pad, gap: 14, maxWidth: 780, width: '100%', alignSelf: 'center' }}
-        keyboardShouldPersistTaps="handled">
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Pressable onPress={() => router.push('/memory')}>
-            <Micro color={C.textDim}>{`${app.state.memory.length} ${en('mem_fact')}`}</Micro>
-          </Pressable>
-          {app.state.chat.length > 0 ? (
-            <Pressable onPress={app.clearChat}>
-              <Micro color={C.accent}>{`+ ${en('new_chat')}`}</Micro>
-            </Pressable>
-          ) : null}
-        </Row>
-
-        {crisis ? (
-          <Card tone={C.red}>
-            <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('helpline_title')}</Text>
-            <Small>{t('helpline_body')}</Small>
-            {HELPLINES.map((h) => (
-              <Pressable key={h.number} onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}>
-                <Row style={{ justifyContent: 'space-between', paddingVertical: 7 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{h.name}</Text>
-                    <Small color={C.textFaint}>{h.note}</Small>
-                  </View>
-                  <Text style={{ color: C.cyan, fontWeight: '600' }}>{h.number}</Text>
-                </Row>
+      <View style={{ flex: 1, flexDirection: 'row', maxWidth: S.maxWide, width: '100%', alignSelf: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            ref={scroller}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: S.pad, gap: 14, maxWidth: 780, width: '100%', alignSelf: 'center' }}
+            keyboardShouldPersistTaps="handled">
+            <Row style={{ justifyContent: 'space-between' }}>
+              <Pressable onPress={() => router.push('/memory')}>
+                <Micro color={C.textDim}>{`${app.state.memory.length} ${en('mem_fact')}`}</Micro>
               </Pressable>
-            ))}
-            <Btn small tone="ghost" label={t('done')} onPress={() => setCrisis(false)} />
-          </Card>
-        ) : null}
-
-        {app.state.chat.length === 0 ? (
-          <Row style={{ flexWrap: 'wrap', gap: 8 }}>
-            {quick.map((q) => (
-              <Pill key={q} label={q} onPress={() => send(q)} />
-            ))}
-          </Row>
-        ) : null}
-
-        {app.state.chat.map((m) =>
-          m.role === 'user' ? (
-            <View key={m.id} style={{ alignSelf: 'flex-end', maxWidth: '86%', backgroundColor: C.accent, borderRadius: 16, borderBottomRightRadius: 5, padding: 13 }}>
-              <Text style={{ color: C.white, fontSize: F.body, lineHeight: 20 }}>{m.text}</Text>
-            </View>
-          ) : (
-            <View key={m.id} style={{ gap: 10 }}>
-              <View style={{ maxWidth: '92%', backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, borderRadius: 16, borderBottomLeftRadius: 5, padding: 14, gap: 10 }}>
-                <Text style={{ color: C.text, fontSize: F.body, lineHeight: 21 }}>{m.text}</Text>
-                <Row style={{ gap: 14 }}>
-                  <Pressable onPress={() => app.rememberText(m.text, 'preference', 'user')}>
-                    <Micro color={C.textFaint}>{en('remember_this')}</Micro>
-                  </Pressable>
-                </Row>
-              </View>
-
-              {m.options && m.options.length > 0 ? (
-                <View style={{ gap: 8 }}>
-                  <Micro>{en('from_your_database')}</Micro>
-                  {m.options.map((o) => (
-                    <Pressable
-                      key={o.foodId}
-                      onPress={() => logOption(o)}
-                      style={({ pressed }) => ({
-                        backgroundColor: C.card,
-                        borderWidth: S.hairline,
-                        borderColor: C.border,
-                        borderRadius: S.radiusSm,
-                        padding: 13,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 12,
-                        opacity: pressed ? 0.7 : 1,
-                      })}>
-                      <View style={{ flex: 1, gap: 3 }}>
-                        <BiText en={o.name_en} alt={lang === 'en' ? undefined : o.name_mr} size={F.body} />
-                        <Micro>{`${o.grams} g`}</Micro>
-                      </View>
-                      <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                        <Text style={{ color: C.violet, fontSize: F.small, fontWeight: '600' }}>{o.protein}g</Text>
-                        <Text style={{ color: C.textDim, fontSize: F.tiny }}>{o.kcal} kcal</Text>
-                      </View>
-                      <Ionicons name="add-circle-outline" size={19} color={C.accent} />
-                    </Pressable>
-                  ))}
-                </View>
+              {app.state.chat.length > 0 ? (
+                <Pressable onPress={app.clearChat}>
+                  <Micro color={C.accent}>{`+ ${en('new_chat')}`}</Micro>
+                </Pressable>
               ) : null}
+            </Row>
+
+            {crisis ? (
+              <Card tone={C.red}>
+                <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('helpline_title')}</Text>
+                <Small>{t('helpline_body')}</Small>
+                {HELPLINES.map((h) => (
+                  <Pressable key={h.number} onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}>
+                    <Row style={{ justifyContent: 'space-between', paddingVertical: 7 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{h.name}</Text>
+                        <Small color={C.textFaint}>{h.note}</Small>
+                      </View>
+                      <Text style={{ color: C.cyan, fontWeight: '600' }}>{h.number}</Text>
+                    </Row>
+                  </Pressable>
+                ))}
+                <Btn small tone="ghost" label={t('done')} onPress={() => setCrisis(false)} />
+              </Card>
+            ) : null}
+
+            {app.state.chat.length === 0 ? (
+              <>
+                <Small color={C.textDim}>{t('no_chat_yet')}</Small>
+                <Row style={{ flexWrap: 'wrap', gap: 8 }}>
+                  {quick.map((q) => (
+                    <Pill key={q} label={q} onPress={() => send(q)} />
+                  ))}
+                </Row>
+              </>
+            ) : null}
+
+            {app.state.chat.map((m) =>
+              m.role === 'user' ? (
+                <View key={m.id} style={{ alignSelf: 'flex-end', maxWidth: '86%', backgroundColor: C.accent, borderRadius: 16, borderBottomRightRadius: 5, padding: 13 }}>
+                  <Text style={{ color: C.white, fontSize: F.body, lineHeight: 20 }}>{m.text}</Text>
+                </View>
+              ) : (
+                <View key={m.id} style={{ gap: 10 }}>
+                  <View style={{ maxWidth: '92%', backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, borderRadius: 16, borderBottomLeftRadius: 5, padding: 14, gap: 10 }}>
+                    <Text style={{ color: C.text, fontSize: F.body, lineHeight: 21 }}>{m.text}</Text>
+                    <Row style={{ gap: 14 }}>
+                      <Pressable onPress={() => app.rememberText(m.text, 'preference', 'user')}>
+                        <Micro color={C.textFaint}>{en('remember_this')}</Micro>
+                      </Pressable>
+                    </Row>
+                  </View>
+
+                  {m.options && m.options.length > 0 ? (
+                    <View style={{ gap: 8 }}>
+                      <Micro>{en('from_your_database')}</Micro>
+                      {m.options.map((o) => (
+                        <Pressable
+                          key={o.foodId}
+                          onPress={() => logOption(o)}
+                          style={({ pressed }) => ({
+                            backgroundColor: C.card,
+                            borderWidth: S.hairline,
+                            borderColor: C.border,
+                            borderRadius: S.radiusSm,
+                            padding: 13,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 12,
+                            opacity: pressed ? 0.7 : 1,
+                          })}>
+                          <View style={{ flex: 1, gap: 3 }}>
+                            <BiText en={o.name_en} alt={lang === 'en' ? undefined : o.name_mr} size={F.body} />
+                            <Micro>{`${o.grams} g`}</Micro>
+                          </View>
+                          <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                            <Text style={{ color: C.violet, fontSize: F.small, fontWeight: '600' }}>{o.protein}g</Text>
+                            <Text style={{ color: C.textDim, fontSize: F.tiny }}>{o.kcal} kcal</Text>
+                          </View>
+                          <Ionicons name="add-circle-outline" size={19} color={C.accent} />
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : null}
+                </View>
+              ),
+            )}
+
+            {busy ? <ActivityIndicator color={C.accent} /> : null}
+            <View style={{ height: 8 }} />
+          </ScrollView>
+
+          <View style={{ padding: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
+            <View style={{ maxWidth: 780, width: '100%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <ChatInput value={input} onChangeText={setInput} placeholder={t('ask_placeholder')} onSubmit={() => send(input)} />
+              </View>
+              <Pressable
+                onPress={() => send(input)}
+                disabled={busy || !input.trim()}
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 21,
+                  backgroundColor: busy || !input.trim() ? C.cardAlt : C.accent,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Ionicons name="arrow-up" size={19} color={busy || !input.trim() ? C.textGhost : C.white} />
+              </Pressable>
             </View>
-          ),
-        )}
-
-        {busy ? <ActivityIndicator color={C.accent} /> : null}
-        <View style={{ height: 8 }} />
-      </ScrollView>
-
-      <View style={{ padding: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
-        <View style={{ maxWidth: 780, width: '100%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={{ flex: 1 }}>
-            <ChatInput value={input} onChangeText={setInput} placeholder={t('ask_placeholder')} onSubmit={() => send(input)} />
           </View>
-          <Pressable
-            onPress={() => send(input)}
-            disabled={busy || !input.trim()}
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 21,
-              backgroundColor: busy || !input.trim() ? C.cardAlt : C.accent,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <Ionicons name="arrow-up" size={19} color={busy || !input.trim() ? C.textGhost : C.white} />
-          </Pressable>
         </View>
+        {wide ? rail : null}
       </View>
     </View>
   );
@@ -286,5 +326,14 @@ function ChatInput({ value, onChangeText, placeholder, onSubmit }: { value: stri
         fontSize: F.body,
       }}
     />
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <Row style={{ justifyContent: 'space-between' }}>
+      <Micro>{label}</Micro>
+      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>{value}</Text>
+    </Row>
   );
 }
