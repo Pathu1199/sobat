@@ -6,7 +6,7 @@ import { Platform, Text, View } from 'react-native';
 import { makeT } from '../i18n';
 import { requestPermission, setupAndroidChannel } from '../services/notify';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Divider, H1, H3, Row, Screen, Small } from '../ui/components';
+import { Btn, Card, Divider, H1, Micro, Row, Screen, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 type State = 'idle' | 'granted' | 'denied';
@@ -19,6 +19,7 @@ export default function PermissionsScreen() {
   const app = useApp();
   const router = useRouter();
   const t = makeT(app.state.profile.lang);
+  const en = makeT('en');
 
   const [notif, setNotif] = useState<State>('idle');
   const [camera, setCamera] = useState<State>('idle');
@@ -41,9 +42,9 @@ export default function PermissionsScreen() {
 
   return (
     <Screen>
-      <View style={{ paddingTop: 32, gap: 6 }}>
+      <View style={{ paddingTop: 32, gap: 7 }}>
         <H1>{t('permissions_title')}</H1>
-        <Small>{t('permissions_sub')}</Small>
+        <Micro>{t('permissions_sub')}</Micro>
       </View>
 
       <PermissionRow
@@ -70,9 +71,9 @@ export default function PermissionsScreen() {
         <Row style={{ gap: 10, alignItems: 'flex-start' }}>
           <Ionicons name="footsteps-outline" size={20} color={C.textFaint} />
           <View style={{ flex: 1, gap: 2 }}>
-            <H3>{t('perm_motion')}</H3>
+            <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t('perm_motion')}</Text>
             <Small>{t('perm_motion_why')}</Small>
-            <Small color={C.textFaint}>{t('perm_asked_when_used')}</Small>
+            <Micro>{t('perm_asked_when_used')}</Micro>
           </View>
         </Row>
       </Card>
@@ -114,14 +115,14 @@ function PermissionRow({
     <Card>
       <Row style={{ gap: 10, alignItems: 'flex-start' }}>
         <Ionicons name={icon} size={20} color={color} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <H3>{title}</H3>
+        <View style={{ flex: 1, gap: 3 }}>
+          <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{title}</Text>
           <Small>{why}</Small>
         </View>
       </Row>
       <Divider />
       {deferred ? (
-        <Small color={C.textFaint}>{t('perm_asked_when_used')}</Small>
+        <Micro>{t('perm_asked_when_used')}</Micro>
       ) : state === 'idle' ? (
         <Btn small tone="soft" label={t('perm_allow')} onPress={onAsk} />
       ) : (

@@ -4,7 +4,7 @@ import React from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { C, F, S } from '../ui/theme';
+import { C, F, MICRO, S } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
 
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; titleKey: string; bodyKey: string }[] = [
@@ -36,7 +36,7 @@ export default function Welcome() {
         </View>
 
         <View style={{ paddingTop: wide ? 60 : 32, paddingBottom: 44, maxWidth: 680 }}>
-          <Text style={{ color: C.accent, fontSize: F.small, marginBottom: 14 }}>{t('w_eyebrow')}</Text>
+          <Text style={[MICRO, { color: C.accent, marginBottom: 16 }]}>{t('w_eyebrow')}</Text>
           <Text style={{ color: C.text, fontSize: wide ? 52 : 34, fontWeight: '300', lineHeight: wide ? 60 : 42, letterSpacing: -1 }}>
             {t('w_headline')}
           </Text>
@@ -86,8 +86,8 @@ export default function Welcome() {
                 padding: 20,
                 gap: 10,
               }}>
-              <Ionicons name={f.icon} size={22} color={C.accent} />
-              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t(f.titleKey)}</Text>
+              <Ionicons name={f.icon} size={20} color={C.accent} />
+              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t(f.titleKey)}</Text>
               <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 20 }}>{t(f.bodyKey)}</Text>
             </View>
           ))}
@@ -105,19 +105,19 @@ export default function Welcome() {
             alignItems: wide ? 'center' : 'flex-start',
             gap: 18,
           }}>
-          <Ionicons name="lock-closed-outline" size={26} color={C.accent} />
-          <View style={{ flex: 1, gap: 6 }}>
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600' }}>{t('w_privacy_t')}</Text>
+          <Ionicons name="lock-closed-outline" size={24} color={C.cyan} />
+          <View style={{ flex: 1, gap: 7 }}>
+            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600', letterSpacing: -0.3 }}>{t('w_privacy_t')}</Text>
             <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: 23 }}>{t('w_privacy_b')}</Text>
           </View>
         </View>
 
         <View style={{ paddingTop: 44, gap: 16 }}>
-          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600' }}>{t('w_how')}</Text>
+          <Text style={[MICRO, { color: C.textDim }]}>{t('w_how')}</Text>
           <View style={{ flexDirection: wide ? 'row' : 'column', gap: 14 }}>
             {[1, 2, 3].map((n) => (
               <View key={n} style={{ flex: 1, gap: 8 }}>
-                <Text style={{ color: C.accent, fontSize: 28, fontWeight: '200' }}>{n}</Text>
+                <Text style={{ color: C.accent, fontSize: 30, fontWeight: '200', letterSpacing: -1 }}>{n}</Text>
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t(`w_step${n}_t`)}</Text>
                 <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 20 }}>{t(`w_step${n}_b`)}</Text>
               </View>
@@ -131,7 +131,7 @@ export default function Welcome() {
             style={{ backgroundColor: C.accent, paddingVertical: 15, paddingHorizontal: 34, borderRadius: 999 }}>
             <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
           </Pressable>
-          <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{t('w_footer')}</Text>
+          <Text style={[MICRO, { color: C.textGhost }]}>{t('w_footer')}</Text>
         </View>
       </View>
     </ScrollView>
@@ -141,8 +141,8 @@ export default function Welcome() {
 function Stat({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
     <View style={{ minWidth: 120 }}>
-      <Text style={{ color: accent ? C.accent : C.text, fontSize: 30, fontWeight: '200', letterSpacing: -0.8 }}>{value}</Text>
-      <Text style={{ color: C.textDim, fontSize: F.tiny, marginTop: 2 }}>{label}</Text>
+      <Text style={{ color: accent ? C.cyan : C.text, fontSize: 32, fontWeight: '200', letterSpacing: -1 }}>{value}</Text>
+      <Text style={[MICRO, { color: C.textFaint, marginTop: 4 }]}>{label}</Text>
     </View>
   );
 }

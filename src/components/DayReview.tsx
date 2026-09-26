@@ -9,7 +9,7 @@ import { longestStretchMinutes, minutesOn } from '../core/usage';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, H3, P, Row, Small } from '../ui/components';
+import { Btn, Card, Micro, P, Row, Small } from '../ui/components';
 import { C } from '../ui/theme';
 
 /**
@@ -93,24 +93,24 @@ export function DayReview() {
   return (
     <Card>
       <Row style={{ gap: 8 }}>
-        <Ionicons name="moon-outline" size={18} color={C.cyan} />
-        <H3>{t('day_review')}</H3>
+        <Ionicons name="moon-outline" size={15} color={C.cyan} />
+        <Micro color={C.cyan}>{t('day_review')}</Micro>
       </Row>
 
       {text ? (
         <>
           <P>{text}</P>
-          <Small color={C.accent}>{t('review_saved')}</Small>
+          <Micro color={C.cyan}>{t('review_saved')}</Micro>
         </>
       ) : existing ? (
         <>
           <P dim>{existing.text}</P>
-          <Small color={C.textFaint}>{t('review_saved')}</Small>
+          <Micro>{t('review_saved')}</Micro>
         </>
       ) : busy ? (
         <Row>
           <ActivityIndicator color={C.accent} />
-          <Small>{t('write_review')}</Small>
+          <Micro>{t('write_review')}</Micro>
         </Row>
       ) : (
         <Btn small tone="soft" label={t('write_review')} onPress={write} />

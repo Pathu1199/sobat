@@ -210,3 +210,21 @@ describe('isDurableMemory', () => {
     expect(isDurableMemory('a'.repeat(200))).toBe(false);
   });
 });
+
+describe('dietFrom only trusts stated rules', () => {
+  it('acts on a rule the person typed', () => {
+    expect(dietFrom([mem('I am vegetarian', { source: 'user' })]).vegOnly).toBe(true);
+  });
+
+  it('ignores a restriction the model invented', () => {
+    // Seen in real use: the model decided paneer was off-limits for a
+    // vegetarian, which would have removed a staple protein.
+    const learned = [mem('I am a vegetarian.', { source: 'auto' }), mem("I can't eat paneer due to my dietary preference.", { source: 'auto' })];
+    expect(dietFrom(learned).vegOnly).toBe(false);
+  });
+
+  it('acts on it once the person confirms it', () => {
+    const confirmed = [mem('I am a vegetarian.', { source: 'user' })];
+    expect(dietFrom(confirmed).vegOnly).toBe(true);
+  });
+});

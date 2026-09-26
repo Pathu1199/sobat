@@ -5,15 +5,15 @@ import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { FOOD_PHOTO_SCHEMA, foodPhotoPrompt } from '../ai/prompts';
 import { toISODate } from '../core/date';
-import { defaultPortion, foodName, resolveByName, searchFoods, toMealItem } from '../core/foods';
+import { defaultPortion, resolveByName, searchFoods, toMealItem } from '../core/foods';
 import { mealTypeForHour } from '../core/nutrition';
 import { pendingCount } from '../core/queue';
 import type { FoodItem, MealItem, MealType } from '../core/types';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Divider, Field, H2, H3, P, Pill, Row, Screen, Small } from '../ui/components';
-import { C, F } from '../ui/theme';
+import { BiText, Btn, Card, Divider, Field, Micro, Pill, Row, Screen, SectionHeader, Segmented, Small } from '../ui/components';
+import { C, F, S } from '../ui/theme';
 
 type VisionItem = { name_en: string; name_mr?: string; portion?: string; grams_est: number; confidence: number };
 type VisionResult = { items: VisionItem[]; notes?: string };
@@ -28,12 +28,15 @@ type Draft = {
   estimated: boolean;
 };
 
+const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner'];
+
 export default function PhotoScreen() {
   const app = useApp();
   const router = useRouter();
   const { askJSON, online } = useAI();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
+  const en = makeT('en');
 
   const [uri, setUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -60,6 +63,7 @@ export default function PhotoScreen() {
   );
   const totalKcal = items.reduce((a, i) => a + i.kcal, 0);
   const totalProtein = Math.round(items.reduce((a, i) => a + i.protein, 0));
+  const queued = pendingCount(app.state.photoQueue);
 
   const corrections = useMemo(
     () =>
@@ -77,7 +81,7 @@ export default function PhotoScreen() {
     setError(null);
     const perm = fromCamera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      setError('Permission denied');
+      setError(t('perm_denied'));
       return;
     }
     const res = fromCamera
@@ -88,12 +92,24 @@ export default function PhotoScreen() {
     setUri(asset.uri);
     setDrafts([]);
     if (asset.base64) analyse(asset.base64, asset.uri);
-    else setError('Could not read the image');
+    else setError(t('photo_unreadable'));
+  }
+
+  function queue(base64: string, sourceUri?: string) {
+    const now = new Date();
+    app.queuePhoto({
+      id: String(now.getTime()),
+      uri: sourceUri ?? uri ?? '',
+      base64,
+      at: now.toISOString(),
+      date: toISODate(now),
+      attempts: 0,
+    });
+    setError(t('queued'));
   }
 
   async function analyse(base64: string, sourceUri?: string) {
     if (!online) {
-      // The screen has always said "queued"; this is what makes that true.
       queue(base64, sourceUri);
       return;
     }
@@ -120,36 +136,16 @@ export default function PhotoScreen() {
       });
       setDrafts(next);
       if (next.length === 0) setError(t('no_results'));
-    } catch (e) {
-      if (online) {
-        setError('The model did not return a readable answer. Try again or log by hand.');
-      } else {
-        queue(base64, uri ?? undefined);
-      }
+    } catch {
+      if (online) setError(t('model_unreadable'));
+      else queue(base64, sourceUri);
     } finally {
       setBusy(false);
     }
   }
 
-  function queue(base64: string, sourceUri?: string) {
-    const now = new Date();
-    app.queuePhoto({
-      id: String(now.getTime()),
-      uri: sourceUri ?? uri ?? '',
-      base64,
-      at: now.toISOString(),
-      date: toISODate(now),
-      attempts: 0,
-    });
-    setError(t('queued'));
-  }
-
   function swap(key: string, food: FoodItem) {
-    setDrafts((d) =>
-      d.map((x) =>
-        x.key === key ? { ...x, food, estimated: false, grams: defaultPortion(food)?.grams ?? x.grams } : x,
-      ),
-    );
+    setDrafts((d) => d.map((x) => (x.key === key ? { ...x, food, estimated: false, grams: defaultPortion(food)?.grams ?? x.grams } : x)));
     setEditing(null);
     setSearch('');
   }
@@ -175,112 +171,122 @@ export default function PhotoScreen() {
 
   return (
     <Screen>
-      <Card>
-        <H2>{t('photo_title')}</H2>
-        <Small>{t('photo_hint')}</Small>
-        <Row style={{ gap: 8 }}>
-          <Btn label={t('take_photo')} onPress={() => pick(true)} style={{ flex: 1 }} />
-          <Btn label={t('pick_photo')} tone="soft" onPress={() => pick(false)} style={{ flex: 1 }} />
-        </Row>
-        {!online ? <Small color={C.amber}>{t('ai_offline_hint')}</Small> : null}
-        {pendingCount(app.state.photoQueue) > 0 ? (
-          <Small color={C.cyan}>
-            {(pendingCount(app.state.photoQueue) === 1 ? t('photos_queued') : t('photos_queued_plural')).replace(
-              '{n}',
-              String(pendingCount(app.state.photoQueue)),
-            )}
-          </Small>
-        ) : null}
-      </Card>
-
-      {uri ? (
+      {!uri ? (
         <Card>
-          <Image source={{ uri }} style={{ width: '100%', height: 200, borderRadius: 10 }} resizeMode="cover" />
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: C.borderStrong,
+              borderStyle: 'dashed',
+              borderRadius: S.radius,
+              paddingVertical: 38,
+              alignItems: 'center',
+              gap: 12,
+            }}>
+            <Ionicons name="camera-outline" size={30} color={C.accent} />
+            <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t('photo_title')}</Text>
+            <Micro>{en('photo_hint')}</Micro>
+          </View>
+          <Row style={{ gap: 8 }}>
+            <Btn label={t('take_photo')} onPress={() => pick(true)} style={{ flex: 1 }} />
+            <Btn tone="soft" label={t('pick_photo')} onPress={() => pick(false)} style={{ flex: 1 }} />
+          </Row>
+          {!online ? <Small color={C.amber}>{t('ai_offline_hint')}</Small> : null}
+          {queued > 0 ? (
+            <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small>
+          ) : null}
+        </Card>
+      ) : (
+        <Card>
+          <Image source={{ uri }} style={{ width: '100%', height: 190, borderRadius: S.radiusSm }} resizeMode="cover" />
           {busy ? (
             <Row>
               <ActivityIndicator color={C.accent} />
-              <Small>{t('analysing')}</Small>
+              <Micro>{en('analysing')}</Micro>
             </Row>
           ) : null}
           {error ? <Small color={C.amber}>{error}</Small> : null}
+          <Row style={{ gap: 8 }}>
+            <Btn small tone="soft" label={t('take_photo')} onPress={() => pick(true)} style={{ flex: 1 }} />
+            <Btn small tone="ghost" label={t('cancel')} onPress={() => router.back()} style={{ flex: 1 }} />
+          </Row>
         </Card>
-      ) : null}
+      )}
 
       {drafts.length > 0 ? (
-        <Card>
-          <Row style={{ flexWrap: 'wrap', gap: 6 }}>
-            {(['breakfast', 'lunch', 'snack', 'dinner'] as MealType[]).map((m) => (
-              <Pill key={m} label={t(m)} active={mealType === m} onPress={() => setMealType(m)} />
-            ))}
-          </Row>
-          <Divider />
+        <>
+          <Segmented value={mealType} onChange={setMealType} options={MEAL_TYPES.map((m) => ({ key: m, label: en(m) }))} />
 
-          {drafts.map((d, idx) => {
-            const item = items[idx];
-            const displayEn = d.food ? d.food.name_en : d.rawName;
-            const displayMr = d.food ? d.food.name_mr : d.nameMrGuess;
-            return (
-              <View key={d.key} style={{ gap: 8, paddingVertical: 8 }}>
-                <Row style={{ justifyContent: 'space-between' }}>
-                  <View style={{ flex: 1 }}>
-                    <P>{displayEn}</P>
-                    {displayMr ? <Small color={C.accent}>{displayMr}</Small> : null}
-                  </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={{ color: C.text, fontWeight: '600' }}>{item.kcal} kcal</Text>
-                    <Small>{item.grams} g</Small>
-                  </View>
-                  <Pressable onPress={() => setDrafts((x) => x.filter((y) => y.key !== d.key))} accessibilityLabel={t('delete')}>
-                    <Ionicons name="close" size={18} color={C.textFaint} />
-                  </Pressable>
-                </Row>
-
-                <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-                  {d.estimated ? <Pill label={t('estimated')} color={C.amberSoft} /> : null}
-                  <Pill label={`${Math.round(d.confidence * 100)}%`} />
-                  {[0.5, 1, 1.5, 2].map((mult) => {
-                    const base = d.food ? (defaultPortion(d.food)?.grams ?? 100) : 100;
-                    return (
-                      <Pill
-                        key={mult}
-                        label={`${mult}x`}
-                        active={Math.abs(d.grams - base * mult) < 5}
-                        onPress={() => setDrafts((x) => x.map((y) => (y.key === d.key ? { ...y, grams: Math.round(base * mult) } : y)))}
-                      />
-                    );
-                  })}
-                  <Pill label={t('edit')} onPress={() => setEditing(editing === d.key ? null : d.key)} />
-                </Row>
-
-                {editing === d.key ? (
-                  <View style={{ gap: 6 }}>
-                    <Field value={search} onChangeText={setSearch} placeholder={t('search_food')} />
-                    {searchFoods(app.foods, search || d.rawName, 6).map((f) => (
-                      <Pressable key={f.id} onPress={() => swap(d.key, f)}>
-                        <Row style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
-                          <View style={{ flex: 1 }}>
-                            <P>{foodName(f, lang)}</P>
-                            <Small>{f.name_mr}</Small>
-                          </View>
-                          <Small>{f.kcal_100g} /100g</Small>
-                        </Row>
+          <View style={{ gap: 10 }}>
+            <SectionHeader title={en('detected')} meta={`${drafts.length}`} />
+            <Card>
+              {drafts.map((d, idx) => {
+                const item = items[idx];
+                const displayEn = d.food ? d.food.name_en : d.rawName;
+                const displayMr = d.food ? d.food.name_mr : d.nameMrGuess;
+                return (
+                  <View key={d.key} style={{ gap: 9 }}>
+                    {idx > 0 ? <Divider /> : null}
+                    <Row style={{ justifyContent: 'space-between' }}>
+                      <View style={{ flex: 1, gap: 3 }}>
+                        <BiText en={displayEn} alt={lang === 'en' ? undefined : displayMr} />
+                        <Micro>{`${item.grams} g`}</Micro>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{item.kcal}</Text>
+                        <Micro>kcal</Micro>
+                      </View>
+                      <Pressable onPress={() => setDrafts((x) => x.filter((y) => y.key !== d.key))} hitSlop={8}>
+                        <Ionicons name="close" size={16} color={C.textGhost} />
                       </Pressable>
-                    ))}
-                  </View>
-                ) : null}
-                <Divider />
-              </View>
-            );
-          })}
+                    </Row>
 
-          <Row style={{ justifyContent: 'space-between' }}>
-            <View>
-              <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600' }}>{totalKcal} kcal</Text>
-              <Small>{totalProtein} g {t('protein')}</Small>
-            </View>
-            <Btn label={t('save')} onPress={save} />
-          </Row>
-        </Card>
+                    <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+                      {d.estimated ? <Pill label={t('estimated')} color={C.amberSoft} textColor={C.amber} tone={C.amber} /> : null}
+                      <Pill label={`${Math.round(d.confidence * 100)}%`} />
+                      {[0.5, 1, 1.5, 2].map((mult) => {
+                        const base = d.food ? (defaultPortion(d.food)?.grams ?? 100) : 100;
+                        return (
+                          <Pill
+                            key={mult}
+                            label={`${mult}x`}
+                            active={Math.abs(d.grams - base * mult) < 5}
+                            onPress={() => setDrafts((x) => x.map((y) => (y.key === d.key ? { ...y, grams: Math.round(base * mult) } : y)))}
+                          />
+                        );
+                      })}
+                      <Pill label={t('edit')} onPress={() => setEditing(editing === d.key ? null : d.key)} />
+                    </Row>
+
+                    {editing === d.key ? (
+                      <View style={{ gap: 6 }}>
+                        <Field value={search} onChangeText={setSearch} placeholder={t('search_food')} />
+                        {searchFoods(app.foods, search || d.rawName, 6).map((f) => (
+                          <Pressable key={f.id} onPress={() => swap(d.key, f)}>
+                            <Row style={{ justifyContent: 'space-between', paddingVertical: 7 }}>
+                              <BiText en={f.name_en} alt={lang === 'en' ? undefined : f.name_mr} size={F.small} />
+                              <Micro>{`${f.kcal_100g} /100g`}</Micro>
+                            </Row>
+                          </Pressable>
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </Card>
+          </View>
+
+          <Card>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <View>
+                <Text style={{ color: C.text, fontSize: 28, fontWeight: '300' }}>{totalKcal}</Text>
+                <Micro>{`kcal · ${totalProtein} g ${en('protein')}`}</Micro>
+              </View>
+              <Btn label={t('save')} onPress={save} />
+            </Row>
+          </Card>
+        </>
       ) : null}
     </Screen>
   );

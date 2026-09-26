@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, H3, P, Row, Small } from '../ui/components';
+import { Btn, Card, Micro, P, Row, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 const WAIT_SECONDS = 120;
@@ -56,8 +56,8 @@ export function CravingSOS() {
   return (
     <Card>
       <Row style={{ gap: 8 }}>
-        <Ionicons name="hand-left-outline" size={18} color={C.amber} />
-        <H3>{t('craving_sos')}</H3>
+        <Ionicons name="hand-left-outline" size={15} color={C.amber} />
+        <Micro color={C.amber}>{t('craving_sos')}</Micro>
       </Row>
       <Small>{t('craving_hint')}</Small>
 

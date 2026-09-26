@@ -174,7 +174,10 @@ const NO_EGG_PATTERNS = [/\bno eggs?\b/i, /\b(?:do ?n[o']?t|do not|never) eat eg
 export function dietFrom(list: MemoryItem[]): Diet {
   let vegOnly = false;
   let noEgg = false;
-  for (const m of list) {
+  // Only rules the person actually stated. A model that decides on its own
+  // that you cannot eat paneer would quietly remove a staple protein, and you
+  // would never see why the suggestions got worse.
+  for (const m of list.filter((x) => x.source === 'user')) {
     if (NON_VEG_NEGATION.some((p) => p.test(m.text))) {
       vegOnly = false;
       continue;

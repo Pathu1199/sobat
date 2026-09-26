@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import type { AIRoute } from '../ai/ollama';
 import type { Lang } from '../core/types';
 import { makeT } from '../i18n';
-import { C, F } from '../ui/theme';
+import { C, MICRO } from '../ui/theme';
 
 export function AIBadge({ route, lang }: { route: AIRoute; lang: Lang }) {
   const t = makeT(lang);
@@ -17,7 +17,7 @@ export function AIBadge({ route, lang }: { route: AIRoute; lang: Lang }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
       <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: m.color }} />
-      <Text style={{ color: C.textDim, fontSize: F.tiny }}>{m.label}</Text>
+      <Text style={[MICRO, { color: C.textDim }]}>{m.label}</Text>
     </View>
   );
 }

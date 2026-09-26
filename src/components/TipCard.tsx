@@ -9,7 +9,7 @@ import { longestStretchMinutes } from '../core/usage';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { Card, H3, P, Row, Small } from '../ui/components';
+import { Card, Micro, P, Row, Small } from '../ui/components';
 import { C } from '../ui/theme';
 
 /**
@@ -72,7 +72,7 @@ export function TipCard() {
       <Card>
         <Row>
           <ActivityIndicator color={C.accent} />
-          <Small>{t('daily_tip')}</Small>
+          <Micro>{t('daily_tip')}</Micro>
         </Row>
       </Card>
     );
@@ -81,8 +81,8 @@ export function TipCard() {
   return (
     <Card>
       <Row style={{ gap: 8 }}>
-        <Ionicons name="bulb-outline" size={18} color={C.amber} />
-        <H3>{t('daily_tip')}</H3>
+        <Ionicons name="bulb-outline" size={15} color={C.amber} />
+        <Micro color={C.amber}>{t('daily_tip')}</Micro>
       </Row>
       <P>{existing}</P>
     </Card>

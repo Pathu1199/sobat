@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { makeT } from '../i18n';
 import { useNudges } from '../services/useNudges';
 import { useApp } from '../store/AppProvider';
-import { Btn, Row, Small } from '../ui/components';
+import { Btn, Micro, Row } from '../ui/components';
 import { C, F, S } from '../ui/theme';
 
 /** The interrupt itself: one line, one two-minute task, three ways out. */
@@ -35,21 +35,21 @@ export function NudgeToast() {
         left: 12,
         right: 12,
         bottom: 88,
-        backgroundColor: C.cardAlt,
-        borderWidth: 1,
+        backgroundColor: C.card,
+        borderWidth: S.hairline,
         borderColor: C.accent,
         borderRadius: S.radius,
-        padding: S.pad,
+        padding: S.padLg,
         gap: 10,
         maxWidth: 520,
         alignSelf: 'center',
       }}>
-      <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{current.title}</Text>
-      <Text style={{ color: C.text, fontSize: F.body }}>{current.body}</Text>
-      <Small color={C.accent}>{current.task}</Small>
+      <Micro color={C.accent}>{current.title}</Micro>
+      <Text style={{ color: C.text, fontSize: F.body, lineHeight: 20 }}>{current.body}</Text>
+      <Text style={{ color: C.cyan, fontSize: F.small }}>{current.task}</Text>
 
       {running && !finished ? (
-        <Text style={{ color: C.text, fontSize: 28, fontWeight: '600', textAlign: 'center' }}>{left}</Text>
+        <Text style={{ color: C.text, fontSize: 30, fontWeight: '200', textAlign: 'center', letterSpacing: -1 }}>{left}</Text>
       ) : null}
 
       <Row style={{ gap: 8 }}>

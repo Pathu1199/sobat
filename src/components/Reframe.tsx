@@ -8,7 +8,7 @@ import type { Lang } from '../core/types';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Field, H3, P, Row, Small } from '../ui/components';
+import { Btn, Card, Field, Micro, P, Row, Small } from '../ui/components';
 import { C } from '../ui/theme';
 
 function reframePrompt(lang: Lang, thought: string): string {
@@ -70,8 +70,8 @@ export function Reframe({ onCrisis }: { onCrisis: () => void }) {
   return (
     <Card>
       <Row style={{ gap: 8 }}>
-        <Ionicons name="repeat-outline" size={18} color={C.violet} />
-        <H3>{t('reframe')}</H3>
+        <Ionicons name="repeat-outline" size={15} color={C.violet} />
+        <Micro color={C.violet}>{t('reframe')}</Micro>
       </Row>
       <Field value={thought} onChangeText={setThought} placeholder={t('reframe_input')} multiline />
       {answer ? <P>{answer}</P> : null}
@@ -80,7 +80,7 @@ export function Reframe({ onCrisis }: { onCrisis: () => void }) {
       ) : online ? (
         <Btn small tone="soft" label={t('reframe_ask')} onPress={go} disabled={!thought.trim()} />
       ) : (
-        <Small color={C.textFaint}>{t('ai_offline_hint')}</Small>
+        <Micro>{t('ai_offline_hint')}</Micro>
       )}
     </Card>
   );

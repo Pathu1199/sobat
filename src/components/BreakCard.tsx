@@ -7,7 +7,7 @@ import { longestStretchMinutes, minutesOn } from '../core/usage';
 import { makeT } from '../i18n';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
-import { Bar, Card, H3, Row, Small } from '../ui/components';
+import { Bar, Card, Micro, Row, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 /** Shows how long until the next pause, and how the day has gone so far. */
@@ -28,41 +28,38 @@ export function BreakCard() {
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
         <Row style={{ gap: 8 }}>
-          <Ionicons name="timer-outline" size={18} color={C.accent} />
-          <H3>{t('break_monitor')}</H3>
+          <Ionicons name="timer-outline" size={15} color={C.accent} />
+          <Micro color={C.accent}>{t('break_monitor')}</Micro>
         </Row>
-        <Small color={C.textFaint}>{formatMinutes(screen)}</Small>
+        <Micro>{formatMinutes(screen)}</Micro>
       </Row>
 
       {monitor.enabled ? (
         <>
-          <Row style={{ alignItems: 'flex-end', gap: 6 }}>
-            <Text style={{ color: C.text, fontSize: 30, fontWeight: '200' }}>{left}</Text>
-            <Text style={{ color: C.textDim, fontSize: F.small, marginBottom: 6 }}>
-              {t('minutes')} · {t('break_next').toLowerCase()}
-            </Text>
+          <Row style={{ alignItems: 'baseline', gap: 7 }}>
+            <Text style={{ color: C.text, fontSize: 30, fontWeight: '200', letterSpacing: -1 }}>{left}</Text>
+            <Micro>{`${t('minutes')} · ${t('break_next')}`}</Micro>
           </Row>
           <Bar value={elapsed} max={monitor.workMinutes} color={left <= 1 ? C.amber : C.accent} />
         </>
       ) : (
-        <Small color={C.textFaint}>{t('break_off')}</Small>
+        <Micro>{t('break_off')}</Micro>
       )}
 
       <Row style={{ justifyContent: 'space-between' }}>
-        <Small>{t('break_compliance')}</Small>
-        <Small color={stats.compliancePct >= 60 ? C.accent : C.textDim}>
-          {stats.taken} / {todayBreaks.length || 0}
-        </Small>
+        <Micro>{t('break_compliance')}</Micro>
+        <Text style={{ color: stats.compliancePct >= 60 ? C.cyan : C.textDim, fontSize: F.small, fontWeight: '600' }}>
+          {stats.taken}
+          <Text style={{ color: C.textFaint, fontWeight: '400' }}> / {todayBreaks.length || 0}</Text>
+        </Text>
       </Row>
       <Row style={{ justifyContent: 'space-between' }}>
-        <Small>{t('longest_sitting')}</Small>
-        <Small color={sitting >= 120 ? C.amber : C.textDim}>{formatMinutes(sitting)}</Small>
+        <Micro>{t('longest_sitting')}</Micro>
+        <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
       </Row>
 
       {monitor.suggestion ? (
-        <Small color={C.amber}>
-          {t('break_every')} {monitor.suggestion} {t('minutes')}?
-        </Small>
+        <Micro color={C.amber}>{`${t('break_every')} ${monitor.suggestion} ${t('minutes')}?`}</Micro>
       ) : null}
     </Card>
   );

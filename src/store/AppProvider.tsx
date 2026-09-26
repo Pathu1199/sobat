@@ -45,6 +45,7 @@ type Ctx = {
   addCustomFood: (f: FoodItem) => void;
   rememberText: (text: string, type?: MemoryType, source?: 'user' | 'auto') => void;
   forgetMemory: (id: string) => void;
+  confirmMemory: (id: string) => void;
   trackActive: (minutes: number) => void;
   logBreak: (action: 'taken' | 'skipped', workedMinutes: number) => void;
   setBreakSettings: (s: Partial<BreakSettings>) => void;
@@ -159,6 +160,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return { ...s, memory: pruneMemory(next, today) };
         }),
       forgetMemory: (id) => update((s) => ({ ...s, memory: removeMemory(s.memory, id) })),
+      confirmMemory: (id) =>
+        update((s) => ({
+          ...s,
+          memory: s.memory.map((m) => (m.id === id ? { ...m, source: 'user' as const, weight: Math.max(m.weight, 0.8) } : m)),
+        })),
       trackActive: (minutes) =>
         update((s) => {
           const now = new Date();

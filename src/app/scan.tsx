@@ -7,7 +7,7 @@ import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem } from '../core/types';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Divider, H2, H3, P, Row, Screen, Small } from '../ui/components';
+import { BiText, Btn, Card, Divider, Micro, Row, Screen, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 type OffProduct = {
@@ -30,7 +30,9 @@ type OffProduct = {
 export default function ScanScreen() {
   const app = useApp();
   const router = useRouter();
-  const t = makeT(app.state.profile.lang);
+  const lang = app.state.profile.lang;
+  const t = makeT(lang);
+  const en = makeT('en');
   const [permission, requestPermission] = useCameraPermissions();
 
   const [code, setCode] = useState<string | null>(null);
@@ -86,8 +88,8 @@ export default function ScanScreen() {
     return (
       <Screen>
         <Card>
-          <H3>{t('scan_barcode')}</H3>
-          <Small>Barcode scanning needs the phone app. Add it by hand instead.</Small>
+          <Micro>{en('scan_barcode')}</Micro>
+          <Small>{t('scan_needs_phone')}</Small>
           <CustomFoodForm onSaved={() => router.back()} onCancel={() => router.back()} />
         </Card>
       </Screen>
@@ -98,7 +100,7 @@ export default function ScanScreen() {
     return (
       <Screen>
         <Card>
-          <H3>{t('perm_camera')}</H3>
+          <Micro>{en('perm_camera')}</Micro>
           <Small>{t('perm_camera_why')}</Small>
           <Btn label={t('perm_allow')} onPress={requestPermission} />
         </Card>
@@ -112,16 +114,17 @@ export default function ScanScreen() {
     return (
       <Screen>
         <Card tone={C.accent}>
-          <Small color={C.accent}>{t('barcode_found')}</Small>
-          <H2>{found.name_en}</H2>
+          <Micro color={C.cyan}>{en('barcode_found')}</Micro>
+          <BiText en={found.name_en} alt={lang === 'en' ? undefined : found.name_mr} size={F.h2} weight="600" />
           <Divider />
           <Row style={{ justifyContent: 'space-between' }}>
-            <P>{per.label_en}</P>
-            <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{n.kcal} kcal</Text>
+            <Micro>{per.label_en}</Micro>
+            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>
+              {n.kcal}
+              <Text style={{ color: C.textFaint, fontSize: F.tiny }}> kcal</Text>
+            </Text>
           </Row>
-          <Small>
-            {n.protein} g {t('protein')} · {found.kcal_100g} kcal / 100 g
-          </Small>
+          <Micro>{`${n.protein} g ${en('protein')} · ${found.kcal_100g} kcal / 100 g`}</Micro>
           <Btn label={t('done')} onPress={() => router.replace('/log')} />
           <Btn
             tone="ghost"
@@ -144,7 +147,7 @@ export default function ScanScreen() {
         onBarcodeScanned={({ data }) => lookup(data)}
       />
       <View style={{ padding: 16, gap: 10 }}>
-        <Small>{busy ? '...' : t('scanning')}</Small>
+        <Micro>{busy ? '...' : t('scanning')}</Micro>
         {notFound ? (
           <Card>
             <Small color={C.amber}>{t('barcode_not_found')}</Small>

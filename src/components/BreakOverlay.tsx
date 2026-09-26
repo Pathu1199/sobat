@@ -4,7 +4,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { makeT } from '../i18n';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
-import { C, F } from '../ui/theme';
+import { C, F, MICRO, S } from '../ui/theme';
 
 const SUGGESTIONS: Record<string, string[]> = {
   en: ['Look at something far away', 'Roll your shoulders back', 'Stand up and stretch tall', 'Drink some water', 'Close your eyes and breathe'],
@@ -63,19 +63,19 @@ export function BreakOverlay() {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: '#060D0C',
+        backgroundColor: '#04060B',
         alignItems: 'center',
         justifyContent: 'center',
         opacity: fade,
         zIndex: 999,
       }}>
-      <Text style={{ color: C.textDim, fontSize: F.h2, fontWeight: '400', marginBottom: 40, textAlign: 'center', paddingHorizontal: 24 }}>
+      <Text style={{ color: C.textDim, fontSize: F.h2, fontWeight: '300', marginBottom: 44, textAlign: 'center', paddingHorizontal: 24, letterSpacing: -0.2 }}>
         {t('break_look_away')}
       </Text>
 
       <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
         <Svg width={size} height={size} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
-          <Circle cx={size / 2} cy={size / 2} r={r} stroke="#12211E" strokeWidth={stroke} fill="none" />
+          <Circle cx={size / 2} cy={size / 2} r={r} stroke="#131828" strokeWidth={stroke} fill="none" />
           <Circle
             cx={size / 2}
             cy={size / 2}
@@ -124,7 +124,7 @@ export function BreakOverlay() {
         )}
       </View>
 
-      <Text style={{ position: 'absolute', top: 28, right: 28, color: '#1C312D', fontSize: F.tiny }}>
+      <Text style={[MICRO, { position: 'absolute', top: 30, right: 30, color: '#18202F' }]}>
         {t('break_count').replace('{n}', String(monitor.takenToday))}
       </Text>
     </Animated.View>
@@ -143,20 +143,18 @@ function BreakWarning({ monitor, lang }: { monitor: ReturnType<typeof useBreakMo
         position: 'absolute',
         right: 16,
         bottom: 100,
-        backgroundColor: C.cardAlt,
-        borderWidth: 1,
+        backgroundColor: C.card,
+        borderWidth: S.hairline,
         borderColor: C.border,
-        borderRadius: 14,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        gap: 4,
-        maxWidth: 320,
+        borderRadius: S.radius,
+        paddingVertical: 14,
+        paddingHorizontal: 18,
+        gap: 5,
+        maxWidth: 330,
         zIndex: 900,
       }}>
-      <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
-        {t('break_soon').replace('{s}', String(seconds))}
-      </Text>
-      <Text style={{ color: C.textDim, fontSize: F.small }}>{t('break_soon_hint')}</Text>
+      <Text style={[MICRO, { color: C.amber }]}>{t('break_soon').replace('{s}', String(seconds))}</Text>
+      <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 18 }}>{t('break_soon_hint')}</Text>
       <View style={{ flexDirection: 'row', gap: 16, marginTop: 6 }}>
         <Pressable onPress={() => monitor.snooze(10)}>
           <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '600' }}>{t('break_snooze')}</Text>

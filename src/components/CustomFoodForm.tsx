@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import type { FoodItem } from '../core/types';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Divider, Field, H3, Pill, Row, Small } from '../ui/components';
+import { Btn, Card, Divider, Field, Micro, Pill, Row, Small } from '../ui/components';
 import { C } from '../ui/theme';
 
 const CATEGORIES = ['grain', 'dal', 'veg', 'nonveg', 'dairy', 'snack', 'sweet', 'beverage', 'fruit', 'fast_food', 'other'];
@@ -68,7 +68,7 @@ export function CustomFoodForm({ initialName, onSaved, onCancel }: { initialName
 
   return (
     <Card tone={C.accent}>
-      <H3>{t('custom_food')}</H3>
+      <Micro color={C.accent}>{t('custom_food')}</Micro>
       <Small>{t('custom_food_hint')}</Small>
 
       <Field label={t('custom_name_en')} value={nameEn} onChangeText={setNameEn} placeholder="Aunty's poha" />
@@ -80,7 +80,7 @@ export function CustomFoodForm({ initialName, onSaved, onCancel }: { initialName
       </Row>
       <Field label={`${t('protein')} (g, ${t('portion').toLowerCase()})`} value={protein} onChangeText={setProtein} keyboardType="numeric" placeholder="5" />
 
-      <Small>{t('custom_category')}</Small>
+      <Micro>{t('custom_category')}</Micro>
       <Row style={{ flexWrap: 'wrap', gap: 6 }}>
         {CATEGORIES.map((c) => (
           <Pill key={c} label={c.replace('_', ' ')} active={category === c} onPress={() => setCategory(c)} />

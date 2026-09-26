@@ -9,7 +9,7 @@ import { KCAL_FLOOR } from '../core/nutrition';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, H3, P, Row, Small } from '../ui/components';
+import { Btn, Card, Micro, P, Row, Small } from '../ui/components';
 import { C } from '../ui/theme';
 
 const LABEL: Record<string, string> = {
@@ -69,20 +69,20 @@ export function WeeklyReport({ summary }: { summary: GrowthSummary }) {
   return (
     <Card>
       <Row style={{ gap: 8 }}>
-        <Ionicons name="document-text-outline" size={18} color={C.violet} />
-        <H3>{t('weekly_report')}</H3>
+        <Ionicons name="document-text-outline" size={15} color={C.violet} />
+        <Micro color={C.violet}>{t('weekly_report')}</Micro>
       </Row>
       {text ? (
         <P>{text}</P>
       ) : busy ? (
         <Row>
           <ActivityIndicator color={C.accent} />
-          <Small>{t('generate')}</Small>
+          <Micro>{t('generate')}</Micro>
         </Row>
       ) : online ? (
         <Btn small tone="soft" label={t('generate')} onPress={write} />
       ) : (
-        <Small color={C.textFaint}>{t('ai_offline_hint')}</Small>
+        <Micro>{t('ai_offline_hint')}</Micro>
       )}
     </Card>
   );
