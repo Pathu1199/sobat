@@ -45,17 +45,28 @@ export async function isAutostartEnabled(): Promise<boolean> {
 }
 
 /**
- * What the Windows shell can see about the window in front. Null everywhere
- * else, which the rules read as "no reason to pause".
+ * What a plain browser tab can work out about itself. A tab cannot see other
+ * programs, so `exe` is always empty and the app list never matches here.
+ */
+export function browserForegroundState(): ForegroundState | null {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return null;
+  const doc = document as Document & { pictureInPictureElement?: Element | null };
+  const fullscreen = document.fullscreenElement !== null || !!doc.pictureInPictureElement;
+  return { fullscreen, exe: '', onCall: false };
+}
+
+/**
+ * What the Windows shell can see about the window in front. Falls back to
+ * what a plain browser tab can see about itself when the shell is absent.
  */
 export async function foregroundState(): Promise<ForegroundState | null> {
-  if (!isDesktopShell()) return null;
+  if (!isDesktopShell()) return browserForegroundState();
   try {
     const mod = await import('@tauri-apps/api/core');
     const raw = await mod.invoke<{ fullscreen: boolean; exe: string; onCall: boolean }>('foreground_state');
     return { fullscreen: !!raw.fullscreen, exe: String(raw.exe ?? ''), onCall: !!raw.onCall };
   } catch {
-    // The command is missing or failed; never let that force a break.
-    return null;
+    // The command is missing or failed; fall back to what the page can see.
+    return browserForegroundState();
   }
 }

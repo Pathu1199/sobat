@@ -9,6 +9,7 @@ const IDS = {
   water: 'sobat-water',
   dinner: 'sobat-dinner',
   review: 'sobat-day-review',
+  long: 'sobat-long-break',
 };
 
 /**
@@ -42,8 +43,17 @@ export function useScheduledReminders() {
       await scheduleDaily(IDS.dinner, Math.max(18, quietStartHour - 3), 30, t('dinner'), t('act_light_dinner'));
       // The day recap, just before things wind down.
       await scheduleDaily(IDS.review, 21, 30, t('day_review'), t('write_review'));
+
+      // The phone cannot blank its own screen, so a long break is a
+      // notification. Only inside the working window, if one is set.
+      const br = app.state.breakSettings;
+      if (br.enabled && br.long.enabled) {
+        await scheduleRepeating(IDS.long, br.long.everyMinutes * 60, t('brk_long'), t('brk_long_hint'));
+      } else {
+        await cancel(IDS.long);
+      }
     })().catch(() => {
       // Permission refused or the OS declined. The app still works.
     });
-  }, [nudgesEnabled, waterGoalMl, quietStartHour, lang, onboarded]);
+  }, [nudgesEnabled, waterGoalMl, quietStartHour, lang, onboarded, app.state.breakSettings]);
 }

@@ -25,6 +25,14 @@ describe('migrateState', () => {
     expect(s.breakSettings.enabled).toBe(true);
   });
 
+  it('leaves micro breaks off where the screen is the phone itself', () => {
+    // vitest runs under the node platform, which is the non-web branch.
+    expect(migrateState(v1).breakSettings.micro.enabled).toBe(false);
+    // The kinds that only ever show a notification stay on.
+    expect(migrateState(v1).breakSettings.long.enabled).toBe(true);
+    expect(migrateState(v1).breakSettings.posture.enabled).toBe(true);
+  });
+
   it('maps the old allowSkip onto a strictness', () => {
     expect(migrateState(v1).breakSettings.strictness).toBe('normal');
     expect(migrateState({ ...v1, breakSettings: { ...v1.breakSettings, allowSkip: false } }).breakSettings.strictness).toBe('strict');

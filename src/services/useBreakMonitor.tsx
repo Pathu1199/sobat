@@ -69,6 +69,17 @@ function useBreakClock() {
     return () => sub.remove();
   }, []);
 
+  // A hidden tab means the person is elsewhere, which counts as a longer
+  // absence than merely not typing.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') lastActivity.current = Date.now();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
   // The shell knows real system idle time and what is in front. Off the shell
   // both stay null and the rules fall back to what the window can see.
   useEffect(() => {

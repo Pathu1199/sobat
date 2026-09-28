@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../core/breaks';
 import type { AppState } from '../core/types';
 import { EMPTY_STATE } from './defaults';
@@ -22,24 +23,25 @@ function isV2Settings(v: unknown): v is BreakSettings {
 }
 
 function upgradeSettings(old: unknown): BreakSettings {
-  if (isV2Settings(old)) {
-    // Already migrated; fill any key a newer default added.
-    return { ...DEFAULT_BREAK_SETTINGS, ...old };
-  }
+  // A phone should not blank its own screen every twenty minutes. Long breaks
+  // and posture still arrive as notifications.
+  const phone = Platform.OS !== 'web';
+  const base: BreakSettings = phone
+    ? { ...DEFAULT_BREAK_SETTINGS, micro: { ...DEFAULT_BREAK_SETTINGS.micro, enabled: false } }
+    : DEFAULT_BREAK_SETTINGS;
+  if (isV2Settings(old)) return { ...base, ...old };
   const v1 = (isRecord(old) ? old : {}) as V1BreakSettings;
   return {
-    ...DEFAULT_BREAK_SETTINGS,
-    enabled: v1.enabled ?? DEFAULT_BREAK_SETTINGS.enabled,
-    // The one timer the person had configured becomes the micro break.
+    ...base,
+    enabled: v1.enabled ?? base.enabled,
     micro: {
-      ...DEFAULT_BREAK_SETTINGS.micro,
-      everyMinutes: v1.workMinutes ?? DEFAULT_BREAK_SETTINGS.micro.everyMinutes,
-      seconds: v1.breakSeconds ?? DEFAULT_BREAK_SETTINGS.micro.seconds,
+      ...base.micro,
+      everyMinutes: v1.workMinutes ?? base.micro.everyMinutes,
+      seconds: v1.breakSeconds ?? base.micro.seconds,
     },
-    // "Skipping not allowed" was the old way of saying strict.
     strictness: v1.allowSkip === false ? 'strict' : 'normal',
-    quietStartHour: v1.quietStartHour ?? DEFAULT_BREAK_SETTINGS.quietStartHour,
-    quietEndHour: v1.quietEndHour ?? DEFAULT_BREAK_SETTINGS.quietEndHour,
+    quietStartHour: v1.quietStartHour ?? base.quietStartHour,
+    quietEndHour: v1.quietEndHour ?? base.quietEndHour,
   };
 }
 
