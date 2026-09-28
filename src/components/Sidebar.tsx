@@ -31,6 +31,9 @@ export function Sidebar() {
   const t = makeT(state.profile.lang);
 
   const online = ai.route === 'primary' || ai.route === 'fallback';
+  const nextEvery = monitor.nextKind ? state.breakSettings[monitor.nextKind].everyMinutes : state.breakSettings.micro.everyMinutes;
+  const left = Number.isFinite(monitor.secondsLeft) ? Math.ceil(monitor.secondsLeft / 60) : 0;
+  const elapsed = Math.max(0, nextEvery - left);
 
   return (
     <View
@@ -90,17 +93,12 @@ export function Sidebar() {
         </Pressable>
         <View style={{ paddingHorizontal: 12, paddingVertical: 10, gap: 10, borderTopWidth: S.hairline, borderTopColor: C.border, marginTop: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Ring
-              value={monitor.enabled ? state.breakSettings.micro.everyMinutes - Math.ceil(monitor.secondsLeft / 60) : 0}
-              max={state.breakSettings.micro.everyMinutes}
-              size={34}
-              stroke={3}
-              color={C.accent}>
-              <Text style={{ color: C.text, fontSize: F.micro, fontWeight: '600' }}>{monitor.enabled ? Math.ceil(monitor.secondsLeft / 60) : '--'}</Text>
+            <Ring value={monitor.enabled ? elapsed : 0} max={nextEvery} size={34} stroke={3} color={C.accent}>
+              <Text style={{ color: C.text, fontSize: F.micro, fontWeight: '600' }}>{monitor.enabled ? left : '--'}</Text>
             </Ring>
             <View style={{ flex: 1 }}>
               <Text style={[MICRO, { color: C.textFaint }]}>{t('next_break')}</Text>
-              <Text style={{ color: C.textDim, fontSize: F.small }}>{monitor.enabled ? `${Math.ceil(monitor.secondsLeft / 60)} ${t('minutes')}` : t('break_off')}</Text>
+              <Text style={{ color: C.textDim, fontSize: F.small }}>{monitor.enabled ? `${left} ${t('minutes')}` : t('break_off')}</Text>
             </View>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

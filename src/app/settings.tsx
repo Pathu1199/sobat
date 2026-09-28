@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { isUp, listModels, normalizeUrl } from '../ai/ollama';
 import type { Lang } from '../core/types';
-import { LANG_NAMES, makeT } from '../i18n';
+import { fill, LANG_NAMES, makeT } from '../i18n';
 import { requestPermission } from '../services/notify';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small } from '../ui/components';
@@ -105,31 +105,103 @@ export default function SettingsScreen() {
             on={br.enabled}
             onToggle={() => app.setBreakSettings({ enabled: !br.enabled })}
           />
+
           <Divider />
-          <Micro>{en('break_every')}</Micro>
+          <Micro>{t('brk_kinds')}</Micro>
+          {(['micro', 'long', 'posture', 'blink'] as const).map((k) => (
+            <View key={k} style={{ gap: 7 }}>
+              <Toggle
+                title={t(`brk_${k}`)}
+                desc={t(`brk_${k}_hint`)}
+                on={br[k].enabled}
+                onToggle={() => app.setBreakSettings({ [k]: { ...br[k], enabled: !br[k].enabled } } as Partial<typeof br>)}
+              />
+              {br[k].enabled ? (
+                <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+                  {(k === 'micro' ? [15, 20, 30, 45] : k === 'long' ? [45, 60, 90, 120] : k === 'posture' ? [20, 30, 45, 60] : [5, 10, 15, 20]).map((m) => (
+                    <Pill
+                      key={m}
+                      label={`${m}m`}
+                      active={br[k].everyMinutes === m}
+                      onPress={() => app.setBreakSettings({ [k]: { ...br[k], everyMinutes: m } } as Partial<typeof br>)}
+                    />
+                  ))}
+                </Row>
+              ) : null}
+            </View>
+          ))}
+
+          <Divider />
+          <Micro>{t('brk_strictness')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-            {[15, 20, 30, 45, 60].map((m) => (
-              <Pill key={m} label={`${m}m`} active={br.micro.everyMinutes === m} onPress={() => app.setBreakSettings({ micro: { ...br.micro, everyMinutes: m } })} />
-            ))}
-          </Row>
-          <Micro>{en('break_length')}</Micro>
-          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-            {[30, 60, 120, 300].map((sec) => (
+            {(['gentle', 'normal', 'strict'] as const).map((s) => (
               <Pill
-                key={sec}
-                label={sec >= 60 ? `${sec / 60}m` : `${sec}s`}
-                active={br.micro.seconds === sec}
-                onPress={() => app.setBreakSettings({ micro: { ...br.micro, seconds: sec } })}
+                key={s}
+                label={t(s === 'strict' ? 'brk_strict_mode' : `brk_${s}`)}
+                active={br.strictness === s}
+                onPress={() => app.setBreakSettings({ strictness: s })}
               />
             ))}
           </Row>
+          <Micro>
+            {br.strictness === 'gentle'
+              ? t('brk_gentle_desc')
+              : br.strictness === 'strict'
+                ? t('brk_strict_desc')
+                : fill(t('brk_normal_desc'), { n: br.maxSkipsPerDay })}
+          </Micro>
+          {br.strictness === 'normal' ? (
+            <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+              {[1, 2, 3, 5].map((n) => (
+                <Pill key={n} label={String(n)} active={br.maxSkipsPerDay === n} onPress={() => app.setBreakSettings({ maxSkipsPerDay: n })} />
+              ))}
+            </Row>
+          ) : null}
+
+          <Divider />
+          <Micro>{t('brk_smart_pause')}</Micro>
+          <Toggle
+            title={t('brk_when_fullscreen')}
+            desc={t('brk_fullscreen_desc')}
+            on={br.smartPause.whenFullscreen}
+            onToggle={() => app.setBreakSettings({ smartPause: { ...br.smartPause, whenFullscreen: !br.smartPause.whenFullscreen } })}
+          />
+          <Toggle
+            title={t('brk_when_oncall')}
+            desc={t('brk_oncall_desc')}
+            on={br.smartPause.whenOnCall}
+            onToggle={() => app.setBreakSettings({ smartPause: { ...br.smartPause, whenOnCall: !br.smartPause.whenOnCall } })}
+          />
+
           <Divider />
           <Toggle
-            title={t('break_allow_skip')}
-            desc={en('break_skip_desc')}
-            on={br.strictness !== 'strict'}
-            onToggle={() => app.setBreakSettings({ strictness: br.strictness === 'strict' ? 'normal' : 'strict' })}
+            title={t('brk_schedule')}
+            desc={t('brk_schedule_desc')}
+            on={br.schedule !== null}
+            onToggle={() =>
+              app.setBreakSettings({ schedule: br.schedule === null ? { days: [1, 2, 3, 4, 5], startHour: 9, endHour: 18 } : null })
+            }
           />
+          {br.schedule ? (
+            <Row style={{ gap: 12 }}>
+              <Field
+                label="from"
+                value={String(br.schedule.startHour)}
+                onChangeText={(v) => app.setBreakSettings({ schedule: { ...br.schedule!, startHour: Number(v) || 0 } })}
+                keyboardType="numeric"
+              />
+              <Field
+                label="to"
+                value={String(br.schedule.endHour)}
+                onChangeText={(v) => app.setBreakSettings({ schedule: { ...br.schedule!, endHour: Number(v) || 0 } })}
+                keyboardType="numeric"
+              />
+            </Row>
+          ) : null}
+
+          <Divider />
+          <Toggle title={t('brk_sound')} desc={t('brk_sound_desc')} on={br.sound} onToggle={() => app.setBreakSettings({ sound: !br.sound })} />
+
           <Divider />
           <Row style={{ justifyContent: 'space-between' }}>
             <Micro>{en('break_compliance')}</Micro>

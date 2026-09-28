@@ -7,7 +7,7 @@ import { longestStretchMinutes, minutesOn } from '../core/usage';
 import { makeT } from '../i18n';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
-import { Bar, Card, Micro, Ring, Row } from '../ui/components';
+import { Bar, Btn, Card, Micro, Ring, Row } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 /** The desktop break panel: a countdown ring, today's compliance, the longest stretch. */
@@ -20,8 +20,9 @@ export function BreakPanel() {
   const stats = breakStats(todayBreaks);
   const screen = minutesOn(app.state.usage, app.today);
   const sitting = longestStretchMinutes(app.state.usage, app.today);
-  const left = Number.isFinite(Math.ceil(monitor.secondsLeft / 60)) ? Math.ceil(Math.ceil(monitor.secondsLeft / 60)) : 0;
-  const elapsed = app.state.breakSettings.micro.everyMinutes - left;
+  const nextEvery = monitor.nextKind ? app.state.breakSettings[monitor.nextKind].everyMinutes : app.state.breakSettings.micro.everyMinutes;
+  const left = Number.isFinite(monitor.secondsLeft) ? Math.ceil(monitor.secondsLeft / 60) : 0;
+  const elapsed = Math.max(0, nextEvery - left);
 
   return (
     <Card>
@@ -35,13 +36,13 @@ export function BreakPanel() {
 
       {monitor.enabled ? (
         <Row style={{ gap: 16, alignItems: 'center' }}>
-          <Ring value={elapsed} max={app.state.breakSettings.micro.everyMinutes} size={88} stroke={5} color={left <= 1 ? C.amber : C.accent}>
+          <Ring value={elapsed} max={nextEvery} size={88} stroke={5} color={left <= 1 ? C.amber : C.accent}>
             <Text style={{ color: C.text, fontSize: 26, fontWeight: '200', letterSpacing: -1 }}>{left}</Text>
             <Micro>{t('minutes')}</Micro>
           </Ring>
           <View style={{ flex: 1, gap: 10 }}>
             <View>
-              <Micro>{t('break_next')}</Micro>
+              <Micro>{monitor.nextKind ? `${t('break_next')} · ${t(`brk_${monitor.nextKind}`)}` : t('break_next')}</Micro>
               <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{`${left} ${t('minutes')}`}</Text>
             </View>
             <View style={{ gap: 6 }}>
@@ -64,7 +65,19 @@ export function BreakPanel() {
         <Micro>{t('longest_sitting')}</Micro>
         <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
       </Row>
-      {monitor.suggestion ? <Micro color={C.amber}>{`${t('break_every')} ${monitor.suggestion.minutes} ${t('minutes')}?`}</Micro> : null}
+
+      <Row style={{ gap: 8 }}>
+        {monitor.paused ? (
+          <Btn small tone="soft" label={t('brk_resume')} onPress={() => app.pauseBreaks(null)} style={{ flex: 1 }} />
+        ) : (
+          <Btn small tone="ghost" label={t('brk_pause_hour')} onPress={() => app.pauseBreaks(60)} style={{ flex: 1 }} />
+        )}
+        <Btn small tone="soft" label={t('brk_take_now')} onPress={() => monitor.takeNow('micro')} style={{ flex: 1 }} />
+      </Row>
+      {monitor.paused ? <Micro color={C.amber}>{t('brk_paused_until')}</Micro> : null}
+      {monitor.suggestion ? (
+        <Micro color={C.amber}>{`${t(`brk_${monitor.suggestion.kind}`)} · ${t('break_every')} ${monitor.suggestion.minutes} ${t('minutes')}?`}</Micro>
+      ) : null}
     </Card>
   );
 }

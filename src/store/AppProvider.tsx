@@ -51,6 +51,7 @@ type Ctx = {
   trackActive: (minutes: number) => void;
   logBreak: (kind: BreakKind, action: 'taken' | 'skipped', workedMinutes: number, seconds: number) => void;
   setBreakSettings: (s: Partial<BreakSettings>) => void;
+  pauseBreaks: (minutes: number | null) => void;
   setTip: (text: string) => void;
   queuePhoto: (p: QueuedPhoto) => void;
   unqueuePhoto: (id: string) => void;
@@ -182,6 +183,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           breaks: [...s.breaks.slice(-500), { id: String(Date.now()), date: toISODate(), at: new Date().toISOString(), kind, action, workedMinutes, seconds }],
         })),
       setBreakSettings: (b) => update((s) => ({ ...s, breakSettings: { ...s.breakSettings, ...b } })),
+      pauseBreaks: (minutes) =>
+        update((s) => ({
+          ...s,
+          breakSettings: { ...s.breakSettings, pausedUntilMs: minutes === null ? null : Date.now() + minutes * 60000 },
+        })),
       queuePhoto: (p) => update((s) => ({ ...s, photoQueue: enqueue(s.photoQueue, p) })),
       unqueuePhoto: (id) => update((s) => ({ ...s, photoQueue: dequeue(s.photoQueue, id) })),
       failPhoto: (id, error) => update((s) => ({ ...s, photoQueue: markFailed(s.photoQueue, id, error) })),
