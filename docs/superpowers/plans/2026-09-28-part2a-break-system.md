@@ -1011,6 +1011,9 @@ function useBreakClock() {
   const runningKind = useRef<BreakKind | null>(null);
   const lastActivity = useRef(Date.now());
   const warnedFor = useRef<BreakKind | null>(null);
+  /** While a toast-only nudge is on screen, no other break is offered. */
+  const nudgeUntil = useRef<number | null>(null);
+  const nudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const systemIdle = useRef<number | null>(null);
   const foreground = useRef<ForegroundState | null>(null);
 
@@ -1106,6 +1109,12 @@ function useBreakClock() {
         return;
       }
 
+      // A toast-only nudge is showing; let it finish before offering another.
+      if (nudgeUntil.current !== null) {
+        if (now < nudgeUntil.current) return;
+        nudgeUntil.current = null;
+      }
+
       const ctx = buildCtx(now);
 
       // Stepping away already gave the rest, so restart the clocks it earned.
@@ -1133,14 +1142,20 @@ function useBreakClock() {
         } else {
           // Posture and blink never take the screen. Show them, write them
           // down as taken, and restart their clock.
+          const seconds = settings[due.kind].seconds;
           setKind(due.kind);
           setPhase('breaking');
-          app.logBreak(due.kind, 'taken', 0, settings[due.kind].seconds);
+          app.logBreak(due.kind, 'taken', 0, seconds);
           clocks.current = clocksAfter(due.kind, clocks.current, now);
-          setTimeout(() => {
+          // Hold off every other kind until this toast has had its seconds,
+          // and keep the handle so teardown can cancel it.
+          nudgeUntil.current = now + seconds * 1000;
+          if (nudgeTimer.current) clearTimeout(nudgeTimer.current);
+          nudgeTimer.current = setTimeout(() => {
+            nudgeTimer.current = null;
             setKind(null);
             setPhase('working');
-          }, settings[due.kind].seconds * 1000);
+          }, seconds * 1000);
         }
         return;
       }
@@ -1156,7 +1171,14 @@ function useBreakClock() {
 
       setPhase('working');
     }, TICK_MS);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      if (nudgeTimer.current) {
+        clearTimeout(nudgeTimer.current);
+        nudgeTimer.current = null;
+      }
+      nudgeUntil.current = null;
+    };
   }, [settings, buildCtx, start, app]);
 
   const snooze = useCallback(
