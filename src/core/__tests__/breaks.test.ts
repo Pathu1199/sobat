@@ -6,6 +6,7 @@ import {
   clocksAfterIdle,
   DEFAULT_BREAK_SETTINGS,
   inQuiet,
+  inWindow,
   isPaused,
   nextDue,
   skipsLeft,
@@ -122,6 +123,17 @@ describe('isPaused', () => {
   it('is never paused by a foreground state the platform could not read', () => {
     expect(isPaused(ctx({ foreground: null }))).toBe(false);
   });
+
+  it('handles a night-shift schedule that crosses midnight', () => {
+    const s = settings({ schedule: { days: [0, 1, 2, 3, 4, 5, 6], startHour: 22, endHour: 6 } });
+    expect(isPaused(ctx({ settings: { ...s, quietStartHour: 0, quietEndHour: 0 }, hour: 23 }))).toBe(false);
+    expect(isPaused(ctx({ settings: { ...s, quietStartHour: 0, quietEndHour: 0 }, hour: 12 }))).toBe(true);
+  });
+
+  it('treats an empty schedule window as all day', () => {
+    const s = settings({ schedule: { days: [1], startHour: 9, endHour: 9 }, quietStartHour: 0, quietEndHour: 0 });
+    expect(isPaused(ctx({ settings: s, weekday: 1, hour: 3 }))).toBe(false);
+  });
 });
 
 describe('takesScreen', () => {
@@ -235,6 +247,15 @@ describe('breakStats', () => {
   it('reports the longest stretch worked', () => {
     expect(breakStats([log('micro', 'taken', 22), log('micro', 'taken', 47)]).longestStretchMinutes).toBe(47);
   });
+
+  it('does not let unacknowledged posture nudges flatter the score', () => {
+    const s = breakStats([log('micro', 'skipped'), log('posture', 'taken'), log('posture', 'taken')]);
+    // The posture toasts are recorded, but only the micro break is scored.
+    expect(s.byKind.posture.taken).toBe(2);
+    expect(s.taken).toBe(0);
+    expect(s.compliancePct).toBe(0);
+    expect(s.eyeCareScore).toBe(0);
+  });
 });
 
 describe('suggestLongerInterval', () => {
@@ -272,5 +293,16 @@ describe('inQuiet', () => {
 
   it('is never quiet when the window is empty', () => {
     expect(inQuiet(5, 7, 7)).toBe(false);
+  });
+});
+
+describe('inWindow', () => {
+  it('handles a plain window, a wrapping one, and an empty one', () => {
+    expect(inWindow(10, 9, 18)).toBe(true);
+    expect(inWindow(20, 9, 18)).toBe(false);
+    expect(inWindow(23, 22, 6)).toBe(true);
+    expect(inWindow(3, 22, 6)).toBe(true);
+    expect(inWindow(12, 22, 6)).toBe(false);
+    expect(inWindow(5, 9, 9)).toBe(true);
   });
 });

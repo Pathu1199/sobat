@@ -8,6 +8,7 @@ import { useFeedback } from '../services/feedback';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
 import { useReducedMotion } from '../ui/animated';
+import { Micro } from '../ui/components';
 import { C, F, MICRO } from '../ui/theme';
 
 /** Calm, low-effort moves worth doing while you are already standing. */
@@ -151,9 +152,12 @@ export function BreakOverlay() {
           alignItems: 'center',
         }}>
         {!over && monitor.skipsLeft > 0 ? (
-          <Pressable onPress={monitor.skip} accessibilityRole="button" accessibilityLabel={t('break_skip')}>
-            <Text style={{ color: C.textFaint, fontSize: F.small }}>{t('break_skip')}</Text>
-          </Pressable>
+          <View>
+            <Pressable onPress={monitor.skip} accessibilityRole="button" accessibilityLabel={t('break_skip')}>
+              <Text style={{ color: C.textFaint, fontSize: F.small }}>{t('break_skip')}</Text>
+            </Pressable>
+            {Number.isFinite(monitor.skipsLeft) ? <Micro>{fill(t('brk_skips_left'), { n: monitor.skipsLeft })}</Micro> : null}
+          </View>
         ) : !over ? (
           <Text style={{ color: C.textGhost, fontSize: F.small }}>{monitor.skipsLeft === 0 ? t('brk_no_skips') : ''}</Text>
         ) : (

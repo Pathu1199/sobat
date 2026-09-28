@@ -54,6 +54,13 @@ export function inQuiet(hour: number, start: number, end: number): boolean {
   return hour >= start && hour < end;
 }
 
+/** True when `hour` falls inside a window that may wrap past midnight. An empty window (start === end) means all day. */
+export function inWindow(hour: number, start: number, end: number): boolean {
+  if (start === end) return true;
+  if (start < end) return hour >= start && hour < end;
+  return hour >= start || hour < end;
+}
+
 export type BreakLog = {
   id: string;
   date: string;
@@ -130,7 +137,7 @@ export function isPaused(ctx: BreakContext): boolean {
   if (s.schedule) {
     const { days, startHour, endHour } = s.schedule;
     if (!days.includes(ctx.weekday)) return true;
-    if (ctx.hour < startHour || ctx.hour >= endHour) return true;
+    if (!inWindow(ctx.hour, startHour, endHour)) return true;
   }
   const fg = ctx.foreground;
   if (fg) {
@@ -187,23 +194,26 @@ export type BreakStats = {
 const KINDS: BreakKind[] = ['micro', 'long', 'posture', 'blink'];
 /** A long break is worth two of anything else to the eyes. */
 const WEIGHT: Record<BreakKind, number> = { micro: 1, long: 2, posture: 1, blink: 1 };
+/** Only a break that took the screen can be complied with or skipped; a toast is not a choice. */
+const SCORED: BreakKind[] = ['micro', 'long'];
 
 export function breakStats(logs: BreakLog[]): BreakStats {
   const byKind = Object.fromEntries(KINDS.map((k) => [k, { taken: 0, offered: 0 }])) as BreakStats['byKind'];
-  let weightedTaken = 0;
-  let weightedOffered = 0;
   for (const l of logs) {
     const bucket = byKind[l.kind];
     if (!bucket) continue;
     bucket.offered += 1;
-    weightedOffered += WEIGHT[l.kind];
-    if (l.action === 'taken') {
-      bucket.taken += 1;
-      weightedTaken += WEIGHT[l.kind];
-    }
+    if (l.action === 'taken') bucket.taken += 1;
   }
-  const taken = logs.filter((l) => l.action === 'taken').length;
-  const skipped = logs.filter((l) => l.action === 'skipped').length;
+  const scored = logs.filter((l) => SCORED.includes(l.kind));
+  let weightedTaken = 0;
+  let weightedOffered = 0;
+  for (const l of scored) {
+    weightedOffered += WEIGHT[l.kind];
+    if (l.action === 'taken') weightedTaken += WEIGHT[l.kind];
+  }
+  const taken = scored.filter((l) => l.action === 'taken').length;
+  const skipped = scored.filter((l) => l.action === 'skipped').length;
   const total = taken + skipped;
   return {
     taken,

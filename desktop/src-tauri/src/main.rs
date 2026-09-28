@@ -60,7 +60,7 @@ fn foreground_state() -> ForegroundState {
         use windows_sys::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
         use windows_sys::Win32::System::ProcessStatus::GetModuleBaseNameW;
         use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ};
-        use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId};
+        use windows_sys::Win32::UI::WindowsAndMessaging::{GetClassNameW, GetForegroundWindow, GetWindowRect, GetWindowThreadProcessId};
 
         unsafe {
             let hwnd: HWND = GetForegroundWindow();
@@ -68,10 +68,22 @@ fn foreground_state() -> ForegroundState {
                 return ForegroundState::default();
             }
 
+            // Progman and WorkerW are the desktop shell's own window classes:
+            // they become the foreground window whenever the user clicks bare
+            // desktop, and their rect can cover the whole monitor, so they
+            // must never be read as a fullscreen app.
+            let mut class_buf = [0u16; 256];
+            let class_len = GetClassNameW(hwnd, class_buf.as_mut_ptr(), class_buf.len() as i32);
+            let class_name = String::from_utf16_lossy(&class_buf[..class_len.max(0) as usize]);
+            let is_shell = class_name == "Progman" || class_name == "WorkerW";
+
             // Fullscreen: the window covers its whole monitor.
+            // Known remaining false positive, worth checking on the real
+            // machine: a plain maximized window when the taskbar auto-hides
+            // also covers the whole monitor rect.
             let mut win: RECT = std::mem::zeroed();
             let mut fullscreen = false;
-            if GetWindowRect(hwnd, &mut win) != 0 {
+            if !is_shell && GetWindowRect(hwnd, &mut win) != 0 {
                 let monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
                 let mut mi: MONITORINFO = std::mem::zeroed();
                 mi.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
@@ -107,9 +119,17 @@ fn foreground_state() -> ForegroundState {
     }
 }
 
-/// Windows records a stop time for every app that has used the microphone.
-/// A zero stop time means it is using it right now, which is as close to
-/// "on a call" as we can get without asking for permissions of our own.
+/// Windows records a start and a stop time for every app that has used the
+/// microphone. A stop time of zero normally means it is using it right now,
+/// which is as close to "on a call" as we can get without asking for
+/// permissions of our own — but a stop time that never got a matching start
+/// (start == 0) is what a crash mid-call leaves behind, and must not read as
+/// "in use" forever.
+///
+/// Microsoft Store apps are direct children of the consent store key. Zoom,
+/// Teams, Slack and Discord are not packaged that way: they register one
+/// level deeper, under a `NonPackaged` subkey, so that subkey's own children
+/// must be checked too.
 #[cfg(windows)]
 fn microphone_in_use() -> bool {
     use windows_sys::Win32::System::Registry::{
@@ -122,42 +142,74 @@ fn microphone_in_use() -> bool {
         s.encode_utf16().chain(std::iter::once(0)).collect()
     }
 
-    unsafe {
-        let mut root: HKEY = std::ptr::null_mut();
-        if RegOpenKeyExW(HKEY_CURRENT_USER, wide(ROOT).as_ptr(), 0, KEY_READ, &mut root) != 0 {
-            return false;
+    unsafe fn read_qword(key: HKEY, name: &str) -> u64 {
+        let mut value: u64 = 0;
+        let mut size = std::mem::size_of::<u64>() as u32;
+        let mut kind: u32 = 0;
+        let ok = RegQueryValueExW(
+            key,
+            wide(name).as_ptr(),
+            std::ptr::null_mut(),
+            &mut kind,
+            &mut value as *mut u64 as *mut u8,
+            &mut size,
+        );
+        if ok == 0 && kind == REG_QWORD {
+            value
+        } else {
+            0
         }
+    }
+
+    /// True only when this one app key shows an in-progress use: a recorded
+    /// start, and no stop yet.
+    unsafe fn key_in_use(key: HKEY) -> bool {
+        let start = read_qword(key, "LastUsedTimeStart");
+        let stop = read_qword(key, "LastUsedTimeStop");
+        stop == 0 && start > 0
+    }
+
+    /// Checks every child of `parent`. A child named `NonPackaged` is not an
+    /// app itself but a container for non-Store apps, so its own children are
+    /// checked instead of the `NonPackaged` key directly.
+    unsafe fn any_child_in_use(parent: HKEY) -> bool {
         let mut in_use = false;
         let mut index = 0u32;
         loop {
             let mut name = [0u16; 512];
             let mut len = name.len() as u32;
-            if RegEnumKeyExW(root, index, name.as_mut_ptr(), &mut len, std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut()) != 0 {
+            if RegEnumKeyExW(parent, index, name.as_mut_ptr(), &mut len, std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut()) != 0 {
                 break;
             }
             index += 1;
 
             let mut sub: HKEY = std::ptr::null_mut();
-            if RegOpenKeyExW(root, name.as_ptr(), 0, KEY_READ, &mut sub) == 0 {
-                let mut value: u64 = 0;
-                let mut size = std::mem::size_of::<u64>() as u32;
-                let mut kind: u32 = 0;
-                let ok = RegQueryValueExW(
-                    sub,
-                    wide("LastUsedTimeStop").as_ptr(),
-                    std::ptr::null_mut(),
-                    &mut kind,
-                    &mut value as *mut u64 as *mut u8,
-                    &mut size,
-                );
-                RegCloseKey(sub);
-                // Zero means "still running".
-                if ok == 0 && kind == REG_QWORD && value == 0 {
-                    in_use = true;
-                    break;
-                }
+            if RegOpenKeyExW(parent, name.as_ptr(), 0, KEY_READ, &mut sub) != 0 {
+                continue;
+            }
+
+            let name_str = String::from_utf16_lossy(&name[..len as usize]);
+            let found = if name_str.eq_ignore_ascii_case("NonPackaged") {
+                any_child_in_use(sub)
+            } else {
+                key_in_use(sub)
+            };
+            RegCloseKey(sub);
+
+            if found {
+                in_use = true;
+                break;
             }
         }
+        in_use
+    }
+
+    unsafe {
+        let mut root: HKEY = std::ptr::null_mut();
+        if RegOpenKeyExW(HKEY_CURRENT_USER, wide(ROOT).as_ptr(), 0, KEY_READ, &mut root) != 0 {
+            return false;
+        }
+        let in_use = any_child_in_use(root);
         RegCloseKey(root);
         in_use
     }

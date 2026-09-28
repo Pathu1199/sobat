@@ -45,9 +45,11 @@ export function useScheduledReminders() {
       await scheduleDaily(IDS.review, 21, 30, t('day_review'), t('write_review'));
 
       // The phone cannot blank its own screen, so a long break is a
-      // notification. Only inside the working window, if one is set.
+      // notification. A repeating notification cannot respect quiet hours or a
+      // schedule, so when either is in force, do not register it at all.
       const br = app.state.breakSettings;
-      if (br.enabled && br.long.enabled) {
+      const paused = br.pausedUntilMs !== null && Date.now() < br.pausedUntilMs;
+      if (br.enabled && br.long.enabled && !paused && br.schedule === null) {
         await scheduleRepeating(IDS.long, br.long.everyMinutes * 60, t('brk_long'), t('brk_long_hint'));
       } else {
         await cancel(IDS.long);

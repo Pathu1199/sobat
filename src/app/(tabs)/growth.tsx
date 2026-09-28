@@ -215,7 +215,7 @@ export default function GrowthScreen() {
       <SectionHeader title={t('brk_eye_care')} meta={`${periodBreaks.eyeCareScore}%`} />
       <Card>
         <Row style={{ flexWrap: 'wrap', rowGap: 16 }}>
-          {(['micro', 'long', 'posture'] as const).map((k) => {
+          {(['micro', 'long', 'posture', 'blink'] as const).map((k) => {
             const s = periodBreaks.byKind[k];
             return (
               <View key={k} style={{ minWidth: 92, flexGrow: 1, gap: 5 }}>

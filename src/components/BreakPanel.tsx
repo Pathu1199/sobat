@@ -2,9 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Text, View } from 'react-native';
 import { breakStats } from '../core/breaks';
-import { formatMinutes } from '../core/date';
+import { formatMinutes, localHHMM } from '../core/date';
 import { longestStretchMinutes, minutesOn } from '../core/usage';
-import { makeT } from '../i18n';
+import { fill, makeT } from '../i18n';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
 import { Bar, Btn, Card, Micro, Ring, Row } from '../ui/components';
@@ -23,6 +23,7 @@ export function BreakPanel() {
   const nextEvery = monitor.nextKind ? app.state.breakSettings[monitor.nextKind].everyMinutes : app.state.breakSettings.micro.everyMinutes;
   const left = Number.isFinite(monitor.secondsLeft) ? Math.ceil(monitor.secondsLeft / 60) : 0;
   const elapsed = Math.max(0, nextEvery - left);
+  const pausedUntilMs = app.state.breakSettings.pausedUntilMs;
 
   return (
     <Card>
@@ -74,7 +75,9 @@ export function BreakPanel() {
         )}
         <Btn small tone="soft" label={t('brk_take_now')} onPress={() => monitor.takeNow('micro')} style={{ flex: 1 }} />
       </Row>
-      {monitor.paused ? <Micro color={C.amber}>{t('brk_paused_until')}</Micro> : null}
+      {pausedUntilMs !== null ? (
+        <Micro color={C.amber}>{fill(t('brk_paused_until'), { t: localHHMM(new Date(pausedUntilMs).toISOString()) })}</Micro>
+      ) : null}
       {monitor.suggestion ? (
         <Micro color={C.amber}>{`${t(`brk_${monitor.suggestion.kind}`)} · ${t('break_every')} ${monitor.suggestion.minutes} ${t('minutes')}?`}</Micro>
       ) : null}

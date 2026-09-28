@@ -260,14 +260,12 @@ const en: Dict = {
   brk_long_hint: 'Stand, stretch, and let your eyes rest.',
   brk_posture_hint: 'Shoulders down, back against the chair.',
   brk_blink_hint: 'Ten slow blinks. Your eyes are drier than they feel.',
-  brk_done_early: 'I am done',
   brk_snooze_n: '+{n} min',
   brk_skips_left: '{n} skips left today',
   brk_no_skips: 'No skips left today',
-  brk_strict: 'Breaks are set to strict',
   brk_counter: '{kind} break {n} today · next {next} in {m} min',
   brk_try_these: 'Two moves while you are up',
-  brk_paused_until: 'Breaks paused',
+  brk_paused_until: 'Breaks paused until {t}',
   brk_pause_hour: 'Pause 1 hour',
   brk_resume: 'Resume breaks',
   brk_take_now: 'Break now',
@@ -289,6 +287,8 @@ const en: Dict = {
   brk_eye_care: 'Eye care',
   brk_offered: 'offered',
   brk_streak: 'day break streak',
+  time_from: 'from',
+  time_to: 'to',
 };
 
 const mr: Dict = {
@@ -553,14 +553,12 @@ const mr: Dict = {
   brk_long_hint: 'उभे रहा, ताण द्या, डोळ्यांना आराम द्या.',
   brk_posture_hint: 'खांदे खाली, पाठ खुर्चीला टेकवा.',
   brk_blink_hint: 'दहा वेळा सावकाश डोळे मिचकावा. डोळे कोरडे झाले आहेत.',
-  brk_done_early: 'झाले',
   brk_snooze_n: '+{n} मिनिटे',
   brk_skips_left: 'आज {n} वेळा टाळता येईल',
   brk_no_skips: 'आज आणखी टाळता येणार नाही',
-  brk_strict: 'ब्रेक कडक ठेवले आहेत',
   brk_counter: 'आजचा {kind} ब्रेक {n} · पुढचा {next} {m} मिनिटांत',
   brk_try_these: 'उठला आहात तर या दोन हालचाली',
-  brk_paused_until: 'ब्रेक थांबवले आहेत',
+  brk_paused_until: '{t} पर्यंत ब्रेक थांबवले',
   brk_pause_hour: '१ तास थांबवा',
   brk_resume: 'ब्रेक पुन्हा सुरू करा',
   brk_take_now: 'आताच ब्रेक',
@@ -582,6 +580,8 @@ const mr: Dict = {
   brk_eye_care: 'डोळ्यांची काळजी',
   brk_offered: 'सुचवले',
   brk_streak: 'दिवस ब्रेक सलग',
+  time_from: 'पासून',
+  time_to: 'पर्यंत',
 };
 
 const hi: Dict = {
@@ -840,14 +840,12 @@ const hi: Dict = {
   brk_long_hint: 'खड़े हों, स्ट्रेच करें, आँखों को आराम दें.',
   brk_posture_hint: 'कंधे नीचे, पीठ कुर्सी से लगाएँ.',
   brk_blink_hint: 'दस बार धीरे पलक झपकाएँ. आँखें सूखी हैं.',
-  brk_done_early: 'हो गया',
   brk_snooze_n: '+{n} मिनट',
   brk_skips_left: 'आज {n} बार टाल सकते हैं',
   brk_no_skips: 'आज और नहीं टाल सकते',
-  brk_strict: 'ब्रेक सख़्त हैं',
   brk_counter: 'आज का {kind} ब्रेक {n} · अगला {next} {m} मिनट में',
   brk_try_these: 'उठे हैं तो ये दो हरकतें',
-  brk_paused_until: 'ब्रेक रोके गए हैं',
+  brk_paused_until: '{t} तक ब्रेक रोके गए',
   brk_pause_hour: '1 घंटा रोकें',
   brk_resume: 'ब्रेक फिर शुरू करें',
   brk_take_now: 'अभी ब्रेक',
@@ -869,6 +867,8 @@ const hi: Dict = {
   brk_eye_care: 'आँखों की देखभाल',
   brk_offered: 'सुझाए',
   brk_streak: 'दिन ब्रेक लगातार',
+  time_from: 'से',
+  time_to: 'तक',
 
 
 

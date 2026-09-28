@@ -185,13 +185,13 @@ export default function SettingsScreen() {
           {br.schedule ? (
             <Row style={{ gap: 12 }}>
               <Field
-                label="from"
+                label={t('time_from')}
                 value={String(br.schedule.startHour)}
                 onChangeText={(v) => app.setBreakSettings({ schedule: { ...br.schedule!, startHour: Number(v) || 0 } })}
                 keyboardType="numeric"
               />
               <Field
-                label="to"
+                label={t('time_to')}
                 value={String(br.schedule.endHour)}
                 onChangeText={(v) => app.setBreakSettings({ schedule: { ...br.schedule!, endHour: Number(v) || 0 } })}
                 keyboardType="numeric"
@@ -231,8 +231,8 @@ export default function SettingsScreen() {
           <Divider />
           <Micro>{en('quiet_hours')}</Micro>
           <Row style={{ gap: 12 }}>
-            <Field label="from" value={String(s.quietStartHour)} onChangeText={(v) => app.setSettings({ quietStartHour: Number(v) || 0 })} keyboardType="numeric" />
-            <Field label="to" value={String(s.quietEndHour)} onChangeText={(v) => app.setSettings({ quietEndHour: Number(v) || 0 })} keyboardType="numeric" />
+            <Field label={t('time_from')} value={String(s.quietStartHour)} onChangeText={(v) => app.setSettings({ quietStartHour: Number(v) || 0 })} keyboardType="numeric" />
+            <Field label={t('time_to')} value={String(s.quietEndHour)} onChangeText={(v) => app.setSettings({ quietEndHour: Number(v) || 0 })} keyboardType="numeric" />
           </Row>
         </Card>
       </View>
