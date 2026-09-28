@@ -67,7 +67,7 @@ export function BreakPanel() {
       </Row>
 
       <Row style={{ gap: 8 }}>
-        {monitor.paused ? (
+        {monitor.pausedByHand ? (
           <Btn small tone="soft" label={t('brk_resume')} onPress={() => app.pauseBreaks(null)} style={{ flex: 1 }} />
         ) : (
           <Btn small tone="ghost" label={t('brk_pause_hour')} onPress={() => app.pauseBreaks(60)} style={{ flex: 1 }} />

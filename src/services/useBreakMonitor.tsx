@@ -38,6 +38,7 @@ function useBreakClock() {
   const [secondsLeft, setSecondsLeft] = useState(Infinity);
   const [nextKind, setNextKind] = useState<BreakKind | null>(null);
   const [paused, setPaused] = useState(false);
+  const [pausedByHand, setPausedByHand] = useState(false);
 
   const mountedAt = Date.now();
   const clocks = useRef<BreakClocks>({ micro: mountedAt, long: mountedAt, posture: mountedAt, blink: mountedAt });
@@ -100,29 +101,39 @@ function useBreakClock() {
 
   const logsToday = useMemo(() => app.state.breaks.filter((b) => b.date === app.today), [app.state.breaks, app.today]);
 
-  const buildCtx = useCallback(
-    (now: number) => {
-      const windowIdle = Math.round((now - lastActivity.current) / 1000);
-      const d = new Date(now);
-      return {
-        nowMs: now,
-        clocks: clocks.current,
-        idleSeconds: systemIdle.current ?? windowIdle,
-        hour: d.getHours(),
-        weekday: d.getDay(),
-        settings,
-        foreground: foreground.current,
-        logsToday,
-      };
-    },
-    [settings, logsToday],
-  );
+  // The tick reads these through refs so the interval is not torn down and
+  // restarted every time anything in the app's state changes. Synced in an
+  // effect (not during render) so they stay fresh without ever being read
+  // for render output.
+  const appRef = useRef(app);
+  const settingsRef = useRef(settings);
+  const logsTodayRef = useRef(logsToday);
+  useEffect(() => {
+    appRef.current = app;
+    settingsRef.current = settings;
+    logsTodayRef.current = logsToday;
+  });
+
+  const buildCtx = useCallback((now: number) => {
+    const windowIdle = Math.round((now - lastActivity.current) / 1000);
+    const d = new Date(now);
+    return {
+      nowMs: now,
+      clocks: clocks.current,
+      idleSeconds: systemIdle.current ?? windowIdle,
+      hour: d.getHours(),
+      weekday: d.getDay(),
+      settings: settingsRef.current,
+      foreground: foreground.current,
+      logsToday: logsTodayRef.current,
+    };
+  }, []);
 
   /** End the running break, write it down, and restart the right clocks. */
   const endBreak = useCallback(
     (action: 'taken' | 'skipped') => {
       const now = Date.now();
-      const k = runningKind.current ?? 'micro';
+      const k = runningKind.current ?? nextKind ?? 'micro';
       const workedMinutes = Math.max(0, (breakStartedAt.current ?? now) - clocks.current[k]) / 60000;
       app.logBreak(k, action, workedMinutes, settings[k].seconds);
       clocks.current = clocksAfter(k, clocks.current, now);
@@ -136,24 +147,31 @@ function useBreakClock() {
       warnedFor.current = null;
       setKind(null);
       setPhase('working');
+      setRemaining(0);
     },
-    [app, settings],
+    [app, settings, nextKind],
   );
 
   /** Start a break of this kind right now. */
-  const start = useCallback((k: BreakKind, now: number) => {
-    // A nudge toast may still be pending; its timer must not clear the
-    // break we are about to start.
-    if (nudgeTimer.current) {
-      clearTimeout(nudgeTimer.current);
-      nudgeTimer.current = null;
-    }
-    nudgeUntil.current = null;
-    breakStartedAt.current = now;
-    runningKind.current = k;
-    setKind(k);
-    setPhase('breaking');
-  }, []);
+  const start = useCallback(
+    (k: BreakKind, now: number) => {
+      // A nudge toast may still be pending; its timer must not clear the
+      // break we are about to start.
+      if (nudgeTimer.current) {
+        clearTimeout(nudgeTimer.current);
+        nudgeTimer.current = null;
+      }
+      nudgeUntil.current = null;
+      breakStartedAt.current = now;
+      runningKind.current = k;
+      // Seed the countdown before the overlay can read it: at 0 it would show
+      // its "done" button from the very first frame.
+      setRemaining(settings[k].seconds);
+      setKind(k);
+      setPhase('breaking');
+    },
+    [settings],
+  );
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -161,7 +179,7 @@ function useBreakClock() {
 
       // A break is running: count it down and stop there.
       if (breakStartedAt.current !== null && runningKind.current !== null) {
-        const total = settings[runningKind.current].seconds;
+        const total = settingsRef.current[runningKind.current].seconds;
         setRemaining(Math.max(0, Math.ceil((breakStartedAt.current + total * 1000 - now) / 1000)));
         return;
       }
@@ -183,6 +201,8 @@ function useBreakClock() {
 
       const held = isPaused(ctx);
       setPaused(held);
+      const heldByHand = settingsRef.current.pausedUntilMs !== null && now < settingsRef.current.pausedUntilMs;
+      setPausedByHand(heldByHand);
 
       const due = nextDue(ctx);
       setNextKind(due?.kind ?? null);
@@ -199,10 +219,10 @@ function useBreakClock() {
         } else {
           // Posture and blink never take the screen. Show them, write them
           // down as taken, and restart their clock.
-          const seconds = settings[due.kind].seconds;
+          const seconds = settingsRef.current[due.kind].seconds;
           setKind(due.kind);
           setPhase('breaking');
-          app.logBreak(due.kind, 'taken', 0, seconds);
+          appRef.current.logBreak(due.kind, 'taken', 0, seconds);
           clocks.current = clocksAfter(due.kind, clocks.current, now);
           nudgeUntil.current = now + seconds * 1000;
           if (nudgeTimer.current) clearTimeout(nudgeTimer.current);
@@ -226,15 +246,21 @@ function useBreakClock() {
 
       setPhase('working');
     }, TICK_MS);
-    return () => {
-      clearInterval(id);
+    return () => clearInterval(id);
+  }, [buildCtx, start]);
+
+  // Only on unmount: the tick effect must not cancel a nudge that is still
+  // showing, and it no longer re-runs on unrelated state changes anyway.
+  useEffect(
+    () => () => {
       if (nudgeTimer.current) {
         clearTimeout(nudgeTimer.current);
         nudgeTimer.current = null;
       }
       nudgeUntil.current = null;
-    };
-  }, [settings, buildCtx, start, app]);
+    },
+    [],
+  );
 
   const snooze = useCallback(
     (minutes: number) => {
@@ -286,6 +312,7 @@ function useBreakClock() {
     nextKind,
     enabled: settings.enabled,
     paused,
+    pausedByHand,
     sound: settings.sound,
     skipsLeft: computeSkipsLeft(logsToday, settings),
     takenToday: logsToday.filter((b) => b.action === 'taken').length,
