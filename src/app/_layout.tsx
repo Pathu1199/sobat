@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
+import { BreakToast } from '../components/BreakToast';
 import { FeedbackProvider } from '../services/feedback';
 import { BreakMonitorProvider } from '../services/useBreakMonitor';
 import { usePhotoQueue } from '../services/usePhotoQueue';
@@ -53,6 +54,7 @@ function AppShell() {
         <Stack.Screen name="permissions" options={{ headerShown: false }} />
       </Stack>
       <BreakOverlay />
+      <BreakToast />
     </View>
   );
 }
