@@ -66,3 +66,16 @@ export async function idleSeconds(): Promise<number> {
   return invoke<number>('get_idle_seconds');
 }
 ```
+
+## What the shell adds to breaks
+
+- **Real system idle time**, so switching to another program still counts as
+  being at the desk.
+- **Smart pause**: the app stays quiet during a fullscreen window and while the
+  microphone is in use. Both are read best-effort; if either lookup fails the
+  break happens anyway.
+- **Global shortcuts**: Ctrl+Alt+B takes a break now, Ctrl+Alt+P pauses breaks
+  for an hour, Ctrl+Alt+W is reserved for water.
+- **Tray**: "Take a break now" and "Pause breaks for an hour".
+
+None of this compiles on macOS. Build on the PC as described above.

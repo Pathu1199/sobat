@@ -236,6 +236,19 @@ function useBreakClock() {
     [start],
   );
 
+  // The desktop shell fires these from global shortcuts and the tray.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const take = () => takeNow('micro');
+    const pause = () => app.pauseBreaks(60);
+    window.addEventListener('sobat:take-break', take);
+    window.addEventListener('sobat:pause-breaks', pause);
+    return () => {
+      window.removeEventListener('sobat:take-break', take);
+      window.removeEventListener('sobat:pause-breaks', pause);
+    };
+  }, [takeNow, app]);
+
   const suggestionCandidates = useMemo(
     () => KINDS.map((k) => ({ kind: k, minutes: suggestLongerInterval(app.state.breaks, k, settings[k].everyMinutes) })),
     [app.state.breaks, settings],
