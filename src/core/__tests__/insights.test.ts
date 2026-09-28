@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { biggestLever, findPatterns, scoreDay, streak, weightTrend } from '../insights';
+import { biggestLever, breakStreak, findPatterns, scoreDay, streak, weightTrend } from '../insights';
 import { lastNDates } from '../date';
 import { expectedKcalByHour } from '../nutrition';
+import type { BreakLog } from '../breaks';
 import type { Meal, MoodLog, SleepLog, WorkoutLog } from '../types';
 
 describe('scoreDay', () => {
@@ -210,5 +211,29 @@ describe('biggestLever', () => {
     const tie = scoreDay({ ...base, kcal: 1800, waterMl: 600, sleepScore: 20, moodScore: 4 });
     expect(tie.water).toBe(20);
     expect(biggestLever(tie)).toBe('water');
+  });
+});
+
+describe('breakStreak', () => {
+  const day = (date: string, taken: number, skipped: number): BreakLog[] => [
+    ...Array.from({ length: taken }, (_, i) => ({ id: `t${date}${i}`, date, at: '', kind: 'micro' as const, action: 'taken' as const, workedMinutes: 20, seconds: 20 })),
+    ...Array.from({ length: skipped }, (_, i) => ({ id: `s${date}${i}`, date, at: '', kind: 'micro' as const, action: 'skipped' as const, workedMinutes: 20, seconds: 20 })),
+  ];
+
+  it('counts back from today while compliance holds at 70 percent', () => {
+    const dates = lastNDates(4, '2026-09-28');
+    const logs = [...day(dates[3], 8, 2), ...day(dates[2], 7, 3), ...day(dates[1], 5, 5), ...day(dates[0], 9, 1)];
+    // Today 80%, yesterday 70%, the day before 50% stops it.
+    expect(breakStreak(logs, dates)).toBe(2);
+  });
+
+  it('is zero when today falls short', () => {
+    const dates = lastNDates(2, '2026-09-28');
+    expect(breakStreak([...day(dates[1], 1, 9), ...day(dates[0], 10, 0)], dates)).toBe(0);
+  });
+
+  it('is zero when nothing was logged today', () => {
+    const dates = lastNDates(2, '2026-09-28');
+    expect(breakStreak(day(dates[0], 10, 0), dates)).toBe(0);
   });
 });

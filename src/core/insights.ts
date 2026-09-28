@@ -1,3 +1,4 @@
+import { breakStats, type BreakLog } from './breaks';
 import { addDays, lastNDates, localHour } from './date';
 import { expectedKcalByHour } from './nutrition';
 import type { ISODate, Meal, MoodLog, SleepLog, WaterLog, WeightLog, WorkoutLog } from './types';
@@ -96,6 +97,24 @@ export function streak(dates: ISODate[], has: (d: ISODate) => boolean): number {
     else break;
   }
   return n;
+}
+
+/** A day counts when at least seven in ten offered breaks were taken. */
+const BREAK_STREAK_PCT = 70;
+
+/** Consecutive days ending today whose break compliance held up. */
+export function breakStreak(logs: BreakLog[], dates: ISODate[]): number {
+  const byDate = new Map<ISODate, BreakLog[]>();
+  for (const l of logs) {
+    const list = byDate.get(l.date);
+    if (list) list.push(l);
+    else byDate.set(l.date, [l]);
+  }
+  return streak(dates, (d) => {
+    const day = byDate.get(d);
+    if (!day || day.length === 0) return false;
+    return breakStats(day).compliancePct >= BREAK_STREAK_PCT;
+  });
 }
 
 /** Weight jumps around daily, so compare 7-day averages instead. */

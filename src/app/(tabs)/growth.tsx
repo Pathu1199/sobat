@@ -2,9 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { TopBarActions } from '../../components/TopBarActions';
 import { WeeklyReport } from '../../components/WeeklyReport';
+import { breakStats } from '../../core/breaks';
 import { formatDayLabel, formatMinutes } from '../../core/date';
 import { changePct, isImprovement, summarize, type Metric, type Period } from '../../core/growth';
-import { findPatterns, weeklyStats } from '../../core/insights';
+import { breakStreak, findPatterns, weeklyStats } from '../../core/insights';
 import { hourlyProfile, longestStretchMinutes, minutesOn } from '../../core/usage';
 import { fill, makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
@@ -72,6 +73,11 @@ export default function GrowthScreen() {
   const patterns = useMemo(
     () => findPatterns({ meals: app.state.meals, sleep: app.state.sleep, moods: app.state.moods, workouts: app.state.workouts, kcalTarget: app.targets.kcal }),
     [app.state.meals, app.state.sleep, app.state.moods, app.state.workouts, app.targets.kcal],
+  );
+
+  const periodBreaks = useMemo(
+    () => breakStats(app.state.breaks.filter((b) => summary.dates.includes(b.date))),
+    [app.state.breaks, summary.dates],
   );
 
   const weightMetric = summary.metrics.find((m) => m.key === 'weight_change')!;
@@ -204,6 +210,37 @@ export default function GrowthScreen() {
     </View>
   );
 
+  const eyeCare = (
+    <View style={{ gap: 10 }}>
+      <SectionHeader title={t('brk_eye_care')} meta={`${periodBreaks.eyeCareScore}%`} />
+      <Card>
+        <Row style={{ flexWrap: 'wrap', rowGap: 16 }}>
+          {(['micro', 'long', 'posture'] as const).map((k) => {
+            const s = periodBreaks.byKind[k];
+            return (
+              <View key={k} style={{ minWidth: 92, flexGrow: 1, gap: 5 }}>
+                <Micro>{t(`brk_${k}`)}</Micro>
+                <Row style={{ gap: 5, alignItems: 'baseline' }}>
+                  <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '300' }}>{s.taken}</Text>
+                  <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{`/ ${s.offered} ${t('brk_offered')}`}</Text>
+                </Row>
+              </View>
+            );
+          })}
+        </Row>
+        <Divider />
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Micro>{t('brk_streak')}</Micro>
+          <Text style={{ color: C.cyan, fontSize: F.small, fontWeight: '600' }}>{breakStreak(app.state.breaks, summary.dates)}</Text>
+        </Row>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Micro>{en('longest_sitting')}</Micro>
+          <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
+        </Row>
+      </Card>
+    </View>
+  );
+
   const weekCard = (
     <View style={{ gap: 10 }}>
       <SectionHeader title={t('week_summary')} meta={`${week.loggedDays}/7`} />
@@ -259,9 +296,10 @@ export default function GrowthScreen() {
           {weightChart}
           {kcalChart}
         </Cols>
-        <Cols weights={[1, 1]}>
+        <Cols weights={[1, 1, 1]}>
           {sleepChart}
           {screenCard}
+          {eyeCare}
         </Cols>
         <Cols weights={[1, 1]}>
           {weekCard}
@@ -284,6 +322,7 @@ export default function GrowthScreen() {
       {kcalChart}
       {sleepChart}
       {screenCard}
+      {eyeCare}
       {weekCard}
       {patternsCard}
     </Page>
