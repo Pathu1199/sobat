@@ -10,9 +10,10 @@ import { lastNDates } from '../core/date';
 import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryItem, type MemoryType } from '../core/memory';
 import { addActive, pruneUsage, type UsageBucket } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
-import type { BreakLog, BreakSettings } from '../core/breaks';
+import type { BreakKind, BreakLog, BreakSettings } from '../core/breaks';
 import type { AppState, ChatMsg, DailyTip, Exercise, FoodItem, Meal, MoodLog, Profile, Settings, SleepLog, StepLog, WaterLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
+import { migrateState } from './migrate';
 
 const KEY = 'sobat.state.v1';
 
@@ -48,7 +49,7 @@ type Ctx = {
   forgetMemory: (id: string) => void;
   confirmMemory: (id: string) => void;
   trackActive: (minutes: number) => void;
-  logBreak: (action: 'taken' | 'skipped', workedMinutes: number) => void;
+  logBreak: (kind: BreakKind, action: 'taken' | 'skipped', workedMinutes: number, seconds: number) => void;
   setBreakSettings: (s: Partial<BreakSettings>) => void;
   setTip: (text: string) => void;
   queuePhoto: (p: QueuedPhoto) => void;
@@ -83,8 +84,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         const raw = await AsyncStorage.getItem(KEY);
         if (raw) {
-          const parsed = JSON.parse(raw) as AppState;
-          setState({ ...EMPTY_STATE, ...parsed, profile: { ...EMPTY_STATE.profile, ...parsed.profile }, settings: { ...EMPTY_STATE.settings, ...parsed.settings } });
+          setState(migrateState(JSON.parse(raw)));
         }
       } catch {
         // A corrupt store should not brick the app; start fresh instead.
@@ -176,10 +176,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // 90 days is plenty of history and keeps the store small.
           return { ...s, usage: pruneUsage(next, 90, toISODate(now)) };
         }),
-      logBreak: (action, workedMinutes) =>
+      logBreak: (kind, action, workedMinutes, seconds) =>
         update((s) => ({
           ...s,
-          breaks: [...s.breaks.slice(-500), { id: String(Date.now()), date: toISODate(), at: new Date().toISOString(), action, workedMinutes }],
+          breaks: [...s.breaks.slice(-500), { id: String(Date.now()), date: toISODate(), at: new Date().toISOString(), kind, action, workedMinutes, seconds }],
         })),
       setBreakSettings: (b) => update((s) => ({ ...s, breakSettings: { ...s.breakSettings, ...b } })),
       queuePhoto: (p) => update((s) => ({ ...s, photoQueue: enqueue(s.photoQueue, p) })),
@@ -201,13 +201,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (typeof parsed !== 'object' || parsed === null || !parsed.profile || !Array.isArray(parsed.meals)) {
             return { ok: false, error: 'not_sobat_file' };
           }
-          setState({
-            ...EMPTY_STATE,
-            ...parsed,
-            profile: { ...EMPTY_STATE.profile, ...parsed.profile },
-            settings: { ...EMPTY_STATE.settings, ...parsed.settings },
-            breakSettings: { ...EMPTY_STATE.breakSettings, ...parsed.breakSettings },
-          } as AppState);
+          setState(migrateState(parsed));
           return { ok: true };
         } catch {
           return { ok: false, error: 'bad_json' };

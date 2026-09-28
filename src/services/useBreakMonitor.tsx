@@ -20,11 +20,16 @@ const WARNING_SECONDS = 60;
  */
 function useBreakClock() {
   const app = useApp();
+  // Task 2 replaces this loop wholesale. Until then, drive it from the micro
+  // break so the app keeps running.
   const settings = app.state.breakSettings;
+  const workMinutes = settings.micro.everyMinutes;
+  const breakSeconds = settings.micro.seconds;
+  const allowSkip = settings.strictness !== 'strict';
 
   const [phase, setPhase] = useState<BreakPhase>('working');
-  const [remaining, setRemaining] = useState(settings.breakSeconds);
-  const [minutesLeft, setMinutesLeft] = useState(settings.workMinutes);
+  const [remaining, setRemaining] = useState(breakSeconds);
+  const [minutesLeft, setMinutesLeft] = useState(workMinutes);
 
   const workingSince = useRef(Date.now());
   const breakStartedAt = useRef<number | null>(null);
@@ -56,15 +61,15 @@ function useBreakClock() {
         workingSinceMs: workingSince.current,
         idleSeconds: 0,
         hour: new Date().getHours(),
-        settings,
+        settings: { enabled: settings.enabled, workMinutes, breakSeconds, allowSkip, quietStartHour: settings.quietStartHour, quietEndHour: settings.quietEndHour },
       });
-      app.logBreak(action, worked);
+      app.logBreak('micro', action, worked, breakSeconds);
       breakStartedAt.current = null;
       workingSince.current = Date.now();
       warnedForStretch.current = false;
       setPhase('working');
     },
-    [app, settings],
+    [app, settings, workMinutes, breakSeconds, allowSkip],
   );
 
   // On the Windows shell this is replaced every second by real system idle
@@ -87,11 +92,11 @@ function useBreakClock() {
       const windowIdle = Math.round((now - lastActivity.current) / 1000);
       const idleSeconds = systemIdle.current ?? windowIdle;
       const hour = new Date().getHours();
-      const ctx = { nowMs: now, workingSinceMs: workingSince.current, idleSeconds, hour, settings };
+      const ctx = { nowMs: now, workingSinceMs: workingSince.current, idleSeconds, hour, settings: { enabled: settings.enabled, workMinutes, breakSeconds, allowSkip, quietStartHour: settings.quietStartHour, quietEndHour: settings.quietEndHour } };
 
       if (breakStartedAt.current !== null) {
-        setRemaining(breakRemainingSeconds(breakStartedAt.current, now, settings.breakSeconds));
-        if (isBreakOver(breakStartedAt.current, now, settings.breakSeconds)) {
+        setRemaining(breakRemainingSeconds(breakStartedAt.current, now, breakSeconds));
+        if (isBreakOver(breakStartedAt.current, now, breakSeconds)) {
           // The pause is over, but leaving is the person's choice.
           setPhase('breaking');
         }
@@ -103,7 +108,7 @@ function useBreakClock() {
       if (reset !== null) {
         workingSince.current = reset;
         warnedForStretch.current = false;
-        setMinutesLeft(settings.workMinutes);
+        setMinutesLeft(workMinutes);
         setPhase('working');
         return;
       }
@@ -118,7 +123,7 @@ function useBreakClock() {
 
       if (shouldStartBreak(ctx)) {
         breakStartedAt.current = now;
-        setRemaining(settings.breakSeconds);
+        setRemaining(breakSeconds);
         setPhase('breaking');
         return;
       }
@@ -134,27 +139,27 @@ function useBreakClock() {
       }
     }, TICK_MS);
     return () => clearInterval(id);
-  }, [settings]);
+  }, [settings, workMinutes, breakSeconds, allowSkip]);
 
   const snooze = useCallback(
     (minutes: number) => {
-      workingSince.current = Date.now() - Math.max(0, settings.workMinutes - minutes) * 60000;
+      workingSince.current = Date.now() - Math.max(0, workMinutes - minutes) * 60000;
       warnedForStretch.current = false;
       setPhase('working');
     },
-    [settings.workMinutes],
+    [workMinutes],
   );
 
-  const suggestion = suggestLongerInterval(app.state.breaks, settings.workMinutes);
+  const suggestion = suggestLongerInterval(app.state.breaks, workMinutes);
 
   return {
     phase,
     remaining,
     minutesLeft,
     enabled: settings.enabled,
-    allowSkip: settings.allowSkip,
-    breakSeconds: settings.breakSeconds,
-    workMinutes: settings.workMinutes,
+    allowSkip,
+    breakSeconds,
+    workMinutes,
     takenToday: app.state.breaks.filter((b) => b.date === app.today).length,
     suggestion,
     finish: () => endBreak('taken'),

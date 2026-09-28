@@ -139,6 +139,7 @@ export type Exercise = {
 export type DailyTip = { date: ISODate; text: string; lang: Lang };
 
 export type AppState = {
+  /** 1 = the original single-timer break settings. 2 = four break kinds. */
   version: number;
   profile: Profile;
   settings: Settings;

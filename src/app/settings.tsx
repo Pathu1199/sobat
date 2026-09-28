@@ -109,7 +109,7 @@ export default function SettingsScreen() {
           <Micro>{en('break_every')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[15, 20, 30, 45, 60].map((m) => (
-              <Pill key={m} label={`${m}m`} active={br.workMinutes === m} onPress={() => app.setBreakSettings({ workMinutes: m })} />
+              <Pill key={m} label={`${m}m`} active={br.micro.everyMinutes === m} onPress={() => app.setBreakSettings({ micro: { ...br.micro, everyMinutes: m } })} />
             ))}
           </Row>
           <Micro>{en('break_length')}</Micro>
@@ -118,8 +118,8 @@ export default function SettingsScreen() {
               <Pill
                 key={sec}
                 label={sec >= 60 ? `${sec / 60}m` : `${sec}s`}
-                active={br.breakSeconds === sec}
-                onPress={() => app.setBreakSettings({ breakSeconds: sec })}
+                active={br.micro.seconds === sec}
+                onPress={() => app.setBreakSettings({ micro: { ...br.micro, seconds: sec } })}
               />
             ))}
           </Row>
@@ -127,8 +127,8 @@ export default function SettingsScreen() {
           <Toggle
             title={t('break_allow_skip')}
             desc={en('break_skip_desc')}
-            on={br.allowSkip}
-            onToggle={() => app.setBreakSettings({ allowSkip: !br.allowSkip })}
+            on={br.strictness !== 'strict'}
+            onToggle={() => app.setBreakSettings({ strictness: br.strictness === 'strict' ? 'normal' : 'strict' })}
           />
           <Divider />
           <Row style={{ justifyContent: 'space-between' }}>

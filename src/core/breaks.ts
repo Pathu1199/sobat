@@ -4,25 +4,54 @@
  * without a timer or a window.
  */
 
+export type BreakKind = 'micro' | 'long' | 'posture' | 'blink';
+
+/** How hard the app is allowed to insist. */
+export type Strictness = 'gentle' | 'normal' | 'strict';
+
+export type KindSettings = { enabled: boolean; everyMinutes: number; seconds: number };
+
 export type BreakSettings = {
   enabled: boolean;
-  workMinutes: number;
-  breakSeconds: number;
-  allowSkip: boolean;
+  micro: KindSettings;
+  long: KindSettings;
+  posture: KindSettings;
+  blink: KindSettings;
+  strictness: Strictness;
+  maxSkipsPerDay: number;
+  snoozeMinutes: number[];
+  smartPause: { whenFullscreen: boolean; whenOnCall: boolean; apps: string[] };
+  schedule: { days: number[]; startHour: number; endHour: number } | null;
   quietStartHour: number;
   quietEndHour: number;
+  sound: boolean;
+  /** Epoch ms until which every break is held. Null when not paused. */
+  pausedUntilMs: number | null;
 };
 
 export const DEFAULT_BREAK_SETTINGS: BreakSettings = {
   enabled: true,
-  workMinutes: 20,
-  breakSeconds: 60,
-  allowSkip: true,
+  // 20-20-20: every twenty minutes, look twenty feet away for twenty seconds.
+  micro: { enabled: true, everyMinutes: 20, seconds: 20 },
+  long: { enabled: true, everyMinutes: 60, seconds: 180 },
+  posture: { enabled: true, everyMinutes: 30, seconds: 6 },
+  // Off by default: a blink prompt every ten minutes is a lot to ask for.
+  blink: { enabled: false, everyMinutes: 10, seconds: 3 },
+  strictness: 'normal',
+  maxSkipsPerDay: 3,
+  snoozeMinutes: [1, 5, 15],
+  smartPause: { whenFullscreen: true, whenOnCall: true, apps: [] },
+  schedule: null,
   quietStartHour: 22,
   quietEndHour: 7,
+  sound: true,
+  pausedUntilMs: null,
 };
 
 export type BreakPhase = 'working' | 'breaking' | 'off';
+
+/** The shape the old single-timer rules below still expect. Task 2 removes them. */
+type LegacySettings = { enabled: boolean; workMinutes: number; breakSeconds: number; allowSkip: boolean; quietStartHour: number; quietEndHour: number };
 
 export type BreakContext = {
   nowMs: number;
@@ -30,7 +59,7 @@ export type BreakContext = {
   workingSinceMs: number;
   idleSeconds: number;
   hour: number;
-  settings: BreakSettings;
+  settings: LegacySettings;
 };
 
 /** Long enough away from the keyboard that the eyes already got their rest. */
@@ -76,7 +105,15 @@ export function isBreakOver(startedMs: number, nowMs: number, breakSeconds: numb
   return breakRemainingSeconds(startedMs, nowMs, breakSeconds) <= 0;
 }
 
-export type BreakLog = { id: string; date: string; at: string; action: 'taken' | 'skipped'; workedMinutes: number };
+export type BreakLog = {
+  id: string;
+  date: string;
+  at: string;
+  kind: BreakKind;
+  action: 'taken' | 'skipped';
+  workedMinutes: number;
+  seconds: number;
+};
 
 export type BreakStats = { taken: number; skipped: number; compliancePct: number; longestStretchMinutes: number };
 
