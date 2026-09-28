@@ -126,6 +126,11 @@ function useBreakClock() {
       const workedMinutes = Math.max(0, (breakStartedAt.current ?? now) - clocks.current[k]) / 60000;
       app.logBreak(k, action, workedMinutes, settings[k].seconds);
       clocks.current = clocksAfter(k, clocks.current, now);
+      if (nudgeTimer.current) {
+        clearTimeout(nudgeTimer.current);
+        nudgeTimer.current = null;
+      }
+      nudgeUntil.current = null;
       breakStartedAt.current = null;
       runningKind.current = null;
       warnedFor.current = null;
@@ -137,6 +142,13 @@ function useBreakClock() {
 
   /** Start a break of this kind right now. */
   const start = useCallback((k: BreakKind, now: number) => {
+    // A nudge toast may still be pending; its timer must not clear the
+    // break we are about to start.
+    if (nudgeTimer.current) {
+      clearTimeout(nudgeTimer.current);
+      nudgeTimer.current = null;
+    }
+    nudgeUntil.current = null;
     breakStartedAt.current = now;
     runningKind.current = k;
     setKind(k);

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { takesScreen, type BreakKind } from '../core/breaks';
@@ -26,11 +26,10 @@ export function BreakOverlay() {
   const t = makeT(lang);
   const { width, height } = useWindowDimensions();
   const reduce = useReducedMotion();
-  // useMemo rather than useRef().current: the React Compiler rule objects to
-  // reading a ref's value during render, and a memoized value is stable
-  // across renders in exactly the same way for an instance that is never reassigned.
-  const fade = useMemo(() => new Animated.Value(0), []);
-  const breathe = useMemo(() => new Animated.Value(0), []);
+  // useState's lazy initializer, not useMemo: React may discard a memo, and a
+  // detached Animated.Value would leave the ring frozen.
+  const [fade] = useState(() => new Animated.Value(0));
+  const [breathe] = useState(() => new Animated.Value(0));
 
   const kind: BreakKind = monitor.kind ?? 'micro';
   const showing = app.state.profile.onboarded && monitor.phase === 'breaking' && takesScreen(kind);
