@@ -1,10 +1,11 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
 import { BreakToast } from '../components/BreakToast';
 import { FeedbackProvider } from '../services/feedback';
+import { enableAutostart } from '../services/platform';
 import { BreakMonitorProvider } from '../services/useBreakMonitor';
 import { usePhotoQueue } from '../services/usePhotoQueue';
 import { useScheduledReminders } from '../services/useScheduledReminders';
@@ -31,6 +32,14 @@ function AppShell() {
   useScheduledReminders();
   useSteps();
   usePhotoQueue();
+
+  // The break monitor is only useful if it is running, so the Windows shell
+  // registers itself to start with the machine. Idempotent, and a no-op in a
+  // browser or on a phone, where there is nothing to register with.
+  useEffect(() => {
+    enableAutostart().catch(() => {});
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <StatusBar style="light" />
