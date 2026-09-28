@@ -20,8 +20,8 @@ export function BreakPanel() {
   const stats = breakStats(todayBreaks);
   const screen = minutesOn(app.state.usage, app.today);
   const sitting = longestStretchMinutes(app.state.usage, app.today);
-  const left = Number.isFinite(monitor.minutesLeft) ? Math.ceil(monitor.minutesLeft) : 0;
-  const elapsed = monitor.workMinutes - left;
+  const left = Number.isFinite(Math.ceil(monitor.secondsLeft / 60)) ? Math.ceil(Math.ceil(monitor.secondsLeft / 60)) : 0;
+  const elapsed = app.state.breakSettings.micro.everyMinutes - left;
 
   return (
     <Card>
@@ -35,7 +35,7 @@ export function BreakPanel() {
 
       {monitor.enabled ? (
         <Row style={{ gap: 16, alignItems: 'center' }}>
-          <Ring value={elapsed} max={monitor.workMinutes} size={88} stroke={5} color={left <= 1 ? C.amber : C.accent}>
+          <Ring value={elapsed} max={app.state.breakSettings.micro.everyMinutes} size={88} stroke={5} color={left <= 1 ? C.amber : C.accent}>
             <Text style={{ color: C.text, fontSize: 26, fontWeight: '200', letterSpacing: -1 }}>{left}</Text>
             <Micro>{t('minutes')}</Micro>
           </Ring>
@@ -64,7 +64,7 @@ export function BreakPanel() {
         <Micro>{t('longest_sitting')}</Micro>
         <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
       </Row>
-      {monitor.suggestion ? <Micro color={C.amber}>{`${t('break_every')} ${monitor.suggestion} ${t('minutes')}?`}</Micro> : null}
+      {monitor.suggestion ? <Micro color={C.amber}>{`${t('break_every')} ${monitor.suggestion.minutes} ${t('minutes')}?`}</Micro> : null}
     </Card>
   );
 }

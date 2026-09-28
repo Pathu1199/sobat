@@ -53,7 +53,8 @@ export function BreakOverlay() {
   const stroke = 3;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
-  const pct = monitor.breakSeconds > 0 ? monitor.remaining / monitor.breakSeconds : 0;
+  const breakSeconds = state.breakSettings[monitor.kind ?? 'micro'].seconds;
+  const pct = breakSeconds > 0 ? monitor.remaining / breakSeconds : 0;
   const mins = Math.floor(monitor.remaining / 60);
   const secs = monitor.remaining % 60;
 
@@ -108,7 +109,7 @@ export function BreakOverlay() {
           paddingHorizontal: 40,
           alignItems: 'center',
         }}>
-        {monitor.allowSkip && !over ? (
+        {monitor.skipsLeft > 0 && !over ? (
           <Pressable onPress={monitor.skip} accessibilityLabel={t('break_skip')}>
             <Text style={{ color: C.textFaint, fontSize: F.small }}>{t('break_skip')}</Text>
           </Pressable>
@@ -137,7 +138,7 @@ export function BreakOverlay() {
 function BreakWarning({ monitor, lang }: { monitor: ReturnType<typeof useBreakMonitor>; lang: any }) {
   const t = makeT(lang);
   if (monitor.phase !== 'warning') return null;
-  const seconds = Math.max(0, Math.round(monitor.minutesLeft * 60));
+  const seconds = Math.max(0, Math.round(monitor.secondsLeft));
 
   return (
     <View
@@ -161,7 +162,7 @@ function BreakWarning({ monitor, lang }: { monitor: ReturnType<typeof useBreakMo
         <Pressable onPress={() => monitor.snooze(10)}>
           <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '600' }}>{t('break_snooze')}</Text>
         </Pressable>
-        {monitor.allowSkip ? (
+        {monitor.skipsLeft > 0 ? (
           <Pressable onPress={monitor.skip}>
             <Text style={{ color: C.textFaint, fontSize: F.small }}>{t('break_skip')}</Text>
           </Pressable>

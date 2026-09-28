@@ -90,12 +90,17 @@ export function Sidebar() {
         </Pressable>
         <View style={{ paddingHorizontal: 12, paddingVertical: 10, gap: 10, borderTopWidth: S.hairline, borderTopColor: C.border, marginTop: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Ring value={monitor.enabled ? monitor.workMinutes - monitor.minutesLeft : 0} max={monitor.workMinutes} size={34} stroke={3} color={C.accent}>
-              <Text style={{ color: C.text, fontSize: F.micro, fontWeight: '600' }}>{monitor.enabled ? Math.ceil(monitor.minutesLeft) : '--'}</Text>
+            <Ring
+              value={monitor.enabled ? state.breakSettings.micro.everyMinutes - Math.ceil(monitor.secondsLeft / 60) : 0}
+              max={state.breakSettings.micro.everyMinutes}
+              size={34}
+              stroke={3}
+              color={C.accent}>
+              <Text style={{ color: C.text, fontSize: F.micro, fontWeight: '600' }}>{monitor.enabled ? Math.ceil(monitor.secondsLeft / 60) : '--'}</Text>
             </Ring>
             <View style={{ flex: 1 }}>
               <Text style={[MICRO, { color: C.textFaint }]}>{t('next_break')}</Text>
-              <Text style={{ color: C.textDim, fontSize: F.small }}>{monitor.enabled ? `${Math.ceil(monitor.minutesLeft)} ${t('minutes')}` : t('break_off')}</Text>
+              <Text style={{ color: C.textDim, fontSize: F.small }}>{monitor.enabled ? `${Math.ceil(monitor.secondsLeft / 60)} ${t('minutes')}` : t('break_off')}</Text>
             </View>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

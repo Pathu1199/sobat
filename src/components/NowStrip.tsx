@@ -45,9 +45,9 @@ export function NowStrip({ wide }: { wide?: boolean }) {
     <Tile
       key="break"
       label={t('next_break')}
-      value={monitor.enabled ? `${Math.ceil(monitor.minutesLeft)}m` : '--'}
+      value={monitor.enabled ? `${Math.ceil(monitor.secondsLeft / 60)}m` : '--'}
       sub={monitor.enabled ? `${monitor.takenToday} ${t('break_compliance')}` : t('break_off')}
-      color={monitor.enabled && monitor.minutesLeft <= 2 ? C.amber : C.text}
+      color={monitor.enabled && monitor.secondsLeft <= 120 ? C.amber : C.text}
       onPress={() => router.push('/settings')}
     />,
     <Tile

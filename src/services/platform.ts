@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import type { ForegroundState } from '../core/breaks';
 
 /**
  * The few things that differ per platform. Everything else in the app is
@@ -40,5 +41,21 @@ export async function isAutostartEnabled(): Promise<boolean> {
     return await mod.isEnabled();
   } catch {
     return false;
+  }
+}
+
+/**
+ * What the Windows shell can see about the window in front. Null everywhere
+ * else, which the rules read as "no reason to pause".
+ */
+export async function foregroundState(): Promise<ForegroundState | null> {
+  if (!isDesktopShell()) return null;
+  try {
+    const mod = await import('@tauri-apps/api/core');
+    const raw = await mod.invoke<{ fullscreen: boolean; exe: string; onCall: boolean }>('foreground_state');
+    return { fullscreen: !!raw.fullscreen, exe: String(raw.exe ?? ''), onCall: !!raw.onCall };
+  } catch {
+    // The command is missing or failed; never let that force a break.
+    return null;
   }
 }

@@ -1,40 +1,52 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
 import {
-  breakRemainingSeconds, inQuiet, isBreakOver, minutesUntilBreak, resetPointFor,
-  shouldStartBreak, suggestLongerInterval, workedMinutes,
+  clocksAfter,
+  clocksAfterIdle,
+  isPaused,
+  nextDue,
+  skipsLeft as computeSkipsLeft,
+  suggestLongerInterval,
+  takesScreen,
+  type BreakClocks,
+  type BreakKind,
+  type ForegroundState,
 } from '../core/breaks';
 import { useApp } from '../store/AppProvider';
 import { notifyNow } from './notify';
-import { systemIdleSeconds } from './platform';
+import { foregroundState, systemIdleSeconds } from './platform';
 
 export type BreakPhase = 'working' | 'warning' | 'breaking';
 
 const TICK_MS = 1000;
+/** How long before a screen-taking break the warning toast appears. */
 const WARNING_SECONDS = 60;
+const KINDS: BreakKind[] = ['micro', 'long', 'posture', 'blink'];
 
 /**
- * Starts the moment the app opens and runs for as long as it is open, which on
- * the desktop build means from when the PC starts. Counts a stretch of work,
- * warns a minute before, then takes the screen for the pause.
+ * One clock for the whole app, mounted by BreakMonitorProvider. Each second it
+ * builds a context from the store and the platform, asks the rules what is due,
+ * and reacts. All the judgement lives in src/core/breaks.ts.
  */
 function useBreakClock() {
   const app = useApp();
-  // Task 2 replaces this loop wholesale. Until then, drive it from the micro
-  // break so the app keeps running.
   const settings = app.state.breakSettings;
-  const workMinutes = settings.micro.everyMinutes;
-  const breakSeconds = settings.micro.seconds;
-  const allowSkip = settings.strictness !== 'strict';
 
   const [phase, setPhase] = useState<BreakPhase>('working');
-  const [remaining, setRemaining] = useState(breakSeconds);
-  const [minutesLeft, setMinutesLeft] = useState(workMinutes);
+  const [kind, setKind] = useState<BreakKind | null>(null);
+  const [remaining, setRemaining] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(Infinity);
+  const [nextKind, setNextKind] = useState<BreakKind | null>(null);
+  const [paused, setPaused] = useState(false);
 
-  const workingSince = useRef(Date.now());
+  const mountedAt = Date.now();
+  const clocks = useRef<BreakClocks>({ micro: mountedAt, long: mountedAt, posture: mountedAt, blink: mountedAt });
   const breakStartedAt = useRef<number | null>(null);
+  const runningKind = useRef<BreakKind | null>(null);
   const lastActivity = useRef(Date.now());
-  const warnedForStretch = useRef(false);
+  const warnedFor = useRef<BreakKind | null>(null);
+  const systemIdle = useRef<number | null>(null);
+  const foreground = useRef<ForegroundState | null>(null);
 
   // Any input counts as being at the desk.
   useEffect(() => {
@@ -54,27 +66,8 @@ function useBreakClock() {
     return () => sub.remove();
   }, []);
 
-  const endBreak = useCallback(
-    (action: 'taken' | 'skipped') => {
-      const worked = workedMinutes({
-        nowMs: breakStartedAt.current ?? Date.now(),
-        workingSinceMs: workingSince.current,
-        idleSeconds: 0,
-        hour: new Date().getHours(),
-        settings: { enabled: settings.enabled, workMinutes, breakSeconds, allowSkip, quietStartHour: settings.quietStartHour, quietEndHour: settings.quietEndHour },
-      });
-      app.logBreak('micro', action, worked, breakSeconds);
-      breakStartedAt.current = null;
-      workingSince.current = Date.now();
-      warnedForStretch.current = false;
-      setPhase('working');
-    },
-    [app, settings, workMinutes, breakSeconds, allowSkip],
-  );
-
-  // On the Windows shell this is replaced every second by real system idle
-  // time, so switching to another program still counts as being at the desk.
-  const systemIdle = useRef<number | null>(null);
+  // The shell knows real system idle time and what is in front. Off the shell
+  // both stay null and the rules fall back to what the window can see.
   useEffect(() => {
     const id = setInterval(() => {
       systemIdleSeconds()
@@ -82,89 +75,169 @@ function useBreakClock() {
           systemIdle.current = v;
         })
         .catch(() => {});
+      foregroundState()
+        .then((v) => {
+          foreground.current = v;
+        })
+        .catch(() => {});
     }, 5000);
     return () => clearInterval(id);
+  }, []);
+
+  const logsToday = useMemo(() => app.state.breaks.filter((b) => b.date === app.today), [app.state.breaks, app.today]);
+
+  const buildCtx = useCallback(
+    (now: number) => {
+      const windowIdle = Math.round((now - lastActivity.current) / 1000);
+      const d = new Date(now);
+      return {
+        nowMs: now,
+        clocks: clocks.current,
+        idleSeconds: systemIdle.current ?? windowIdle,
+        hour: d.getHours(),
+        weekday: d.getDay(),
+        settings,
+        foreground: foreground.current,
+        logsToday,
+      };
+    },
+    [settings, logsToday],
+  );
+
+  /** End the running break, write it down, and restart the right clocks. */
+  const endBreak = useCallback(
+    (action: 'taken' | 'skipped') => {
+      const now = Date.now();
+      const k = runningKind.current ?? 'micro';
+      const workedMinutes = Math.max(0, (breakStartedAt.current ?? now) - clocks.current[k]) / 60000;
+      app.logBreak(k, action, workedMinutes, settings[k].seconds);
+      clocks.current = clocksAfter(k, clocks.current, now);
+      breakStartedAt.current = null;
+      runningKind.current = null;
+      warnedFor.current = null;
+      setKind(null);
+      setPhase('working');
+    },
+    [app, settings],
+  );
+
+  /** Start a break of this kind right now. */
+  const start = useCallback((k: BreakKind, now: number) => {
+    breakStartedAt.current = now;
+    runningKind.current = k;
+    setKind(k);
+    setPhase('breaking');
   }, []);
 
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
-      const windowIdle = Math.round((now - lastActivity.current) / 1000);
-      const idleSeconds = systemIdle.current ?? windowIdle;
-      const hour = new Date().getHours();
-      const ctx = { nowMs: now, workingSinceMs: workingSince.current, idleSeconds, hour, settings: { enabled: settings.enabled, workMinutes, breakSeconds, allowSkip, quietStartHour: settings.quietStartHour, quietEndHour: settings.quietEndHour } };
 
-      if (breakStartedAt.current !== null) {
-        setRemaining(breakRemainingSeconds(breakStartedAt.current, now, breakSeconds));
-        if (isBreakOver(breakStartedAt.current, now, breakSeconds)) {
-          // The pause is over, but leaving is the person's choice.
+      // A break is running: count it down and stop there.
+      if (breakStartedAt.current !== null && runningKind.current !== null) {
+        const total = settings[runningKind.current].seconds;
+        setRemaining(Math.max(0, Math.ceil((breakStartedAt.current + total * 1000 - now) / 1000)));
+        return;
+      }
+
+      const ctx = buildCtx(now);
+
+      // Stepping away already gave the rest, so restart the clocks it earned.
+      const rested = clocksAfterIdle(ctx);
+      if (rested) {
+        clocks.current = rested;
+        warnedFor.current = null;
+      }
+
+      const held = isPaused(ctx);
+      setPaused(held);
+
+      const due = nextDue(ctx);
+      setNextKind(due?.kind ?? null);
+      setSecondsLeft(due ? due.inSeconds : Infinity);
+
+      if (held || !due) {
+        setPhase('working');
+        return;
+      }
+
+      if (due.inSeconds <= 0) {
+        if (takesScreen(due.kind)) {
+          start(due.kind, now);
+        } else {
+          // Posture and blink never take the screen. Show them, write them
+          // down as taken, and restart their clock.
+          setKind(due.kind);
           setPhase('breaking');
+          app.logBreak(due.kind, 'taken', 0, settings[due.kind].seconds);
+          clocks.current = clocksAfter(due.kind, clocks.current, now);
+          setTimeout(() => {
+            setKind(null);
+            setPhase('working');
+          }, settings[due.kind].seconds * 1000);
         }
         return;
       }
 
-      // Stepping away already gave the eyes their rest, so restart the clock.
-      const reset = resetPointFor(ctx);
-      if (reset !== null) {
-        workingSince.current = reset;
-        warnedForStretch.current = false;
-        setMinutesLeft(workMinutes);
-        setPhase('working');
-        return;
-      }
-
-      if (!settings.enabled || inQuiet(hour, settings.quietStartHour, settings.quietEndHour)) {
-        setPhase('working');
-        return;
-      }
-
-      const left = minutesUntilBreak(ctx);
-      setMinutesLeft(left);
-
-      if (shouldStartBreak(ctx)) {
-        breakStartedAt.current = now;
-        setRemaining(breakSeconds);
-        setPhase('breaking');
-        return;
-      }
-
-      if (left * 60 <= WARNING_SECONDS) {
-        if (!warnedForStretch.current) {
-          warnedForStretch.current = true;
+      if (takesScreen(due.kind) && due.inSeconds <= WARNING_SECONDS) {
+        if (warnedFor.current !== due.kind) {
+          warnedFor.current = due.kind;
           notifyNow('Break in 1 minute', 'Finish what you are typing.').catch(() => {});
         }
         setPhase('warning');
-      } else {
-        setPhase('working');
+        return;
       }
+
+      setPhase('working');
     }, TICK_MS);
     return () => clearInterval(id);
-  }, [settings, workMinutes, breakSeconds, allowSkip]);
+  }, [settings, buildCtx, start, app]);
 
   const snooze = useCallback(
     (minutes: number) => {
-      workingSince.current = Date.now() - Math.max(0, workMinutes - minutes) * 60000;
-      warnedForStretch.current = false;
+      const k = runningKind.current ?? nextKind ?? 'micro';
+      // Push this kind's clock forward so it comes due again in `minutes`.
+      const now = Date.now();
+      clocks.current = { ...clocks.current, [k]: now - Math.max(0, settings[k].everyMinutes - minutes) * 60000 };
+      breakStartedAt.current = null;
+      runningKind.current = null;
+      warnedFor.current = null;
+      setKind(null);
       setPhase('working');
     },
-    [workMinutes],
+    [settings, nextKind],
   );
 
-  const suggestion = suggestLongerInterval(app.state.breaks, workMinutes);
+  const takeNow = useCallback(
+    (k: BreakKind) => {
+      if (!takesScreen(k)) return;
+      start(k, Date.now());
+    },
+    [start],
+  );
+
+  const suggestionCandidates = useMemo(
+    () => KINDS.map((k) => ({ kind: k, minutes: suggestLongerInterval(app.state.breaks, k, settings[k].everyMinutes) })),
+    [app.state.breaks, settings],
+  );
+  const suggestion = suggestionCandidates.find((c): c is { kind: BreakKind; minutes: number } => c.minutes !== null) ?? null;
 
   return {
     phase,
+    kind,
     remaining,
-    minutesLeft,
+    secondsLeft,
+    nextKind,
     enabled: settings.enabled,
-    allowSkip,
-    breakSeconds,
-    workMinutes,
-    takenToday: app.state.breaks.filter((b) => b.date === app.today).length,
+    paused,
+    sound: settings.sound,
+    skipsLeft: computeSkipsLeft(logsToday, settings),
+    takenToday: logsToday.filter((b) => b.action === 'taken').length,
     suggestion,
     finish: () => endBreak('taken'),
     skip: () => endBreak('skipped'),
     snooze,
+    takeNow,
   };
 }
 
