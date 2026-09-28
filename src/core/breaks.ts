@@ -48,61 +48,10 @@ export const DEFAULT_BREAK_SETTINGS: BreakSettings = {
   pausedUntilMs: null,
 };
 
-export type BreakPhase = 'working' | 'breaking' | 'off';
-
-/** The shape the old single-timer rules below still expect. Task 2 removes them. */
-type LegacySettings = { enabled: boolean; workMinutes: number; breakSeconds: number; allowSkip: boolean; quietStartHour: number; quietEndHour: number };
-
-export type BreakContext = {
-  nowMs: number;
-  /** When the current stretch of work began: session start, or the end of the last break. */
-  workingSinceMs: number;
-  idleSeconds: number;
-  hour: number;
-  settings: LegacySettings;
-};
-
-/** Long enough away from the keyboard that the eyes already got their rest. */
-export const IDLE_COUNTS_AS_BREAK_SECONDS = 180;
-
 export function inQuiet(hour: number, start: number, end: number): boolean {
   if (start === end) return false;
   if (start > end) return hour >= start || hour < end;
   return hour >= start && hour < end;
-}
-
-export function workedMinutes(ctx: BreakContext): number {
-  return Math.max(0, (ctx.nowMs - ctx.workingSinceMs) / 60000);
-}
-
-export function minutesUntilBreak(ctx: BreakContext): number {
-  if (!ctx.settings.enabled) return Infinity;
-  return Math.max(0, ctx.settings.workMinutes - workedMinutes(ctx));
-}
-
-export function shouldStartBreak(ctx: BreakContext): boolean {
-  if (!ctx.settings.enabled) return false;
-  if (inQuiet(ctx.hour, ctx.settings.quietStartHour, ctx.settings.quietEndHour)) return false;
-  // Already away from the desk, so interrupting would be pointless.
-  if (ctx.idleSeconds >= IDLE_COUNTS_AS_BREAK_SECONDS) return false;
-  return workedMinutes(ctx) >= ctx.settings.workMinutes;
-}
-
-/**
- * Stepping away resets the work clock, so a natural break counts and you are
- * not ambushed the moment you come back.
- */
-export function resetPointFor(ctx: BreakContext): number | null {
-  if (ctx.idleSeconds >= IDLE_COUNTS_AS_BREAK_SECONDS) return ctx.nowMs;
-  return null;
-}
-
-export function breakRemainingSeconds(startedMs: number, nowMs: number, breakSeconds: number): number {
-  return Math.max(0, Math.ceil((startedMs + breakSeconds * 1000 - nowMs) / 1000));
-}
-
-export function isBreakOver(startedMs: number, nowMs: number, breakSeconds: number): boolean {
-  return breakRemainingSeconds(startedMs, nowMs, breakSeconds) <= 0;
 }
 
 export type BreakLog = {
@@ -115,9 +64,144 @@ export type BreakLog = {
   seconds: number;
 };
 
-export type BreakStats = { taken: number; skipped: number; compliancePct: number; longestStretchMinutes: number };
+/** What the desktop shell can tell us about the window in front. */
+export type ForegroundState = { fullscreen: boolean; exe: string; onCall: boolean };
+
+/** When each kind's clock last restarted, in epoch ms. */
+export type BreakClocks = Record<BreakKind, number>;
+
+export type BreakContext = {
+  nowMs: number;
+  clocks: BreakClocks;
+  idleSeconds: number;
+  hour: number;
+  /** 0 is Sunday, matching Date.getDay(). */
+  weekday: number;
+  settings: BreakSettings;
+  /** Null in a browser or on a phone, where these facts are unknowable. */
+  foreground: ForegroundState | null;
+  logsToday: BreakLog[];
+};
+
+export type Due = { kind: BreakKind; inSeconds: number };
+
+/** Away this long and the eyes and back have already had their rest. */
+export const IDLE_RESETS_SHORT_SECONDS = 180;
+/** Away this long and even the long break can start over. */
+export const IDLE_RESETS_LONG_SECONDS = 300;
+
+/** Micro and long blank the screen. Posture and blink are only a toast. */
+export function takesScreen(kind: BreakKind): boolean {
+  return kind === 'micro' || kind === 'long';
+}
+
+/** Longest first, so a tie is resolved in favour of the more restful break. */
+const PRIORITY: BreakKind[] = ['long', 'micro', 'posture', 'blink'];
+
+function kindSettings(s: BreakSettings, kind: BreakKind): KindSettings {
+  return s[kind];
+}
+
+/**
+ * The next break to offer and how long until it is due, or null when nothing
+ * is scheduled. Does not consider pausing: ask `isPaused` separately, so the
+ * interface can still show a countdown while a pause is in force.
+ */
+export function nextDue(ctx: BreakContext): Due | null {
+  if (!ctx.settings.enabled) return null;
+  let best: Due | null = null;
+  for (const kind of PRIORITY) {
+    const k = kindSettings(ctx.settings, kind);
+    if (!k.enabled) continue;
+    const elapsed = Math.max(0, ctx.nowMs - ctx.clocks[kind]) / 1000;
+    const inSeconds = Math.max(0, Math.round(k.everyMinutes * 60 - elapsed));
+    // Strictly less keeps PRIORITY's order on a tie.
+    if (best === null || inSeconds < best.inSeconds) best = { kind, inSeconds };
+  }
+  return best;
+}
+
+/** Every reason the app should hold its tongue right now. */
+export function isPaused(ctx: BreakContext): boolean {
+  const s = ctx.settings;
+  if (!s.enabled) return true;
+  if (s.pausedUntilMs !== null && ctx.nowMs < s.pausedUntilMs) return true;
+  if (inQuiet(ctx.hour, s.quietStartHour, s.quietEndHour)) return true;
+  if (s.schedule) {
+    const { days, startHour, endHour } = s.schedule;
+    if (!days.includes(ctx.weekday)) return true;
+    if (ctx.hour < startHour || ctx.hour >= endHour) return true;
+  }
+  const fg = ctx.foreground;
+  if (fg) {
+    if (s.smartPause.whenFullscreen && fg.fullscreen) return true;
+    if (s.smartPause.whenOnCall && fg.onCall) return true;
+    const exe = fg.exe.toLowerCase();
+    if (s.smartPause.apps.some((a) => a.toLowerCase() === exe)) return true;
+  }
+  return false;
+}
+
+/**
+ * The clocks to run after a break of this kind ends. A long break has already
+ * rested the eyes and the back, so it restarts those clocks too.
+ */
+export function clocksAfter(kind: BreakKind, clocks: BreakClocks, nowMs: number): BreakClocks {
+  if (kind === 'long') return { ...clocks, long: nowMs, micro: nowMs, posture: nowMs };
+  return { ...clocks, [kind]: nowMs };
+}
+
+/** New clocks when the desk has been empty long enough to count, else null. */
+export function clocksAfterIdle(ctx: BreakContext): BreakClocks | null {
+  if (ctx.idleSeconds >= IDLE_RESETS_LONG_SECONDS) {
+    return { micro: ctx.nowMs, long: ctx.nowMs, posture: ctx.nowMs, blink: ctx.nowMs };
+  }
+  if (ctx.idleSeconds >= IDLE_RESETS_SHORT_SECONDS) {
+    return { ...ctx.clocks, micro: ctx.nowMs, posture: ctx.nowMs, blink: ctx.nowMs };
+  }
+  return null;
+}
+
+/** How many skips are left today. Infinity in gentle mode, zero in strict. */
+export function skipsLeft(logsToday: BreakLog[], settings: BreakSettings): number {
+  if (settings.strictness === 'gentle') return Infinity;
+  if (settings.strictness === 'strict') return 0;
+  const used = logsToday.filter((l) => l.action === 'skipped').length;
+  return Math.max(0, settings.maxSkipsPerDay - used);
+}
+
+export function canSkip(logsToday: BreakLog[], settings: BreakSettings): boolean {
+  return skipsLeft(logsToday, settings) > 0;
+}
+
+export type BreakStats = {
+  taken: number;
+  skipped: number;
+  compliancePct: number;
+  longestStretchMinutes: number;
+  byKind: Record<BreakKind, { taken: number; offered: number }>;
+  /** Taken over offered, counting a long break twice. 0 to 100. */
+  eyeCareScore: number;
+};
+
+const KINDS: BreakKind[] = ['micro', 'long', 'posture', 'blink'];
+/** A long break is worth two of anything else to the eyes. */
+const WEIGHT: Record<BreakKind, number> = { micro: 1, long: 2, posture: 1, blink: 1 };
 
 export function breakStats(logs: BreakLog[]): BreakStats {
+  const byKind = Object.fromEntries(KINDS.map((k) => [k, { taken: 0, offered: 0 }])) as BreakStats['byKind'];
+  let weightedTaken = 0;
+  let weightedOffered = 0;
+  for (const l of logs) {
+    const bucket = byKind[l.kind];
+    if (!bucket) continue;
+    bucket.offered += 1;
+    weightedOffered += WEIGHT[l.kind];
+    if (l.action === 'taken') {
+      bucket.taken += 1;
+      weightedTaken += WEIGHT[l.kind];
+    }
+  }
   const taken = logs.filter((l) => l.action === 'taken').length;
   const skipped = logs.filter((l) => l.action === 'skipped').length;
   const total = taken + skipped;
@@ -126,15 +210,18 @@ export function breakStats(logs: BreakLog[]): BreakStats {
     skipped,
     compliancePct: total === 0 ? 0 : Math.round((taken / total) * 100),
     longestStretchMinutes: logs.reduce((m, l) => Math.max(m, Math.round(l.workedMinutes)), 0),
+    byKind,
+    eyeCareScore: weightedOffered === 0 ? 0 : Math.round((weightedTaken / weightedOffered) * 100),
   };
 }
 
 /**
- * Skipping every break means the interval is wrong for how this person works.
- * Suggest a longer one rather than nagging at the same rate.
+ * Skipping the same kind five times running means its interval is wrong for
+ * how this person works. Suggest a longer one rather than nagging on.
  */
-export function suggestLongerInterval(logs: BreakLog[], current: number): number | null {
-  const recent = logs.slice(-5);
+export function suggestLongerInterval(logs: BreakLog[], kind: BreakKind, current: number): number | null {
+  const forKind = logs.filter((l) => l.kind === kind);
+  const recent = forKind.slice(-5);
   if (recent.length < 5) return null;
   if (!recent.every((l) => l.action === 'skipped')) return null;
   const next = Math.min(current + 15, 90);
