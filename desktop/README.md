@@ -12,6 +12,26 @@ cannot do:
 **This has to be built on the Windows PC.** Tauri does not cross-compile from
 macOS to Windows. Everything else in this repository builds anywhere.
 
+## The short version
+
+On the PC, from the repository root in PowerShell:
+
+```powershell
+.\desktop\build-windows.ps1
+```
+
+That checks your tools, builds the app, and produces an installer at
+`desktop\src-tauri\target\release\bundle\nsis\Sobat_<version>_x64-setup.exe`.
+Double-click it. It installs for your user only, so Windows will not ask for an
+administrator password.
+
+The result is a normal Windows program, not a browser tab and not an Expo app.
+It starts with Windows, lives in the system tray, and keeps the break monitor
+running whether or not its window is open.
+
+**It has to be built on the PC.** Tauri cannot cross-compile a Windows binary
+from a Mac, so no `.exe` can be produced anywhere else.
+
 ## One-time setup on the PC
 
 1. Install [Rust](https://rustup.rs) and the Visual Studio C++ build tools.
