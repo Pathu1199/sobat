@@ -164,14 +164,25 @@ It has to be built on the PC: see [desktop/README.md](desktop/README.md).
 
 ## Status
 
-v0.4 part 1. Working: everything in v0.3, plus one compact top bar per tab, a
+v0.4 part 2a. Working: everything in v0.3, plus one compact top bar per tab, a
 five-slot phone tab bar with a centre "+", a Today screen with a hero ring,
 decision checklist, Now strip and day score, tappable and editable meals with
 a yesterday view, desktop layouts for every tab, local-time clocks, and toasts
 on every save.
 
-Not built yet: phone-to-PC sync, Health Connect, and the Windows installer
-itself, which has to be produced on the PC.
+And now four kinds of screen break rather than one timer: a twenty-second
+micro break on the 20-20-20 rule, a longer one that suggests two mobility
+moves, and posture and blink nudges that never take the screen. Each has its
+own interval. Breaks can be gentle, normal with a daily skip budget, or
+strict. They stay quiet during fullscreen video and calls, outside your work
+hours, and while you are away from the desk. Growth shows how the week went
+per kind, with a streak.
+
+Not built yet: water pace reminders, the app reaching out on its own,
+phone-to-PC sync, Health Connect, and the Windows installer itself, which has
+to be produced on the PC. The Windows shell code for smart pause and the
+global shortcuts is written but has only ever been compiled on paper: it needs
+a build on the PC.
 
 ## Licence
 
