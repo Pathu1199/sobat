@@ -51,7 +51,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "seed": "node scripts/seed-state.js"
+    "seed": "node scripts/seed-state.js",
+    "deploy-hosting": "expo export -p web && cp 'dist/+not-found.html' dist/404.html && firebase deploy --only hosting"
   },
   "private": true
 }
