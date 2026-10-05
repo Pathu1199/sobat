@@ -2,12 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { lineLabel } from '../components/RoutineCard';
+import { SlotEditor } from '../components/SlotEditor';
 import { foodName, searchFoods } from '../core/foods';
-import { ruleForFood, slotLabel, toggleBhaji } from '../core/routine';
+import { newSlot, ruleForFood, slotLabel, toggleBhaji, updateSlot, type RoutineSlot } from '../core/routine';
 import type { FoodItem, Lang } from '../core/types';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
+import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 /** Monday first, the way the week is planned; values are `Date.getDay()` indices. */
@@ -28,6 +29,7 @@ export default function RoutineScreen() {
   const en = makeT('en');
 
   const [openDay, setOpenDay] = useState<number | null>(null);
+  const [openSlot, setOpenSlot] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [minText, setMinText] = useState(String(routine.budgetMin));
   const [maxText, setMaxText] = useState(String(routine.budgetMax));
@@ -102,15 +104,41 @@ export default function RoutineScreen() {
       <View style={{ gap: 10 }}>
         <SectionHeader title={en('routine_slots')} meta={`${routine.slots.length}`} />
         <Card>
-          {routine.slots.map((s, i) => (
-            <View key={s.id}>
-              {i > 0 ? <Divider /> : null}
-              <ListRow
-                title={slotLabel(s, lang)}
-                sub={`${t(s.type)} · ${s.options.map((o) => o.map((l) => lineLabel(l, foods, lang)).join(' + ')).join(' / ')}${s.withBhaji ? ` + ${t('routine_bhaji').toLowerCase()}` : ''}`}
-              />
-            </View>
-          ))}
+          {routine.slots.map((s, i) => {
+            const open = openSlot === s.id;
+            const setSlot = (next: RoutineSlot) => app.setRoutine({ slots: updateSlot(routine.slots, s.id, next) });
+            return (
+              <View key={s.id}>
+                {i > 0 ? <Divider /> : null}
+                <ListRow
+                  title={slotLabel(s, lang) || t('routine_new_meal')}
+                  sub={`${t(s.type)} · ${s.options.map((o) => o.map((l) => lineLabel(l, foods, lang)).join(' + ') || '…').join(' / ')}${s.withBhaji ? ` + ${t('routine_bhaji').toLowerCase()}` : ''}`}
+                  onPress={() => setOpenSlot(open ? null : s.id)}
+                  trailing={<Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />}
+                />
+                {open ? (
+                  <SlotEditor
+                    slot={s}
+                    onChange={setSlot}
+                    onRemove={() => {
+                      app.setRoutine({ slots: routine.slots.filter((x) => x.id !== s.id) });
+                      setOpenSlot(null);
+                    }}
+                  />
+                ) : null}
+              </View>
+            );
+          })}
+          <Btn
+            small
+            tone="soft"
+            label={t('routine_add_meal')}
+            onPress={() => {
+              const slot = newSlot('snack', '');
+              app.setRoutine({ slots: [...routine.slots, slot] });
+              setOpenSlot(slot.id);
+            }}
+          />
         </Card>
       </View>
 

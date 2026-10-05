@@ -27,9 +27,58 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
 
+  apk:
+    name: Build signed APK
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the signing key is set
+        env:
+          KEY: ${{ secrets.SOBAT_RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::The SOBAT_RELEASE_KEYSTORE_BASE64 secret is missing. The APK is signed with the release key kept in GitHub secrets; see SETUP.md, Rebuilding the APK."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+      - run: npm ci
+      - name: Write the signing key
+        env:
+          KEY: ${{ secrets.SOBAT_RELEASE_KEYSTORE_BASE64 }}
+        run: echo "$KEY" | base64 -d > "$RUNNER_TEMP/sobat-release.keystore"
+      # The android folder is generated; the signing config comes from plugins/withReleaseSigning.js.
+      - run: npx expo prebuild -p android --no-install
+      - name: Build the release APK
+        working-directory: android
+        env:
+          SOBAT_RELEASE_KEY_ALIAS: ${{ secrets.SOBAT_RELEASE_KEY_ALIAS }}
+          SOBAT_RELEASE_STORE_PASSWORD: ${{ secrets.SOBAT_RELEASE_STORE_PASSWORD }}
+          SOBAT_RELEASE_KEY_PASSWORD: ${{ secrets.SOBAT_RELEASE_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease --no-daemon \
+            -PreactNativeArchitectures=arm64-v8a \
+            -PSOBAT_RELEASE_STORE_FILE="$RUNNER_TEMP/sobat-release.keystore" \
+            -PSOBAT_RELEASE_KEY_ALIAS="$SOBAT_RELEASE_KEY_ALIAS" \
+            -PSOBAT_RELEASE_STORE_PASSWORD="$SOBAT_RELEASE_STORE_PASSWORD" \
+            -PSOBAT_RELEASE_KEY_PASSWORD="$SOBAT_RELEASE_KEY_PASSWORD"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sobat-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
   deploy:
     name: Build and deploy
-    needs: check
+    needs: [check, apk]
     runs-on: ubuntu-latest
     environment:
       name: production
@@ -50,6 +99,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:web
+      # The phone build is served next to the web app, at /downloads/sobat.apk.
+      - uses: actions/download-artifact@v8
+        with:
+          name: sobat-apk
+          path: apk
+      - run: mkdir -p dist/downloads && cp apk/app-release.apk dist/downloads/sobat.apk
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

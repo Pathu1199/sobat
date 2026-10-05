@@ -16,6 +16,12 @@ import {
   spentOn,
   toggleBhaji,
   weekdayOf,
+  addLine,
+  newSlot,
+  removeLine,
+  renameSlot,
+  setLineQty,
+  updateSlot,
   type SpendLog,
 } from '../routine';
 import type { FoodItem, Meal } from '../types';
@@ -104,6 +110,37 @@ describe('slots', () => {
     expect(slotLogged(lunch, ['dudhi-bhaji'], [meal('lunch', ['dudhi-bhaji'])])).toBe(true);
     expect(slotLogged(lunch, ['dudhi-bhaji'], [meal('dinner', ['chapati'])])).toBe(false);
     expect(slotLogged(tea, [], [meal('snack', ['chai-with-sugar'])])).toBe(false);
+  });
+});
+
+describe('editing slots', () => {
+  const slot = newSlot('snack', 'Evening');
+  const chana = { foodId: 'roasted-chana', unit: 'handful', qty: 1 };
+
+  it('adds a food, and merges the same food into a bigger portion', () => {
+    const once = addLine(slot, 0, chana);
+    expect(once.options[0]).toEqual([chana]);
+    expect(addLine(once, 0, chana).options[0]).toEqual([{ ...chana, qty: 2 }]);
+  });
+
+  it('changes a portion and removes a food', () => {
+    const s = addLine(addLine(slot, 0, chana), 0, { foodId: 'taak', unit: 'glass', qty: 1 });
+    expect(setLineQty(s, 0, 'taak', 2).options[0][1].qty).toBe(2);
+    expect(removeLine(s, 0, 'taak').options[0]).toEqual([chana]);
+  });
+
+  it('drops an emptied alternative but always keeps one option', () => {
+    const two = { ...slot, options: [[chana], [{ foodId: 'taak', unit: 'glass', qty: 1 }]] };
+    expect(removeLine(two, 1, 'taak').options).toEqual([[chana]]);
+    expect(removeLine(slot, 0, 'nothing').options).toEqual([[]]);
+  });
+
+  it('renames in one language and fills the English fallback', () => {
+    const mr = renameSlot(slot, 'mr', 'संध्याकाळ');
+    expect(mr.label_mr).toBe('संध्याकाळ');
+    expect(mr.label_en).toBe('Evening');
+    expect(renameSlot(newSlot('snack', ''), 'hi', 'शाम').label_en).toBe('शाम');
+    expect(updateSlot([slot], slot.id, { type: 'dinner' })[0].type).toBe('dinner');
   });
 });
 

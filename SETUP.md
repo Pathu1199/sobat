@@ -295,18 +295,18 @@ Done — the Windows side is complete.
 
 ### 7.1 Install the APK
 
-Two are already built, in the `dist-apk` folder of the project:
+On the phone, open <https://sobat-a56c7.web.app> and tap **Download for
+Android**. The file is `sobat.apk`, about 55 MB, built for any 64-bit phone
+from roughly 2017 on. Android will ask you to allow installing from that
+source — allow it, then install.
 
-| File | Size | Use |
-| --- | --- | --- |
-| `Sobat-0.1.0-arm64.apk` | 54 MB | **Use this one.** Any phone from roughly 2017 on. |
-| `Sobat-0.1.0-universal.apk` | 131 MB | All four ABIs. Only for an x86 emulator or a very old 32-bit phone. |
+The same file is at `dist-apk/Sobat-0.2.0-arm64.apk` in the project if you
+would rather copy it over USB.
 
-Copy it to the phone and tap it. Android will ask you to allow installing from
-that source — allow it, then install.
-
-Both are signed with the debug key. Fine for your own use; the Play Store would
-reject them.
+It is signed with Sobat's own release key, so later versions install straight
+over it and keep your data. The 0.1.0 builds were signed with the shared debug
+key; if one of those is on the phone, **export your data first** (Settings →
+Export), uninstall it, install this one, then import.
 
 ### 7.2 Connect the phone to Ollama
 
@@ -449,10 +449,17 @@ npx --yes @tauri-apps/cli@^2 build --config desktop/tauri.conf.json --target x86
 
 ### Rebuilding the APK
 
-Needs the Android SDK and a JDK, on the Mac or the PC:
+You normally do not. Every push to `main` runs the **Deploy to Firebase**
+workflow under the repo's Actions tab, which tests the code, builds the
+signed APK, builds the website and deploys both — the APK is served at
+`/downloads/sobat.apk` next to the site. The release key lives in the repo's
+Actions secrets (`SOBAT_RELEASE_KEYSTORE_BASE64`, `SOBAT_RELEASE_KEY_ALIAS`,
+`SOBAT_RELEASE_STORE_PASSWORD`, `SOBAT_RELEASE_KEY_PASSWORD`).
+
+To build by hand you need the Android SDK and JDK 17:
 
 ```bash
-npx expo prebuild -p android
+npx expo prebuild -p android --clean
 ```
 
 ```bash
@@ -462,6 +469,15 @@ cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
 Drop the `-PreactNativeArchitectures` flag for the universal build. The result
 lands at `android/app/build/outputs/apk/release/app-release.apk`.
 
+**Signing.** `plugins/withReleaseSigning.js` makes the release build use the
+key named by four Gradle properties, `SOBAT_RELEASE_STORE_FILE`,
+`SOBAT_RELEASE_KEY_ALIAS`, `SOBAT_RELEASE_STORE_PASSWORD` and
+`SOBAT_RELEASE_KEY_PASSWORD`. On the Mac mini they are in
+`~/.gradle/gradle.properties` and the key itself is
+`~/.sobat/sobat-release.keystore`. **Back that file up.** Without it, no future
+version can install over the current one. A machine without the properties
+builds a debug-signed APK, which still runs but cannot update a release one.
+
 ---
 
 ## Paths worth remembering
@@ -469,7 +485,7 @@ lands at `android/app/build/outputs/apk/release/app-release.apk`.
 | Thing | Where |
 | --- | --- |
 | Windows installer | `desktop\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\Sobat_0.1.0_x64-setup.exe` |
-| Phone APK | `dist-apk\Sobat-0.1.0-arm64.apk` |
+| Phone APK | <https://sobat-a56c7.web.app/downloads/sobat.apk>, or `dist-apk\Sobat-0.2.0-arm64.apk` |
 | Web build the shell loads | `dist\` |
 | Ollama API | `http://127.0.0.1:11434` on the PC, `http://<pc-ip>:11434` from the phone |
 

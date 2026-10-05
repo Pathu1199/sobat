@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
+import { Logo, Wordmark } from '../ui/Logo';
 import { C, F, MICRO, S } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
 
@@ -14,7 +15,13 @@ const FEATURES: { icon: keyof typeof Ionicons.glyphMap; titleKey: string; bodyKe
   { icon: 'walk-outline', titleKey: 'w_f4_t', bodyKey: 'w_f4_b' },
   { icon: 'timer-outline', titleKey: 'w_f5_t', bodyKey: 'w_f5_b' },
   { icon: 'chatbubble-ellipses-outline', titleKey: 'w_f6_t', bodyKey: 'w_f6_b' },
+  { icon: 'calendar-outline', titleKey: 'w_f7_t', bodyKey: 'w_f7_b' },
+  { icon: 'wallet-outline', titleKey: 'w_f8_t', bodyKey: 'w_f8_b' },
+  { icon: 'phone-portrait-outline', titleKey: 'w_f9_t', bodyKey: 'w_f9_b' },
 ];
+
+/** The Android build published next to the web app by the deploy workflow. */
+const APK_PATH = '/downloads/sobat.apk';
 
 export default function Welcome() {
   const router = useRouter();
@@ -27,7 +34,7 @@ export default function Welcome() {
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingBottom: 60 }}>
       <View style={{ maxWidth: 1100, width: '100%', alignSelf: 'center', paddingHorizontal: wide ? 40 : 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 20 }}>
-          <Text style={{ color: C.text, fontSize: 20, fontWeight: '600', letterSpacing: -0.3 }}>{t('app_name')}</Text>
+          <Wordmark size={20} />
           <Pressable
             onPress={() => router.replace('/onboarding')}
             style={{ backgroundColor: C.accent, paddingVertical: 9, paddingHorizontal: 18, borderRadius: 999 }}>
@@ -36,6 +43,9 @@ export default function Welcome() {
         </View>
 
         <View style={{ paddingTop: wide ? 60 : 32, paddingBottom: 44, maxWidth: 680 }}>
+          <View style={{ marginBottom: 22 }}>
+            <Logo size={wide ? 64 : 52} />
+          </View>
           <Text style={[MICRO, { color: C.accent, marginBottom: 16 }]}>{t('w_eyebrow')}</Text>
           <Text style={{ color: C.text, fontSize: wide ? 52 : 34, fontWeight: '300', lineHeight: wide ? 60 : 42, letterSpacing: -1 }}>
             {t('w_headline')}
@@ -48,12 +58,16 @@ export default function Welcome() {
               style={{ backgroundColor: C.accent, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999 }}>
               <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
             </Pressable>
-            <Pressable
-              onPress={() => router.replace('/onboarding')}
-              style={{ borderWidth: 1, borderColor: C.border, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999 }}>
-              <Text style={{ color: C.textDim, fontSize: F.body }}>{t('w_cta2')}</Text>
-            </Pressable>
+            {Platform.OS === 'web' ? (
+              <Pressable
+                onPress={() => Linking.openURL(APK_PATH)}
+                style={{ borderWidth: 1, borderColor: C.border, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="logo-android" size={16} color={C.textDim} />
+                <Text style={{ color: C.textDim, fontSize: F.body }}>{t('w_download_apk')}</Text>
+              </Pressable>
+            ) : null}
           </View>
+          {Platform.OS === 'web' ? <Text style={{ color: C.textGhost, fontSize: F.tiny, marginTop: 12, lineHeight: 17 }}>{t('w_download_note')}</Text> : null}
         </View>
 
         <View

@@ -10,6 +10,17 @@ concrete things to do today. The AI runs on your own PC through
 Runs on **Android** and in the **browser** from one codebase. The browser build
 is what the Windows desktop shell loads.
 
+## Get it
+
+| | |
+| --- | --- |
+| **Web** | <https://sobat-a56c7.web.app> — works in any browser, data stays in that browser |
+| **Android** | <https://sobat-a56c7.web.app/downloads/sobat.apk> — or tap **Download for Android** on the site |
+| **Windows** | build the installer with `desktop/build-windows.ps1`, see [SETUP.md](SETUP.md) |
+
+Every push to `main` is tested, built and deployed by GitHub Actions; the
+website and the APK are always the latest `main`.
+
 > Sobat is not a doctor or a counsellor. Get your blood pressure, sugar and
 > thyroid checked before starting hard exercise, and talk to a real person when
 > things feel heavy.
@@ -53,6 +64,13 @@ nothing with jumping or running at level 1.
 Mood check-ins, a breathing box, 5-4-3-2-1 grounding, gratitude lines. If what
 you write sounds like a crisis, the helpline card is shown **by code**, before
 the model ever sees the text. Tele-MANAS, KIRAN and iCall, tappable to dial.
+
+### A routine you set once
+Pick the bhaji for each weekday, the fixed meals of your day and the foods you
+have decided to stop. The Today screen shows the plan, logs any meal in one tap
+with real numbers from the food database, flags an avoided food with a swap, and
+keeps a daily food budget in rupees — bulk buys are spread over the days they
+last. Everything about it is editable in the app.
 
 ### Reminders that back off
 Every 30 minutes by default. It stays quiet when you are idle, during quiet

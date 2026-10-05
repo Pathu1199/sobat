@@ -335,6 +335,45 @@ export function routineFacts(routine: Routine, foods: FoodItem[], date: ISODate,
   return facts;
 }
 
+/** An empty meal to fill in. The id is unique enough for a list a person edits by hand. */
+export function newSlot(type: MealType, label: string): RoutineSlot {
+  return { id: `slot-${Date.now().toString(36)}`, type, label_en: label, label_mr: '', label_hi: '', options: [[]], withBhaji: false };
+}
+
+export function updateSlot(slots: RoutineSlot[], id: string, patch: Partial<RoutineSlot>): RoutineSlot[] {
+  return slots.map((s) => (s.id === id ? { ...s, ...patch } : s));
+}
+
+/** Set the slot's name in one language; the English name is the fallback, so fill it when empty. */
+export function renameSlot(slot: RoutineSlot, lang: Lang, label: string): RoutineSlot {
+  const key = lang === 'mr' ? 'label_mr' : lang === 'hi' ? 'label_hi' : 'label_en';
+  const next = { ...slot, [key]: label };
+  if (!next.label_en.trim()) next.label_en = label;
+  return next;
+}
+
+/** Add a food to one option. The same food twice becomes a bigger portion. */
+export function addLine(slot: RoutineSlot, optionIdx: number, line: PlanLine): RoutineSlot {
+  const options = slot.options.map((o, i) => {
+    if (i !== optionIdx) return o;
+    const existing = o.find((l) => l.foodId === line.foodId);
+    return existing ? o.map((l) => (l.foodId === line.foodId ? { ...l, qty: l.qty + line.qty } : l)) : [...o, line];
+  });
+  return { ...slot, options };
+}
+
+export function removeLine(slot: RoutineSlot, optionIdx: number, foodId: string): RoutineSlot {
+  const options = slot.options.map((o, i) => (i === optionIdx ? o.filter((l) => l.foodId !== foodId) : o));
+  // An option with nothing left goes, unless it is the last one.
+  const kept = options.filter((o, i) => o.length > 0 || options.length === 1 || i !== optionIdx);
+  return { ...slot, options: kept.length > 0 ? kept : [[]] };
+}
+
+export function setLineQty(slot: RoutineSlot, optionIdx: number, foodId: string, qty: number): RoutineSlot {
+  const options = slot.options.map((o, i) => (i === optionIdx ? o.map((l) => (l.foodId === foodId ? { ...l, qty } : l)) : o));
+  return { ...slot, options };
+}
+
 /** Foods the routine says to stay away from, for filtering suggestions. */
 export function avoidedFoodIds(routine: Routine): Set<string> {
   return new Set(routine.enabled ? routine.avoid.flatMap((r) => r.foodIds) : []);

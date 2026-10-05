@@ -7,6 +7,7 @@ import { useAI } from '../services/useAI';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
 import { Ring } from '../ui/components';
+import { Wordmark } from '../ui/Logo';
 import { C, F, MICRO, S } from '../ui/theme';
 
 type Item = { href: string; icon: keyof typeof Ionicons.glyphMap; labelKey: string };
@@ -47,9 +48,8 @@ export function Sidebar() {
         justifyContent: 'space-between',
       }}>
       <View style={{ gap: 4 }}>
-        <View style={{ paddingHorizontal: 12, paddingBottom: 24, gap: 3 }}>
-          <Text style={{ color: C.text, fontSize: 21, fontWeight: '600', letterSpacing: -0.4 }}>{t('app_name')}</Text>
-          <Text style={[MICRO, { color: C.textGhost }]}>{t('tagline')}</Text>
+        <View style={{ paddingHorizontal: 12, paddingBottom: 24 }}>
+          <Wordmark size={21} alt={t('tagline')} />
         </View>
 
         {ITEMS.map((item) => {
