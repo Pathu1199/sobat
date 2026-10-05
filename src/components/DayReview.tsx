@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { dayReviewPrompt, factsFrom, systemPrompt } from '../ai/prompts';
 import { formatMinutes } from '../core/date';
 import { guardAdvice } from '../core/guardrails';
@@ -9,7 +9,7 @@ import { longestStretchMinutes, minutesOn } from '../core/usage';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Micro, P, Row, Small } from '../ui/components';
+import { Btn, Card, Micro, P, Row } from '../ui/components';
 import { C } from '../ui/theme';
 
 /**
@@ -18,13 +18,13 @@ import { C } from '../ui/theme';
  */
 export function DayReview() {
   const app = useApp();
-  const { ask, online } = useAI();
+  const { ask } = useAI();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState<string | null>(null);
 
-  const hour = new Date().getHours();
+  const hour = app.hour;
   const existing = app.state.memory.find((m) => m.type === 'episode' && m.date === app.today);
 
   // Only worth offering once the day is mostly over and there is something to say.

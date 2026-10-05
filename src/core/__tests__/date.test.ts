@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { formatDayLabel, localDate, localHHMM, localHour } from '../date';
+import { formatDayLabel, localDate, localHHMM, localHour, msToNextMinute } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
 describe('local time from ISO strings', () => {
@@ -48,6 +48,37 @@ describe('local time from ISO strings', () => {
       expect(formatDayLabel('2026-09-26', 'en')).toBe('2026-09-26');
     } finally {
       spy.mockRestore();
+    }
+  });
+});
+
+describe('msToNextMinute', () => {
+  it('counts the rest of the current minute', () => {
+    expect(msToNextMinute(new Date(2026, 8, 26, 10, 30, 0, 0))).toBe(60000);
+    expect(msToNextMinute(new Date(2026, 8, 26, 10, 30, 20, 0))).toBe(40000);
+    expect(msToNextMinute(new Date(2026, 8, 26, 10, 30, 59, 999))).toBe(1);
+  });
+
+  it('never returns zero, so a timer built on it cannot spin', () => {
+    for (let s = 0; s < 60; s++) {
+      for (const ms of [0, 1, 500, 999]) {
+        const v = msToNextMinute(new Date(2026, 8, 26, 10, 30, s, ms));
+        expect(v).toBeGreaterThan(0);
+        expect(v).toBeLessThanOrEqual(60000);
+      }
+    }
+  });
+
+  it('lands exactly on the next minute, including across an hour and a day', () => {
+    for (const start of [
+      new Date(2026, 8, 26, 10, 30, 12, 345),
+      new Date(2026, 8, 26, 10, 59, 12, 345),
+      new Date(2026, 8, 26, 23, 59, 12, 345),
+    ]) {
+      const landed = new Date(start.getTime() + msToNextMinute(start));
+      expect(landed.getSeconds()).toBe(0);
+      expect(landed.getMilliseconds()).toBe(0);
+      expect(landed.getMinutes()).toBe((start.getMinutes() + 1) % 60);
     }
   });
 });

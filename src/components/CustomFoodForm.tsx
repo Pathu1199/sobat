@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import {} from 'react-native';
 import type { FoodItem } from '../core/types';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';

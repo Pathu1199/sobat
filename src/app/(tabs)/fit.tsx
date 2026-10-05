@@ -9,7 +9,7 @@ import { totalSeconds, buildSteps } from '../../core/session';
 import type { Exercise } from '../../core/types';
 import { fill, makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
-import { BiText, Bar, Btn, Card, Divider, Micro, P, Pill, Ring, Row, SectionHeader, Small, StatQuad } from '../../ui/components';
+import { BiText, Bar, Btn, Card, Divider, Micro, Pill, Ring, Row, SectionHeader, Small, StatQuad } from '../../ui/components';
 import { C, F, readinessColor } from '../../ui/theme';
 import { Cols } from '../../ui/tiles';
 import { Page } from '../../ui/TopBar';

@@ -10,7 +10,10 @@ import { useApp } from '../store/AppProvider';
 export function useSteps() {
   const app = useApp();
   const setSteps = useRef(app.setSteps);
-  setSteps.current = app.setSteps;
+  // A ref cannot be written during render; after every commit is soon enough.
+  useEffect(() => {
+    setSteps.current = app.setSteps;
+  });
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -19,6 +22,8 @@ export function useSteps() {
 
     (async () => {
       try {
+        // Native only, and loaded past the web guard above for that reason.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { Pedometer } = require('expo-sensors') as typeof import('expo-sensors');
         const available = await Pedometer.isAvailableAsync();
         if (!available || cancelled) return;

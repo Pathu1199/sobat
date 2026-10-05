@@ -12,10 +12,15 @@ const ACTIVE_WINDOW_MS = 150000;
  */
 export function useUsageTracker() {
   const app = useApp();
-  const lastActivity = useRef(Date.now());
+  // Seeded in the effect below: neither `Date.now()` nor a ref write belongs
+  // in a render, and the React Compiler rejects both.
+  const lastActivity = useRef(0);
   const visible = useRef(true);
   const track = useRef(app.trackActive);
-  track.current = app.trackActive;
+
+  useEffect(() => {
+    track.current = app.trackActive;
+  });
 
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
@@ -46,6 +51,7 @@ export function useUsageTracker() {
   }, []);
 
   useEffect(() => {
+    lastActivity.current = Date.now();
     const id = setInterval(() => {
       if (!visible.current) return;
       if (Date.now() - lastActivity.current > ACTIVE_WINDOW_MS) return;

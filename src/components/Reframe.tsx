@@ -8,7 +8,7 @@ import type { Lang } from '../core/types';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Field, Micro, P, Row, Small } from '../ui/components';
+import { Btn, Card, Field, Micro, P, Row } from '../ui/components';
 import { C } from '../ui/theme';
 
 function reframePrompt(lang: Lang, thought: string): string {

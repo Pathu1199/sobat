@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
-import { bmiBand, dailyTargets, healthyWeightRange } from '../core/nutrition';
+import { dailyTargets, healthyWeightRange } from '../core/nutrition';
 import type { Activity, Lang, Profile, Sex } from '../core/types';
 import { LANG_NAMES, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Divider, Field, H1, Micro, Pill, Row, Screen, SectionHeader, Small, StatQuad } from '../ui/components';
+import { Btn, Card, Divider, Field, H1, Micro, Pill, Row, Screen, Small, StatQuad } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 export default function Onboarding() {

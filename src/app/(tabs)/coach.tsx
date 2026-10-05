@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { factsFrom, memoryExtractionPrompt, MEMORY_SCHEMA, systemPrompt } from '../../ai/prompts';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { formatMinutes, toISODate } from '../../core/date';
+import { newId } from '../../core/id';
 import { suggestMeals, toMealItem } from '../../core/foods';
 import { guardAdvice, HELPLINES, isCrisisText } from '../../core/guardrails';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
@@ -20,7 +21,7 @@ import { useBreakpoint } from '../../ui/useBreakpoint';
 
 export default function CoachScreen() {
   const app = useApp();
-  const { ai, ask, askJSON } = useAI();
+  const { ask, askJSON } = useAI();
   const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
@@ -80,7 +81,7 @@ export default function CoachScreen() {
       return;
     }
 
-    app.addChat({ id: String(Date.now()), role: 'user', text: clean, at: new Date().toISOString() });
+    app.addChat({ id: newId(), role: 'user', text: clean, at: new Date().toISOString() });
     setInput('');
     setBusy(true);
 
@@ -119,7 +120,7 @@ export default function CoachScreen() {
       const reply = guardAdvice(raw, floor).text.trim();
       const foodish = /eat|food|dinner|lunch|meal|breakfast|snack|खा|जेव|नाश्ता|भूक/i.test(clean);
       app.addChat({
-        id: String(Date.now() + 1),
+        id: newId(),
         role: 'assistant',
         text: reply,
         at: new Date().toISOString(),
@@ -127,7 +128,7 @@ export default function CoachScreen() {
       });
       learn(clean, reply);
     } catch {
-      app.addChat({ id: String(Date.now() + 1), role: 'assistant', text: t('ai_offline_hint'), at: new Date().toISOString() });
+      app.addChat({ id: newId(), role: 'assistant', text: t('ai_offline_hint'), at: new Date().toISOString() });
     } finally {
       setBusy(false);
       setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60);
@@ -156,7 +157,7 @@ export default function CoachScreen() {
     const now = new Date();
     const item = toMealItem(food, o.grams);
     app.addMeal({
-      id: String(now.getTime()),
+      id: newId(),
       at: now.toISOString(),
       date: toISODate(now),
       type: mealTypeForHour(now.getHours()),
@@ -306,7 +307,6 @@ export default function CoachScreen() {
 }
 
 function ChatInput({ value, onChangeText, placeholder, onSubmit }: { value: string; onChangeText: (v: string) => void; placeholder: string; onSubmit: () => void }) {
-  const { TextInput } = require('react-native') as typeof import('react-native');
   return (
     <TextInput
       value={value}

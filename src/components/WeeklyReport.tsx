@@ -2,14 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { factsFrom, systemPrompt, weeklyReportPrompt } from '../ai/prompts';
-import { formatMinutes } from '../core/date';
+import {} from '../core/date';
 import { changePct, type GrowthSummary } from '../core/growth';
 import { guardAdvice } from '../core/guardrails';
 import { KCAL_FLOOR } from '../core/nutrition';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Micro, P, Row, Small } from '../ui/components';
+import { Btn, Card, Micro, P, Row } from '../ui/components';
 import { C } from '../ui/theme';
 
 const LABEL: Record<string, string> = {

@@ -31,12 +31,11 @@ export default function TodayScreen() {
   const app = useApp();
   const router = useRouter();
   const fb = useFeedback();
-  const { state, budget, targets, waterToday, streakDays, today } = app;
+  const { state, budget, targets, waterToday, streakDays, today, hour } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
   // The design leads in English with the chosen language beside it.
   const en = makeT('en');
-  const hour = new Date().getHours();
   const wide = useBreakpoint() === 'desktop';
 
   // Today by default; the chevrons under the meals walk back a day at a time.

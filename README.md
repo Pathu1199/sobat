@@ -88,6 +88,10 @@ The app works fully offline. Point it at your Ollama when you want the AI parts.
 
 ### Connect it to Ollama on Windows
 
+Step by step, including the phone and troubleshooting: [SETUP.md](SETUP.md).
+The short version:
+
+
 Ollama only listens on localhost by default. On the PC, once:
 
 ```powershell
@@ -160,7 +164,8 @@ button.
 The desktop app is a thin Tauri shell around this same web build. It adds
 autostart at login, a tray icon, and real system-wide idle detection, which is
 what makes the break monitor skip itself when you have already stepped away.
-It has to be built on the PC: see [desktop/README.md](desktop/README.md).
+It has to be built on the PC: see [SETUP.md](SETUP.md) for every command
+from a blank machine to a working install.
 
 ## Status
 

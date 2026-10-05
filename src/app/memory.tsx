@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { MAX_MEMORIES, type MemoryItem, type MemoryType } from '../core/memory';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Bar, Btn, Card, Divider, Empty, Field, Micro, Pill, Row, Screen, SectionHeader, Small } from '../ui/components';
+import { Bar, Btn, Card, Divider, Empty, Field, Micro, Pill, Row, Screen, SectionHeader } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 const GROUPS: { type: MemoryType; icon: keyof typeof Ionicons.glyphMap; color: string }[] = [

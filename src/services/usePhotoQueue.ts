@@ -20,21 +20,36 @@ export function usePhotoQueue() {
   const { askJSON, online } = useAI();
   const working = useRef(false);
 
+  // The effect fires on a deliberately narrow trigger: a photo arrived, or the
+  // PC came back. Reading the store and the model through refs keeps both
+  // current without widening that trigger — widening it would retry a photo
+  // the model just failed on straight away, three times over, instead of
+  // waiting for the next real change.
+  const appRef = useRef(app);
+  const askRef = useRef(askJSON);
+  useEffect(() => {
+    appRef.current = app;
+    askRef.current = askJSON;
+  });
+
+  const queued = app.state.photoQueue.length;
+
   useEffect(() => {
     if (!online || working.current) return;
-    const photo = nextToProcess(app.state.photoQueue);
+    const store = appRef.current;
+    const photo = nextToProcess(store.state.photoQueue);
     if (!photo) return;
 
     working.current = true;
     (async () => {
       try {
-        const result = await askJSON<{ items?: VisionItem[] }>(
+        const result = await askRef.current<{ items?: VisionItem[] }>(
           [{ role: 'user', content: foodPhotoPrompt([]) }, { role: 'user', content: '', images: [photo.base64] }],
           FOOD_PHOTO_SCHEMA,
           true,
         );
         const items: MealItem[] = (result.items ?? []).map((v) => {
-          const match = resolveByName(app.foods, v.name_en);
+          const match = resolveByName(store.foods, v.name_en);
           const grams = Math.max(20, Math.round(v.grams_est || (match ? (defaultPortion(match)?.grams ?? 100) : 100)));
           if (match) return toMealItem(match, grams, false);
           return {
@@ -50,12 +65,12 @@ export function usePhotoQueue() {
         });
 
         if (items.length === 0) {
-          app.failPhoto(photo.id, 'nothing recognised');
+          store.failPhoto(photo.id, 'nothing recognised');
           return;
         }
 
         const at = new Date(photo.at || Date.now());
-        app.addMeal({
+        store.addMeal({
           id: `q-${photo.id}`,
           at: at.toISOString(),
           date: photo.date || toISODate(at),
@@ -66,12 +81,12 @@ export function usePhotoQueue() {
           photoUri: photo.uri,
           note: 'needs_review',
         });
-        app.unqueuePhoto(photo.id);
+        store.unqueuePhoto(photo.id);
       } catch (e) {
-        app.failPhoto(photo.id, String(e));
+        store.failPhoto(photo.id, String(e));
       } finally {
         working.current = false;
       }
     })();
-  }, [online, app.state.photoQueue.length]);
+  }, [online, queued]);
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { localHHMM, toISODate } from '../../core/date';
+import { newId } from '../../core/id';
 import { HELPLINES, isCrisisText } from '../../core/guardrails';
 import { CravingSOS } from '../../components/CravingSOS';
 import { Reframe } from '../../components/Reframe';
@@ -9,7 +10,7 @@ import { TopBarActions } from '../../components/TopBarActions';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { Face } from '../../ui/Face';
-import { Btn, Card, Divider, Field, ListRow, Micro, P, Pill, Row, SectionHeader, Small } from '../../ui/components';
+import { Btn, Card, Divider, Field, ListRow, Micro, P, Row, SectionHeader, Small } from '../../ui/components';
 import { PressScale } from '../../ui/PressScale';
 import { C, F, S } from '../../ui/theme';
 import { Cols } from '../../ui/tiles';
@@ -35,7 +36,7 @@ export default function MindScreen() {
       // Shown by code, never left to the model to decide.
       setCrisis(true);
     }
-    app.addMood({ id: String(Date.now()), at: new Date().toISOString(), date: toISODate(), score, note: note.trim() || undefined });
+    app.addMood({ id: newId(), at: new Date().toISOString(), date: toISODate(), score, note: note.trim() || undefined });
     setNote('');
     setScore(null);
   }

@@ -15,7 +15,10 @@ export function useAI() {
   const mounted = useRef(true);
 
   const check = useCallback(async () => {
-    setAI((a) => ({ ...a, checking: true }));
+    // Nothing is set before the await. This runs straight from an effect, and
+    // a synchronous setState there cascades renders; the badge already starts
+    // on 'checking', and a silent re-check every minute beats flickering the
+    // status back to 'checking' when the PC has been reachable all along.
     const r = await resolveRoute(ollamaUrl, ollamaFallbackUrl);
     if (!mounted.current) return r;
     setAI({ route: r.route, url: r.url, checking: false });
@@ -24,7 +27,7 @@ export function useAI() {
 
   useEffect(() => {
     mounted.current = true;
-    check();
+    void check();
     const t = setInterval(check, 60000);
     return () => {
       mounted.current = false;

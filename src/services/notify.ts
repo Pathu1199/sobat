@@ -14,6 +14,9 @@ function loadNative(): NativeModule | null {
   if (Platform.OS === 'web') return null;
   if (native) return native;
   try {
+    // Loaded here, not at the top: the web bundle has no expo-notifications,
+    // and a static import would be evaluated before the Platform check above.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     native = require('expo-notifications') as NativeModule;
     native.setNotificationHandler({
       handleNotification: async () => ({

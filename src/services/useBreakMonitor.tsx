@@ -22,6 +22,8 @@ const TICK_MS = 1000;
 /** How long before a screen-taking break the warning toast appears. */
 const WARNING_SECONDS = 60;
 const KINDS: BreakKind[] = ['micro', 'long', 'posture', 'blink'];
+/** Placeholder until the mount effect stamps the real start time. */
+const UNSTARTED_CLOCKS: BreakClocks = { micro: 0, long: 0, posture: 0, blink: 0 };
 
 /**
  * One clock for the whole app, mounted by BreakMonitorProvider. Each second it
@@ -40,17 +42,27 @@ function useBreakClock() {
   const [paused, setPaused] = useState(false);
   const [pausedByHand, setPausedByHand] = useState(false);
 
-  const mountedAt = Date.now();
-  const clocks = useRef<BreakClocks>({ micro: mountedAt, long: mountedAt, posture: mountedAt, blink: mountedAt });
+  const clocks = useRef<BreakClocks>(UNSTARTED_CLOCKS);
   const breakStartedAt = useRef<number | null>(null);
   const runningKind = useRef<BreakKind | null>(null);
-  const lastActivity = useRef(Date.now());
+  const lastActivity = useRef(0);
   const warnedFor = useRef<BreakKind | null>(null);
   const systemIdle = useRef<number | null>(null);
   const foreground = useRef<ForegroundState | null>(null);
   /** While a toast-only nudge is on screen, no other break is offered. */
   const nudgeUntil = useRef<number | null>(null);
   const nudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // `Date.now()` is not allowed in a render, so the clocks start at zero and
+  // are set here instead. Mount only: the tick effect below re-runs whenever
+  // the break settings change, and seeding there would silently restart every
+  // break timer each time a setting is touched. Effects run in order and the
+  // first tick is a second away, so the clocks are always set before a read.
+  useEffect(() => {
+    const now = Date.now();
+    clocks.current = { micro: now, long: now, posture: now, blink: now };
+    lastActivity.current = now;
+  }, []);
 
   // Any input counts as being at the desk.
   useEffect(() => {

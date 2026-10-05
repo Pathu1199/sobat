@@ -5,6 +5,7 @@ import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { FOOD_PHOTO_SCHEMA, foodPhotoPrompt } from '../ai/prompts';
 import { toISODate } from '../core/date';
+import { newId } from '../core/id';
 import { defaultPortion, resolveByName, searchFoods, toMealItem } from '../core/foods';
 import { mealTypeForHour } from '../core/nutrition';
 import { pendingCount } from '../core/queue';
@@ -44,7 +45,7 @@ export default function PhotoScreen() {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [mealType, setMealType] = useState<MealType>(mealTypeForHour(new Date().getHours()));
+  const [mealType, setMealType] = useState<MealType>(() => mealTypeForHour(app.hour));
 
   const items: MealItem[] = drafts.map((d) =>
     d.food
@@ -98,7 +99,7 @@ export default function PhotoScreen() {
   function queue(base64: string, sourceUri?: string) {
     const now = new Date();
     app.queuePhoto({
-      id: String(now.getTime()),
+      id: newId(),
       uri: sourceUri ?? uri ?? '',
       base64,
       at: now.toISOString(),
@@ -155,7 +156,7 @@ export default function PhotoScreen() {
     const now = new Date();
     const changed = drafts.filter((d) => d.food && d.food.name_en.toLowerCase() !== d.rawName.toLowerCase());
     app.addMeal({
-      id: String(now.getTime()),
+      id: newId(),
       at: now.toISOString(),
       date: toISODate(now),
       type: mealType,

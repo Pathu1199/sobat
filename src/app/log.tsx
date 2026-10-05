@@ -6,13 +6,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CustomFoodForm } from '../components/CustomFoodForm';
 import { IconButton } from '../components/TopBarActions';
 import { addDays, localHHMM, toISODate } from '../core/date';
+import { newId } from '../core/id';
 import { defaultPortion, foodName, portionLabel, recentFoodIds, searchFoods, toMealItem } from '../core/foods';
 import { mealTypeForHour } from '../core/nutrition';
 import type { FoodItem, MealItem, MealType } from '../core/types';
 import { makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
-import { BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, SectionHeader, Segmented, Small } from '../ui/components';
+import { BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, SectionHeader, Segmented } from '../ui/components';
 import { TopBar } from '../ui/TopBar';
 import { C, F, S } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
@@ -30,7 +31,7 @@ export default function LogScreen() {
   const wide = useBreakpoint() === 'desktop';
 
   const [query, setQuery] = useState('');
-  const [mealType, setMealType] = useState<MealType>(mealTypeForHour(new Date().getHours()));
+  const [mealType, setMealType] = useState<MealType>(() => mealTypeForHour(app.hour));
   const [basket, setBasket] = useState<{ food: FoodItem; count: number; unit: string }[]>([]);
   const [weightInput, setWeightInput] = useState('');
   const [customOpen, setCustomOpen] = useState(false);
@@ -62,7 +63,7 @@ export default function LogScreen() {
   function saveMeal() {
     if (basketItems.length === 0) return;
     const now = new Date();
-    app.addMeal({ id: String(now.getTime()), at: now.toISOString(), date: toISODate(now), type: mealType, items: basketItems, kcal: basketKcal, protein: basketProtein });
+    app.addMeal({ id: newId(), at: now.toISOString(), date: toISODate(now), type: mealType, items: basketItems, kcal: basketKcal, protein: basketProtein });
     setBasket([]);
     setQuery('');
     fb.haptic('success');
@@ -72,7 +73,7 @@ export default function LogScreen() {
   function repeatYesterday() {
     if (!yesterdaySame) return;
     const now = new Date();
-    app.addMeal({ ...yesterdaySame, id: String(now.getTime()), at: now.toISOString(), date: toISODate(now), note: undefined });
+    app.addMeal({ ...yesterdaySame, id: newId(), at: now.toISOString(), date: toISODate(now), note: undefined });
     fb.haptic('success');
     fb.notify(t('toast_meal_saved').replace('{kcal}', String(yesterdaySame.kcal)));
   }

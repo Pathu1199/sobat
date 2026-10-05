@@ -5,7 +5,7 @@ import { formatMinutes, localDate, localHHMM, minutesBetween } from '../core/dat
 import { buildSleepLog, prefillAnswers, sleepDebt, sleepFlags, sleepScore } from '../core/sleep';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Divider, Field, H2, H3, P, Pill, Ring, Row, Screen, Small } from '../ui/components';
+import { Btn, Card, Divider, Field, H2, H3, Pill, Ring, Row, Screen, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 export default function SleepScreen() {

@@ -15,9 +15,8 @@ export function NowStrip({ wide }: { wide?: boolean }) {
   const app = useApp();
   const router = useRouter();
   const monitor = useBreakMonitor();
-  const { state, today, waterToday } = app;
+  const { state, today, waterToday, hour } = app;
   const t = makeT(state.profile.lang);
-  const hour = new Date().getHours();
 
   const sleepLast = useMemo(() => [...state.sleep].sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0], [state.sleep]);
   const sleepToday = state.sleep.some((s) => s.date === today);

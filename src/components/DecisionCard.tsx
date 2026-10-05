@@ -23,21 +23,24 @@ export function DecisionCard({ decision, lang, targets, budget }: { decision: De
   const { ask, online } = useAI();
   const app = useApp();
   const { state, waterToday, streakDays } = app;
-  const [words, setWords] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Keyed by the request it answers, so the wording for one situation is never
+  // shown under another, and both "is it loading" and "have we got words yet"
+  // fall out of the key instead of needing their own setState in the effect.
+  const [result, setResult] = useState<{ key: string; words: string | null } | null>(null);
   const [why, setWhy] = useState(false);
 
   const actionText = decision.actionKeys.map((k) => t(`act_${k}`));
   const tone = severityColor(decision.severity);
   const floor = KCAL_FLOOR[state.profile.sex];
 
+  const requestKey = `${decision.situation}|${decision.severity}|${lang}`;
+  const answered = result?.key === requestKey;
+  const words = answered ? result.words : null;
+  const loading = online && !answered;
+
   useEffect(() => {
     let cancelled = false;
-    if (!online) {
-      setWords(null);
-      return;
-    }
-    setLoading(true);
+    if (!online) return;
     const facts = factsFrom({
       budget,
       weightKg: state.profile.weightKg,
@@ -55,17 +58,21 @@ export function DecisionCard({ decision, lang, targets, budget }: { decision: De
     ])
       .then((raw) => {
         if (cancelled) return;
-        setWords(guardAdvice(raw, floor).text.trim());
+        setResult({ key: requestKey, words: guardAdvice(raw, floor).text.trim() });
       })
       .catch(() => {
-        if (!cancelled) setWords(null);
-      })
-      .finally(() => !cancelled && setLoading(false));
+        // A failed call still answers the request: fall back to the plain
+        // wording rather than spinning forever.
+        if (!cancelled) setResult({ key: requestKey, words: null });
+      });
     return () => {
       cancelled = true;
     };
-    // Re-word only when the situation itself changes, not on every render.
-  }, [decision.situation, decision.severity, online, lang]);
+    // Re-word only when the situation itself changes. The prompt reads a lot
+    // more than that — budget, memory, streak — but those move constantly,
+    // and a model call per change would rewrite the card every few seconds.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestKey, online]);
 
   // An energy breakdown the user can check the advice against.
   const activeBurn = Math.max(0, targets.tdee - targets.bmr);

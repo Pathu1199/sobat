@@ -1,18 +1,21 @@
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { buildSteps, completedExerciseIds, progressAt, stepSeconds, totalSeconds } from '../core/session';
-import { buildSession, readiness } from '../core/fitness';
-import { weeksSince } from '../core/fitness';
+import { buildSession, readiness, weeksSince } from '../core/fitness';
 import type { Exercise } from '../core/types';
 import { makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { BiText, Bar, Btn, Card, Divider, Micro, Pill, Row, Screen, SectionHeader, Small } from '../ui/components';
-import { C, F, S } from '../ui/theme';
+import { C, F } from '../ui/theme';
+
+/** Whole minutes since a start stamp, never zero: a session always counts. */
+function elapsedSince(startMs: number): number {
+  return Math.max(1, Math.round((Date.now() - startMs) / 60000));
+}
 
 /** Walks through the session one set at a time, with a timer and rest. */
 export default function SessionScreen() {
@@ -40,41 +43,59 @@ export default function SessionScreen() {
   const [felt, setFelt] = useState(3);
   const [pain, setPain] = useState(false);
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
-  const startedAt = useRef(Date.now());
+  // Stamped in the mount effect below: `Date.now()` cannot run in a render.
+  const startedAt = useRef(0);
 
   const step = steps[index];
   const done = index >= steps.length;
 
   useEffect(() => {
-    if (!step) return;
-    setLeft(stepSeconds(step));
-    // Rest runs itself; a set waits for you to be ready.
-    setRunning(step.kind === 'rest');
-  }, [index]);
-
-  useEffect(() => {
-    if (!running || done || finished) return;
-    if (left <= 0) {
-      buzz();
-      setIndex((i) => i + 1);
-      return;
-    }
-    const id = setTimeout(() => setLeft((l) => l - 1), 1000);
-    return () => clearTimeout(id);
-  }, [running, left, done, finished]);
-
-  // Freeze the duration the moment the session ends, so the summary does not drift.
-  useEffect(() => {
-    if (done || finished) setElapsedMinutes((m) => (m > 0 ? m : Math.max(1, Math.round((Date.now() - startedAt.current) / 60000))));
-  }, [done, finished]);
+    startedAt.current = Date.now();
+  }, []);
 
   function buzz() {
     if (Platform.OS === 'web') return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }
 
+  /**
+   * Moving on sets the timer for what comes next in the same go. An effect
+   * watching `index` would work too, but it costs a second render for every
+   * set and the compiler is right to object to it.
+   */
+  const goTo = useCallback(
+    (next: number) => {
+      const target = steps[next];
+      setIndex(next);
+      setLeft(target ? stepSeconds(target) : 0);
+      // Rest runs itself; a set waits for you to be ready.
+      setRunning(target ? target.kind === 'rest' : false);
+    },
+    [steps],
+  );
+
+  useEffect(() => {
+    if (!running || done || finished) return;
+    const id = setTimeout(() => {
+      // The last second of a step ends it, rather than parking on zero for a
+      // beat and advancing from a second pass through this effect.
+      if (left <= 1) {
+        buzz();
+        goTo(index + 1);
+      } else {
+        setLeft((l) => l - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [running, left, done, finished, index, goTo]);
+
+  // Freeze the duration the moment the session ends, so the summary does not drift.
+  useEffect(() => {
+    if (done || finished) setElapsedMinutes((m) => (m > 0 ? m : elapsedSince(startedAt.current)));
+  }, [done, finished]);
+
   function finish(status: 'done' | 'skipped') {
-    const minutes = Math.max(1, Math.round((Date.now() - startedAt.current) / 60000));
+    const minutes = elapsedSince(startedAt.current);
     setElapsedMinutes(minutes);
     app.addWorkout({
       id: app.today,
@@ -204,7 +225,7 @@ export default function SessionScreen() {
               onPress={() => setRunning((x) => !x)}
               style={{ minWidth: 110 }}
             />
-            <Btn small tone="ghost" label={t('next')} onPress={() => setIndex((i) => i + 1)} style={{ minWidth: 100 }} />
+            <Btn small tone="ghost" label={t('next')} onPress={() => goTo(index + 1)} style={{ minWidth: 100 }} />
           </Row>
         </View>
       </Card>

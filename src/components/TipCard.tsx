@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator } from 'react-native';
 import { dailyTipPrompt, factsFrom, systemPrompt } from '../ai/prompts';
 import { guardAdvice } from '../core/guardrails';
 import { contextFor, toPromptLines } from '../core/memory';
@@ -9,7 +9,7 @@ import { longestStretchMinutes } from '../core/usage';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
-import { Card, Micro, P, Row, Small } from '../ui/components';
+import { Card, Micro, P, Row } from '../ui/components';
 import { C } from '../ui/theme';
 
 /**
@@ -23,13 +23,16 @@ export function TipCard() {
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const asked = useRef(false);
+  // The ref alone cannot drive the spinner: writing it never re-renders, so
+  // the spinner used to appear only if something else happened to repaint.
+  const [failed, setFailed] = useState(false);
 
   const existing = app.tipToday;
+  // Needs a little history before a tip can say anything useful.
+  const hasHistory = app.state.meals.length > 0 || app.state.sleep.length > 0;
 
   useEffect(() => {
-    if (existing || !online || asked.current) return;
-    // Needs a little history before a tip can say anything useful.
-    if (app.state.meals.length === 0 && app.state.sleep.length === 0) return;
+    if (existing || !online || asked.current || !hasHistory) return;
     asked.current = true;
 
     const focus: string[] = [];
@@ -63,11 +66,15 @@ export function TipCard() {
       })
       .catch(() => {
         asked.current = false;
+        setFailed(true);
       });
-  }, [existing, online, lang, app.today]);
+    // One tip a day, so the trigger is the day and the language, not every
+    // number the prompt happens to mention.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing, online, lang, app.today, hasHistory]);
 
   if (!existing) {
-    if (!online || asked.current === false) return null;
+    if (!online || !hasHistory || failed) return null;
     return (
       <Card>
         <Row>

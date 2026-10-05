@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
+import { newId } from '../core/id';
 import { pickNudge, type NudgeChoice } from '../core/nudge';
 import { pickMessage } from '../data/nudges';
 import { useApp } from '../store/AppProvider';
 import { notifyNow } from './notify';
+
+/** One nudge on screen. `id` changes per nudge, which is what resets the toast. */
+export type Nudge = { id: string; choice: NudgeChoice; title: string; body: string; task: string };
 
 /**
  * Runs the nudge timer while the app is open. On the Windows build this is
@@ -13,9 +17,16 @@ import { notifyNow } from './notify';
  */
 export function useNudges() {
   const app = useApp();
-  const [current, setCurrent] = useState<{ choice: NudgeChoice; title: string; body: string; task: string } | null>(null);
-  const lastInteraction = useRef(Date.now());
-  const sittingSince = useRef(Date.now());
+  const [current, setCurrent] = useState<Nudge | null>(null);
+  // Seeded in an effect: `Date.now()` is impure and must not run in a render.
+  const lastInteraction = useRef(0);
+  const sittingSince = useRef(0);
+
+  useEffect(() => {
+    const now = Date.now();
+    lastInteraction.current = now;
+    sittingSince.current = now;
+  }, []);
 
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
@@ -63,7 +74,7 @@ export function useNudges() {
       });
       if (!choice) return;
       const msg = pickMessage(app.state.profile.lang, choice.type);
-      setCurrent({ choice, ...msg });
+      setCurrent({ id: newId(), choice, ...msg });
       notifyNow(msg.title, msg.body).catch(() => {});
     }, every);
     return () => clearInterval(timer);

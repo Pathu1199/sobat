@@ -12,6 +12,9 @@ cannot do:
 **This has to be built on the Windows PC.** Tauri does not cross-compile from
 macOS to Windows. Everything else in this repository builds anywhere.
 
+> Step-by-step, with every command, Ollama, the phone, and the things that
+> go wrong: [`../SETUP.md`](../SETUP.md).
+
 ## The short version
 
 On the PC, from the repository root in PowerShell:

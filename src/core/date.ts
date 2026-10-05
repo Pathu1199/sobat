@@ -28,6 +28,15 @@ export function minutesBetween(from: string, to: string): number {
   return mins;
 }
 
+/**
+ * Milliseconds from `now` to the next whole minute in local time. Always
+ * between 1 and 60000, so a timer built on it can never spin, and always
+ * re-measured rather than accumulated, so it cannot drift.
+ */
+export function msToNextMinute(now: Date = new Date()): number {
+  return 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
+}
+
 export function hhmm(d: Date = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }

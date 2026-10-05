@@ -19,7 +19,6 @@ export default function PermissionsScreen() {
   const app = useApp();
   const router = useRouter();
   const t = makeT(app.state.profile.lang);
-  const en = makeT('en');
 
   const [notif, setNotif] = useState<State>('idle');
   const [camera, setCamera] = useState<State>('idle');

@@ -2,16 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import foodsJson from '../data/foods.json';
 import exercisesJson from '../data/exercises.json';
-import { toISODate } from '../core/date';
+import { lastNDates, toISODate } from '../core/date';
+import { newId } from '../core/id';
+import { useClock } from '../services/useClock';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
 import { streak } from '../core/insights';
-import { minutesOn } from '../core/usage';
-import { lastNDates } from '../core/date';
-import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryItem, type MemoryType } from '../core/memory';
-import { addActive, pruneUsage, type UsageBucket } from '../core/usage';
+import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryType } from '../core/memory';
+import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
-import type { BreakKind, BreakLog, BreakSettings } from '../core/breaks';
-import type { AppState, ChatMsg, DailyTip, Exercise, FoodItem, Meal, MoodLog, Profile, Settings, SleepLog, StepLog, WaterLog, WeightLog, WorkoutLog } from '../core/types';
+import type { BreakKind, BreakSettings } from '../core/breaks';
+import type { AppState, ChatMsg, Exercise, FoodItem, Meal, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
 import { migrateState } from './migrate';
 
@@ -26,6 +26,8 @@ type Ctx = {
   foods: FoodItem[];
   exercises: Exercise[];
   today: string;
+  /** Local hour, 0 to 23, kept fresh by the clock rather than read during render. */
+  hour: number;
   targets: Targets;
   budget: Budget;
   waterToday: number;
@@ -104,14 +106,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, 250);
   }, [state, ready]);
 
-  const today = toISODate();
+  // Not `toISODate()` at render time: nothing would re-render at midnight and
+  // the whole app would keep working against yesterday.
+  const { date: today, hour } = useClock();
   const update = useCallback((fn: (s: AppState) => AppState) => setState((s) => fn(s)), []);
 
   const value = useMemo<Ctx>(() => {
     const targets = dailyTargets(state.profile);
     const todayMeals = state.meals.filter((m) => m.date === today);
     const totals = sumTotals(todayMeals.flatMap((m) => m.items));
-    const hour = new Date().getHours();
     const budget = calcBudget(targets, totals, hour);
     const waterToday = state.water.filter((w) => w.date === today).reduce((a, w) => a + w.ml, 0);
     const dates = lastNDates(60, today);
@@ -127,6 +130,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       foods: [...FOODS, ...state.customFoods],
       exercises: EXERCISES,
       today,
+      hour,
       targets,
       budget,
       waterToday,
@@ -140,7 +144,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       removeMeal: (id) => update((s) => ({ ...s, meals: s.meals.filter((m) => m.id !== id) })),
       updateMeal: (m) => update((s) => ({ ...s, meals: s.meals.map((x) => (x.id === m.id ? m : x)) })),
       addWater: (ml) =>
-        update((s) => ({ ...s, water: [...s.water, { id: String(Date.now()), at: new Date().toISOString(), date: toISODate(), ml }] })),
+        update((s) => ({ ...s, water: [...s.water, { id: newId(), at: new Date().toISOString(), date: toISODate(), ml }] })),
       undoWater: () =>
         update((s) => {
           const d = toISODate();
@@ -153,7 +157,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addSleep: (sl) => update((s) => ({ ...s, sleep: [...s.sleep.filter((x) => x.date !== sl.date), sl] })),
       addWorkout: (w) => update((s) => ({ ...s, workouts: [...s.workouts.filter((x) => x.date !== w.date), w] })),
       logNudge: (type, action) =>
-        update((s) => ({ ...s, nudges: [...s.nudges, { id: String(Date.now()), at: new Date().toISOString(), date: toISODate(), type, action }] })),
+        update((s) => ({ ...s, nudges: [...s.nudges, { id: newId(), at: new Date().toISOString(), date: toISODate(), type, action }] })),
       addChat: (m) => update((s) => ({ ...s, chat: [...s.chat.slice(-60), m] })),
       clearChat: () => update((s) => ({ ...s, chat: [] })),
       addCustomFood: (f) => update((s) => ({ ...s, customFoods: [...s.customFoods, f] })),
@@ -180,7 +184,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       logBreak: (kind, action, workedMinutes, seconds) =>
         update((s) => ({
           ...s,
-          breaks: [...s.breaks.slice(-500), { id: String(Date.now()), date: toISODate(), at: new Date().toISOString(), kind, action, workedMinutes, seconds }],
+          breaks: [...s.breaks.slice(-500), { id: newId(), date: toISODate(), at: new Date().toISOString(), kind, action, workedMinutes, seconds }],
         })),
       setBreakSettings: (b) => update((s) => ({ ...s, breakSettings: { ...s.breakSettings, ...b } })),
       pauseBreaks: (minutes) =>
@@ -221,7 +225,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       },
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, update]);
+  }, [state, ready, today, hour, update]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

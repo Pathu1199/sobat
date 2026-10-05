@@ -121,7 +121,6 @@ export function summarize(period: Period, today: ISODate, d: GrowthData): Growth
   const hasPrevious = before.loggedDays > 0;
 
   const kcal = kcalByDate(d.meals);
-  const water = waterByDate(d.water);
 
   const metrics: Metric[] = [
     { key: 'avg_kcal', value: now.kcalAvg, previous: hasPrevious ? before.kcalAvg : null, higherIsBetter: false, unit: 'kcal' },

@@ -33,6 +33,8 @@ Installer and tick "Desktop development with C++". Without them the linker
 (link.exe) is missing and the build stops part-way through.
 '@
 
+Need 'rustup' 'Install Rust from https://rustup.rs, then open a NEW terminal so PATH updates.'
+
 Write-Host "  node   $(node --version)"
 Write-Host "  npm    $(npm --version)"
 Write-Host "  cargo  $(cargo --version)"
@@ -60,11 +62,20 @@ if (-not (Test-Path 'dist/index.html')) {
 
 # The Tauri command line is a dev dependency rather than a global install, so
 # the same version is used on every machine.
+# One architecture, pinned. Left to itself Tauri builds for whatever the host
+# is, so an ARM64 Windows machine would quietly produce an ARM-only installer
+# that will not run on an ordinary PC. x64 runs on both.
+$target = 'x86_64-pc-windows-msvc'
+
+Write-Host ""
+Write-Host "Making sure the $target toolchain is present..." -ForegroundColor Cyan
+rustup target add $target
+
 Write-Host ""
 Write-Host "Packaging the installer (the first run compiles Rust and takes a while)..." -ForegroundColor Cyan
-npx --yes @tauri-apps/cli@^2 build --config desktop/tauri.conf.json
+npx --yes @tauri-apps/cli@^2 build --config desktop/tauri.conf.json --target $target
 
-$bundle = Join-Path $root 'desktop\src-tauri\target\release\bundle\nsis'
+$bundle = Join-Path $root "desktop\src-tauri\target\$target\release\bundle\nsis"
 $installer = Get-ChildItem -Path $bundle -Filter '*-setup.exe' -ErrorAction SilentlyContinue |
              Sort-Object LastWriteTime -Descending | Select-Object -First 1
 
