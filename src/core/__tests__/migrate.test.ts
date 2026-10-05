@@ -69,6 +69,18 @@ describe('migrateState', () => {
     expect(s.breakSettings.long.everyMinutes).toBe(60);
   });
 
+  it('gives an older store the default routine and keeps an edited one', () => {
+    const s = migrateState(v1);
+    expect(s.routine).toEqual(EMPTY_STATE.routine);
+    expect(s.spend).toEqual([]);
+    // A routine saved before a field existed keeps its edits and gains the new field.
+    const edited = migrateState({ ...v1, routine: { enabled: false, budgetMin: 150 }, spend: [{ id: 's', date: '2026-09-26', at: '', category: 'fruit', rupees: 300, spreadDays: 7 }] });
+    expect(edited.routine.enabled).toBe(false);
+    expect(edited.routine.budgetMin).toBe(150);
+    expect(edited.routine.budgetMax).toBe(EMPTY_STATE.routine.budgetMax);
+    expect(edited.spend).toHaveLength(1);
+  });
+
   it('returns a fresh state for junk input rather than throwing', () => {
     expect(migrateState(null).version).toBe(EMPTY_STATE.version);
     expect(migrateState('nonsense').profile.onboarded).toBe(false);

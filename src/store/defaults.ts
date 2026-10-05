@@ -1,4 +1,5 @@
 import { DEFAULT_BREAK_SETTINGS } from '../core/breaks';
+import { DEFAULT_ROUTINE } from '../core/routine';
 import type { AppState, Profile, Settings } from '../core/types';
 
 export const DEFAULT_PROFILE: Profile = {
@@ -50,4 +51,6 @@ export const EMPTY_STATE: AppState = {
   photoQueue: [],
   steps: [],
   actionsDone: [],
+  routine: DEFAULT_ROUTINE,
+  spend: [],
 };

@@ -77,5 +77,8 @@ export function migrateState(raw: unknown): AppState {
     settings: { ...EMPTY_STATE.settings, ...(isRecord(raw.settings) ? raw.settings : {}) },
     breakSettings,
     breaks: upgradeLogs(raw.breaks, breakSettings.micro.seconds),
+    // Older stores have no routine; one saved before a field existed gets the default for it.
+    routine: { ...EMPTY_STATE.routine, ...(isRecord(raw.routine) ? raw.routine : {}) },
+    spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
   };
 }

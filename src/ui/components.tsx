@@ -197,6 +197,33 @@ export function Field({
   );
 }
 
+/** A labelled switch row with a one-line reason under it. */
+export function Toggle({ title, desc, on, onToggle }: { title: string; desc: string; on: boolean; onToggle: () => void }) {
+  return (
+    <Row style={{ justifyContent: 'space-between', gap: 14 }}>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{title}</Text>
+        <Text style={{ color: C.textFaint, fontSize: F.tiny, lineHeight: 16 }}>{desc}</Text>
+      </View>
+      <Pressable
+        onPress={onToggle}
+        style={{
+          width: 46,
+          height: 27,
+          borderRadius: 999,
+          backgroundColor: on ? C.accent : C.cardAlt,
+          borderWidth: S.hairline,
+          borderColor: on ? C.accent : C.border,
+          padding: 3,
+          justifyContent: 'center',
+          alignItems: on ? 'flex-end' : 'flex-start',
+        }}>
+        <View style={{ width: 19, height: 19, borderRadius: 999, backgroundColor: on ? C.white : C.textFaint }} />
+      </Pressable>
+    </Row>
+  );
+}
+
 export function Bar({ value, max, color = C.accent, height = 4, marker }: { value: number; max: number; color?: string; height?: number; marker?: number }) {
   const target = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
   const pct = useEased(target);

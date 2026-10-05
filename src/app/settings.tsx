@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { isUp, listModels, normalizeUrl } from '../ai/ollama';
 import type { Lang } from '../core/types';
 import { fill, LANG_NAMES, makeT } from '../i18n';
 import { requestPermission } from '../services/notify';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small } from '../ui/components';
-import { C, F, S } from '../ui/theme';
+import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
+import { C, F } from '../ui/theme';
 
 export default function SettingsScreen() {
   const app = useApp();
@@ -291,33 +291,6 @@ export default function SettingsScreen() {
 
       <Micro>Sobat v0.3 · MIT · your data never leaves your devices.</Micro>
     </Screen>
-  );
-}
-
-/** A labelled switch row with a one-line reason under it. */
-function Toggle({ title, desc, on, onToggle }: { title: string; desc: string; on: boolean; onToggle: () => void }) {
-  return (
-    <Row style={{ justifyContent: 'space-between', gap: 14 }}>
-      <View style={{ flex: 1, gap: 3 }}>
-        <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{title}</Text>
-        <Text style={{ color: C.textFaint, fontSize: F.tiny, lineHeight: 16 }}>{desc}</Text>
-      </View>
-      <Pressable
-        onPress={onToggle}
-        style={{
-          width: 46,
-          height: 27,
-          borderRadius: 999,
-          backgroundColor: on ? C.accent : C.cardAlt,
-          borderWidth: S.hairline,
-          borderColor: on ? C.accent : C.border,
-          padding: 3,
-          justifyContent: 'center',
-          alignItems: on ? 'flex-end' : 'flex-start',
-        }}>
-        <View style={{ width: 19, height: 19, borderRadius: 999, backgroundColor: on ? C.white : C.textFaint }} />
-      </Pressable>
-    </Row>
   );
 }
 

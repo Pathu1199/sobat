@@ -10,6 +10,7 @@ import { suggestMeals, toMealItem } from '../../core/foods';
 import { guardAdvice, HELPLINES, isCrisisText } from '../../core/guardrails';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
 import { KCAL_FLOOR, mealTypeForHour } from '../../core/nutrition';
+import { avoidedFoodIds, routineFacts } from '../../core/routine';
 import type { ChatOption } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useAI } from '../../services/useAI';
@@ -86,7 +87,9 @@ export default function CoachScreen() {
     setBusy(true);
 
     const diet = dietFrom(app.state.memory);
-    const options = suggestMeals(app.foods, Math.max(app.budget.perMeal, 300), diet);
+    // Never offer something the routine says to stay away from.
+    const avoided = avoidedFoodIds(app.state.routine);
+    const options = suggestMeals(app.foods, Math.max(app.budget.perMeal, 300), diet).filter((o) => !avoided.has(o.food.id));
     const chatOptions: ChatOption[] = options.slice(0, 3).map((o) => ({
       foodId: o.food.id,
       name_en: o.food.name_en,
@@ -113,6 +116,15 @@ export default function CoachScreen() {
             options.slice(0, 8).map((o) => `${o.food.name_en} ${o.kcal} kcal ${o.protein} g protein`).join('; '),
         );
       }
+      facts.push(
+        ...routineFacts(
+          app.state.routine,
+          app.foods,
+          app.today,
+          app.state.meals.filter((m) => m.date === app.today),
+          app.spentToday,
+        ),
+      );
       facts.push(...toPromptLines(contextFor(app.state.memory, clean, app.today, 10)));
 
       const history = app.state.chat.slice(-8).map((m) => ({ role: m.role, content: m.text }));

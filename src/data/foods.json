@@ -6944,5 +6944,302 @@
       "high_protein"
     ],
     "source": "estimate"
+  },
+  {
+    "id": "dudhi-bhaji",
+    "name_en": "Dudhi Bhaji (Lauki Sabzi)",
+    "name_mr": "दुधी भोपळ्याची भाजी",
+    "name_hi": "लौकी की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 55,
+    "protein_100g": 1.2,
+    "carbs_100g": 6,
+    "fat_100g": 3,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "healthy_swap"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "cabbage-matar-bhaji",
+    "name_en": "Cabbage Matar Bhaji",
+    "name_mr": "कोबी-मटार भाजी",
+    "name_hi": "पत्तागोभी मटर की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 80,
+    "protein_100g": 3,
+    "carbs_100g": 9,
+    "fat_100g": 3.8,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "healthy_swap"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "tomato-kanda-bhaji",
+    "name_en": "Tomato Kanda Patal Bhaji",
+    "name_mr": "टोमॅटो-कांद्याची पातळ भाजी",
+    "name_hi": "टमाटर प्याज़ की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 65,
+    "protein_100g": 1.5,
+    "carbs_100g": 8,
+    "fat_100g": 3,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "healthy_swap"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "bhindi-bhaji",
+    "name_en": "Bhindi Bhaji (Dry, Low Oil)",
+    "name_mr": "कमी तेलातली भेंडी (सुकी)",
+    "name_hi": "कम तेल की सूखी भिंडी",
+    "category": "veg",
+    "kcal_100g": 85,
+    "protein_100g": 2.2,
+    "carbs_100g": 8,
+    "fat_100g": 5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "healthy_swap"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "shepu-bhaji",
+    "name_en": "Shepu Bhaji (Dill, with Peanut Kut)",
+    "name_mr": "शेपूची भाजी",
+    "name_hi": "सोआ की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 90,
+    "protein_100g": 3.5,
+    "carbs_100g": 7,
+    "fat_100g": 5.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "healthy_swap"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "moong-dal",
+    "name_en": "Moong Dal (Plain)",
+    "name_mr": "मूग डाळ",
+    "name_hi": "मूंग दाल",
+    "category": "dal",
+    "kcal_100g": 95,
+    "protein_100g": 6.5,
+    "carbs_100g": 14,
+    "fat_100g": 1.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "high_protein",
+      "healthy_swap"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "masoor-dal",
+    "name_en": "Masoor Dal (Plain)",
+    "name_mr": "मसूर डाळ",
+    "name_hi": "मसूर दाल",
+    "category": "dal",
+    "kcal_100g": 100,
+    "protein_100g": 7,
+    "carbs_100g": 15,
+    "fat_100g": 1.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "high_protein",
+      "healthy_swap"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "walnuts",
+    "name_en": "Walnuts (Akrod)",
+    "name_mr": "अक्रोड",
+    "name_hi": "अखरोट",
+    "category": "snack",
+    "kcal_100g": 654,
+    "protein_100g": 15,
+    "carbs_100g": 14,
+    "fat_100g": 65,
+    "portions": [
+      {
+        "unit": "handful",
+        "label_en": "1 handful (20 g)",
+        "label_mr": "१ मूठ (२० ग्रॅ)",
+        "label_hi": "1 मुट्ठी (20 ग्राम)",
+        "grams": 20
+      },
+      {
+        "unit": "piece",
+        "label_en": "1 walnut (4 g)",
+        "label_mr": "१ अक्रोड (४ ग्रॅ)",
+        "label_hi": "1 अखरोट (4 ग्राम)",
+        "grams": 4
+      }
+    ],
+    "default_portion": "handful",
+    "tags": [
+      "veg",
+      "healthy_swap"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "black-tea",
+    "name_en": "Black Tea (no milk, no sugar)",
+    "name_mr": "कोरा चहा (दूध-साखर नाही)",
+    "name_hi": "काली चाय (बिना दूध, बिना चीनी)",
+    "category": "beverage",
+    "kcal_100g": 1,
+    "protein_100g": 0,
+    "carbs_100g": 0.3,
+    "fat_100g": 0,
+    "portions": [
+      {
+        "unit": "cup",
+        "label_en": "1 cup (150 ml)",
+        "label_mr": "१ कप (१५० मिली)",
+        "label_hi": "1 कप (150 मिली)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "cup",
+    "tags": [
+      "veg",
+      "healthy_swap"
+    ],
+    "source": "estimate"
   }
 ]

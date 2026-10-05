@@ -1,6 +1,7 @@
 import type { BreakLog, BreakSettings } from './breaks';
 import type { MemoryItem } from './memory';
 import type { QueuedPhoto } from './queue';
+import type { Routine, SpendLog } from './routine';
 import type { UsageBucket } from './usage';
 
 export type Lang = 'en' | 'mr' | 'hi';
@@ -161,6 +162,10 @@ export type AppState = {
   steps: StepLog[];
   /** Decision-card actions ticked off, kept only for the day they belong to. */
   actionsDone: { date: ISODate; key: string }[];
+  /** The fixed daily food routine: weekly bhaji, meal slots, avoid list, budget. */
+  routine: Routine;
+  /** Rupees spent on food. */
+  spend: SpendLog[];
 };
 
 export type StepLog = { date: ISODate; count: number };

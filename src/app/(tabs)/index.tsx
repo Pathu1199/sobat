@@ -8,6 +8,7 @@ import { DayScoreCard } from '../../components/DayScore';
 import { DecisionCard } from '../../components/DecisionCard';
 import { MealSheet } from '../../components/MealSheet';
 import { NowStrip } from '../../components/NowStrip';
+import { RoutineCard } from '../../components/RoutineCard';
 import { TipCard } from '../../components/TipCard';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { addDays, formatDayLabel, localHHMM, localHour } from '../../core/date';
@@ -178,6 +179,7 @@ export default function TodayScreen() {
         <Cols weights={[1.15, 1, 0.95]}>
           <>
             {heroCard}
+            {isToday ? <RoutineCard /> : null}
             {mealsBlock}
           </>
           <>
@@ -197,6 +199,7 @@ export default function TodayScreen() {
     <Page title={titleName} alt={undefined} subtitle={subtitle} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
+      {isToday ? <RoutineCard /> : null}
       {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
       {isToday ? <NowStrip /> : null}
       <DayScoreCard score={score} />

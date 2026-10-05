@@ -10,6 +10,7 @@ import { streak } from '../core/insights';
 import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryType } from '../core/memory';
 import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
+import { pruneSpend, spentOn, type Routine, type SpendLog } from '../core/routine';
 import type { BreakKind, BreakSettings } from '../core/breaks';
 import type { AppState, ChatMsg, Exercise, FoodItem, Meal, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
@@ -62,6 +63,11 @@ type Ctx = {
   stepsToday: number;
   actionsDoneToday: string[];
   toggleAction: (key: string) => void;
+  setRoutine: (r: Partial<Routine>) => void;
+  addSpend: (s: Pick<SpendLog, 'category' | 'rupees' | 'spreadDays'>) => void;
+  removeSpend: (id: string) => void;
+  /** Rupees counted against today, bulk buys spread over their days. */
+  spentToday: number;
   importState: (json: string) => { ok: boolean; error?: string };
   tipToday: string | null;
   screenMinutesToday: number;
@@ -204,6 +210,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const has = kept.some((a) => a.key === key);
           return { ...s, actionsDone: has ? kept.filter((a) => a.key !== key) : [...kept, { date: today, key }] };
         }),
+      setRoutine: (r) => update((s) => ({ ...s, routine: { ...s.routine, ...r } })),
+      addSpend: (x) =>
+        update((s) => ({
+          ...s,
+          spend: pruneSpend([...s.spend, { ...x, id: newId(), date: today, at: new Date().toISOString() }], today),
+        })),
+      removeSpend: (id) => update((s) => ({ ...s, spend: s.spend.filter((x) => x.id !== id) })),
+      spentToday: spentOn(state.spend, today),
       importState: (json) => {
         try {
           const parsed = JSON.parse(json) as Partial<AppState>;

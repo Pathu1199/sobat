@@ -4,11 +4,13 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CustomFoodForm } from '../components/CustomFoodForm';
+import { swapText } from '../components/RoutineCard';
 import { IconButton } from '../components/TopBarActions';
 import { addDays, localHHMM, toISODate } from '../core/date';
 import { newId } from '../core/id';
 import { defaultPortion, foodName, portionLabel, recentFoodIds, searchFoods, toMealItem } from '../core/foods';
 import { mealTypeForHour } from '../core/nutrition';
+import { avoidHits } from '../core/routine';
 import type { FoodItem, MealItem, MealType } from '../core/types';
 import { makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
@@ -50,6 +52,20 @@ export default function LogScreen() {
   });
   const basketKcal = basketItems.reduce((a, i) => a + i.kcal, 0);
   const basketProtein = Math.round(basketItems.reduce((a, i) => a + i.protein, 0));
+
+  const avoidRules = app.state.routine.enabled ? app.state.routine.avoid : [];
+
+  /** Put the routine's suggested swap in place of an avoided food, keeping the portion count. */
+  function swapInBasket(fromId: string, toId: string) {
+    const to = app.foods.find((f) => f.id === toId);
+    if (!to) return;
+    fb.haptic('light');
+    setBasket((b) =>
+      b.some((x) => x.food.id === toId)
+        ? b.filter((x) => x.food.id !== fromId)
+        : b.map((x) => (x.food.id === fromId ? { food: to, count: 1, unit: to.default_portion } : x)),
+    );
+  }
 
   function addToBasket(food: FoodItem) {
     fb.haptic('light');
@@ -162,6 +178,8 @@ export default function LogScreen() {
         {basket.map((b, idx) => {
           const p = b.food.portions.find((x) => x.unit === b.unit) ?? defaultPortion(b.food);
           const item = basketItems[idx];
+          const hit = avoidHits([item], avoidRules)[0];
+          const swapTo = hit ? app.foods.find((f) => f.id === hit.rule.swapIds[0]) : undefined;
           return (
             <View key={b.food.id} style={{ gap: 9 }}>
               {idx > 0 ? <Divider /> : null}
@@ -188,6 +206,13 @@ export default function LogScreen() {
                     ))
                   : null}
               </Row>
+              {hit ? (
+                <Row style={{ gap: 8, alignItems: 'flex-start' }}>
+                  <Ionicons name="swap-horizontal" size={14} color={C.amber} style={{ marginTop: 2 }} />
+                  <Text style={{ color: C.amber, fontSize: F.small, lineHeight: 18, flex: 1 }}>{swapText(hit, app.foods, lang)}</Text>
+                  {swapTo ? <Pill label={`${t('routine_swap')} → ${foodName(swapTo, lang)}`} tone={C.amber} textColor={C.text} onPress={() => swapInBasket(b.food.id, swapTo.id)} /> : null}
+                </Row>
+              ) : null}
             </View>
           );
         })}
