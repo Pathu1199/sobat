@@ -81,6 +81,13 @@ describe('migrateState', () => {
     expect(edited.spend).toHaveLength(1);
   });
 
+  it('keeps an address the person typed, and the PC address on a phone', () => {
+    const custom = migrateState({ ...v1, settings: { ...v1.settings, ollamaUrl: 'http://10.0.0.5:11434' } });
+    expect(custom.settings.ollamaUrl).toBe('http://10.0.0.5:11434');
+    // vitest runs as a phone, where localhost would be the phone itself.
+    expect(migrateState(v1).settings.ollamaUrl).toBe('http://192.168.1.10:11434');
+  });
+
   it('returns a fresh state for junk input rather than throwing', () => {
     expect(migrateState(null).version).toBe(EMPTY_STATE.version);
     expect(migrateState('nonsense').profile.onboarded).toBe(false);

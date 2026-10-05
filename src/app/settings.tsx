@@ -7,6 +7,7 @@ import type { Lang } from '../core/types';
 import { fill, LANG_NAMES, makeT } from '../i18n';
 import { requestPermission } from '../services/notify';
 import { useApp } from '../store/AppProvider';
+import { DEFAULT_OLLAMA_URL } from '../store/defaults';
 import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
 import { C, F } from '../ui/theme';
 
@@ -83,7 +84,7 @@ export default function SettingsScreen() {
       <View style={{ gap: 10 }}>
         <SectionHeader title="Ollama" meta={result?.ok ? en('connected') : undefined} />
         <Card>
-          <Field label={en('ollama_url')} value={s.ollamaUrl} onChangeText={(v) => app.setSettings({ ollamaUrl: v })} placeholder="http://192.168.1.10:11434" />
+          <Field label={en('ollama_url')} value={s.ollamaUrl} onChangeText={(v) => app.setSettings({ ollamaUrl: v })} placeholder={DEFAULT_OLLAMA_URL} />
           <Field label="Fallback (Tailscale)" value={s.ollamaFallbackUrl} onChangeText={(v) => app.setSettings({ ollamaFallbackUrl: v })} placeholder="http://varad-pc:11434" />
           <Row style={{ gap: 12 }}>
             <Field label={en('text_model')} value={s.textModel} onChangeText={(v) => app.setSettings({ textModel: v })} />

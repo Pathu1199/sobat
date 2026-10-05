@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS } from '../core/breaks';
 import { DEFAULT_ROUTINE } from '../core/routine';
 import type { AppState, Profile, Settings } from '../core/types';
@@ -15,9 +16,17 @@ export const DEFAULT_PROFILE: Profile = {
   onboarded: false,
 };
 
+/** The placeholder address older versions shipped with. */
+export const OLD_OLLAMA_PLACEHOLDER = 'http://192.168.1.10:11434';
+
+/**
+ * In a browser or the desktop shell, Ollama runs on the same machine. On a
+ * phone, localhost is the phone itself, so it needs the PC's address instead.
+ */
+export const DEFAULT_OLLAMA_URL = Platform.OS === 'web' ? 'http://localhost:11434' : OLD_OLLAMA_PLACEHOLDER;
+
 export const DEFAULT_SETTINGS: Settings = {
-  // Your Windows PC on the home network. Change the IP in Settings.
-  ollamaUrl: 'http://192.168.1.10:11434',
+  ollamaUrl: DEFAULT_OLLAMA_URL,
   // A Tailscale name reaches the same PC from outside home.
   ollamaFallbackUrl: '',
   textModel: 'qwen3:8b',

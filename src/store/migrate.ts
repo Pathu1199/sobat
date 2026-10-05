@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../core/breaks';
 import type { AppState } from '../core/types';
-import { EMPTY_STATE } from './defaults';
+import { DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER } from './defaults';
 
 /** The shape break settings had in version 1. */
 type V1BreakSettings = {
@@ -62,6 +62,13 @@ function upgradeLogs(old: unknown, microSeconds: number): BreakLog[] {
   });
 }
 
+/** An address nobody changed from the old placeholder moves to this platform's default. */
+function upgradeAppSettings(old: unknown): AppState['settings'] {
+  const s = { ...EMPTY_STATE.settings, ...(isRecord(old) ? old : {}) };
+  if (s.ollamaUrl === OLD_OLLAMA_PLACEHOLDER) s.ollamaUrl = DEFAULT_OLLAMA_URL;
+  return s;
+}
+
 /**
  * Brings a stored blob up to the current shape. Never throws: a corrupt or
  * foreign file yields a fresh state rather than bricking the app.
@@ -74,7 +81,7 @@ export function migrateState(raw: unknown): AppState {
     ...(raw as Partial<AppState>),
     version: 2,
     profile: { ...EMPTY_STATE.profile, ...(raw.profile as object) },
-    settings: { ...EMPTY_STATE.settings, ...(isRecord(raw.settings) ? raw.settings : {}) },
+    settings: upgradeAppSettings(raw.settings),
     breakSettings,
     breaks: upgradeLogs(raw.breaks, breakSettings.micro.seconds),
     // Older stores have no routine; one saved before a field existed gets the default for it.

@@ -269,14 +269,15 @@ Open Sobat → **Settings** → the **Ollama** section.
 
 | Field | What to put |
 | --- | --- |
-| **Ollama address** | `http://127.0.0.1:11434` |
+| **Ollama address** | already `http://localhost:11434` — leave it |
 | **Fallback (Tailscale)** | leave empty |
 | **Text model** | `qwen3:8b` |
 | **Vision model** | `qwen2.5vl:7b` |
 
-Use `127.0.0.1` here, **not** the LAN address from 3.7. The desktop app runs on
-the same machine as Ollama, so it never needs to touch the network — and it
-keeps working when your router hands the PC a different IP.
+Keep `localhost` here, **not** the LAN address from 3.7. The desktop app runs
+on the same machine as Ollama, so it never needs to touch the network — and it
+keeps working when your router hands the PC a different IP. The badge in the
+sidebar reads **AI: PC** once it connects.
 
 Press **Test connection**. You want:
 
