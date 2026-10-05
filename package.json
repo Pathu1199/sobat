@@ -52,7 +52,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "seed": "node scripts/seed-state.js",
-    "deploy-hosting": "expo export -p web && cp 'dist/+not-found.html' dist/404.html && firebase deploy --only hosting"
+    "deploy-hosting": "npm run build:web && firebase deploy --only hosting",
+    "build:web": "expo export -p web && cp 'dist/+not-found.html' dist/404.html"
   },
   "private": true
 }
