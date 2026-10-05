@@ -20,8 +20,8 @@ const FEATURES: { icon: keyof typeof Ionicons.glyphMap; titleKey: string; bodyKe
   { icon: 'phone-portrait-outline', titleKey: 'w_f9_t', bodyKey: 'w_f9_b' },
 ];
 
-/** The Android build published next to the web app by the deploy workflow. */
-const APK_PATH = '/downloads/sobat.apk';
+/** The newest Android build, published as a GitHub Release by the deploy workflow. */
+const APK_URL = 'https://github.com/Pathu1199/sobat/releases/latest/download/sobat.apk';
 
 export default function Welcome() {
   const router = useRouter();
@@ -60,7 +60,7 @@ export default function Welcome() {
             </Pressable>
             {Platform.OS === 'web' ? (
               <Pressable
-                onPress={() => Linking.openURL(APK_PATH)}
+                onPress={() => Linking.openURL(APK_URL)}
                 style={{ borderWidth: 1, borderColor: C.border, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Ionicons name="logo-android" size={16} color={C.textDim} />
                 <Text style={{ color: C.textDim, fontSize: F.body }}>{t('w_download_apk')}</Text>

@@ -15,7 +15,7 @@ is what the Windows desktop shell loads.
 | | |
 | --- | --- |
 | **Web** | <https://sobat-a56c7.web.app> — works in any browser, data stays in that browser |
-| **Android** | <https://sobat-a56c7.web.app/downloads/sobat.apk> — or tap **Download for Android** on the site |
+| **Android** | <https://github.com/Pathu1199/sobat/releases/latest/download/sobat.apk> — or tap **Download for Android** on the site |
 | **Windows** | build the installer with `desktop/build-windows.ps1`, see [SETUP.md](SETUP.md) |
 
 Every push to `main` is tested, built and deployed by GitHub Actions; the

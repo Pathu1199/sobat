@@ -12,6 +12,10 @@ concurrency:
   group: firebase-live
   cancel-in-progress: false
 
+permissions:
+  contents: write
+  checks: write
+
 jobs:
   check:
     name: Test, lint, typecheck
@@ -70,15 +74,20 @@ jobs:
             -PSOBAT_RELEASE_KEY_ALIAS="$SOBAT_RELEASE_KEY_ALIAS" \
             -PSOBAT_RELEASE_STORE_PASSWORD="$SOBAT_RELEASE_STORE_PASSWORD" \
             -PSOBAT_RELEASE_KEY_PASSWORD="$SOBAT_RELEASE_KEY_PASSWORD"
-      - uses: actions/upload-artifact@v7
+      - run: cp android/app/build/outputs/apk/release/app-release.apk sobat.apk
+      # The site links to releases/latest/download/sobat.apk, so each build is a release.
+      - name: Publish as a GitHub Release
+        uses: softprops/action-gh-release@v3
         with:
-          name: sobat-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
+          tag_name: build-${{ github.run_number }}
+          name: Sobat build ${{ github.run_number }}
+          body: Automatic build of ${{ github.sha }}. Android 8+, arm64, signed with Sobat's release key.
+          files: sobat.apk
+          make_latest: true
 
   deploy:
     name: Build and deploy
-    needs: [check, apk]
+    needs: check
     runs-on: ubuntu-latest
     environment:
       name: production
@@ -99,12 +108,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:web
-      # The phone build is served next to the web app, at /downloads/sobat.apk.
-      - uses: actions/download-artifact@v8
-        with:
-          name: sobat-apk
-          path: apk
-      - run: mkdir -p dist/downloads && cp apk/app-release.apk dist/downloads/sobat.apk
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
