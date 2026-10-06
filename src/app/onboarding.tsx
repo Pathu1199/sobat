@@ -45,7 +45,7 @@ export default function Onboarding() {
     if (!valid) return;
     app.setProfile(draft);
     app.addWeight({ date: app.today, kg: draft.weightKg });
-    router.replace('/permissions');
+    router.replace('/tour');
   }
 
   return (
