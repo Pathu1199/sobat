@@ -35,6 +35,8 @@ export type Settings = {
   quietEndHour: number;
   waterGoalMl: number;
   glassMl: number;
+  /** When the last Google Drive backup was written, ISO time. */
+  driveBackupAt?: string;
 };
 
 export type MealItem = {

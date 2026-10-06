@@ -5,7 +5,10 @@
     "version": "0.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "sobat",
+    "scheme": [
+      "sobat",
+      "com.varad.sobat"
+    ],
     "userInterfaceStyle": "dark",
     "android": {
       "adaptiveIcon": {
@@ -72,6 +75,12 @@
     "androidStatusBar": {
       "barStyle": "light-content",
       "backgroundColor": "#111F1C"
+    },
+    "extra": {
+      "google": {
+        "webClientId": "",
+        "androidClientId": ""
+      }
     }
   }
 }

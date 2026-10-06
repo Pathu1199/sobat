@@ -6,6 +6,7 @@ import { isUp, listModels, normalizeUrl } from '../ai/ollama';
 import type { Lang } from '../core/types';
 import { fill, LANG_NAMES, makeT } from '../i18n';
 import { requestPermission } from '../services/notify';
+import { useDriveBackup } from '../services/useDriveBackup';
 import { useApp } from '../store/AppProvider';
 import { DEFAULT_OLLAMA_URL } from '../store/defaults';
 import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
@@ -24,6 +25,8 @@ export default function SettingsScreen() {
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const drive = useDriveBackup();
+  const [confirmRestore, setConfirmRestore] = useState(false);
 
   async function test() {
     setTesting(true);
@@ -263,6 +266,39 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
+        <SectionHeader title={en('drive_title')} />
+        <Card>
+          <Small>{t('drive_note')}</Small>
+          {!drive.configured ? (
+            <Small color={C.textFaint}>{t('drive_not_configured')}</Small>
+          ) : (
+            <>
+              <Micro>{drive.lastBackupAt ? fill(t('drive_last'), { t: new Date(drive.lastBackupAt).toLocaleString() }) : t('drive_never')}</Micro>
+              <Row style={{ gap: 8 }}>
+                <Btn small label={t('drive_backup')} onPress={drive.backup} disabled={drive.status === 'busy'} style={{ flex: 1 }} />
+                {confirmRestore ? (
+                  <Btn
+                    small
+                    tone="danger"
+                    label={t('confirm')}
+                    onPress={() => {
+                      setConfirmRestore(false);
+                      void drive.restore();
+                    }}
+                    style={{ flex: 1 }}
+                  />
+                ) : (
+                  <Btn small tone="soft" label={t('drive_restore')} onPress={() => setConfirmRestore(true)} disabled={drive.status === 'busy'} style={{ flex: 1 }} />
+                )}
+              </Row>
+              {confirmRestore ? <Small color={C.amber}>{t('drive_restore_confirm')}</Small> : null}
+              {drive.status !== 'idle' && drive.status !== 'busy' ? (
+                <Small color={drive.status === 'error' || drive.status === 'none' ? C.amber : C.green}>{t(`drive_${drive.status}`)}</Small>
+              ) : null}
+            </>
+          )}
+        </Card>
+
         <SectionHeader title={en('export_data')} />
         <Card>
           <Row style={{ flexWrap: 'wrap', rowGap: 14 }}>
