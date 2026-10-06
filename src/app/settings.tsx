@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Linking, Platform, Text, View } from 'react-native';
 import { isUp, listModels, normalizeUrl } from '../ai/ollama';
 import type { Lang } from '../core/types';
 import { fill, LANG_NAMES, makeT } from '../i18n';
 import { requestPermission } from '../services/notify';
+import Constants from 'expo-constants';
 import { ScheduleEditor } from '../components/ScheduleEditor';
 import { useDriveBackup } from '../services/useDriveBackup';
 import { useApp } from '../store/AppProvider';
@@ -301,6 +302,21 @@ export default function SettingsScreen() {
               ) : null}
             </>
           )}
+        </Card>
+
+        <SectionHeader title={en('about')} />
+        <Card>
+          <Row style={{ gap: 12 }}>
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{`Sobat ${Constants.expoConfig?.version ?? ''}`}</Text>
+              <Small>{t('made_by')}</Small>
+            </View>
+          </Row>
+          <Small color={C.textDim}>{t('about_body')}</Small>
+          <Row style={{ gap: 8 }}>
+            <Btn small tone="soft" label={t('open_guide')} onPress={() => router.push('/guide')} style={{ flex: 1 }} />
+            <Btn small tone="ghost" label={t('view_source')} onPress={() => Linking.openURL('https://github.com/Pathu1199/sobat')} style={{ flex: 1 }} />
+          </Row>
         </Card>
 
         <SectionHeader title={en('export_data')} />

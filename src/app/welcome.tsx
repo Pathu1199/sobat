@@ -145,7 +145,7 @@ export default function Welcome() {
             style={{ backgroundColor: C.accent, paddingVertical: 15, paddingHorizontal: 34, borderRadius: 999 }}>
             <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
           </Pressable>
-          <Text style={[MICRO, { color: C.textGhost }]}>{t('w_footer')}</Text>
+          <Text style={[MICRO, { color: C.textGhost }]}>{`${t('made_by')} · ${t('w_footer')}`}</Text>
         </View>
       </View>
     </ScrollView>

@@ -29,6 +29,7 @@ export function TopBarActions({ streak }: { streak?: number }) {
         <IconButton name="add-circle-outline" label={t('tab_log')} onPress={() => router.push('/log')} />
       ) : (
         <>
+          <IconButton name="help-circle-outline" label={t('guide_title')} onPress={() => router.push('/guide')} />
           <IconButton name="chatbubble-ellipses-outline" label={t('tab_coach')} onPress={() => router.push('/coach')} />
           <IconButton name="settings-outline" label={t('settings')} onPress={() => router.push('/settings')} />
         </>
