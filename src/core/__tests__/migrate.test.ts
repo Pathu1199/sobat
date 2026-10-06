@@ -88,6 +88,15 @@ describe('migrateState', () => {
     expect(migrateState(v1).settings.ollamaUrl).toBe('http://192.168.1.10:11434');
   });
 
+  it('gives routine meals saved without a time their default time', () => {
+    const old = { ...v1, routine: { ...EMPTY_STATE.routine, slots: EMPTY_STATE.routine.slots.map(({ time: _t, ...s }) => s) } };
+    const s = migrateState(old);
+    expect(s.routine.slots.find((x) => x.id === 'bhel')?.time).toBe('18:30');
+    expect(s.routine.slots.find((x) => x.id === 'lunch')?.time).toBe('13:00');
+    const custom = migrateState({ ...v1, routine: { ...EMPTY_STATE.routine, slots: [{ id: 'x', type: 'dinner', label_en: 'X', label_mr: '', label_hi: '', options: [[]], withBhaji: false }] } });
+    expect(custom.routine.slots[0].time).toBe('20:30');
+  });
+
   it('returns a fresh state for junk input rather than throwing', () => {
     expect(migrateState(null).version).toBe(EMPTY_STATE.version);
     expect(migrateState('nonsense').profile.onboarded).toBe(false);

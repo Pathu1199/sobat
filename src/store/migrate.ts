@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../core/breaks';
 import type { AppState } from '../core/types';
+import { DEFAULT_ROUTINE } from '../core/routine';
 import { DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER } from './defaults';
 
 /** The shape break settings had in version 1. */
@@ -62,6 +63,16 @@ function upgradeLogs(old: unknown, microSeconds: number): BreakLog[] {
   });
 }
 
+/** Routine meals saved before they had times get the default time for their id, else a sensible one by meal. */
+function upgradeRoutine(old: unknown): AppState['routine'] {
+  const r = { ...EMPTY_STATE.routine, ...(isRecord(old) ? old : {}) } as AppState['routine'];
+  const byType: Record<string, string> = { breakfast: '08:30', lunch: '13:00', snack: '16:00', dinner: '20:30' };
+  r.slots = (Array.isArray(r.slots) ? r.slots : []).map((s) =>
+    s.time ? s : { ...s, time: DEFAULT_ROUTINE.slots.find((d) => d.id === s.id)?.time ?? byType[s.type] ?? '13:00' },
+  );
+  return r;
+}
+
 /** An address nobody changed from the old placeholder moves to this platform's default. */
 function upgradeAppSettings(old: unknown): AppState['settings'] {
   const s = { ...EMPTY_STATE.settings, ...(isRecord(old) ? old : {}) };
@@ -85,7 +96,7 @@ export function migrateState(raw: unknown): AppState {
     breakSettings,
     breaks: upgradeLogs(raw.breaks, breakSettings.micro.seconds),
     // Older stores have no routine; one saved before a field existed gets the default for it.
-    routine: { ...EMPTY_STATE.routine, ...(isRecord(raw.routine) ? raw.routine : {}) },
+    routine: upgradeRoutine(raw.routine),
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
     schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}) },
   };

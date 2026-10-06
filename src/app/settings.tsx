@@ -166,7 +166,7 @@ export default function SettingsScreen() {
         <Card>
           <ListRow
             icon={<Ionicons name="bookmark-outline" size={16} color={C.violet} />}
-            title={t('memory_title')}
+            title={t('mem_fact')}
             sub={`${app.state.memory.length} remembered`}
             onPress={() => router.push('/memory')}
             trailing={<Ionicons name="chevron-forward" size={16} color={C.textFaint} />}
