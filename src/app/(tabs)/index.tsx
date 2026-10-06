@@ -48,6 +48,8 @@ export default function TodayScreen() {
   const viewDate = dayOffset === 0 ? today : addDays(today, dayOffset);
   const isToday = dayOffset === 0;
   const [openMeal, setOpenMeal] = useState<Meal | null>(null);
+  // The phone shows the essentials; the rest waits behind one tap.
+  const [more, setMore] = useState(false);
 
   const greetKey = hour < 12 ? 'good_morning' : hour < 17 ? 'good_afternoon' : 'good_evening';
   const greeting = en(greetKey);
@@ -206,11 +208,22 @@ export default function TodayScreen() {
       {isToday ? <PlanCard /> : null}
       {isToday ? <RoutineCard /> : null}
       {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
-      {isToday ? <NowStrip /> : null}
-      <DayScoreCard score={score} />
-      {isToday ? <TipCard /> : null}
-      {isToday ? <DayReview /> : null}
       {mealsBlock}
+      <Pressable
+        onPress={() => setMore((m) => !m)}
+        accessibilityRole="button"
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, opacity: pressed ? 0.7 : 1 })}>
+        <Micro color={C.textDim}>{`${t('more_today')} · ${t('day_score')} ${score.total}`}</Micro>
+        <Ionicons name={more ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />
+      </Pressable>
+      {more ? (
+        <>
+          {isToday ? <NowStrip /> : null}
+          <DayScoreCard score={score} />
+          {isToday ? <TipCard /> : null}
+          {isToday ? <DayReview /> : null}
+        </>
+      ) : null}
       <Small color={C.textGhost}>{t('medical_note')}</Small>
       <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
     </Page>

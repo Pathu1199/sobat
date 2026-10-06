@@ -340,14 +340,14 @@ export default function LogScreen() {
         <View style={{ flex: 1, flexDirection: 'row', maxWidth: S.maxWide, width: '100%', alignSelf: 'center' }}>
           <ScrollView style={{ flex: 1.2 }} contentContainerStyle={{ ...scroll, paddingHorizontal: S.gutterWide }} keyboardShouldPersistTaps="handled">
             {dayBlock}
-            {tools}
             {searchBlock}
             {customForm}
             {resultsCard}
           </ScrollView>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...scroll, paddingHorizontal: S.gutterWide }} keyboardShouldPersistTaps="handled">
-            {quickRow}
             {basketCard}
+            {tools}
+            {quickRow}
             {todayCard}
           </ScrollView>
         </View>
@@ -360,12 +360,12 @@ export default function LogScreen() {
       {bar}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...scroll, maxWidth: 780, width: '100%', alignSelf: 'center', paddingBottom: basket.length > 0 ? 120 : 40 }} keyboardShouldPersistTaps="handled">
         {dayBlock}
-        {quickRow}
-        {tools}
         {searchBlock}
         {basketCard}
         {customForm}
         {resultsCard}
+        {tools}
+        {quickRow}
         {todayCard}
       </ScrollView>
       {basket.length > 0 ? (

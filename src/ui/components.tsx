@@ -1,7 +1,7 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { useEased } from './animated';
+import { useEased, useEntrance } from './animated';
 import { C, F, MICRO, S } from './theme';
 
 export function Screen({ children, refreshing, wide }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean }) {
@@ -17,18 +17,35 @@ export function Screen({ children, refreshing, wide }: { children: React.ReactNo
   );
 }
 
-export function Card({ children, style, tone, flat, rail }: { children: React.ReactNode; style?: ViewStyle; tone?: string; flat?: boolean; rail?: string }) {
+export function Card({
+  children,
+  style,
+  tone,
+  flat,
+  rail,
+  still,
+}: {
+  children: React.ReactNode;
+  style?: ViewStyle;
+  tone?: string;
+  flat?: boolean;
+  rail?: string;
+  /** No entrance animation, for cards that re-mount often. */
+  still?: boolean;
+}) {
+  const { opacity, translateY } = useEntrance();
   return (
-    <View
+    <Animated.View
       style={[
         st.card,
         flat && { backgroundColor: 'transparent', borderColor: 'transparent', padding: 0 },
         tone ? { borderColor: tone } : null,
         rail ? { borderLeftWidth: 2, borderLeftColor: rail } : null,
         style,
+        still ? null : { opacity, transform: [{ translateY }] },
       ]}>
       {children}
-    </View>
+    </Animated.View>
   );
 }
 

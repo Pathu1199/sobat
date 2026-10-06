@@ -48,3 +48,28 @@ export function useEased(target: number, duration: number = M.slow): number {
 
   return current;
 }
+
+/**
+ * Opacity and a small rise for something that has just appeared. Cards use
+ * it on mount, so a screen settles in instead of popping. Off under reduced
+ * motion, where the values simply start at their final state.
+ */
+export function useEntrance(delayMs = 0): { opacity: Animated.Value; translateY: Animated.Value } {
+  const reduce = useReducedMotion();
+  // Created once per mount; state rather than a ref so render never touches a ref.
+  const [{ opacity, translateY }] = useState(() => ({ opacity: new Animated.Value(reduce ? 1 : 0), translateY: new Animated.Value(reduce ? 0 : 8) }));
+  useEffect(() => {
+    if (reduce) {
+      opacity.setValue(1);
+      translateY.setValue(0);
+      return;
+    }
+    const anim = Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: M.base, delay: delayMs, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: M.base, delay: delayMs, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]);
+    anim.start();
+    return () => anim.stop();
+  }, [reduce, delayMs, opacity, translateY]);
+  return { opacity, translateY };
+}
