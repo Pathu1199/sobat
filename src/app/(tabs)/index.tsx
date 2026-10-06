@@ -8,6 +8,7 @@ import { DayScoreCard } from '../../components/DayScore';
 import { DecisionCard } from '../../components/DecisionCard';
 import { MealSheet } from '../../components/MealSheet';
 import { NowStrip } from '../../components/NowStrip';
+import { PlanCard, useMotivation } from '../../components/PlanCard';
 import { RoutineCard } from '../../components/RoutineCard';
 import { TipCard } from '../../components/TipCard';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
@@ -21,7 +22,7 @@ import type { Meal } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
 import { useApp } from '../../store/AppProvider';
-import { Card, Divider, ListRow, MeterRow, Micro, Row, Small } from '../../ui/components';
+import { Card, Divider, ListRow, MeterRow, Micro, Quote, Row, Small } from '../../ui/components';
 import { HeroRing } from '../../ui/HeroRing';
 import { Page } from '../../ui/TopBar';
 import { Cols } from '../../ui/tiles';
@@ -38,6 +39,7 @@ export default function TodayScreen() {
   // The design leads in English with the chosen language beside it.
   const en = makeT('en');
   const wide = useBreakpoint() === 'desktop';
+  const motivation = useMotivation();
 
   // Today by default; the chevrons under the meals walk back a day at a time.
   // Held as an offset, not a date: the day can roll over while the app is open
@@ -131,6 +133,7 @@ export default function TodayScreen() {
       </View>
       {isToday ? (
         <>
+          <Quote color={C.cyan}>{motivation}</Quote>
           <Divider />
           <Row style={{ gap: 8 }}>
             <QuickAction icon="add" label={t('add_food')} onPress={() => router.push('/log')} />
@@ -179,6 +182,7 @@ export default function TodayScreen() {
         <Cols weights={[1.15, 1, 0.95]}>
           <>
             {heroCard}
+            {isToday ? <PlanCard /> : null}
             {isToday ? <RoutineCard /> : null}
             {mealsBlock}
           </>
@@ -199,6 +203,7 @@ export default function TodayScreen() {
     <Page title={titleName} alt={undefined} subtitle={subtitle} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
+      {isToday ? <PlanCard /> : null}
       {isToday ? <RoutineCard /> : null}
       {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
       {isToday ? <NowStrip /> : null}

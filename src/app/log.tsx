@@ -6,16 +6,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CustomFoodForm } from '../components/CustomFoodForm';
 import { swapText } from '../components/RoutineCard';
 import { IconButton } from '../components/TopBarActions';
-import { addDays, localHHMM, toISODate } from '../core/date';
+import { addDays, formatDayLabel, lastNDates, localHHMM } from '../core/date';
 import { newId } from '../core/id';
 import { defaultPortion, foodName, portionLabel, recentFoodIds, searchFoods, toMealItem } from '../core/foods';
-import { mealTypeForHour } from '../core/nutrition';
+import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../core/nutrition';
 import { avoidHits } from '../core/routine';
 import type { FoodItem, MealItem, MealType } from '../core/types';
 import { makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
-import { BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, SectionHeader, Segmented } from '../ui/components';
+import { Bar, BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, SectionHeader, Segmented } from '../ui/components';
+import { DateStrip } from '../ui/DateStrip';
 import { TopBar } from '../ui/TopBar';
 import { C, F, S } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
@@ -39,12 +40,25 @@ export default function LogScreen() {
   const [customOpen, setCustomOpen] = useState(false);
 
   const results = useMemo(() => searchFoods(app.foods, query, 30), [app.foods, query]);
-  const todayMeals = app.state.meals.filter((m) => m.date === app.today);
+  // Any day of the last two weeks can be logged; today unless another is picked.
+  const [viewDate, setViewDate] = useState(app.today);
+  const isToday = viewDate === app.today;
+  const stripDates = useMemo(() => lastNDates(14, app.today), [app.today]);
+  const loggedDates = useMemo(() => new Set(app.state.meals.map((m) => m.date)), [app.state.meals]);
+  const dayMeals = app.state.meals.filter((m) => m.date === viewDate);
+  const dayKcal = sumTotals(dayMeals.flatMap((m) => m.items)).kcal;
+
+  /** When a meal "happened": now for today, the usual hour of that meal for an earlier day. */
+  function atFor(type: MealType): string {
+    if (isToday) return new Date().toISOString();
+    const h = (MEAL_WINDOWS.find((w) => w.type === type)?.startHour ?? 12) + 1;
+    return new Date(`${viewDate}T${String(h).padStart(2, '0')}:00:00`).toISOString();
+  }
   const recents = useMemo(() => {
     const ids = recentFoodIds(app.state.meals, addDays(app.today, -30), 8);
     return ids.map((id) => app.foods.find((f) => f.id === id)).filter((f): f is FoodItem => !!f);
   }, [app.state.meals, app.foods, app.today]);
-  const yesterdaySame = app.state.meals.find((m) => m.date === addDays(app.today, -1) && m.type === mealType);
+  const yesterdaySame = app.state.meals.find((m) => m.date === addDays(viewDate, -1) && m.type === mealType);
 
   const basketItems: MealItem[] = basket.map((b) => {
     const p = b.food.portions.find((x) => x.unit === b.unit) ?? defaultPortion(b.food);
@@ -78,8 +92,7 @@ export default function LogScreen() {
 
   function saveMeal() {
     if (basketItems.length === 0) return;
-    const now = new Date();
-    app.addMeal({ id: newId(), at: now.toISOString(), date: toISODate(now), type: mealType, items: basketItems, kcal: basketKcal, protein: basketProtein });
+    app.addMeal({ id: newId(), at: atFor(mealType), date: viewDate, type: mealType, items: basketItems, kcal: basketKcal, protein: basketProtein });
     setBasket([]);
     setQuery('');
     fb.haptic('success');
@@ -88,8 +101,7 @@ export default function LogScreen() {
 
   function repeatYesterday() {
     if (!yesterdaySame) return;
-    const now = new Date();
-    app.addMeal({ ...yesterdaySame, id: newId(), at: now.toISOString(), date: toISODate(now), note: undefined });
+    app.addMeal({ ...yesterdaySame, id: newId(), at: atFor(yesterdaySame.type), date: viewDate, note: undefined });
     fb.haptic('success');
     fb.notify(t('toast_meal_saved').replace('{kcal}', String(yesterdaySame.kcal)));
   }
@@ -151,6 +163,22 @@ export default function LogScreen() {
       <Btn small tone="soft" icon={<Ionicons name="camera-outline" size={15} color={C.accent} />} label={t('add_photo')} onPress={() => router.push('/photo')} style={{ flex: 1 }} />
       <Btn small tone="soft" icon={<Ionicons name="barcode-outline" size={15} color={C.accent} />} label={t('scan_barcode')} onPress={() => router.push('/scan')} style={{ flex: 1 }} />
     </Row>
+  );
+
+  const dayBlock = (
+    <View style={{ gap: 10 }}>
+      <DateStrip dates={stripDates} selected={viewDate} onSelect={setViewDate} marked={loggedDates} lang={lang} today={app.today} />
+      <Card>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <BiText en={isToday ? en('tab_today') : formatDayLabel(viewDate, 'en')} alt={lang === 'en' ? undefined : isToday ? t('tab_today') : formatDayLabel(viewDate, lang)} size={F.small} color={C.textDim} weight="400" />
+          <Text style={{ color: dayKcal > app.targets.kcal ? C.red : C.text, fontSize: F.h2, fontWeight: '300' }}>
+            {dayKcal}
+            <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400' }}>{` / ${app.targets.kcal} kcal`}</Text>
+          </Text>
+        </Row>
+        <Bar value={dayKcal} max={app.targets.kcal} color={dayKcal > app.targets.kcal ? C.red : C.accent} />
+      </Card>
+    </View>
   );
 
   const searchBlock = (
@@ -271,12 +299,12 @@ export default function LogScreen() {
 
   const todayCard = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={en('logged_intake')} meta={`${todayMeals.length}`} />
+      <SectionHeader title={en('logged_intake')} meta={`${dayMeals.length}`} />
       <Card>
-        {todayMeals.length === 0 ? (
+        {dayMeals.length === 0 ? (
           <Empty text={t('nothing_logged')} />
         ) : (
-          todayMeals.map((m, i) => (
+          dayMeals.map((m, i) => (
             <View key={m.id}>
               {i > 0 ? <Divider /> : null}
               <ListRow
@@ -311,6 +339,7 @@ export default function LogScreen() {
         {bar}
         <View style={{ flex: 1, flexDirection: 'row', maxWidth: S.maxWide, width: '100%', alignSelf: 'center' }}>
           <ScrollView style={{ flex: 1.2 }} contentContainerStyle={{ ...scroll, paddingHorizontal: S.gutterWide }} keyboardShouldPersistTaps="handled">
+            {dayBlock}
             {tools}
             {searchBlock}
             {customForm}
@@ -330,6 +359,7 @@ export default function LogScreen() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       {bar}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ ...scroll, maxWidth: 780, width: '100%', alignSelf: 'center', paddingBottom: basket.length > 0 ? 120 : 40 }} keyboardShouldPersistTaps="handled">
+        {dayBlock}
         {quickRow}
         {tools}
         {searchBlock}
