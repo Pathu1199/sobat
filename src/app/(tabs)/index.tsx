@@ -8,6 +8,7 @@ import { DayReview } from '../../components/DayReview';
 import { DayScoreCard } from '../../components/DayScore';
 import { DecisionCard } from '../../components/DecisionCard';
 import { MealSheet } from '../../components/MealSheet';
+import { NotificationNudge } from '../../components/NotificationNudge';
 import { NowStrip } from '../../components/NowStrip';
 import { PlanCard } from '../../components/PlanCard';
 import { RecoveryCard } from '../../components/RecoveryCard';
@@ -214,6 +215,7 @@ export default function TodayScreen() {
         <Cols weights={[1.15, 1, 0.95]}>
           <>
             {heroCard}
+            {isToday ? <NotificationNudge /> : null}
             {isToday ? <RecoveryCard /> : null}
             {isToday ? <BreakCheckin /> : null}
             {isToday ? <RoutineCard /> : null}
@@ -238,6 +240,7 @@ export default function TodayScreen() {
     <Page title={titleName} alt={undefined} subtitle={subtitle} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
+      {isToday ? <NotificationNudge /> : null}
       {isToday ? <RecoveryCard /> : null}
       {isToday ? <BreakCheckin /> : null}
       {isToday ? <RoutineCard /> : null}

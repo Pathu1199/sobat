@@ -32,9 +32,32 @@ function loadNative(): NativeModule | null {
   }
 }
 
+/** What the browser currently says; 'unsupported' where there is no Notification API at all. */
+export function webPermission(): NotificationPermission | 'unsupported' {
+  if (Platform.OS !== 'web' || typeof Notification === 'undefined') return 'unsupported';
+  return Notification.permission;
+}
+
+/**
+ * The service worker is what lets a pinned iPhone web app show notifications
+ * at all; desktop browsers accept either route. Registered lazily, once.
+ */
+let swReady: Promise<ServiceWorkerRegistration | null> | null = null;
+function serviceWorker(): Promise<ServiceWorkerRegistration | null> {
+  if (Platform.OS !== 'web' || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return Promise.resolve(null);
+  if (!swReady) {
+    swReady = navigator.serviceWorker
+      .register('/sw.js')
+      .then(() => navigator.serviceWorker.ready)
+      .catch(() => null);
+  }
+  return swReady;
+}
+
 export async function requestPermission(): Promise<boolean> {
   if (Platform.OS === 'web') {
     if (typeof Notification === 'undefined') return false;
+    void serviceWorker();
     if (Notification.permission === 'granted') return true;
     if (Notification.permission === 'denied') return false;
     const res = await Notification.requestPermission();
@@ -63,8 +86,17 @@ export async function setupAndroidChannel(): Promise<void> {
 /** Fire right now. Used by the in-app nudge timer. */
 export async function notifyNow(title: string, body: string): Promise<void> {
   if (Platform.OS === 'web') {
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      new Notification(title, { body });
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    const reg = await serviceWorker();
+    if (reg) {
+      // iOS shows notifications only this way; it also works everywhere else.
+      await reg.showNotification(title, { body, icon: '/icon-192.png', badge: '/icon-192.png', tag: `sobat-${Date.now()}` });
+      return;
+    }
+    try {
+      new Notification(title, { body, icon: '/icon-192.png' });
+    } catch {
+      // Some browsers have the API but refuse the constructor; nothing else to do.
     }
     return;
   }
