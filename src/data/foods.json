@@ -787,9 +787,14 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "dal"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "dal fry",
+      "tadka"
+    ]
   },
   {
     "id": "dal-makhani",
@@ -820,9 +825,11 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "dal"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": []
   },
   {
     "id": "rajma",
@@ -853,9 +860,13 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "gravy"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "rajma"
+    ]
   },
   {
     "id": "chole",
@@ -886,9 +897,14 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "chana",
+      "chhole"
+    ]
   },
   {
     "id": "sambar",
@@ -918,9 +934,13 @@
     ],
     "default_portion": "katori",
     "tags": [
-      "veg"
+      "veg",
+      "dal"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "sambhar"
+    ]
   },
   {
     "id": "kadhi",
@@ -951,9 +971,15 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "maharashtrian"
+      "maharashtrian",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "kadhi",
+      "pivli kadhi",
+      "taak kadhi"
+    ]
   },
   {
     "id": "matki-usal",
@@ -985,9 +1011,15 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "high_protein"
+      "high_protein",
+      "usal"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "matki",
+      "moth",
+      "usal"
+    ]
   },
   {
     "id": "dalimbi-usal",
@@ -1019,9 +1051,15 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "high_protein"
+      "high_protein",
+      "usal"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "dalimbi",
+      "val",
+      "birda"
+    ]
   },
   {
     "id": "moong-usal",
@@ -1053,9 +1091,15 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "high_protein"
+      "high_protein",
+      "usal"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "mug usal",
+      "moong",
+      "hirve mug"
+    ]
   },
   {
     "id": "amti",
@@ -1086,9 +1130,15 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "maharashtrian"
+      "maharashtrian",
+      "dal"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "amti",
+      "katachi amti",
+      "goda masala"
+    ]
   },
   {
     "id": "varan",
@@ -1119,9 +1169,15 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "maharashtrian"
+      "maharashtrian",
+      "dal"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "varan",
+      "varan bhat",
+      "toor dal"
+    ]
   },
   {
     "id": "akha-masoor-usal",
@@ -1153,9 +1209,15 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "high_protein"
+      "high_protein",
+      "usal"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "masoor",
+      "akkha masoor",
+      "lal masala"
+    ]
   },
   {
     "id": "sprouts-boiled",
@@ -1187,9 +1249,15 @@
     "tags": [
       "veg",
       "high_protein",
-      "healthy_swap"
+      "healthy_swap",
+      "usal"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "mod",
+      "kadadhanya",
+      "sprouts"
+    ]
   },
   {
     "id": "paneer-bhurji",
@@ -1220,9 +1288,13 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "paneer bhurji"
+    ]
   },
   {
     "id": "palak-paneer",
@@ -1253,9 +1325,13 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "palak paneer"
+    ]
   },
   {
     "id": "mixed-veg",
@@ -1285,9 +1361,15 @@
     ],
     "default_portion": "katori",
     "tags": [
-      "veg"
+      "veg",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "mix bhaji",
+      "mix veg",
+      "mixed bhaji"
+    ]
   },
   {
     "id": "aloo-gobi",
@@ -1317,9 +1399,17 @@
     ],
     "default_portion": "katori",
     "tags": [
-      "veg"
+      "veg",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "flower batata",
+      "gobi batata",
+      "phool kobi",
+      "flower bhaji",
+      "koradi"
+    ]
   },
   {
     "id": "bhindi-masala",
@@ -1349,9 +1439,15 @@
     ],
     "default_portion": "katori",
     "tags": [
-      "veg"
+      "veg",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "bhendi",
+      "bhindi masala",
+      "patal bhendi"
+    ]
   },
   {
     "id": "baingan-bharta",
@@ -1382,9 +1478,15 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "maharashtrian"
+      "maharashtrian",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "bharit",
+      "vangyache bharit",
+      "bharta"
+    ]
   },
   {
     "id": "dum-aloo",
@@ -1414,9 +1516,13 @@
     ],
     "default_portion": "katori",
     "tags": [
-      "veg"
+      "veg",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "dum aloo"
+    ]
   },
   {
     "id": "matar-paneer",
@@ -1447,9 +1553,13 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "matar paneer"
+    ]
   },
   {
     "id": "kadai-paneer",
@@ -1480,9 +1590,13 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "kadai paneer"
+    ]
   },
   {
     "id": "malai-kofta",
@@ -1513,9 +1627,11 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "fried"
+      "fried",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": []
   },
   {
     "id": "veg-kofta-curry",
@@ -1546,9 +1662,11 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "fried"
+      "fried",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": []
   },
   {
     "id": "gobi-manchurian",
@@ -1613,9 +1731,11 @@
     "default_portion": "piece",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": []
   },
   {
     "id": "thecha",
@@ -1646,9 +1766,14 @@
     "default_portion": "tbsp",
     "tags": [
       "veg",
-      "maharashtrian"
+      "maharashtrian",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "thecha",
+      "mirchi thecha"
+    ]
   },
   {
     "id": "zunka",
@@ -1679,9 +1804,15 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "maharashtrian"
+      "maharashtrian",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "zunka",
+      "jhunka",
+      "besan"
+    ]
   },
   {
     "id": "pithla",
@@ -1712,9 +1843,15 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "maharashtrian"
+      "maharashtrian",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "pithla",
+      "pithle",
+      "patal pithla"
+    ]
   },
   {
     "id": "kothimbir-vadi",
@@ -1747,9 +1884,15 @@
       "veg",
       "maharashtrian",
       "fried",
-      "street_food"
+      "street_food",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "coriander vadi",
+      "kothimbir",
+      "kothimbir vadi"
+    ]
   },
   {
     "id": "alu-vadi",
@@ -1815,9 +1958,19 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "breakfast"
+      "breakfast",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "batata bhaji",
+      "batatyachi bhaji",
+      "sukhi batata",
+      "koradi batata",
+      "aloo bhaji",
+      "pivli bhaji",
+      "haldi batata"
+    ]
   },
   {
     "id": "bharli-vangi",
@@ -1848,9 +2001,16 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "maharashtrian"
+      "maharashtrian",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "bharli vangi",
+      "bharleli vangi",
+      "stuffed brinjal",
+      "kala masala"
+    ]
   },
   {
     "id": "wangi-kaap",
@@ -1982,9 +2142,15 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "healthy_swap"
+      "healthy_swap",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "methi",
+      "methichi bhaji",
+      "sukhi methi"
+    ]
   },
   {
     "id": "palak-bhaji",
@@ -2016,9 +2182,14 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "healthy_swap"
+      "healthy_swap",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "palak",
+      "palakachi bhaji"
+    ]
   },
   {
     "id": "dhapate",
@@ -6580,9 +6751,14 @@
       "veg",
       "high_protein",
       "street_food",
-      "healthy_swap"
+      "healthy_swap",
+      "usal"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "misal",
+      "sprout chaat"
+    ]
   },
   {
     "id": "oats-porridge",
@@ -6975,9 +7151,16 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "healthy_swap"
+      "healthy_swap",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "dudhi",
+      "lauki",
+      "bhopla",
+      "dudhi bhopla"
+    ]
   },
   {
     "id": "cabbage-matar-bhaji",
@@ -7009,9 +7192,17 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "healthy_swap"
+      "healthy_swap",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "kobi",
+      "kobi matar",
+      "cabbage",
+      "patta gobi",
+      "kobichi bhaji"
+    ]
   },
   {
     "id": "tomato-kanda-bhaji",
@@ -7043,9 +7234,16 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "healthy_swap"
+      "healthy_swap",
+      "gravy"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "tomato kanda",
+      "patal bhaji",
+      "kanda tomato",
+      "rassa"
+    ]
   },
   {
     "id": "bhindi-bhaji",
@@ -7077,9 +7275,16 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "healthy_swap"
+      "healthy_swap",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "bhendi",
+      "sukhi bhendi",
+      "koradi bhendi",
+      "bhendichi bhaji"
+    ]
   },
   {
     "id": "shepu-bhaji",
@@ -7111,9 +7316,15 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "healthy_swap"
+      "healthy_swap",
+      "dry"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "shepu",
+      "suva",
+      "dill"
+    ]
   },
   {
     "id": "moong-dal",
@@ -7145,9 +7356,15 @@
     "tags": [
       "veg",
       "high_protein",
-      "healthy_swap"
+      "healthy_swap",
+      "dal"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "mug dal",
+      "moong dal",
+      "pivli dal"
+    ]
   },
   {
     "id": "masoor-dal",
@@ -7179,9 +7396,14 @@
     "tags": [
       "veg",
       "high_protein",
-      "healthy_swap"
+      "healthy_swap",
+      "dal"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "masoor dal",
+      "lal dal"
+    ]
   },
   {
     "id": "walnuts",
@@ -7239,6 +7461,656 @@
     "tags": [
       "veg",
       "healthy_swap"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "flower-rassa",
+    "name_en": "Flower Rassa (Cauliflower Gravy)",
+    "name_mr": "फ्लॉवर रस्सा",
+    "name_hi": "फूलगोभी रस्सा",
+    "category": "veg",
+    "kcal_100g": 85,
+    "protein_100g": 2.2,
+    "carbs_100g": 8,
+    "fat_100g": 5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "gravy"
+    ],
+    "aliases": [
+      "flower rassa",
+      "phool kobi rassa",
+      "patal flower",
+      "flower batata rassa",
+      "lal masala"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "vangi-batata",
+    "name_en": "Vangi Batata Bhaji (Dry)",
+    "name_mr": "वांगी-बटाटा भाजी",
+    "name_hi": "बैंगन आलू की सूखी सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 110,
+    "protein_100g": 1.8,
+    "carbs_100g": 12,
+    "fat_100g": 6,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry"
+    ],
+    "aliases": [
+      "vangi batata",
+      "vangi",
+      "baingan batata",
+      "koradi",
+      "kala masala"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "kanda-batata-rassa",
+    "name_en": "Kanda Batata Rassa",
+    "name_mr": "कांदा-बटाटा रस्सा",
+    "name_hi": "प्याज़ आलू रस्सा",
+    "category": "veg",
+    "kcal_100g": 95,
+    "protein_100g": 1.6,
+    "carbs_100g": 12,
+    "fat_100g": 4.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "gravy"
+    ],
+    "aliases": [
+      "kanda batata",
+      "patal batata",
+      "batata rassa",
+      "aloo rassa",
+      "lal masala"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "methi-batata",
+    "name_en": "Methi Batata Bhaji",
+    "name_mr": "मेथी-बटाटा भाजी",
+    "name_hi": "मेथी आलू की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 105,
+    "protein_100g": 2.5,
+    "carbs_100g": 12,
+    "fat_100g": 5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry"
+    ],
+    "aliases": [
+      "methi batata",
+      "methi aloo",
+      "koradi"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "farasbi-bhaji",
+    "name_en": "Farasbi Bhaji (French Beans)",
+    "name_mr": "फरसबीची भाजी",
+    "name_hi": "फ्रेंच बीन्स की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 80,
+    "protein_100g": 2.5,
+    "carbs_100g": 8,
+    "fat_100g": 4.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "healthy_swap"
+    ],
+    "aliases": [
+      "farasbi",
+      "beans",
+      "french beans",
+      "shravan ghevda",
+      "koradi"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "gavar-bhaji",
+    "name_en": "Gavar Bhaji (Cluster Beans)",
+    "name_mr": "गवारीची भाजी",
+    "name_hi": "गवार की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 85,
+    "protein_100g": 3,
+    "carbs_100g": 9,
+    "fat_100g": 4.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "healthy_swap"
+    ],
+    "aliases": [
+      "gavar",
+      "gawar",
+      "guar",
+      "cluster beans"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "dodka-bhaji",
+    "name_en": "Dodka Bhaji (Ridge Gourd)",
+    "name_mr": "दोडक्याची भाजी",
+    "name_hi": "तुरई की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 60,
+    "protein_100g": 1.5,
+    "carbs_100g": 6,
+    "fat_100g": 3.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "healthy_swap"
+    ],
+    "aliases": [
+      "dodka",
+      "turai",
+      "ridge gourd",
+      "ghosale"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "padwal-bhaji",
+    "name_en": "Padwal Bhaji (Snake Gourd)",
+    "name_mr": "पडवळाची भाजी",
+    "name_hi": "चिचिंडा की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 55,
+    "protein_100g": 1.2,
+    "carbs_100g": 6,
+    "fat_100g": 3,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "healthy_swap"
+    ],
+    "aliases": [
+      "padwal",
+      "snake gourd"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "karle-bhaji",
+    "name_en": "Karle Bhaji (Bitter Gourd)",
+    "name_mr": "कारल्याची भाजी",
+    "name_hi": "करेले की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 95,
+    "protein_100g": 2,
+    "carbs_100g": 8,
+    "fat_100g": 6,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry"
+    ],
+    "aliases": [
+      "karle",
+      "karela",
+      "bitter gourd",
+      "kadu"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "tondli-bhaji",
+    "name_en": "Tondli Bhaji (Ivy Gourd)",
+    "name_mr": "तोंडल्याची भाजी",
+    "name_hi": "कुंदरू की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 75,
+    "protein_100g": 1.5,
+    "carbs_100g": 7,
+    "fat_100g": 4.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "healthy_swap"
+    ],
+    "aliases": [
+      "tondli",
+      "tendli",
+      "kundru",
+      "ivy gourd"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "vatana-usal",
+    "name_en": "Vatana Usal (Green Peas)",
+    "name_mr": "वाटाण्याची उसळ",
+    "name_hi": "मटर की उसल",
+    "category": "veg",
+    "kcal_100g": 115,
+    "protein_100g": 6,
+    "carbs_100g": 15,
+    "fat_100g": 3.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "usal",
+      "high_protein"
+    ],
+    "aliases": [
+      "vatana",
+      "matar usal",
+      "pattani",
+      "hirva vatana"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "pavta-bhaji",
+    "name_en": "Pavta Bhaji (Lima Beans)",
+    "name_mr": "पावट्याची भाजी",
+    "name_hi": "सेम के बीज की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 120,
+    "protein_100g": 6.5,
+    "carbs_100g": 16,
+    "fat_100g": 3,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "usal",
+      "high_protein"
+    ],
+    "aliases": [
+      "pavta",
+      "pavata",
+      "lima beans"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "chavli-usal",
+    "name_en": "Chavli Usal (Black-eyed Beans)",
+    "name_mr": "चवळीची उसळ",
+    "name_hi": "लोबिया की उसल",
+    "category": "veg",
+    "kcal_100g": 115,
+    "protein_100g": 6.5,
+    "carbs_100g": 15,
+    "fat_100g": 3,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "usal",
+      "high_protein"
+    ],
+    "aliases": [
+      "chavli",
+      "chawli",
+      "lobia",
+      "black eyed"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "shevga-amti",
+    "name_en": "Shevga Amti (Drumstick Dal)",
+    "name_mr": "शेवग्याची आमटी",
+    "name_hi": "सहजन की दाल",
+    "category": "dal",
+    "kcal_100g": 90,
+    "protein_100g": 4,
+    "carbs_100g": 10,
+    "fat_100g": 3.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dal"
+    ],
+    "aliases": [
+      "shevga",
+      "drumstick",
+      "shevgyachi amti",
+      "sahjan"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "aluchi-patal-bhaji",
+    "name_en": "Aluchi Patal Bhaji (Colocasia)",
+    "name_mr": "अळूची पातळ भाजी",
+    "name_hi": "अरबी के पत्तों की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 95,
+    "protein_100g": 2.5,
+    "carbs_100g": 11,
+    "fat_100g": 4.5,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "gravy"
+    ],
+    "aliases": [
+      "alu",
+      "aluchi bhaji",
+      "alu vadi",
+      "patal bhaji",
+      "goda masala"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "batata-rassa-pivla",
+    "name_en": "Batata Rassa (Yellow, Puri Bhaji)",
+    "name_mr": "पिवळा बटाटा रस्सा (पुरी भाजी)",
+    "name_hi": "पूरी वाली आलू की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 90,
+    "protein_100g": 1.5,
+    "carbs_100g": 12,
+    "fat_100g": 4,
+    "portions": [
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "gravy"
+    ],
+    "aliases": [
+      "puri bhaji",
+      "pivli bhaji",
+      "pivla rassa",
+      "batata rassa",
+      "haldi"
     ],
     "source": "estimate"
   }

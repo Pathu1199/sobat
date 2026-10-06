@@ -8,7 +8,7 @@ import { swapText } from '../components/RoutineCard';
 import { IconButton } from '../components/TopBarActions';
 import { addDays, formatDayLabel, lastNDates, localHHMM } from '../core/date';
 import { newId } from '../core/id';
-import { defaultPortion, foodName, MEASURES, portionLabel, recentFoodIds, searchFoods, suggestMeals, toMealItem } from '../core/foods';
+import { defaultPortion, DISH_STYLES, foodIcon, foodName, MEASURES, portionLabel, recentFoodIds, searchFoods, styleOf, suggestMeals, toMealItem, type DishStyle } from '../core/foods';
 import { dietFrom } from '../core/memory';
 import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../core/nutrition';
 import { avoidedFoodIds, avoidHits } from '../core/routine';
@@ -42,7 +42,11 @@ export default function LogScreen() {
   const [weightInput, setWeightInput] = useState('');
   const [customOpen, setCustomOpen] = useState(false);
 
-  const results = useMemo(() => searchFoods(app.foods, query, 30), [app.foods, query]);
+  const [styleFilter, setStyleFilter] = useState<DishStyle | null>(null);
+  const found = useMemo(() => searchFoods(app.foods, query, 30), [app.foods, query]);
+  // Dry or gravy is the first thing a Marathi cook asks; offer the chips whenever the results mix styles.
+  const stylesPresent = useMemo(() => DISH_STYLES.filter((s) => found.some((f) => styleOf(f) === s)), [found]);
+  const results = useMemo(() => (styleFilter ? found.filter((f) => styleOf(f) === styleFilter) : found), [found, styleFilter]);
   // Any day of the last two weeks can be logged; today unless another is picked.
   const [viewDate, setViewDate] = useState(app.today);
   const isToday = viewDate === app.today;
@@ -195,7 +199,14 @@ export default function LogScreen() {
     <View style={{ gap: 10 }}>
       <SectionHeader title={en('add_food')} meta={t(mealType)} />
       <Segmented value={mealType} onChange={setMealType} options={MEAL_TYPES.map((m) => ({ key: m, label: en(m) }))} />
-      <Field value={query} onChangeText={setQuery} placeholder={t('search_food')} autoFocus={!wide} />
+      <Field value={query} onChangeText={(v) => { setQuery(v); setStyleFilter(null); }} placeholder={t('search_food')} autoFocus={!wide} />
+      {query.trim() !== '' && stylesPresent.length > 1 ? (
+        <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+          {stylesPresent.map((s) => (
+            <Pill key={s} label={t(`style_${s}`)} active={styleFilter === s} onPress={() => setStyleFilter(styleFilter === s ? null : s)} />
+          ))}
+        </Row>
+      ) : null}
       {query.trim() === '' && ideas.length > 0 ? (
         <View style={{ gap: 8 }}>
           <Micro>{fill(t('ideas_now'), { kcal: app.budget.remaining })}</Micro>
@@ -299,7 +310,16 @@ export default function LogScreen() {
             return (
               <View key={f.id}>
                 {i > 0 ? <Divider /> : null}
-                <ListRow title={f.name_en} alt={lang === 'en' ? undefined : f.name_mr} sub={p ? portionLabel(p, lang) : undefined} value={String(kcal)} valueUnit="kcal" onPress={() => addToBasket(f)} trailing={<Ionicons name="add" size={17} color={C.accent} />} />
+                <ListRow
+                  icon={<Text style={{ fontSize: 17 }}>{foodIcon(f)}</Text>}
+                  title={f.name_en}
+                  alt={lang === 'en' ? undefined : f.name_mr}
+                  sub={[styleOf(f) ? t(`style_${styleOf(f)}`) : null, p ? portionLabel(p, lang) : null].filter(Boolean).join(' · ')}
+                  value={String(kcal)}
+                  valueUnit="kcal"
+                  onPress={() => addToBasket(f)}
+                  trailing={<Ionicons name="add" size={17} color={C.accent} />}
+                />
               </View>
             );
           })}

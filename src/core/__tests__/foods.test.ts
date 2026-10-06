@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { foodsForDiet, MEASURES, recentFoodIds, scaleMealItem } from '../foods';
+import { foodIcon, foodsForDiet, MEASURES, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
 import type { FoodItem, Meal, MealItem } from '../types';
 
 describe('scaleMealItem', () => {
@@ -66,5 +66,24 @@ describe('foodsForDiet', () => {
   it('offers household measures with sensible weights', () => {
     expect(MEASURES.find((m) => m.unit === 'bowl')?.grams).toBe(150);
     expect(MEASURES.every((m) => m.grams > 0 && m.grams <= 250)).toBe(true);
+  });
+});
+
+describe('Marathi names in English letters', () => {
+  const ALL = foodsJson as unknown as FoodItem[];
+  it('finds a dish by the name a Marathi kitchen uses', () => {
+    expect(searchFoods(ALL, 'flower batata', 3).map((f) => f.id)).toContain('aloo-gobi');
+    expect(searchFoods(ALL, 'patal bhaji', 5).some((f) => styleOf(f) === 'gravy')).toBe(true);
+    expect(resolveByName(ALL, 'Vangi Batata (dry)')?.id).toBe('vangi-batata');
+    expect(resolveByName(ALL, 'kobi')?.id).toBe('cabbage-matar-bhaji');
+  });
+
+  it('knows dry from gravy and draws a matching icon', () => {
+    const dry = ALL.find((f) => f.id === 'aloo-gobi')!;
+    const gravy = ALL.find((f) => f.id === 'flower-rassa')!;
+    expect(styleOf(dry)).toBe('dry');
+    expect(styleOf(gravy)).toBe('gravy');
+    expect(foodIcon(dry)).not.toBe(foodIcon(gravy));
+    expect(ALL.filter((f) => f.category === 'veg' && !styleOf(f))).toEqual([]);
   });
 });

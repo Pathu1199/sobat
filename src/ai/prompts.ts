@@ -90,6 +90,8 @@ export function foodPhotoPrompt(examples: { predicted: string; corrected: string
     'grams_est (your estimate of the cooked weight in grams),',
     'confidence (0 to 1).',
     '',
+    'For a vegetable dish say whether it is dry (sukhi, koradi) or gravy (patal, rassa) in name_en, e.g. "Flower Batata (dry)" or "Batata Rassa (gravy)"; dry and gravy differ a lot in oil and water.',
+    'Prefer the Marathi household name in English letters where there is one: "Flower Batata", "Vangi Batata", "Matki Usal", "Pithla", "Kobi", "Bhendi".',
     'Do NOT estimate calories. The app looks those up itself. Only name the food and the portion.',
     'If you are unsure between two dishes, pick the more common one and lower the confidence.',
   ];

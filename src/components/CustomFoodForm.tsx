@@ -24,6 +24,9 @@ export function CustomFoodForm({ initialName, onSaved, onCancel }: { initialName
   const [grams, setGrams] = useState('150');
   const [protein, setProtein] = useState('');
   const [category, setCategory] = useState('other');
+  // Dry or gravy, for a bhaji; it is what the search chips and the icon read.
+  const [style, setStyle] = useState<string | null>(null);
+  const [alias, setAlias] = useState('');
 
   const kcalN = parseFloat(kcal);
   const gramsN = parseFloat(grams);
@@ -59,7 +62,8 @@ export function CustomFoodForm({ initialName, onSaved, onCancel }: { initialName
         },
       ],
       default_portion: 'serving',
-      tags: ['custom'],
+      tags: ['custom', ...(style ? [style] : [])],
+      aliases: alias.split(',').map((a) => a.trim().toLowerCase()).filter(Boolean),
       source: 'estimate',
     };
     app.addCustomFood(food);
@@ -80,6 +84,17 @@ export function CustomFoodForm({ initialName, onSaved, onCancel }: { initialName
       </Row>
       <Field label={`${t('protein')} (g, ${t('portion').toLowerCase()})`} value={protein} onChangeText={setProtein} keyboardType="numeric" placeholder="5" />
 
+      <Field label={t('custom_alias')} value={alias} onChangeText={setAlias} placeholder="flower batata, koradi" />
+      {category === 'veg' || category === 'dal' ? (
+        <>
+          <Micro>{t('custom_style')}</Micro>
+          <Row style={{ flexWrap: 'wrap', gap: 6 }}>
+            {['dry', 'gravy', 'usal', 'dal'].map((s) => (
+              <Pill key={s} label={t(`style_${s}`)} active={style === s} onPress={() => setStyle(style === s ? null : s)} />
+            ))}
+          </Row>
+        </>
+      ) : null}
       <Micro>{t('custom_category')}</Micro>
       <Row style={{ flexWrap: 'wrap', gap: 6 }}>
         {CATEGORIES.map((c) => (

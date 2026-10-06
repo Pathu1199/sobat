@@ -120,6 +120,8 @@ export type FoodItem = {
   portions: FoodPortion[];
   default_portion: string;
   tags: string[];
+  /** Other names people type, often Marathi in English letters: "flower batata", "patal bhaji". */
+  aliases?: string[];
   source: string;
 };
 

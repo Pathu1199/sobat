@@ -20,6 +20,35 @@ export function defaultPortion(food: FoodItem) {
 
 const EGG_NAME = /\begg\b|\bomelet|अंड/i;
 
+/** How a dish is made: dry (sukhi, koradi), gravy (patal, rassa), usal or dal. Decides oil, water and calories. */
+export type DishStyle = 'dry' | 'gravy' | 'usal' | 'dal';
+export const DISH_STYLES: DishStyle[] = ['dry', 'gravy', 'usal', 'dal'];
+
+export function styleOf(f: FoodItem): DishStyle | null {
+  return (DISH_STYLES.find((s) => f.tags.includes(s)) as DishStyle | undefined) ?? null;
+}
+
+/** A pictogram per kind of food. Photos of 230 dishes would be heavy and need the internet; these read at a glance. */
+export function foodIcon(f: FoodItem): string {
+  const style = styleOf(f);
+  if (style === 'dry') return '🥬';
+  if (style === 'gravy') return '🍲';
+  if (style === 'usal') return '🫘';
+  if (style === 'dal') return '🥣';
+  if (/rice|bhaat|bhat|pulao|biryani|khichdi/i.test(f.name_en)) return '🍚';
+  switch (f.category) {
+    case 'grain': return '🫓';
+    case 'fruit': return '🍎';
+    case 'dairy': return '🥛';
+    case 'beverage': return '🥤';
+    case 'sweet': return '🍮';
+    case 'snack': return '🥜';
+    case 'fast_food': return '🍔';
+    case 'nonveg': return '🍗';
+    default: return '🍽️';
+  }
+}
+
 export function isNonVeg(f: FoodItem): boolean {
   return f.category === 'nonveg' || f.tags.includes('nonveg');
 }
@@ -55,6 +84,7 @@ export function buildIndex(foods: FoodItem[]) {
       { name: 'name_en', weight: 3 },
       { name: 'name_mr', weight: 3 },
       { name: 'name_hi', weight: 3 },
+      { name: 'aliases', weight: 3 },
       { name: 'tags', weight: 1 },
       { name: 'category', weight: 0.5 },
     ],
