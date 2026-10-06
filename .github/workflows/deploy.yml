@@ -62,7 +62,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
       - if: steps.key.outputs.present == 'true'
         run: npm ci
       - if: steps.key.outputs.present == 'true'
