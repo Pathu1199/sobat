@@ -8,6 +8,8 @@
  * kept readable on a phone in daylight. Numbers are light; labels are small,
  * uppercase and quiet.
  */
+const listeners = new Set<() => void>();
+
 export type ThemeMode = 'dark' | 'light';
 
 const DARK = {
@@ -86,7 +88,6 @@ export const PALETTES: Record<ThemeMode, typeof DARK> = { dark: DARK, light: LIG
  */
 export const C: typeof DARK = { ...DARK };
 let current: ThemeMode = 'dark';
-const listeners = new Set<() => void>();
 
 export function themeMode(): ThemeMode {
   return current;
@@ -121,8 +122,8 @@ export const S = {
 /** Durations in ms. One curve for everything, ease-out cubic. */
 export const M = { fast: 180, base: 320, slow: 600 };
 
-/** One step larger than before across the board: this is read on a phone, often outdoors. */
-export const F = {
+/** Base type sizes at scale 1. Read on a phone, often outdoors. */
+const F_BASE = {
   display: 40,
   h1: 28,
   h2: 22,
@@ -133,6 +134,23 @@ export const F = {
   micro: 11,
   hero: 52,
 };
+
+/** The live type sizes: F_BASE times the person's text-size setting. Mutated by applyTextScale, like C. */
+export const F: typeof F_BASE = { ...F_BASE };
+export const TEXT_SCALES = [0.9, 1, 1.12, 1.25] as const;
+let scaleNow = 1;
+
+export function textScale(): number {
+  return scaleNow;
+}
+
+export function applyTextScale(scale: number): void {
+  if (scale === scaleNow) return;
+  scaleNow = scale;
+  for (const k of Object.keys(F_BASE) as (keyof typeof F_BASE)[]) F[k] = Math.round(F_BASE[k] * scale);
+  MICRO.fontSize = F.micro;
+  listeners.forEach((fn) => fn());
+}
 
 /** Small uppercase label style used for every section heading and stat caption. */
 export const MICRO = {

@@ -186,7 +186,7 @@ export default function PhotoScreen() {
             }}>
             <Ionicons name="camera-outline" size={30} color={C.accent} />
             <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t('photo_title')}</Text>
-            <Micro>{en('photo_hint')}</Micro>
+            <Micro>{t('photo_hint')}</Micro>
           </View>
           <Row style={{ gap: 8 }}>
             <Btn label={t('take_photo')} onPress={() => pick(true)} style={{ flex: 1 }} />
@@ -203,7 +203,7 @@ export default function PhotoScreen() {
           {busy ? (
             <Row>
               <ActivityIndicator color={C.accent} />
-              <Micro>{en('analysing')}</Micro>
+              <Micro>{t('analysing')}</Micro>
             </Row>
           ) : null}
           {error ? <Small color={C.amber}>{error}</Small> : null}
@@ -219,7 +219,7 @@ export default function PhotoScreen() {
           <Segmented value={mealType} onChange={setMealType} options={MEAL_TYPES.map((m) => ({ key: m, label: en(m) }))} />
 
           <View style={{ gap: 10 }}>
-            <SectionHeader title={en('detected')} meta={`${drafts.length}`} />
+            <SectionHeader title={t('detected')} meta={`${drafts.length}`} />
             <Card>
               {drafts.map((d, idx) => {
                 const item = items[idx];
@@ -282,7 +282,7 @@ export default function PhotoScreen() {
             <Row style={{ justifyContent: 'space-between' }}>
               <View>
                 <Text style={{ color: C.text, fontSize: 28, fontWeight: '300' }}>{totalKcal}</Text>
-                <Micro>{`kcal · ${totalProtein} g ${en('protein')}`}</Micro>
+                <Micro>{`kcal · ${totalProtein} g ${t('protein')}`}</Micro>
               </View>
               <Btn label={t('save')} onPress={save} />
             </Row>

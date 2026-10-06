@@ -9,7 +9,6 @@ import {
   bhajiFor,
   DEFAULT_SPREAD,
   planItems,
-  planKcal,
   skipKey,
   slotLabel,
   slotLines,
@@ -68,7 +67,6 @@ export function RoutineCard() {
   const routine = state.routine;
   const lang = state.profile.lang;
   const t = makeT(lang);
-  const en = makeT('en');
   const [openSlot, setOpenSlot] = useState<RoutineSlot | null>(null);
   const [spendOpen, setSpendOpen] = useState(false);
   const minute = useMinute();
@@ -99,13 +97,10 @@ export function RoutineCard() {
   return (
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
-        <Micro color={C.textDim}>{`${en('routine_title')} · ${t(`wd_${weekdayOf(today)}`)}`}</Micro>
-        <Row style={{ gap: 10 }}>
-          <Micro>{fill(t('routine_plan_kcal'), { n: planKcal(routine, foods, today) })}</Micro>
-          <Pressable onPress={() => router.push('/routine')} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('edit')}>
-            <Micro color={C.accent}>{t('edit')}</Micro>
-          </Pressable>
-        </Row>
+        <Micro color={C.textDim}>{`${t('routine_title')} · ${t(`wd_${weekdayOf(today)}`)}`}</Micro>
+        <Pressable onPress={() => router.push('/routine')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('edit')}>
+          <Ionicons name="create-outline" size={18} color={C.textFaint} />
+        </Pressable>
       </Row>
 
       <View style={{ gap: 4 }}>
@@ -170,7 +165,9 @@ export function RoutineCard() {
                     <Micro color={C.textFaint}>{`${t('slot_skipped')} ×`}</Micro>
                   </Pressable>
                 ) : (
-                  <Pill label={t('routine_log')} onPress={() => setOpenSlot(slot)} />
+                  <Pressable onPress={() => setOpenSlot(slot)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('routine_log')}>
+                    <Ionicons name="add-circle" size={28} color={C.accent} />
+                  </Pressable>
                 )}
               </View>
             </View>
@@ -192,7 +189,7 @@ export function RoutineCard() {
       <Divider />
       <Pressable onPress={() => setSpendOpen(true)} accessibilityRole="button" style={({ pressed }) => ({ gap: 7, opacity: pressed ? 0.7 : 1 })}>
         <Row style={{ justifyContent: 'space-between' }}>
-          <BiText en={en('routine_budget')} alt={lang === 'en' ? undefined : t('routine_budget')} size={F.small} color={C.textDim} weight="400" />
+          <BiText en={t('routine_budget')} alt={lang === 'en' ? undefined : t('routine_budget')} size={F.small} color={C.textDim} weight="400" />
           <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
             {`₹${app.spentToday}`}
             <Text style={{ color: C.textFaint, fontWeight: '400' }}>{` / ₹${routine.budgetMin}–${routine.budgetMax}`}</Text>

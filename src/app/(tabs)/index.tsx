@@ -28,6 +28,7 @@ import { useFeedback } from '../../services/feedback';
 import { useMantra } from '../../services/useMantra';
 import { useApp } from '../../store/AppProvider';
 import { Bar, Card, Divider, ListRow, MeterRow, Micro, Quote, Row, Small } from '../../ui/components';
+import { Logo } from '../../ui/Logo';
 import { Page } from '../../ui/TopBar';
 import { Cols } from '../../ui/tiles';
 import { C, F, S } from '../../ui/theme';
@@ -131,14 +132,13 @@ export default function TodayScreen() {
               <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400', letterSpacing: 0 }}>{`  ${over ? t('kcal_over') : t('kcal_left')}`}</Text>
             </Text>
           </View>
-          <Micro>{`${dayBudget.consumed.toLocaleString()} / ${dayBudget.target.toLocaleString()} kcal`}</Micro>
         </Row>
         <Bar value={dayBudget.consumed} max={dayBudget.target} color={over ? C.red : C.accent} height={8} />
         <View style={{ gap: 13 }}>
-          <MeterRow label={en('eaten')} alt={lang === 'en' ? undefined : t('eaten')} value={dayBudget.consumed} total={dayBudget.target} unit="kcal" color={C.accent} />
-          <MeterRow label={en('protein')} alt={lang === 'en' ? undefined : t('protein')} value={dayBudget.proteinConsumed} total={dayBudget.proteinTarget} unit="g" color={C.violet} />
-          <MeterRow label={en('water')} alt={lang === 'en' ? undefined : t('water')} value={dayWater} total={state.settings.waterGoalMl} unit="ml" color={C.cyan} marker={waterMarker} />
-          {daySteps > 0 ? <MeterRow label={en('steps_today')} alt={lang === 'en' ? undefined : t('steps_today')} value={daySteps} total={8000} color={C.green} /> : null}
+          <MeterRow label={t('eaten')} alt={lang === 'en' ? undefined : t('eaten')} value={dayBudget.consumed} total={dayBudget.target} unit="kcal" color={C.accent} />
+          <MeterRow label={t('protein')} alt={lang === 'en' ? undefined : t('protein')} value={dayBudget.proteinConsumed} total={dayBudget.proteinTarget} unit="g" color={C.violet} />
+          <MeterRow label={t('water')} alt={lang === 'en' ? undefined : t('water')} value={dayWater} total={state.settings.waterGoalMl} unit="ml" color={C.cyan} marker={waterMarker} />
+          {daySteps > 0 ? <MeterRow label={t('steps_today')} alt={lang === 'en' ? undefined : t('steps_today')} value={daySteps} total={8000} color={C.green} /> : null}
         </View>
       </View>
       {isToday ? (
@@ -237,7 +237,7 @@ export default function TodayScreen() {
   }
 
   return (
-    <Page title={state.profile.name || greeting} alt={undefined} subtitle={`${greeting} · ${subtitle}`} right={<TopBarActions streak={streakDays} />}>
+    <Page title={state.profile.name || greeting} alt={undefined} subtitle={`${greeting} · ${subtitle}`} left={<Logo size={26} />} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
       {isToday ? <NotificationNudge /> : null}

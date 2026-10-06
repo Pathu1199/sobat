@@ -157,7 +157,7 @@ export default function LogScreen() {
         <Pressable onPress={addGlass} style={({ pressed }) => ({ gap: 4, opacity: pressed ? 0.7 : 1 })}>
           <Row style={{ gap: 6 }}>
             <Ionicons name="water-outline" size={15} color={C.cyan} />
-            <Micro>{en('water')}</Micro>
+            <Micro>{t('water')}</Micro>
           </Row>
           <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '300' }}>
             +1 <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${glasses} / ${glassGoal}`}</Text>
@@ -175,7 +175,7 @@ export default function LogScreen() {
         </Pressable>
       </View>
       <View style={{ flex: 1, backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, borderRadius: S.radius, padding: 14, gap: 6 }}>
-        <Micro>{en('add_weight')}</Micro>
+        <Micro>{t('add_weight')}</Micro>
         <Row style={{ gap: 8 }}>
           <Field value={weightInput} onChangeText={setWeightInput} keyboardType="numeric" placeholder={`${app.state.profile.weightKg}`} />
           <Pressable onPress={saveWeight} disabled={!weightInput.trim()} hitSlop={6} accessibilityLabel={t('save')} style={{ opacity: weightInput.trim() ? 1 : 0.35, justifyContent: 'center' }}>
@@ -198,7 +198,7 @@ export default function LogScreen() {
       <DateStrip dates={stripDates} selected={viewDate} onSelect={setViewDate} marked={loggedDates} lang={lang} today={app.today} />
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <BiText en={isToday ? en('tab_today') : formatDayLabel(viewDate, 'en')} alt={lang === 'en' ? undefined : isToday ? t('tab_today') : formatDayLabel(viewDate, lang)} size={F.small} color={C.textDim} weight="400" />
+          <BiText en={isToday ? t('tab_today') : formatDayLabel(viewDate, 'en')} alt={lang === 'en' ? undefined : isToday ? t('tab_today') : formatDayLabel(viewDate, lang)} size={F.small} color={C.textDim} weight="400" />
           <Text style={{ color: dayKcal > app.targets.kcal ? C.red : C.text, fontSize: F.h2, fontWeight: '300' }}>
             {dayKcal}
             <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400' }}>{` / ${app.targets.kcal} kcal`}</Text>
@@ -211,7 +211,7 @@ export default function LogScreen() {
 
   const searchBlock = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={en('add_food')} meta={t(mealType)} />
+      <SectionHeader title={t('add_food')} meta={t(mealType)} />
       <Segmented value={mealType} onChange={setMealType} options={MEAL_TYPES.map((m) => ({ key: m, label: en(m) }))} />
       <Field value={query} onChangeText={(v) => { setQuery(v); setStyleFilter(null); }} placeholder={t('search_food')} autoFocus={!wide} />
       {query.trim() !== '' && stylesPresent.length > 1 ? (
@@ -287,7 +287,7 @@ export default function LogScreen() {
             <Row style={{ justifyContent: 'space-between' }}>
               <View>
                 <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>{basketKcal}</Text>
-                <Micro>{`kcal · ${basketProtein} g ${en('protein')}`}</Micro>
+                <Micro>{`kcal · ${basketProtein} g ${t('protein')}`}</Micro>
               </View>
               <Btn label={t('save')} onPress={saveMeal} />
             </Row>
@@ -345,7 +345,7 @@ export default function LogScreen() {
 
   const todayCard = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={en('logged_intake')} meta={`${dayMeals.length}`} />
+      <SectionHeader title={t('logged_intake')} meta={`${dayMeals.length}`} />
       <Card>
         {dayMeals.length === 0 ? (
           <Empty text={t('nothing_logged')} />
@@ -374,7 +374,7 @@ export default function LogScreen() {
   );
 
   const bar = (
-    <TopBar title={en('tab_log')} alt={lang === 'en' ? undefined : t('tab_log')} right={<IconButton name="close" label={t('close')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />} />
+    <TopBar title={t('tab_log')} alt={lang === 'en' ? undefined : t('tab_log')} right={<IconButton name="close" label={t('close')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />} />
   );
 
   const scroll = { padding: S.pad, gap: S.gap } as const;
@@ -434,7 +434,7 @@ export default function LogScreen() {
           }}>
           <View style={{ flex: 1 }}>
             <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>{basketKcal}</Text>
-            <Micro>{`${basket.length} ${t('items').toLowerCase()} · ${basketProtein} g ${en('protein')}`}</Micro>
+            <Micro>{`${basket.length} ${t('items').toLowerCase()} · ${basketProtein} g ${t('protein')}`}</Micro>
           </View>
           <Btn label={t('save')} onPress={saveMeal} style={{ minWidth: 120 }} />
         </View>

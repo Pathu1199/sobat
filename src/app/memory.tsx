@@ -26,7 +26,6 @@ export default function MemoryScreen() {
   const app = useApp();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
-  const en = makeT('en');
   const [text, setText] = useState('');
 
   const grouped = useMemo(() => {
@@ -47,7 +46,7 @@ export default function MemoryScreen() {
   return (
     <Screen>
       <Card>
-        <Micro>{en('memory_add')}</Micro>
+        <Micro>{t('memory_add')}</Micro>
         <Field value={text} onChangeText={setText} placeholder={t('memory_add')} multiline />
         <Btn label={t('memory_add_btn')} onPress={() => add(text)} disabled={!text.trim()} />
         <Row style={{ flexWrap: 'wrap', gap: 6 }}>
@@ -70,7 +69,7 @@ export default function MemoryScreen() {
         if (items.length === 0) return null;
         return (
           <View key={g.type} style={{ gap: 10 }}>
-            <SectionHeader title={en(`mem_${g.type}`)} meta={`${items.length}`} />
+            <SectionHeader title={t(`mem_${g.type}`)} meta={`${items.length}`} />
             <Card>
               {items.map((m, i) => (
                 <View key={m.id}>
@@ -114,7 +113,7 @@ export default function MemoryScreen() {
 
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <Micro>{en('memory_stored')}</Micro>
+          <Micro>{t('memory_stored')}</Micro>
           <Text style={{ color: C.textDim, fontSize: F.tiny }}>
             {app.state.memory.length} / {MAX_MEMORIES}
           </Text>

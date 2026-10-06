@@ -41,6 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
   // Most of the people this is built for are vegetarian; the setting is one tap away.
   diet: 'veg',
   appearance: 'system',
+  textScale: 1,
 };
 
 export const EMPTY_STATE: AppState = {

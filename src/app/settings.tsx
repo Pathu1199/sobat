@@ -12,7 +12,7 @@ import { useDriveBackup } from '../services/useDriveBackup';
 import { useApp } from '../store/AppProvider';
 import { DEFAULT_OLLAMA_URL } from '../store/defaults';
 import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
-import { C, F } from '../ui/theme';
+import { C, F, TEXT_SCALES } from '../ui/theme';
 
 export default function SettingsScreen() {
   const app = useApp();
@@ -20,7 +20,6 @@ export default function SettingsScreen() {
   const br = app.state.breakSettings;
   const lang = app.state.profile.lang;
   const t = makeT(lang);
-  const en = makeT('en');
   const router = useRouter();
 
   const [testing, setTesting] = useState(false);
@@ -79,7 +78,7 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <View style={{ gap: 10 }}>
-        <SectionHeader title={en('language')} />
+        <SectionHeader title={t('language')} />
         <Card>
           <Row style={{ gap: 8 }}>
             {(Object.keys(LANG_NAMES) as Lang[]).map((l) => (
@@ -87,14 +86,21 @@ export default function SettingsScreen() {
             ))}
           </Row>
           <Divider />
-          <Micro>{en('appearance')}</Micro>
+          <Micro>{t('appearance')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {(['system', 'light', 'dark'] as const).map((a) => (
               <Pill key={a} label={t(`appearance_${a}`)} active={s.appearance === a} onPress={() => app.setSettings({ appearance: a })} />
             ))}
           </Row>
           <Divider />
-          <Micro>{en('diet')}</Micro>
+          <Micro>{t('text_size')}</Micro>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {TEXT_SCALES.map((sc, i) => (
+              <Pill key={sc} label={t(['size_small', 'size_normal', 'size_large', 'size_xl'][i])} active={(s.textScale || 1) === sc} onPress={() => app.setSettings({ textScale: sc })} />
+            ))}
+          </Row>
+          <Divider />
+          <Micro>{t('diet')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {(['veg', 'egg', 'nonveg'] as const).map((d) => (
               <Pill key={d} label={t(`diet_${d}`)} active={s.diet === d} onPress={() => app.setSettings({ diet: d })} />
@@ -106,11 +112,11 @@ export default function SettingsScreen() {
 
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={en('nudge_every')} meta={s.nudgesEnabled ? 'On' : 'Off'} />
+        <SectionHeader title={t('nudge_every')} meta={s.nudgesEnabled ? 'On' : 'Off'} />
         <Card>
           <Toggle
             title={t('nudge_every')}
-            desc={en('nudge_desc')}
+            desc={t('nudge_desc')}
             on={s.nudgesEnabled}
             onToggle={() => app.setSettings({ nudgesEnabled: !s.nudgesEnabled })}
           />
@@ -120,7 +126,7 @@ export default function SettingsScreen() {
             ))}
           </Row>
           <Row style={{ gap: 8 }}>
-            <Btn small tone="ghost" label={en('allow_notifications')} onPress={() => requestPermission()} style={{ flex: 1 }} />
+            <Btn small tone="ghost" label={t('allow_notifications')} onPress={() => requestPermission()} style={{ flex: 1 }} />
             <Btn
               small
               tone="soft"
@@ -135,7 +141,7 @@ export default function SettingsScreen() {
           </Row>
           {notifyMsg ? <Small color={notifyMsg === 'sent' ? C.green : C.amber}>{t(notifyMsg === 'sent' ? 'test_notification_sent' : 'test_notification_blocked')}</Small> : null}
           <Divider />
-          <Micro>{en('quiet_hours')}</Micro>
+          <Micro>{t('quiet_hours')}</Micro>
           <Row style={{ gap: 12 }}>
             <Field label={t('time_from')} value={String(s.quietStartHour)} onChangeText={(v) => app.setSettings({ quietStartHour: Number(v) || 0 })} keyboardType="numeric" />
             <Field label={t('time_to')} value={String(s.quietEndHour)} onChangeText={(v) => app.setSettings({ quietEndHour: Number(v) || 0 })} keyboardType="numeric" />
@@ -144,7 +150,7 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={en('water_goal')} meta={`${s.waterGoalMl / 1000} L`} />
+        <SectionHeader title={t('water_goal')} meta={`${s.waterGoalMl / 1000} L`} />
         <Card>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[2000, 2500, 3000, 3500, 4000].map((m) => (
@@ -155,7 +161,7 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={en('memory_title')} meta={`${app.state.memory.length}`} />
+        <SectionHeader title={t('memory_title')} meta={`${app.state.memory.length}`} />
         <Card>
           <ListRow
             icon={<Ionicons name="bookmark-outline" size={16} color={C.violet} />}
@@ -168,10 +174,10 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={en('sched_title')} />
+        <SectionHeader title={t('sched_title')} />
         <ScheduleEditor />
 
-        <SectionHeader title={en('drive_title')} />
+        <SectionHeader title={t('drive_title')} />
         <Card>
           <Small>{t('drive_note')}</Small>
           {!drive.configured ? (
@@ -209,7 +215,7 @@ export default function SettingsScreen() {
           accessibilityRole="button"
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, opacity: pressed ? 0.7 : 1 })}>
           <View style={{ gap: 3 }}>
-            <Micro color={C.textDim}>{en('advanced')}</Micro>
+            <Micro color={C.textDim}>{t('advanced')}</Micro>
             <Small color={C.textFaint}>{t('advanced_desc')}</Small>
           </View>
           <Ionicons name={advanced ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />
@@ -217,13 +223,13 @@ export default function SettingsScreen() {
         {advanced ? (
           <View style={{ gap: 20 }}>
           <View style={{ gap: 10 }}>
-            <SectionHeader title="Ollama" meta={result?.ok ? en('connected') : undefined} />
+            <SectionHeader title="Ollama" meta={result?.ok ? t('connected') : undefined} />
             <Card>
-              <Field label={en('ollama_url')} value={s.ollamaUrl} onChangeText={(v) => app.setSettings({ ollamaUrl: v })} placeholder={DEFAULT_OLLAMA_URL} />
+              <Field label={t('ollama_url')} value={s.ollamaUrl} onChangeText={(v) => app.setSettings({ ollamaUrl: v })} placeholder={DEFAULT_OLLAMA_URL} />
               <Field label="Fallback (Tailscale)" value={s.ollamaFallbackUrl} onChangeText={(v) => app.setSettings({ ollamaFallbackUrl: v })} placeholder="http://varad-pc:11434" />
               <Row style={{ gap: 12 }}>
-                <Field label={en('text_model')} value={s.textModel} onChangeText={(v) => app.setSettings({ textModel: v })} />
-                <Field label={en('vision_model')} value={s.visionModel} onChangeText={(v) => app.setSettings({ visionModel: v })} />
+                <Field label={t('text_model')} value={s.textModel} onChangeText={(v) => app.setSettings({ textModel: v })} />
+                <Field label={t('vision_model')} value={s.visionModel} onChangeText={(v) => app.setSettings({ visionModel: v })} />
               </Row>
               <Btn small tone="soft" label={testing ? '...' : t('test_connection')} onPress={test} />
               {result ? <Small color={result.ok ? C.cyan : C.amber}>{result.text}</Small> : null}
@@ -233,11 +239,11 @@ export default function SettingsScreen() {
           </View>
     
           <View style={{ gap: 10 }}>
-            <SectionHeader title={en('break_monitor')} meta={br.enabled ? 'On' : 'Off'} />
+            <SectionHeader title={t('break_monitor')} meta={br.enabled ? 'On' : 'Off'} />
             <Card>
               <Toggle
                 title={t('break_monitor')}
-                desc={en('break_monitor_desc')}
+                desc={t('break_monitor_desc')}
                 on={br.enabled}
                 onToggle={() => app.setBreakSettings({ enabled: !br.enabled })}
               />
@@ -340,7 +346,7 @@ export default function SettingsScreen() {
     
               <Divider />
               <Row style={{ justifyContent: 'space-between' }}>
-                <Micro>{en('break_compliance')}</Micro>
+                <Micro>{t('break_compliance')}</Micro>
                 <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
                   {app.state.breaks.filter((b) => b.action === 'taken').length}
                   <Text style={{ color: C.textFaint, fontWeight: '400' }}> / {app.state.breaks.length}</Text>
@@ -351,7 +357,7 @@ export default function SettingsScreen() {
           </View>
         ) : null}
 
-        <SectionHeader title={en('about')} />
+        <SectionHeader title={t('about')} />
         <Card>
           <Row style={{ gap: 12 }}>
             <View style={{ flex: 1, gap: 3 }}>
@@ -367,20 +373,20 @@ export default function SettingsScreen() {
           </Row>
         </Card>
 
-        <SectionHeader title={en('export_data')} />
+        <SectionHeader title={t('export_data')} />
         <Card>
           <Row style={{ flexWrap: 'wrap', rowGap: 14 }}>
-            <Count label={en('logged_intake')} value={app.state.meals.length} />
+            <Count label={t('logged_intake')} value={app.state.meals.length} />
             <Count label={t('unit_kg')} value={app.state.weights.length} />
-            <Count label={en('sleep_title')} value={app.state.sleep.length} />
-            <Count label={en('mem_fact')} value={app.state.memory.length} />
+            <Count label={t('sleep_title')} value={app.state.sleep.length} />
+            <Count label={t('mem_fact')} value={app.state.memory.length} />
           </Row>
           <Divider />
           <Row style={{ gap: 8 }}>
             <Btn small tone="soft" label={t('export_data')} onPress={exportFile} style={{ flex: 1 }} />
             {Platform.OS === 'web' ? <Btn small tone="soft" label={t('import_data')} onPress={importFile} style={{ flex: 1 }} /> : null}
           </Row>
-          <Micro>{en('import_hint')}</Micro>
+          <Micro>{t('import_hint')}</Micro>
           {importMsg ? <Small color={importMsg.ok ? C.cyan : C.amber}>{importMsg.text}</Small> : null}
           <Divider />
           {confirmReset ? (

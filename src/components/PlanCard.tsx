@@ -21,7 +21,6 @@ export function PlanCard() {
   const { state, targets, today } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
-  const en = makeT('en');
 
   const plan = useMemo(() => planFrom(state.profile, state.weights, targets, today), [state.profile, state.weights, targets, today]);
   const weekWins = useMemo(() => wins({ today, meals: state.meals, water: state.water, weights: state.weights, workouts: state.workouts, waterGoalMl: state.settings.waterGoalMl, streakDays: app.streakDays }), [today, state.meals, state.water, state.weights, state.workouts, state.settings.waterGoalMl, app.streakDays]);
@@ -31,7 +30,7 @@ export function PlanCard() {
   return (
     <Card rail={C.cyan}>
       <Row style={{ justifyContent: 'space-between' }}>
-        <Micro color={C.textDim}>{en('plan_title')}</Micro>
+        <Micro color={C.textDim}>{t('plan_title')}</Micro>
         {plan.daysLogging > 0 ? <Micro>{fill(t('plan_days'), { n: plan.daysLogging })}</Micro> : null}
       </Row>
 

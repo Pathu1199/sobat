@@ -13,7 +13,6 @@ export default function Onboarding() {
   const router = useRouter();
   const [lang, setLang] = useState<Lang>(app.state.profile.lang);
   const t = makeT(lang);
-  const en = makeT('en');
 
   const [name, setName] = useState('');
   const [sex, setSex] = useState<Sex>('male');
@@ -56,7 +55,7 @@ export default function Onboarding() {
       </View>
 
       <Card>
-        <Micro>{en('language')}</Micro>
+        <Micro>{t('language')}</Micro>
         <Row style={{ gap: 8 }}>
           {(Object.keys(LANG_NAMES) as Lang[]).map((l) => (
             <Pill key={l} label={LANG_NAMES[l]} active={lang === l} onPress={() => setLang(l)} />
@@ -65,7 +64,7 @@ export default function Onboarding() {
       </Card>
 
       <Card>
-        <Micro>{en('onboarding_title')}</Micro>
+        <Micro>{t('onboarding_title')}</Micro>
         <Field label={t('name_q')} value={name} onChangeText={setName} placeholder="Varad" />
 
         <View style={{ gap: 7 }}>
@@ -105,7 +104,7 @@ export default function Onboarding() {
       </Card>
 
       <Card tone={C.accent}>
-        <Micro color={C.accent}>{en('target')}</Micro>
+        <Micro color={C.accent}>{t('target')}</Micro>
         <Row style={{ alignItems: 'baseline', gap: 8 }}>
           <Text style={{ color: C.text, fontSize: 40, fontWeight: '200', letterSpacing: -1.5 }}>{targets.kcal.toLocaleString()}</Text>
           <Text style={{ color: C.textDim, fontSize: F.h2 }}>kcal</Text>
@@ -113,10 +112,10 @@ export default function Onboarding() {
         <Divider />
         <StatQuad
           items={[
-            { label: en('protein'), value: `${targets.proteinG}g` },
-            { label: en('bmi_label'), value: String(targets.bmi), color: targets.band === 'normal' ? C.cyan : C.amber },
-            { label: en('bmr'), value: targets.bmr.toLocaleString() },
-            { label: en('tdee'), value: targets.tdee.toLocaleString() },
+            { label: t('protein'), value: `${targets.proteinG}g` },
+            { label: t('bmi_label'), value: String(targets.bmi), color: targets.band === 'normal' ? C.cyan : C.amber },
+            { label: t('bmr'), value: targets.bmr.toLocaleString() },
+            { label: t('tdee'), value: targets.tdee.toLocaleString() },
           ]}
         />
         <Divider />

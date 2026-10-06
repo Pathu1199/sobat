@@ -13,7 +13,7 @@ import { useSteps } from '../services/useSteps';
 import { useUsageTracker } from '../services/useUsageTracker';
 import { useWorkSchedule } from '../services/useWorkSchedule';
 import { AppProvider, useApp } from '../store/AppProvider';
-import { applyTheme, C, themeMode, type ThemeMode } from '../ui/theme';
+import { applyTextScale, applyTheme, C, themeMode, type ThemeMode } from '../ui/theme';
 
 export default function RootLayout() {
   return (
@@ -35,18 +35,20 @@ function Themed({ children }: { children: React.ReactNode }) {
   const system = useColorScheme();
   const mode: ThemeMode = state.settings.appearance === 'system' ? (system === 'light' ? 'light' : 'dark') : state.settings.appearance;
   // Swap the palette before paint, then remount the tree so every component reads the new colours.
-  const [applied, setApplied] = useState<ThemeMode>(themeMode());
+  const scale = state.settings.textScale || 1;
+  const [applied, setApplied] = useState<string>(`${themeMode()}-1`);
   useLayoutEffect(() => {
     applyTheme(mode);
+    applyTextScale(scale);
     // Deliberate: the remount must follow the palette swap, and nothing else re-renders this subtree.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setApplied(mode);
+    setApplied(`${mode}-${scale}`);
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       document.documentElement.style.background = C.bg;
       document.body.style.background = C.bg;
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', C.bg);
     }
-  }, [mode]);
+  }, [mode, scale]);
   return <View key={applied} style={{ flex: 1, backgroundColor: C.bg }}>{children}</View>;
 }
 

@@ -42,6 +42,8 @@ export type Settings = {
   diet: Diet;
   /** Follow the phone, or force light or dark. */
   appearance: 'system' | 'light' | 'dark';
+  /** Multiplier on every type size; 1 is the design size. */
+  textScale: number;
 };
 
 export type Diet = 'veg' | 'egg' | 'nonveg';

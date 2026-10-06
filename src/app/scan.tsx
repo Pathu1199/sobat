@@ -32,7 +32,6 @@ export default function ScanScreen() {
   const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
-  const en = makeT('en');
   const [permission, requestPermission] = useCameraPermissions();
 
   const [code, setCode] = useState<string | null>(null);
@@ -88,7 +87,7 @@ export default function ScanScreen() {
     return (
       <Screen>
         <Card>
-          <Micro>{en('scan_barcode')}</Micro>
+          <Micro>{t('scan_barcode')}</Micro>
           <Small>{t('scan_needs_phone')}</Small>
           <CustomFoodForm onSaved={() => router.back()} onCancel={() => router.back()} />
         </Card>
@@ -100,7 +99,7 @@ export default function ScanScreen() {
     return (
       <Screen>
         <Card>
-          <Micro>{en('perm_camera')}</Micro>
+          <Micro>{t('perm_camera')}</Micro>
           <Small>{t('perm_camera_why')}</Small>
           <Btn label={t('perm_allow')} onPress={requestPermission} />
         </Card>
@@ -114,7 +113,7 @@ export default function ScanScreen() {
     return (
       <Screen>
         <Card tone={C.accent}>
-          <Micro color={C.cyan}>{en('barcode_found')}</Micro>
+          <Micro color={C.cyan}>{t('barcode_found')}</Micro>
           <BiText en={found.name_en} alt={lang === 'en' ? undefined : found.name_mr} size={F.h2} weight="600" />
           <Divider />
           <Row style={{ justifyContent: 'space-between' }}>
@@ -124,7 +123,7 @@ export default function ScanScreen() {
               <Text style={{ color: C.textFaint, fontSize: F.tiny }}> kcal</Text>
             </Text>
           </Row>
-          <Micro>{`${n.protein} g ${en('protein')} · ${found.kcal_100g} kcal / 100 g`}</Micro>
+          <Micro>{`${n.protein} g ${t('protein')} · ${found.kcal_100g} kcal / 100 g`}</Micro>
           <Btn label={t('done')} onPress={() => router.replace('/log')} />
           <Btn
             tone="ghost"

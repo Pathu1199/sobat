@@ -116,7 +116,7 @@ export default function SessionScreen() {
     return (
       <Screen>
         <Card>
-          <Micro>{en('no_data_yet')}</Micro>
+          <Micro>{t('no_data_yet')}</Micro>
           <Btn label={t('cancel')} tone="ghost" onPress={() => router.back()} />
         </Card>
       </Screen>
@@ -136,14 +136,14 @@ export default function SessionScreen() {
           </Text>
           <Micro>{`${elapsedMinutes} min`}</Micro>
           <Divider />
-          <Micro>{en('how_did_it_feel')}</Micro>
+          <Micro>{t('how_did_it_feel')}</Micro>
           <Row style={{ gap: 6 }}>
             {[1, 2, 3, 4, 5].map((n) => (
               <Pill key={n} label={`${n}`} active={felt === n} onPress={() => setFelt(n)} />
             ))}
           </Row>
           <Row style={{ justifyContent: 'space-between' }}>
-            <Micro>{en('any_pain')}</Micro>
+            <Micro>{t('any_pain')}</Micro>
             <Pill label={pain ? t('done') : t('cancel')} active={pain} onPress={() => setPain(!pain)} />
           </Row>
           {pain ? <Small color={C.amber}>{t('pain_note')}</Small> : null}
@@ -185,16 +185,16 @@ export default function SessionScreen() {
 
       <Card tone={accent}>
         <View style={{ alignItems: 'center', gap: 14, paddingVertical: 10 }}>
-          <Micro color={accent}>{isRest ? en('rest') : t(`cat_${current.category}`)}</Micro>
+          <Micro color={accent}>{isRest ? t('rest') : t(`cat_${current.category}`)}</Micro>
           <BiText
-            en={isRest ? `${en('next')}: ${current.name_en}` : current.name_en}
+            en={isRest ? `${t('next')}: ${current.name_en}` : current.name_en}
             alt={lang === 'en' ? undefined : name(current)}
             size={F.h2}
             weight="600"
           />
 
           {!isRest && step.kind === 'exercise' ? (
-            <Micro>{`${en('sets')} ${step.setIndex + 1} / ${step.totalSets}${step.reps ? ` · ${step.reps} ${en('reps')}` : ''}`}</Micro>
+            <Micro>{`${t('sets')} ${step.setIndex + 1} / ${step.totalSets}${step.reps ? ` · ${step.reps} ${t('reps')}` : ''}`}</Micro>
           ) : null}
 
           <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
@@ -232,7 +232,7 @@ export default function SessionScreen() {
 
       {!isRest ? (
         <View style={{ gap: 10 }}>
-          <SectionHeader title={en('how_to')} />
+          <SectionHeader title={t('how_to')} />
           <Card>
             {instructions(current).map((line, i) => (
               <Row key={i} style={{ alignItems: 'flex-start', gap: 10 }}>

@@ -51,14 +51,14 @@ export default function FitScreen() {
   const hero = (
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
-        <Micro>{`${en('readiness')} · ${en('period_today')}`}</Micro>
+        <Micro>{`${t('readiness')} · ${t('period_today')}`}</Micro>
         <Micro color={readinessColor(r.level)}>{en(session.title)}</Micro>
       </Row>
 
       <Row style={{ gap: 20, alignItems: 'center' }}>
         <Ring value={r.score} max={100} size={96} stroke={6} color={readinessColor(r.level)}>
           <Text style={{ color: C.text, fontSize: 26, fontWeight: '300' }}>{r.score}</Text>
-          <Micro>{en('readiness')}</Micro>
+          <Micro>{t('readiness')}</Micro>
         </Ring>
         <View style={{ flex: 1, gap: 9 }}>
           <BiText en={en(session.title)} alt={lang === 'en' ? undefined : t(session.title)} size={F.h2} weight="600" />
@@ -76,14 +76,14 @@ export default function FitScreen() {
       <Divider />
       <StatQuad
         items={[
-          { label: en('week_label'), value: String(week) },
-          { label: en('phase_label'), value: String(phase.phase) },
-          { label: en('minutes'), value: String(Math.round(totalSeconds(steps) / 60)) },
-          { label: en('moves'), value: String(session.exercises.length) },
+          { label: t('week_label'), value: String(week) },
+          { label: t('phase_label'), value: String(phase.phase) },
+          { label: t('minutes'), value: String(Math.round(totalSeconds(steps) / 60)) },
+          { label: t('moves'), value: String(session.exercises.length) },
         ]}
       />
 
-      {eased ? <Small color={C.amber}>{en('plan_eased')}</Small> : null}
+      {eased ? <Small color={C.amber}>{t('plan_eased')}</Small> : null}
 
       <View style={{ gap: 6 }}>
         <Micro>{phaseLine}</Micro>
@@ -120,7 +120,7 @@ export default function FitScreen() {
 
   const moves = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={en('todays_moves')} meta={`${session.exercises.length}`} />
+      <SectionHeader title={t('todays_moves')} meta={`${session.exercises.length}`} />
       {session.exercises.map((e) => (
         <Card key={e.id}>
           <Pressable onPress={() => setOpen(open === e.id ? null : e.id)}>
@@ -128,8 +128,8 @@ export default function FitScreen() {
               <View style={{ flex: 1, gap: 4 }}>
                 <BiText en={e.name_en} alt={lang === 'en' ? undefined : name(e)} />
                 <Micro>
-                  {e.mode === 'time' ? `${e.default_seconds}s` : `${e.default_reps} ${en('reps')}`} · {e.default_sets} {en('sets')} ·{' '}
-                  {en('rest')} {e.rest_seconds}s
+                  {e.mode === 'time' ? `${e.default_seconds}s` : `${e.default_reps} ${t('reps')}`} · {e.default_sets} {t('sets')} ·{' '}
+                  {t('rest')} {e.rest_seconds}s
                 </Micro>
               </View>
               <Pill label={t(`cat_${e.category}`)} />
@@ -163,14 +163,14 @@ export default function FitScreen() {
 
   const weekCard = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={en('week_summary')} meta={`${doneCount} ${en('total')}`} />
+      <SectionHeader title={t('week_summary')} meta={`${doneCount} ${t('total')}`} />
       <Card>
         <StatQuad
           items={[
-            { label: en('workout_days_m'), value: String(doneCount) },
-            { label: en('walk_target'), value: `${phase.walkMinutes}m` },
-            { label: en('strength_days'), value: String(phase.strengthDays) },
-            { label: en('phase_label'), value: String(phase.phase) },
+            { label: t('workout_days_m'), value: String(doneCount) },
+            { label: t('walk_target'), value: `${phase.walkMinutes}m` },
+            { label: t('strength_days'), value: String(phase.strengthDays) },
+            { label: t('phase_label'), value: String(phase.phase) },
           ]}
         />
       </Card>
@@ -179,7 +179,7 @@ export default function FitScreen() {
 
   const history = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={en('workout_days_m')} meta={`${doneCount} ${en('total')}`} />
+      <SectionHeader title={t('workout_days_m')} meta={`${doneCount} ${t('total')}`} />
       <Card>
         {[...app.state.workouts]
           .sort((a, b) => b.date.localeCompare(a.date))
@@ -200,7 +200,7 @@ export default function FitScreen() {
 
   if (wide) {
     return (
-      <Page title={en('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />} wide>
+      <Page title={t('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />} wide>
         <Cols weights={[1.3, 1]}>
           <>
             {hero}
@@ -217,7 +217,7 @@ export default function FitScreen() {
   }
 
   return (
-    <Page title={en('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />}>
+    <Page title={t('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />}>
       {hero}
       {moves}
       {weekCard}

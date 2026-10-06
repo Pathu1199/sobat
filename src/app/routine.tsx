@@ -26,7 +26,6 @@ export default function RoutineScreen() {
   const routine = app.state.routine;
   const lang = app.state.profile.lang;
   const t = makeT(lang);
-  const en = makeT('en');
 
   const [openDay, setOpenDay] = useState<number | null>(null);
   const [openSlot, setOpenSlot] = useState<string | null>(null);
@@ -58,13 +57,13 @@ export default function RoutineScreen() {
   return (
     <Screen>
       <Card>
-        <Toggle title={t('routine_enabled')} desc={en('routine_title')} on={routine.enabled} onToggle={() => app.setRoutine({ enabled: !routine.enabled })} />
+        <Toggle title={t('routine_enabled')} desc={t('routine_title')} on={routine.enabled} onToggle={() => app.setRoutine({ enabled: !routine.enabled })} />
         <Divider />
         <Toggle title={t('routine_walk_toggle')} desc={t('routine_walk')} on={routine.walk} onToggle={() => app.setRoutine({ walk: !routine.walk })} />
       </Card>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={en('routine_week')} />
+        <SectionHeader title={t('routine_week')} />
         <Card>
           <Small color={C.textFaint}>{t('routine_week_hint')}</Small>
           {WEEK_ORDER.map((day, i) => {
@@ -102,7 +101,7 @@ export default function RoutineScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={en('routine_slots')} meta={`${routine.slots.length}`} />
+        <SectionHeader title={t('routine_slots')} meta={`${routine.slots.length}`} />
         <Card>
           {routine.slots.map((s, i) => {
             const open = openSlot === s.id;
@@ -143,7 +142,7 @@ export default function RoutineScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={en('routine_avoid')} meta={`${routine.avoid.length}`} />
+        <SectionHeader title={t('routine_avoid')} meta={`${routine.avoid.length}`} />
         <Card>
           {routine.avoid.length === 0 ? <Small color={C.textGhost}>{t('routine_no_avoid')}</Small> : null}
           {routine.avoid.map((r, i) => (
@@ -184,7 +183,7 @@ export default function RoutineScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={en('routine_budget_range')} />
+        <SectionHeader title={t('routine_budget_range')} />
         <Card>
           <Row style={{ gap: 12 }}>
             <Field

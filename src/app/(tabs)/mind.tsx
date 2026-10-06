@@ -21,7 +21,6 @@ export default function MindScreen() {
   const app = useApp();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
-  const en = makeT('en');
   const [score, setScore] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [crisis, setCrisis] = useState(false);
@@ -62,7 +61,7 @@ export default function MindScreen() {
 
   const checkIn = (
     <Card>
-      <Micro>{en('mood_q')}</Micro>
+      <Micro>{t('mood_q')}</Micro>
       <Row style={{ justifyContent: 'space-between' }}>
         {[1, 2, 3, 4, 5].map((n, i) => (
           <Pressable key={n} onPress={() => setScore(i + 1)} accessibilityLabel={`${t('mood_q')} ${n}`}>
@@ -126,7 +125,7 @@ export default function MindScreen() {
   const entries =
     todayMoods.length > 0 ? (
       <View style={{ gap: 10 }}>
-        <SectionHeader title={en('tab_today')} meta={`${todayMoods.length}`} />
+        <SectionHeader title={t('tab_today')} meta={`${todayMoods.length}`} />
         <Card>
           {todayMoods.map((m, i) => (
             <View key={m.id}>
@@ -140,7 +139,7 @@ export default function MindScreen() {
 
   if (wide) {
     return (
-      <Page title={en('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />} wide>
+      <Page title={t('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />} wide>
         {crisisCard}
         <Cols weights={[1.1, 1]}>
           <>
@@ -159,7 +158,7 @@ export default function MindScreen() {
   }
 
   return (
-    <Page title={en('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />}>
+    <Page title={t('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />}>
       {crisisCard}
       {checkIn}
       {toolTiles}

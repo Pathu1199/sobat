@@ -28,7 +28,6 @@ export default function CoachScreen() {
   const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
-  const en = makeT('en');
   const wide = useBreakpoint() === 'desktop';
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -48,7 +47,7 @@ export default function CoachScreen() {
         <Stat label={t('sleep_title')} value={lastSleep ? `${formatMinutes(lastSleep.minutes)} · ${lastSleep.score}` : '--'} />
         <Divider />
         <Pressable onPress={() => router.push('/memory')}>
-          <Small color={C.accent}>{`${app.state.memory.length} ${en('mem_fact')} ›`}</Small>
+          <Small color={C.accent}>{`${app.state.memory.length} ${t('mem_fact')} ›`}</Small>
         </Pressable>
       </Card>
       {lastOptions.length > 0 ? (
@@ -201,7 +200,7 @@ export default function CoachScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <TopBar
-        title={en('coach_title')}
+        title={t('coach_title')}
         alt={lang === 'en' ? undefined : t('coach_title')}
         left={wide ? undefined : <IconButton name="chevron-back" label={t('close')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />}
         right={<TopBarActions />}
@@ -215,11 +214,11 @@ export default function CoachScreen() {
             keyboardShouldPersistTaps="handled">
             <Row style={{ justifyContent: 'space-between' }}>
               <Pressable onPress={() => router.push('/memory')}>
-                <Micro color={C.textDim}>{`${app.state.memory.length} ${en('mem_fact')}`}</Micro>
+                <Micro color={C.textDim}>{`${app.state.memory.length} ${t('mem_fact')}`}</Micro>
               </Pressable>
               {app.state.chat.length > 0 ? (
                 <Pressable onPress={app.clearChat}>
-                  <Micro color={C.accent}>{`+ ${en('new_chat')}`}</Micro>
+                  <Micro color={C.accent}>{`+ ${t('new_chat')}`}</Micro>
                 </Pressable>
               ) : null}
             </Row>
@@ -265,14 +264,14 @@ export default function CoachScreen() {
                     <Text style={{ color: C.text, fontSize: F.body, lineHeight: 21 }}>{m.text}</Text>
                     <Row style={{ gap: 14 }}>
                       <Pressable onPress={() => app.rememberText(m.text, 'preference', 'user')}>
-                        <Micro color={C.textFaint}>{en('remember_this')}</Micro>
+                        <Micro color={C.textFaint}>{t('remember_this')}</Micro>
                       </Pressable>
                     </Row>
                   </View>
 
                   {m.options && m.options.length > 0 ? (
                     <View style={{ gap: 8 }}>
-                      <Micro>{en('from_your_database')}</Micro>
+                      <Micro>{t('from_your_database')}</Micro>
                       {m.options.map((o) => (
                         <Pressable
                           key={o.foodId}

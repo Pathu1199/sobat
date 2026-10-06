@@ -81,13 +81,9 @@ export function SectionHeader({ title, meta, color }: { title: string; meta?: st
 }
 
 /** English name with its Marathi form beside it, as the design shows them. */
+/** One language at a time: the chosen language when a translation is given, English otherwise. */
 export function BiText({ en, alt, size = F.body, color, weight = '500' }: { en: string; alt?: string; size?: number; color?: string; weight?: '400' | '500' | '600' }) {
-  return (
-    <Text style={{ color: color ?? C.text, fontSize: size, fontWeight: weight }}>
-      {en}
-      {alt ? <Text style={{ color: C.textFaint, fontWeight: '400' }}> {alt}</Text> : null}
-    </Text>
-  );
+  return <Text style={{ color: color ?? C.text, fontSize: size, fontWeight: weight }}>{alt || en}</Text>;
 }
 
 export function Row({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {

@@ -35,7 +35,6 @@ export default function GrowthScreen() {
   const app = useApp();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
-  const en = makeT('en');
   const wide = useBreakpoint() === 'desktop';
   const [period, setPeriod] = useState<Period>('week');
 
@@ -104,9 +103,9 @@ export default function GrowthScreen() {
       value={period}
       onChange={setPeriod}
       options={[
-        { key: 'today', label: en('period_today') },
-        { key: 'week', label: en('period_week') },
-        { key: 'month', label: en('period_month') },
+        { key: 'today', label: t('period_today') },
+        { key: 'week', label: t('period_week') },
+        { key: 'month', label: t('period_month') },
       ]}
     />
   );
@@ -114,8 +113,8 @@ export default function GrowthScreen() {
   const headline = (
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
-        <Micro>{`${en('weight_change')} · ${en(`period_${period}`)}`}</Micro>
-        <Micro color={weightMetric.value <= 0 ? C.cyan : C.amber}>{weightMetric.value <= 0 ? en('on_track_short') : en('watch_short')}</Micro>
+        <Micro>{`${t('weight_change')} · ${t(`period_${period}`)}`}</Micro>
+        <Micro color={weightMetric.value <= 0 ? C.cyan : C.amber}>{weightMetric.value <= 0 ? t('on_track_short') : t('watch_short')}</Micro>
       </Row>
       <Row style={{ alignItems: 'flex-end', gap: 8 }}>
         <Text style={{ color: C.text, fontSize: 42, fontWeight: '200', letterSpacing: -1.5 }}>
@@ -127,8 +126,8 @@ export default function GrowthScreen() {
       <View style={{ gap: 7 }}>
         <Bar value={progressed} max={totalToLose} color={C.accent} height={5} />
         <Row style={{ justifyContent: 'space-between' }}>
-          <Micro>{`${app.state.profile.weightKg} ${t('unit_kg')} ${en('now')}`}</Micro>
-          <Micro>{`${toGoal} ${t('unit_kg')} ${en('to_goal')}`}</Micro>
+          <Micro>{`${app.state.profile.weightKg} ${t('unit_kg')} ${t('now')}`}</Micro>
+          <Micro>{`${toGoal} ${t('unit_kg')} ${t('to_goal')}`}</Micro>
         </Row>
       </View>
     </Card>
@@ -136,7 +135,7 @@ export default function GrowthScreen() {
 
   const consistency = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={`${en('consistency')} · ${en(`period_${period}`)}`} meta={`${summary.consistency.filter((c) => c.onTarget).length}/${summary.consistency.length}`} />
+      <SectionHeader title={`${t('consistency')} · ${t(`period_${period}`)}`} meta={`${summary.consistency.filter((c) => c.onTarget).length}/${summary.consistency.length}`} />
       <Card>
         <ConsistencyStrip data={summary.consistency} labels={period === 'week' ? WEEKDAY : undefined} />
       </Card>
@@ -155,7 +154,7 @@ export default function GrowthScreen() {
 
   const weightChart = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={en('weight_trend')} meta={lang === 'en' ? undefined : t('weight_trend')} />
+      <SectionHeader title={t('weight_trend')} meta={lang === 'en' ? undefined : t('weight_trend')} />
       <Card>
         {summary.weightSeries.length >= 2 ? (
           <LineChart data={summary.weightSeries} goal={app.state.profile.goalWeightKg} format={(v) => `${v.toFixed(1)} ${t('unit_kg')}`} dateLabel={dayLabel} />
@@ -168,7 +167,7 @@ export default function GrowthScreen() {
 
   const kcalChart = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={en('calories_vs_target')} meta={`${app.targets.kcal} kcal`} />
+      <SectionHeader title={t('calories_vs_target')} meta={`${app.targets.kcal} kcal`} />
       <Card>
         <BarChart data={summary.kcalSeries} target={app.targets.kcal} format={(v) => `${v} kcal`} labels={barLabels} />
       </Card>
@@ -177,7 +176,7 @@ export default function GrowthScreen() {
 
   const sleepChart = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={en('sleep_hours')} meta="7h 30m" />
+      <SectionHeader title={t('sleep_hours')} meta="7h 30m" />
       <Card>
         <BarChart data={summary.sleepSeries} target={450} color={C.violet} format={(v) => formatMinutes(v)} labels={barLabels} />
       </Card>
@@ -186,7 +185,7 @@ export default function GrowthScreen() {
 
   const screenCard = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={en('screen_time')} meta={formatMinutes(screenToday)} />
+      <SectionHeader title={t('screen_time')} meta={formatMinutes(screenToday)} />
       <Card>
         <HourStrip hours={hourlyProfile(app.state.usage, app.today)} />
         <Row style={{ justifyContent: 'space-between' }}>
@@ -196,11 +195,11 @@ export default function GrowthScreen() {
         </Row>
         <Divider />
         <Row style={{ justifyContent: 'space-between' }}>
-          <Micro>{en('longest_sitting')}</Micro>
+          <Micro>{t('longest_sitting')}</Micro>
           <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
         </Row>
         <Row style={{ justifyContent: 'space-between' }}>
-          <Micro>{en('break_compliance')}</Micro>
+          <Micro>{t('break_compliance')}</Micro>
           <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
             {breaksTaken}
             <Text style={{ color: C.textFaint, fontWeight: '400' }}> / {breaksToday.length}</Text>
@@ -234,7 +233,7 @@ export default function GrowthScreen() {
           <Text style={{ color: C.cyan, fontSize: F.small, fontWeight: '600' }}>{breakStreak(app.state.breaks, summary.dates)}</Text>
         </Row>
         <Row style={{ justifyContent: 'space-between' }}>
-          <Micro>{en('longest_sitting')}</Micro>
+          <Micro>{t('longest_sitting')}</Micro>
           <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
         </Row>
       </Card>
@@ -284,7 +283,7 @@ export default function GrowthScreen() {
 
   if (wide) {
     return (
-      <Page title={en('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />} wide>
+      <Page title={t('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />} wide>
         <View style={{ maxWidth: 420 }}>{periodSwitch}</View>
         {empty}
         <Cols weights={[1.2, 1]}>
@@ -311,7 +310,7 @@ export default function GrowthScreen() {
   }
 
   return (
-    <Page title={en('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />}>
+    <Page title={t('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />}>
       {periodSwitch}
       {headline}
       {empty}
