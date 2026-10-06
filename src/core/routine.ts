@@ -23,6 +23,8 @@ export type RoutineSlot = {
   options: PlanLine[][];
   /** The day's bhaji goes into this meal, on top of whichever option is picked. */
   withBhaji: boolean;
+  /** When it usually happens, "HH:MM". Drives the row's state and the "log or skip?" prompt. */
+  time?: string;
 };
 
 /**
@@ -92,6 +94,7 @@ export const DEFAULT_ROUTINE: Routine = {
   slots: [
     {
       id: 'fruit',
+      time: '08:30',
       type: 'breakfast',
       label_en: 'Fruit',
       label_mr: 'फळ',
@@ -101,6 +104,7 @@ export const DEFAULT_ROUTINE: Routine = {
     },
     {
       id: 'dry-fruit',
+      time: '11:00',
       type: 'snack',
       label_en: 'Badam and akrod at the office',
       label_mr: 'ऑफिसमध्ये बदाम-अक्रोड',
@@ -115,6 +119,7 @@ export const DEFAULT_ROUTINE: Routine = {
     },
     {
       id: 'lunch',
+      time: '13:00',
       type: 'lunch',
       label_en: 'Lunch',
       label_mr: 'दुपारचे जेवण',
@@ -128,6 +133,7 @@ export const DEFAULT_ROUTINE: Routine = {
     },
     {
       id: 'tea',
+      time: '15:45',
       type: 'snack',
       label_en: 'Afternoon black tea',
       label_mr: 'दुपारचा कोरा चहा',
@@ -137,6 +143,7 @@ export const DEFAULT_ROUTINE: Routine = {
     },
     {
       id: 'bhel',
+      time: '18:30',
       type: 'snack',
       label_en: 'Evening murmura bhel',
       label_mr: 'संध्याकाळची मुरमुरे भेळ',
@@ -146,6 +153,7 @@ export const DEFAULT_ROUTINE: Routine = {
     },
     {
       id: 'milk',
+      time: '21:00',
       type: 'snack',
       label_en: 'Milk or taak',
       label_mr: 'दूध किंवा ताक',
@@ -381,6 +389,48 @@ export function removeLine(slot: RoutineSlot, optionIdx: number, foodId: string)
 export function setLineQty(slot: RoutineSlot, optionIdx: number, foodId: string, qty: number): RoutineSlot {
   const options = slot.options.map((o, i) => (i === optionIdx ? o.map((l) => (l.foodId === foodId ? { ...l, qty } : l)) : o));
   return { ...slot, options };
+}
+
+/** Minutes after a slot's time before it counts as missed and the prompt goes out. */
+export const SLOT_GRACE_MIN = 45;
+/** Minutes before a slot's time that it already counts as "now". */
+export const SLOT_EARLY_MIN = 30;
+
+const TYPE_TIME: Record<MealType, string> = { breakfast: '08:30', lunch: '13:00', snack: '16:00', dinner: '20:30' };
+
+/** The slot's time, or a sensible one for its meal when none was set (older stores). */
+export function slotTime(slot: RoutineSlot): string {
+  return slot.time && /^([01]\d|2[0-3]):[0-5]\d$/.test(slot.time) ? slot.time : TYPE_TIME[slot.type];
+}
+
+export function slotMinutes(slot: RoutineSlot): number {
+  const [h, m] = slotTime(slot).split(':').map(Number);
+  return h * 60 + m;
+}
+
+export type SlotStatus = 'done' | 'skipped' | 'now' | 'missed' | 'later';
+
+/** Where a slot stands at this minute of the day. */
+export function slotStatus(slot: RoutineSlot, nowMinutes: number, logged: boolean, skipped: boolean): SlotStatus {
+  if (logged) return 'done';
+  if (skipped) return 'skipped';
+  const at = slotMinutes(slot);
+  if (nowMinutes > at + SLOT_GRACE_MIN) return 'missed';
+  if (nowMinutes >= at - SLOT_EARLY_MIN) return 'now';
+  return 'later';
+}
+
+/** The done-key that records a slot skipped for the day. */
+export function skipKey(slot: RoutineSlot): string {
+  return `skip_${slot.id}`;
+}
+
+/** Slots whose prompt moment (time + grace) fell inside this tick. */
+export function slotsDueBetween(routine: Routine, fromMinutes: number, toMinutes: number): RoutineSlot[] {
+  return routine.slots.filter((s) => {
+    const m = slotMinutes(s) + SLOT_GRACE_MIN;
+    return m > fromMinutes && m <= toMinutes;
+  });
 }
 
 /** Foods the routine says to stay away from, for filtering suggestions. */

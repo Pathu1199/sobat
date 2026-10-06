@@ -17,6 +17,9 @@ import {
   toggleBhaji,
   weekdayOf,
   setBhajiOverride,
+  slotStatus,
+  slotTime,
+  slotsDueBetween,
   addLine,
   newSlot,
   removeLine,
@@ -82,6 +85,28 @@ describe('setBhajiOverride', () => {
     expect(bhajiFor(next, '2026-10-07')).toEqual(['shepu-bhaji']);
     expect(bhajiFor(next, '2026-10-06')).toEqual(['palak-bhaji', 'methi-bhaji']);
     expect(next.overrides?.['2026-09-01']).toBeUndefined();
+  });
+});
+
+describe('slots on the clock', () => {
+  const lunch = DEFAULT_ROUTINE.slots.find((s) => s.id === 'lunch')!;
+  it('has a time for every default slot and a fallback by meal', () => {
+    expect(slotTime(lunch)).toBe('13:00');
+    expect(slotTime({ ...lunch, time: undefined })).toBe('13:00');
+    expect(slotTime({ ...lunch, type: 'dinner', time: 'soon' })).toBe('20:30');
+  });
+  it('is later, then now, then missed, unless logged or skipped', () => {
+    const at = 13 * 60;
+    expect(slotStatus(lunch, at - 60, false, false)).toBe('later');
+    expect(slotStatus(lunch, at - 10, false, false)).toBe('now');
+    expect(slotStatus(lunch, at + 44, false, false)).toBe('now');
+    expect(slotStatus(lunch, at + 46, false, false)).toBe('missed');
+    expect(slotStatus(lunch, at + 46, true, false)).toBe('done');
+    expect(slotStatus(lunch, at + 46, false, true)).toBe('skipped');
+  });
+  it('knows which prompts fall inside a tick', () => {
+    expect(slotsDueBetween(DEFAULT_ROUTINE, 13 * 60 + 44, 13 * 60 + 45).map((s) => s.id)).toEqual(['lunch']);
+    expect(slotsDueBetween(DEFAULT_ROUTINE, 13 * 60 + 45, 13 * 60 + 46)).toEqual([]);
   });
 });
 

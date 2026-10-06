@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { msToNextMinute } from '../core/date';
+import { skipKey, slotLabel, slotLogged, slotMinutes, slotsDueBetween, SLOT_GRACE_MIN, bhajiFor } from '../core/routine';
 import { orderedBlocks, startedBetween, toMinutes } from '../core/schedule';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -38,7 +39,7 @@ const PREFIX = 'sobat-sched-';
 export function useWorkSchedule() {
   const app = useApp();
   const fb = useFeedback();
-  const { schedule, profile } = app.state;
+  const { schedule, profile, routine } = app.state;
   const minute = useMinute();
   const last = useRef(minute);
   const lastRegistered = useRef<string[]>([]);
@@ -55,6 +56,17 @@ export function useWorkSchedule() {
       fb.notify(`${title} · ${body}`);
       notifyNow(title, body).catch(() => {});
     }
+    // A routine meal whose time passed with nothing logged: ask once, log or skip.
+    if (routine.enabled) {
+      const todayMeals = app.state.meals.filter((m) => m.date === app.today);
+      const bhaji = bhajiFor(routine, app.today);
+      for (const s of slotsDueBetween(routine, from, minute)) {
+        if (slotLogged(s, bhaji, todayMeals) || app.actionsDoneToday.includes(skipKey(s))) continue;
+        const title = `${slotLabel(s, profile.lang)}?`;
+        fb.notify(`${title} · ${t('slot_prompt')}`);
+        notifyNow(title, t('slot_prompt')).catch(() => {});
+      }
+    }
     // Only the minute changing should speak; a schedule edit should not replay the day.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minute]);
@@ -68,10 +80,17 @@ export function useWorkSchedule() {
         const m = toMinutes(b.start);
         await scheduleDaily(`${PREFIX}${b.id}`, Math.floor(m / 60), m % 60, t(`ntf_${b.kind}`), t(`ntf_${b.kind}_body`));
       }
-      // Blocks removed in Settings must stop firing too.
-      for (const id of lastRegistered.current) if (!blocks.some((b) => `${PREFIX}${b.id}` === id)) await cancel(id);
-      lastRegistered.current = blocks.map((b) => `${PREFIX}${b.id}`);
+      // Routine meals: the same "log or skip?" prompt, at time + grace, with the app closed.
+      const slots = routine.enabled ? routine.slots : [];
+      for (const s of slots) {
+        const m = slotMinutes(s) + SLOT_GRACE_MIN;
+        await scheduleDaily(`${PREFIX}slot-${s.id}`, Math.floor(m / 60) % 24, m % 60, `${slotLabel(s, profile.lang)}?`, t('slot_prompt'));
+      }
+      const wanted = [...blocks.map((b) => `${PREFIX}${b.id}`), ...slots.map((s) => `${PREFIX}slot-${s.id}`)];
+      // Blocks and slots removed in Settings must stop firing too.
+      for (const id of lastRegistered.current) if (!wanted.includes(id)) await cancel(id);
+      lastRegistered.current = wanted;
     })().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schedule, profile.onboarded, profile.lang]);
+  }, [schedule, routine, profile.onboarded, profile.lang]);
 }

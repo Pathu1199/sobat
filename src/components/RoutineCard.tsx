@@ -10,9 +10,13 @@ import {
   DEFAULT_SPREAD,
   planItems,
   planKcal,
+  skipKey,
   slotLabel,
   slotLines,
   slotLogged,
+  slotMinutes,
+  slotStatus,
+  slotTime,
   SPEND_CATEGORIES,
   spendStatus,
   weekdayOf,
@@ -24,6 +28,7 @@ import {
 import type { FoodItem, Lang } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
+import { useMinute } from '../services/useWorkSchedule';
 import { useApp } from '../store/AppProvider';
 import { Bar, BiText, Btn, Card, Divider, Field, Micro, Pill, Row, Small } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
@@ -66,6 +71,7 @@ export function RoutineCard() {
   const en = makeT('en');
   const [openSlot, setOpenSlot] = useState<RoutineSlot | null>(null);
   const [spendOpen, setSpendOpen] = useState(false);
+  const minute = useMinute();
 
   if (!routine.enabled) return null;
 
@@ -122,28 +128,45 @@ export function RoutineCard() {
       ) : null}
 
       <View>
-        {routine.slots.map((slot, i) => {
+        {[...routine.slots].sort((a, b) => slotMinutes(a) - slotMinutes(b)).map((slot, i) => {
           const done = slotLogged(slot, bhaji, todayMeals);
+          const skipped = app.actionsDoneToday.includes(skipKey(slot));
+          const status = slotStatus(slot, minute, done, skipped);
           const lines = slotLines(routine, slot, 0, bhaji[0] ?? null);
           const kcal = planItems(lines, foods).reduce((a, x) => a + x.kcal, 0);
+          const tone = status === 'done' ? C.accent : status === 'now' ? C.amber : status === 'missed' ? C.red : C.borderStrong;
+          const quiet = status === 'done' || status === 'skipped';
           return (
             <View key={slot.id}>
               {i > 0 ? <Divider /> : null}
               <Pressable
-                onPress={() => setOpenSlot(slot)}
+                onPress={() => (quiet ? undefined : setOpenSlot(slot))}
                 accessibilityRole="button"
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10, opacity: pressed ? 0.7 : 1 })}>
-                <Ionicons name={done ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={done ? C.accent : C.borderStrong} />
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10, opacity: pressed && !quiet ? 0.7 : 1 })}>
+                <Ionicons name={done ? 'checkmark-circle' : skipped ? 'remove-circle-outline' : status === 'now' ? 'time' : 'ellipse-outline'} size={20} color={tone} />
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={{ color: done ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500' }}>{slotLabel(slot, lang)}</Text>
+                  <Row style={{ gap: 8 }}>
+                    <Text style={{ color: quiet ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500', textDecorationLine: skipped ? 'line-through' : 'none' }}>{slotLabel(slot, lang)}</Text>
+                    <Micro color={status === 'now' ? C.amber : status === 'missed' ? C.red : C.textGhost}>{status === 'missed' ? t('slot_missed') : status === 'now' ? t('slot_now') : slotTime(slot)}</Micro>
+                  </Row>
                   <Text style={{ color: C.textFaint, fontSize: F.tiny }} numberOfLines={1}>
                     {lines.map((l) => lineLabel(l, foods, lang)).join(' + ')}
                   </Text>
                 </View>
-                <Text style={{ color: C.textDim, fontSize: F.small }}>{`${kcal} kcal`}</Text>
+                {status === 'missed' ? (
+                  <Pressable onPress={() => app.toggleAction(skipKey(slot))} hitSlop={8} accessibilityRole="button">
+                    <Micro color={C.textFaint}>{t('slot_skip')}</Micro>
+                  </Pressable>
+                ) : (
+                  <Text style={{ color: C.textDim, fontSize: F.small }}>{`${kcal} kcal`}</Text>
+                )}
                 {done ? (
                   <Pressable onPress={() => unlog(slot)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('undo')}>
                     <Micro color={C.accent}>{`${t('routine_logged')} ×`}</Micro>
+                  </Pressable>
+                ) : skipped ? (
+                  <Pressable onPress={() => app.toggleAction(skipKey(slot))} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('undo')}>
+                    <Micro color={C.textFaint}>{`${t('slot_skipped')} ×`}</Micro>
                   </Pressable>
                 ) : (
                   <Pill label={t('routine_log')} onPress={() => setOpenSlot(slot)} />

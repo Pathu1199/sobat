@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { defaultPortion, foodName, portionLabel, searchFoods } from '../core/foods';
-import { addLine, removeLine, renameSlot, setLineQty, slotLabel, type RoutineSlot } from '../core/routine';
+import { addLine, removeLine, renameSlot, setLineQty, slotLabel, slotTime, type RoutineSlot } from '../core/routine';
 import type { FoodItem, Lang, MealType } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -23,6 +23,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
   const t = makeT(lang);
   const [addingTo, setAddingTo] = useState<number | null>(null);
   const [query, setQuery] = useState('');
+  const [time, setTime] = useState(slotTime(slot));
 
   const results = addingTo !== null && query.trim() ? searchFoods(foods, query, 6) : [];
 
@@ -35,7 +36,20 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
 
   return (
     <View style={{ gap: 12, paddingBottom: 6 }}>
-      <Field label={t('routine_meal_name')} value={slotLabel(slot, lang)} onChangeText={(v) => onChange(renameSlot(slot, lang, v))} />
+      <Row style={{ gap: 10 }}>
+        <Field label={t('routine_meal_name')} value={slotLabel(slot, lang)} onChangeText={(v) => onChange(renameSlot(slot, lang, v))} />
+        <View style={{ width: 96 }}>
+          <Field
+            label={t('sched_at')}
+            value={time}
+            placeholder="13:00"
+            onChangeText={(v) => {
+              setTime(v);
+              if (/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) onChange({ ...slot, time: v });
+            }}
+          />
+        </View>
+      </Row>
 
       <Micro>{t('routine_meal_type')}</Micro>
       <Row style={{ flexWrap: 'wrap', gap: 6 }}>
