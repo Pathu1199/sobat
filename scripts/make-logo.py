@@ -5,9 +5,9 @@ you. Colours come from src/ui/theme.ts. Run with: python3 scripts/make-logo.py
 """
 from PIL import Image, ImageDraw, ImageFilter
 
-BG = (0x0B, 0x0E, 0x17)          # C.bgAlt
-ACCENT = (0x3B, 0x82, 0xF6)      # C.accent
-CYAN = (0x22, 0xD3, 0xEE)        # C.cyan
+BG = (0x0E, 0x10, 0x17)          # C.bgAlt
+ACCENT = (0x5B, 0x86, 0xF5)      # C.accent
+CYAN = (0x3F, 0xD3, 0xE6)        # C.cyan
 WHITE = (255, 255, 255)
 SS = 4                           # supersample for smooth edges
 

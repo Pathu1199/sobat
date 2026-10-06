@@ -7,7 +7,7 @@ import React, { type PropsWithChildren } from 'react';
  * highlight, and inputs at 16px so iOS does not zoom into them.
  */
 const APP_CSS = `
-html, body { background: #07090F; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+html, body { background: #0A0B10; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
 body { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-text-size-adjust: 100%; touch-action: pan-x pan-y; }
 input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; font-size: 16px !important; }
 `;
@@ -31,7 +31,7 @@ export default function Root({ children }: PropsWithChildren) {
         {/* maximum-scale=1 stops iOS zooming the page when a text box is tapped. */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no, viewport-fit=cover" />
         <meta name="description" content="A local-first health companion. Food, sleep, movement and mind, with the AI on your own PC." />
-        <meta name="theme-color" content="#07090F" />
+        <meta name="theme-color" content="#0A0B10" />
         <meta name="color-scheme" content="dark" />
         {/* Pinned to an iPhone home screen: this icon and name, and no Safari chrome around the app. */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

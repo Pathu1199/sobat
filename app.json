@@ -12,7 +12,7 @@
     "userInterfaceStyle": "dark",
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0B0E17",
+        "backgroundColor": "#0E1017",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -37,7 +37,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#07090F",
+          "backgroundColor": "#0A0B10",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 120
         }
@@ -45,7 +45,7 @@
       [
         "expo-notifications",
         {
-          "color": "#3B82F6",
+          "color": "#5B86F5",
           "defaultChannel": "sobat"
         }
       ],
@@ -71,7 +71,7 @@
       "reactCompiler": true
     },
     "description": "Local-first health companion: calories, food photos, sleep, joint-safe fitness and gentle reminders. Runs on Android and Windows, uses your own Ollama for AI.",
-    "primaryColor": "#3B82F6",
+    "primaryColor": "#5B86F5",
     "androidStatusBar": {
       "barStyle": "light-content",
       "backgroundColor": "#111F1C"

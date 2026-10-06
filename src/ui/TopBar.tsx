@@ -38,7 +38,7 @@ export function TopBar({
         }}>
         {left}
         <View style={{ flex: 1, gap: 2 }}>
-          <Text numberOfLines={1} style={{ color: C.text, fontSize: F.h2, fontWeight: '600', letterSpacing: -0.3 }}>
+          <Text numberOfLines={1} style={{ color: C.text, fontSize: wide ? F.h2 : F.h2 - 2, fontWeight: '600', letterSpacing: -0.3 }}>
             {title}
             {alt ? <Text style={{ color: C.textFaint, fontWeight: '400' }}> {alt}</Text> : null}
           </Text>
