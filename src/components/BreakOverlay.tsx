@@ -8,6 +8,7 @@ import { useFeedback } from '../services/feedback';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
 import { useReducedMotion } from '../ui/animated';
+import { Blink, FollowDot, NeckTilt, ShoulderRoll } from './BreakGuides';
 import { Micro } from '../ui/components';
 import { C, F, MICRO } from '../ui/theme';
 
@@ -125,8 +126,16 @@ export function BreakOverlay() {
         </Text>
       </Animated.View>
 
+      {/* Something to do with the break, chosen by kind and varied from break to break. */}
+      <View style={{ marginTop: 28 }}>
+        {kind === 'micro' ? (seed % 2 === 0 ? <FollowDot width={width} label={t('guide_follow')} /> : <Blink label={t('guide_blink')} />) : null}
+        {kind === 'blink' ? <Blink label={t('guide_blink')} /> : null}
+        {kind === 'posture' ? (seed % 2 === 0 ? <NeckTilt label={t('guide_neck')} /> : <ShoulderRoll label={t('guide_shoulders')} />) : null}
+        {kind === 'long' ? <NeckTilt label={t('guide_stand')} /> : null}
+      </View>
+
       {moves.length > 0 ? (
-        <View style={{ marginTop: 36, gap: 10, paddingHorizontal: 32, maxWidth: 520 }}>
+        <View style={{ marginTop: 24, gap: 10, paddingHorizontal: 32, maxWidth: 520 }}>
           <Text style={[MICRO, { color: C.textGhost, textAlign: 'center' }]}>{t('brk_try_these')}</Text>
           {moves.map((e) => (
             <Text key={e.id} style={{ color: C.textDim, fontSize: F.small, textAlign: 'center', lineHeight: 19 }}>
