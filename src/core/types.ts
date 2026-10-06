@@ -40,6 +40,8 @@ export type Settings = {
   driveBackupAt?: string;
   /** What the food list may show. 'veg' hides meat, fish and eggs. */
   diet: Diet;
+  /** Follow the phone, or force light or dark. */
+  appearance: 'system' | 'light' | 'dark';
 };
 
 export type Diet = 'veg' | 'egg' | 'nonveg';

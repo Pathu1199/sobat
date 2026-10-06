@@ -2,7 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useEased, useEntrance } from './animated';
-import { C, F, MICRO, S } from './theme';
+import { C, F, MICRO, onThemeChange, S } from './theme';
 
 export function Screen({ children, refreshing, wide }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean }) {
   return (
@@ -433,7 +433,9 @@ export function Empty({ text }: { text: string }) {
   );
 }
 
-const st = StyleSheet.create({
+// Baked once per theme; rebuilt when the palette switches (the tree remounts right after).
+function buildStyles() {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.bg },
   screenContent: { padding: S.pad, gap: S.gap, maxWidth: 780, width: '100%', alignSelf: 'center' },
   card: { backgroundColor: C.card, borderRadius: S.radius, borderWidth: S.hairline, borderColor: C.border, padding: S.padLg, gap: 12 },
@@ -471,4 +473,10 @@ const st = StyleSheet.create({
   barTrack: { backgroundColor: C.cardAlt, overflow: 'visible', width: '100%' },
   divider: { height: S.hairline, backgroundColor: C.border },
   empty: { paddingVertical: 22, alignItems: 'center' },
+});
+}
+
+let st = buildStyles();
+onThemeChange(() => {
+  st = buildStyles();
 });

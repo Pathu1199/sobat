@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { foodName } from '../core/foods';
+import { foodName, searchFoods } from '../core/foods';
 import { newId } from '../core/id';
 import {
   avoidHits,
@@ -139,12 +139,13 @@ export function RoutineCard() {
           return (
             <View key={slot.id}>
               {i > 0 ? <Divider /> : null}
-              <Pressable
-                onPress={() => (quiet ? undefined : setOpenSlot(slot))}
-                accessibilityRole="button"
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10, opacity: pressed && !quiet ? 0.7 : 1 })}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10 }}>
                 <Ionicons name={done ? 'checkmark-circle' : skipped ? 'remove-circle-outline' : status === 'now' ? 'time' : 'ellipse-outline'} size={20} color={tone} />
-                <View style={{ flex: 1, gap: 2 }}>
+                <Pressable
+                  onPress={() => (quiet ? undefined : setOpenSlot(slot))}
+                  disabled={quiet}
+                  accessibilityRole="button"
+                  style={({ pressed }) => ({ flex: 1, gap: 2, opacity: pressed && !quiet ? 0.7 : 1 })}>
                   <Row style={{ gap: 8 }}>
                     <Text style={{ color: quiet ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500', textDecorationLine: skipped ? 'line-through' : 'none' }}>{slotLabel(slot, lang)}</Text>
                     <Micro color={status === 'now' ? C.amber : status === 'missed' ? C.red : C.textGhost}>{status === 'missed' ? t('slot_missed') : status === 'now' ? t('slot_now') : slotTime(slot)}</Micro>
@@ -152,7 +153,7 @@ export function RoutineCard() {
                   <Text style={{ color: C.textFaint, fontSize: F.tiny }} numberOfLines={1}>
                     {lines.map((l) => lineLabel(l, foods, lang)).join(' + ')}
                   </Text>
-                </View>
+                </Pressable>
                 {status === 'missed' ? (
                   <Pressable onPress={() => app.toggleAction(skipKey(slot))} hitSlop={8} accessibilityRole="button">
                     <Micro color={C.textFaint}>{t('slot_skip')}</Micro>
@@ -171,7 +172,7 @@ export function RoutineCard() {
                 ) : (
                   <Pill label={t('routine_log')} onPress={() => setOpenSlot(slot)} />
                 )}
-              </Pressable>
+              </View>
             </View>
           );
         })}
@@ -220,6 +221,10 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
   const [option, setOption] = useState(0);
   const [bhajiIdx, setBhajiIdx] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);
+  // Ate a different bhaji than planned: pick any vegetable dish instead.
+  const [otherOpen, setOtherOpen] = useState(false);
+  const [otherQuery, setOtherQuery] = useState('');
+  const [otherId, setOtherId] = useState<string | null>(null);
 
   // A different slot starts from its defaults again.
   const slotId = slot?.id ?? null;
@@ -227,11 +232,16 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
     setOpenId(slotId);
     setOption(0);
     setBhajiIdx(0);
+    setOtherOpen(false);
+    setOtherQuery('');
+    setOtherId(null);
   }
 
   if (!slot) return null;
   const current = slot;
-  const lines = slotLines(state.routine, current, option, bhaji[bhajiIdx] ?? null);
+  const chosenBhaji = otherId ?? bhaji[bhajiIdx] ?? null;
+  const lines = slotLines(state.routine, current, option, chosenBhaji);
+  const otherResults = otherOpen && otherQuery.trim() ? searchFoods(foods, otherQuery, 6).filter((f) => f.category === 'veg' || f.category === 'dal') : [];
   const items = planItems(lines, foods);
   const kcal = items.reduce((a, i) => a + i.kcal, 0);
   const protein = Math.round(items.reduce((a, i) => a + i.protein, 0));
@@ -247,14 +257,26 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
 
   return (
     <Sheet open title={slotLabel(current, lang)} onClose={onClose}>
-      {current.withBhaji && bhaji.length > 1 ? (
+      {current.withBhaji ? (
         <View style={{ gap: 8 }}>
           <Micro>{t('routine_bhaji')}</Micro>
           <Row style={{ flexWrap: 'wrap', gap: 6 }}>
             {bhaji.map((id, i) => (
-              <Pill key={id} label={foodLabel(id, foods, lang)} active={bhajiIdx === i} onPress={() => setBhajiIdx(i)} />
+              <Pill key={id} label={foodLabel(id, foods, lang)} active={otherId === null && bhajiIdx === i} onPress={() => { setBhajiIdx(i); setOtherId(null); setOtherOpen(false); }} />
             ))}
+            {otherId ? <Pill label={foodLabel(otherId, foods, lang)} active onPress={() => setOtherOpen(true)} /> : null}
+            <Pill label={`${t('other_bhaji')}…`} active={otherOpen && !otherId} onPress={() => setOtherOpen((o) => !o)} />
           </Row>
+          {otherOpen ? (
+            <View style={{ gap: 4 }}>
+              <Field value={otherQuery} onChangeText={setOtherQuery} placeholder={t('search_food')} autoFocus />
+              {otherResults.map((f) => (
+                <Pressable key={f.id} onPress={() => { setOtherId(f.id); setOtherOpen(false); setOtherQuery(''); }} style={({ pressed }) => ({ paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}>
+                  <BiText en={f.name_en} alt={lang === 'en' ? undefined : f.name_mr} size={F.body} />
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
         </View>
       ) : null}
       {current.options.length > 1 ? (

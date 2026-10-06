@@ -8,7 +8,9 @@
  * kept readable on a phone in daylight. Numbers are light; labels are small,
  * uppercase and quiet.
  */
-export const C = {
+export type ThemeMode = 'dark' | 'light';
+
+const DARK = {
   bg: '#0A0B10',
   bgAlt: '#0E1017',
   card: '#141721',
@@ -40,6 +42,68 @@ export const C = {
   white: '#FFFFFF',
   scrim: 'rgba(4, 6, 11, 0.7)',
 };
+
+/** The same roles in daylight: paper-white panels, ink text, the accents a shade deeper so they hold on white. */
+const LIGHT: typeof DARK = {
+  bg: '#F4F5F9',
+  bgAlt: '#FFFFFF',
+  card: '#FFFFFF',
+  cardAlt: '#EEF1F7',
+  cardHigh: '#E3E8F2',
+  border: '#E1E5EE',
+  borderStrong: '#C9D1E0',
+
+  text: '#141826',
+  textDim: '#4A536F',
+  textFaint: '#7A8399',
+  textGhost: '#A7AFC2',
+
+  accent: '#3F6AE0',
+  accentSoft: '#D5DEFB',
+  accentDim: '#E7ECFC',
+
+  cyan: '#0E9FB6',
+  cyanSoft: '#CBEDF3',
+  violet: '#7656EE',
+  violetSoft: '#E5DEFE',
+  green: '#1E9A67',
+  amber: '#C4860E',
+  amberSoft: '#FAE9C3',
+  red: '#D7475A',
+  redSoft: '#FAD8DD',
+  pink: '#D4478A',
+
+  white: '#FFFFFF',
+  scrim: 'rgba(20, 24, 38, 0.45)',
+};
+
+export const PALETTES: Record<ThemeMode, typeof DARK> = { dark: DARK, light: LIGHT };
+
+/**
+ * The live palette. Every component reads from this object at render, so a
+ * switch is an Object.assign plus a remount of the tree (ThemeProvider does
+ * that); modules that bake colours into a StyleSheet subscribe to rebuild.
+ */
+export const C: typeof DARK = { ...DARK };
+let current: ThemeMode = 'dark';
+const listeners = new Set<() => void>();
+
+export function themeMode(): ThemeMode {
+  return current;
+}
+
+export function applyTheme(mode: ThemeMode): void {
+  if (mode === current) return;
+  current = mode;
+  Object.assign(C, PALETTES[mode]);
+  listeners.forEach((fn) => fn());
+}
+
+export function onThemeChange(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
 
 export const S = {
   gap: 12,

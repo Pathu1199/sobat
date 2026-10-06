@@ -87,6 +87,13 @@ export default function SettingsScreen() {
             ))}
           </Row>
           <Divider />
+          <Micro>{en('appearance')}</Micro>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {(['system', 'light', 'dark'] as const).map((a) => (
+              <Pill key={a} label={t(`appearance_${a}`)} active={s.appearance === a} onPress={() => app.setSettings({ appearance: a })} />
+            ))}
+          </Row>
+          <Divider />
           <Micro>{en('diet')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {(['veg', 'egg', 'nonveg'] as const).map((d) => (

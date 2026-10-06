@@ -32,7 +32,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no, viewport-fit=cover" />
         <meta name="description" content="A local-first health companion. Food, sleep, movement and mind, with the AI on your own PC." />
         <meta name="theme-color" content="#0A0B10" />
-        <meta name="color-scheme" content="dark" />
+        <meta name="color-scheme" content="dark light" />
         {/* Pinned to an iPhone home screen: this icon and name, and no Safari chrome around the app. */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

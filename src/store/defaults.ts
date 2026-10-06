@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS: Settings = {
   glassMl: 250,
   // Most of the people this is built for are vegetarian; the setting is one tap away.
   diet: 'veg',
+  appearance: 'system',
 };
 
 export const EMPTY_STATE: AppState = {
