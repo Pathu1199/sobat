@@ -4,11 +4,12 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CustomFoodForm } from '../components/CustomFoodForm';
+import { FoodDetailSheet, FoodThumb, type Chosen } from '../components/FoodDetailSheet';
 import { swapText } from '../components/RoutineCard';
 import { IconButton } from '../components/TopBarActions';
 import { addDays, formatDayLabel, lastNDates, localHHMM } from '../core/date';
 import { newId } from '../core/id';
-import { defaultPortion, DISH_STYLES, foodIcon, foodName, MEASURES, portionLabel, recentFoodIds, searchFoods, styleOf, suggestMeals, toMealItem, type DishStyle } from '../core/foods';
+import { defaultPortion, DISH_STYLES, foodName, MEASURES, portionLabel, recentFoodIds, searchFoods, styleOf, suggestMeals, toMealItem, type DishStyle } from '../core/foods';
 import { dietFrom } from '../core/memory';
 import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../core/nutrition';
 import { avoidedFoodIds, avoidHits } from '../core/routine';
@@ -41,6 +42,8 @@ export default function LogScreen() {
   const [basket, setBasket] = useState<{ food: FoodItem; count: number; unit: string; gramsPerUnit: number }[]>([]);
   const [weightInput, setWeightInput] = useState('');
   const [customOpen, setCustomOpen] = useState(false);
+  // A tapped result opens its sheet: picture, measure, amount, numbers, then Add.
+  const [detail, setDetail] = useState<FoodItem | null>(null);
 
   const [styleFilter, setStyleFilter] = useState<DishStyle | null>(null);
   const found = useMemo(() => searchFoods(app.foods, query, 30), [app.foods, query]);
@@ -92,6 +95,16 @@ export default function LogScreen() {
         ? b.filter((x) => x.food.id !== fromId)
         : b.map((x) => (x.food.id === fromId ? { food: to, count: 1, unit: to.default_portion, gramsPerUnit: defaultPortion(to)?.grams ?? 150 } : x)),
     );
+  }
+
+  function addChosen(c: Chosen) {
+    fb.haptic('light');
+    setBasket((b) => {
+      const rest = b.filter((x) => x.food.id !== c.food.id);
+      return [...rest, { food: c.food, count: c.count, unit: c.unit, gramsPerUnit: c.gramsPerUnit }];
+    });
+    setDetail(null);
+    setQuery('');
   }
 
   function addToBasket(food: FoodItem) {
@@ -244,6 +257,7 @@ export default function LogScreen() {
             <View key={b.food.id} style={{ gap: 9 }}>
               {idx > 0 ? <Divider /> : null}
               <Row style={{ justifyContent: 'space-between' }}>
+                <FoodThumb food={b.food} size={40} />
                 <View style={{ flex: 1, gap: 3 }}>
                   <BiText en={b.food.name_en} alt={lang === 'en' ? undefined : b.food.name_mr} />
                   <Micro>{`${b.count} × ${measureText} · ${item.grams} g`}</Micro>
@@ -311,14 +325,14 @@ export default function LogScreen() {
               <View key={f.id}>
                 {i > 0 ? <Divider /> : null}
                 <ListRow
-                  icon={<Text style={{ fontSize: 17 }}>{foodIcon(f)}</Text>}
+                  icon={<FoodThumb food={f} size={40} />}
                   title={f.name_en}
                   alt={lang === 'en' ? undefined : f.name_mr}
                   sub={[styleOf(f) ? t(`style_${styleOf(f)}`) : null, p ? portionLabel(p, lang) : null].filter(Boolean).join(' · ')}
                   value={String(kcal)}
                   valueUnit="kcal"
-                  onPress={() => addToBasket(f)}
-                  trailing={<Ionicons name="add" size={17} color={C.accent} />}
+                  onPress={() => setDetail(f)}
+                  trailing={<Ionicons name="chevron-forward" size={15} color={C.textGhost} />}
                 />
               </View>
             );
@@ -396,6 +410,7 @@ export default function LogScreen() {
             {todayCard}
           </ScrollView>
         </View>
+        <FoodDetailSheet food={detail} onAdd={addChosen} onClose={() => setDetail(null)} />
       </View>
     );
   }
@@ -437,6 +452,7 @@ export default function LogScreen() {
           <Btn label={t('save')} onPress={saveMeal} style={{ minWidth: 120 }} />
         </View>
       ) : null}
+      <FoodDetailSheet food={detail} onAdd={addChosen} onClose={() => setDetail(null)} />
     </View>
   );
 }
