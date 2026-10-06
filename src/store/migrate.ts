@@ -87,5 +87,6 @@ export function migrateState(raw: unknown): AppState {
     // Older stores have no routine; one saved before a field existed gets the default for it.
     routine: { ...EMPTY_STATE.routine, ...(isRecord(raw.routine) ? raw.routine : {}) },
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
+    schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}) },
   };
 }

@@ -43,7 +43,7 @@ export default function LogScreen() {
   // Any day of the last two weeks can be logged; today unless another is picked.
   const [viewDate, setViewDate] = useState(app.today);
   const isToday = viewDate === app.today;
-  const stripDates = useMemo(() => lastNDates(14, app.today), [app.today]);
+  const stripDates = useMemo(() => [...lastNDates(11, app.today), ...[1, 2, 3].map((n) => addDays(app.today, n))], [app.today]);
   const loggedDates = useMemo(() => new Set(app.state.meals.map((m) => m.date)), [app.state.meals]);
   const dayMeals = app.state.meals.filter((m) => m.date === viewDate);
   const dayKcal = sumTotals(dayMeals.flatMap((m) => m.items)).kcal;

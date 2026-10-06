@@ -2,6 +2,7 @@ import type { BreakLog, BreakSettings } from './breaks';
 import type { MemoryItem } from './memory';
 import type { QueuedPhoto } from './queue';
 import type { Routine, SpendLog } from './routine';
+import type { WorkSchedule } from './schedule';
 import type { UsageBucket } from './usage';
 
 export type Lang = 'en' | 'mr' | 'hi';
@@ -168,6 +169,8 @@ export type AppState = {
   routine: Routine;
   /** Rupees spent on food. */
   spend: SpendLog[];
+  /** The office day: start, breaks, lunch, tea, end. */
+  schedule: WorkSchedule;
 };
 
 export type StepLog = { date: ISODate; count: number };

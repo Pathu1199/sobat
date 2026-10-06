@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { BreakCheckin } from '../../components/BreakCheckin';
 import { BreakPanel } from '../../components/BreakPanel';
 import { DayReview } from '../../components/DayReview';
 import { DayScoreCard } from '../../components/DayScore';
@@ -184,6 +185,7 @@ export default function TodayScreen() {
         <Cols weights={[1.15, 1, 0.95]}>
           <>
             {heroCard}
+            {isToday ? <BreakCheckin /> : null}
             {isToday ? <PlanCard /> : null}
             {isToday ? <RoutineCard /> : null}
             {mealsBlock}
@@ -205,6 +207,7 @@ export default function TodayScreen() {
     <Page title={titleName} alt={undefined} subtitle={subtitle} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
+      {isToday ? <BreakCheckin /> : null}
       {isToday ? <PlanCard /> : null}
       {isToday ? <RoutineCard /> : null}
       {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}

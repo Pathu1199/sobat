@@ -6,6 +6,7 @@ import { isUp, listModels, normalizeUrl } from '../ai/ollama';
 import type { Lang } from '../core/types';
 import { fill, LANG_NAMES, makeT } from '../i18n';
 import { requestPermission } from '../services/notify';
+import { ScheduleEditor } from '../components/ScheduleEditor';
 import { useDriveBackup } from '../services/useDriveBackup';
 import { useApp } from '../store/AppProvider';
 import { DEFAULT_OLLAMA_URL } from '../store/defaults';
@@ -266,6 +267,9 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
+        <SectionHeader title={en('sched_title')} />
+        <ScheduleEditor />
+
         <SectionHeader title={en('drive_title')} />
         <Card>
           <Small>{t('drive_note')}</Small>

@@ -26,7 +26,7 @@ export function DateStrip({
   const t = makeT(lang);
   const scroller = useRef<ScrollView>(null);
 
-  // Open on the selected day rather than the start of the strip.
+  // Open with the selected day in the middle.
   useEffect(() => {
     const idx = dates.indexOf(selected);
     if (idx >= 0) scroller.current?.scrollTo({ x: Math.max(0, (idx - 3) * (CELL + 6)), animated: false });
@@ -37,12 +37,15 @@ export function DateStrip({
       {dates.map((d) => {
         const on = d === selected;
         const isToday = d === today;
+        // Tomorrow has not happened yet; it is shown for bearings, not for logging.
+        const future = d > today;
         return (
           <Pressable
             key={d}
-            onPress={() => onSelect(d)}
+            onPress={future ? undefined : () => onSelect(d)}
+            disabled={future}
             accessibilityRole="button"
-            accessibilityState={{ selected: on }}
+            accessibilityState={{ selected: on, disabled: future }}
             style={({ pressed }) => ({
               width: CELL,
               paddingVertical: 8,
@@ -52,7 +55,7 @@ export function DateStrip({
               backgroundColor: on ? C.accent : C.card,
               borderWidth: 1,
               borderColor: on ? C.accent : isToday ? C.borderStrong : C.border,
-              opacity: pressed ? 0.7 : 1,
+              opacity: future ? 0.35 : pressed ? 0.7 : 1,
             })}>
             <Text style={[MICRO, { color: on ? C.white : C.textFaint }]}>{t(`wd_${weekdayOf(d)}`)}</Text>
             <Text style={{ color: on ? C.white : C.text, fontSize: F.h3, fontWeight: '600' }}>{Number(d.slice(8, 10))}</Text>

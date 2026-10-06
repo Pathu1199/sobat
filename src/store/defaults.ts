@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS } from '../core/breaks';
 import { DEFAULT_ROUTINE } from '../core/routine';
+import { DEFAULT_SCHEDULE } from '../core/schedule';
 import type { AppState, Profile, Settings } from '../core/types';
 
 export const DEFAULT_PROFILE: Profile = {
@@ -62,4 +63,5 @@ export const EMPTY_STATE: AppState = {
   actionsDone: [],
   routine: DEFAULT_ROUTINE,
   spend: [],
+  schedule: DEFAULT_SCHEDULE,
 };
