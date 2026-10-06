@@ -11,6 +11,7 @@ import { usePhotoQueue } from '../services/usePhotoQueue';
 import { useScheduledReminders } from '../services/useScheduledReminders';
 import { useSteps } from '../services/useSteps';
 import { useUsageTracker } from '../services/useUsageTracker';
+import { usePushSync } from '../services/usePushSync';
 import { useWorkSchedule } from '../services/useWorkSchedule';
 import { AppProvider, useApp } from '../store/AppProvider';
 import { applyTextScale, applyTheme, C, themeMode, type ThemeMode } from '../ui/theme';
@@ -59,6 +60,7 @@ function AppShell() {
   useSteps();
   usePhotoQueue();
   useWorkSchedule();
+  usePushSync();
 
   // The break monitor is only useful if it is running, so the Windows shell
   // registers itself to start with the machine. Idempotent, and a no-op in a

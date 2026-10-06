@@ -1,0 +1,19 @@
+{
+  "name": "sobat-relay",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@block65/webcrypto-web-push": "^2.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250101.0",
+    "typescript": "~5.9.0",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.86.0"
+  }
+}

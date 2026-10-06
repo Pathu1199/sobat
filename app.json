@@ -80,6 +80,10 @@
       "google": {
         "webClientId": "",
         "androidClientId": ""
+      },
+      "push": {
+        "relayUrl": "",
+        "vapidPublicKey": "BCwCri232dn5dL8BgxWj2BeTE5v-N7GSpEX1TgKns8nzwk3zPpN4Z0XWKK_U4Qx0EIRdUVt3849xMbefS9LcjMA"
       }
     }
   }

@@ -1,0 +1,19 @@
+# Sobat's reminder relay. Deploy with: npm run deploy (after `npx wrangler login`).
+name = "sobat-relay"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+
+# Every five minutes: send whatever became due since the last run.
+[triggers]
+crons = ["*/5 * * * *"]
+
+[[kv_namespaces]]
+binding = "SUBS"
+id = "REPLACE_WITH_KV_ID"
+
+[vars]
+VAPID_SUBJECT = "mailto:design3@varadautomation.com"
+VAPID_PUBLIC_KEY = "BCwCri232dn5dL8BgxWj2BeTE5v-N7GSpEX1TgKns8nzwk3zPpN4Z0XWKK_U4Qx0EIRdUVt3849xMbefS9LcjMA"
+ALLOWED_ORIGINS = "https://sobat-a56c7.web.app,http://localhost:8082"
+
+# VAPID_PRIVATE_KEY is a secret: npx wrangler secret put VAPID_PRIVATE_KEY

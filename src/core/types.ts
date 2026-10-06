@@ -44,6 +44,8 @@ export type Settings = {
   appearance: 'system' | 'light' | 'dark';
   /** Multiplier on every type size; 1 is the design size. */
   textScale: number;
+  /** Web only: reminders through the relay while the app is closed. */
+  pushRelay: boolean;
 };
 
 export type Diet = 'veg' | 'egg' | 'nonveg';

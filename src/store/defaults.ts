@@ -42,6 +42,7 @@ export const DEFAULT_SETTINGS: Settings = {
   diet: 'veg',
   appearance: 'system',
   textScale: 1,
+  pushRelay: false,
 };
 
 export const EMPTY_STATE: AppState = {

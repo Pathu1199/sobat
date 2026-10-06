@@ -6,6 +6,7 @@ import { isUp, listModels, normalizeUrl } from '../ai/ollama';
 import type { Lang } from '../core/types';
 import { fill, LANG_NAMES, makeT } from '../i18n';
 import { notifyNow, requestPermission } from '../services/notify';
+import { pushConfigured, stopPush, testPush } from '../services/push';
 import Constants from 'expo-constants';
 import { ScheduleEditor } from '../components/ScheduleEditor';
 import { useDriveBackup } from '../services/useDriveBackup';
@@ -31,6 +32,7 @@ export default function SettingsScreen() {
   // Ollama and the break monitor are the technical half; folded unless wanted.
   const [advanced, setAdvanced] = useState(false);
   const [notifyMsg, setNotifyMsg] = useState<'sent' | 'blocked' | null>(null);
+  const [pushMsg, setPushMsg] = useState<'sent' | 'failed' | null>(null);
 
   async function test() {
     setTesting(true);
@@ -141,6 +143,39 @@ export default function SettingsScreen() {
             />
           </Row>
           {notifyMsg ? <Small color={notifyMsg === 'sent' ? C.green : C.amber}>{t(notifyMsg === 'sent' ? 'test_notification_sent' : 'test_notification_blocked')}</Small> : null}
+          {pushConfigured() ? (
+            <>
+              <Divider />
+              <Toggle
+                title={t('push_title')}
+                desc={t('push_desc')}
+                on={s.pushRelay}
+                onToggle={async () => {
+                  if (s.pushRelay) {
+                    await stopPush();
+                    app.setSettings({ pushRelay: false });
+                  } else {
+                    const ok = await requestPermission();
+                    if (ok) app.setSettings({ pushRelay: true });
+                    else setNotifyMsg('blocked');
+                  }
+                }}
+              />
+              {s.pushRelay ? (
+                <Btn
+                  small
+                  tone="soft"
+                  label={t('push_test')}
+                  onPress={async () => {
+                    setPushMsg(null);
+                    setPushMsg((await testPush(lang)) ? 'sent' : 'failed');
+                  }}
+                />
+              ) : null}
+              {pushMsg ? <Small color={pushMsg === 'sent' ? C.green : C.amber}>{t(pushMsg === 'sent' ? 'push_test_sent' : 'push_test_failed')}</Small> : null}
+              <Small color={C.textGhost}>{t('push_privacy')}</Small>
+            </>
+          ) : null}
           <Divider />
           <Micro>{t('quiet_hours')}</Micro>
           <Row style={{ gap: 12 }}>

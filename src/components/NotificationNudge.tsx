@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Platform, Text } from 'react-native';
 import { makeT } from '../i18n';
 import { notifyNow, requestPermission, webPermission } from '../services/notify';
+import { pushConfigured } from '../services/push';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Row, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
@@ -13,7 +14,7 @@ import { C, F } from '../ui/theme';
  * pinned app, so in plain Safari it says to pin first.
  */
 export function NotificationNudge() {
-  const { state } = useApp();
+  const { state, setSettings } = useApp();
   const t = makeT(state.profile.lang);
   const [status, setStatus] = useState(() => webPermission());
 
@@ -25,7 +26,10 @@ export function NotificationNudge() {
   async function enable() {
     const ok = await requestPermission();
     setStatus(ok ? 'granted' : webPermission());
-    if (ok) await notifyNow(t('ntf_on_title'), t('ntf_on_body'));
+    if (ok) {
+      if (pushConfigured()) setSettings({ pushRelay: true });
+      await notifyNow(t('ntf_on_title'), t('ntf_on_body'));
+    }
   }
 
   return (
