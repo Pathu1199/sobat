@@ -5,7 +5,7 @@ import { Linking, Platform, Pressable, Text, View } from 'react-native';
 import { isUp, listModels, normalizeUrl } from '../ai/ollama';
 import type { Lang } from '../core/types';
 import { fill, LANG_NAMES, makeT } from '../i18n';
-import { requestPermission } from '../services/notify';
+import { notifyNow, requestPermission } from '../services/notify';
 import Constants from 'expo-constants';
 import { ScheduleEditor } from '../components/ScheduleEditor';
 import { useDriveBackup } from '../services/useDriveBackup';
@@ -31,6 +31,7 @@ export default function SettingsScreen() {
   const [confirmRestore, setConfirmRestore] = useState(false);
   // Ollama and the break monitor are the technical half; folded unless wanted.
   const [advanced, setAdvanced] = useState(false);
+  const [notifyMsg, setNotifyMsg] = useState<'sent' | 'blocked' | null>(null);
 
   async function test() {
     setTesting(true);
@@ -85,6 +86,14 @@ export default function SettingsScreen() {
               <Pill key={l} label={LANG_NAMES[l]} active={lang === l} onPress={() => app.setProfile({ lang: l })} />
             ))}
           </Row>
+          <Divider />
+          <Micro>{en('diet')}</Micro>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {(['veg', 'egg', 'nonveg'] as const).map((d) => (
+              <Pill key={d} label={t(`diet_${d}`)} active={s.diet === d} onPress={() => app.setSettings({ diet: d })} />
+            ))}
+          </Row>
+          <Small color={C.textFaint}>{t('diet_hint')}</Small>
         </Card>
       </View>
 
@@ -103,7 +112,21 @@ export default function SettingsScreen() {
               <Pill key={m} label={`${m}m`} active={s.nudgeMinutes === m} onPress={() => app.setSettings({ nudgeMinutes: m })} />
             ))}
           </Row>
-          <Btn small tone="ghost" label={en('allow_notifications')} onPress={() => requestPermission()} />
+          <Row style={{ gap: 8 }}>
+            <Btn small tone="ghost" label={en('allow_notifications')} onPress={() => requestPermission()} style={{ flex: 1 }} />
+            <Btn
+              small
+              tone="soft"
+              label={t('test_notification')}
+              onPress={async () => {
+                const ok = await requestPermission();
+                setNotifyMsg(ok ? 'sent' : 'blocked');
+                if (ok) await notifyNow(t('test_notification_title'), t('test_notification_body'));
+              }}
+              style={{ flex: 1 }}
+            />
+          </Row>
+          {notifyMsg ? <Small color={notifyMsg === 'sent' ? C.green : C.amber}>{t(notifyMsg === 'sent' ? 'test_notification_sent' : 'test_notification_blocked')}</Small> : null}
           <Divider />
           <Micro>{en('quiet_hours')}</Micro>
           <Row style={{ gap: 12 }}>

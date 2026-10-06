@@ -38,7 +38,11 @@ export type Settings = {
   glassMl: number;
   /** When the last Google Drive backup was written, ISO time. */
   driveBackupAt?: string;
+  /** What the food list may show. 'veg' hides meat, fish and eggs. */
+  diet: Diet;
 };
+
+export type Diet = 'veg' | 'egg' | 'nonveg';
 
 export type MealItem = {
   foodId?: string;

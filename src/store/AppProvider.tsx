@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import foodsJson from '../data/foods.json';
 import exercisesJson from '../data/exercises.json';
 import { lastNDates, toISODate } from '../core/date';
+import { foodsForDiet } from '../core/foods';
 import { newId } from '../core/id';
 import { useClock } from '../services/useClock';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
@@ -135,7 +136,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return {
       ready,
       state,
-      foods: [...FOODS, ...state.customFoods],
+      foods: foodsForDiet([...FOODS, ...state.customFoods], state.settings.diet),
       exercises: EXERCISES,
       today,
       hour,

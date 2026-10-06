@@ -65,6 +65,8 @@ export type Routine = {
   avoid: AvoidRule[];
   budgetMin: number;
   budgetMax: number;
+  /** A bhaji chosen for one particular day, on top of the weekly plan. */
+  overrides?: Record<ISODate, string[]>;
 };
 
 export const SPEND_CATEGORIES: SpendCategory[] = ['fruit', 'veg', 'dry', 'milk', 'other'];
@@ -189,9 +191,16 @@ export function weekdayOf(date: ISODate): number {
   return new Date(date + 'T12:00:00').getDay();
 }
 
-/** The bhaji choices for a date. Empty means a free day. */
+/** The bhaji choices for a date: the day's own pick if there is one, else the weekly plan. Empty means a free day. */
 export function bhajiFor(routine: Routine, date: ISODate): string[] {
-  return routine.week[weekdayOf(date)] ?? [];
+  return routine.overrides?.[date] ?? routine.week[weekdayOf(date)] ?? [];
+}
+
+/** Choose the bhaji for one day. Picks older than yesterday are dropped, since the day has passed. */
+export function setBhajiOverride(routine: Routine, date: ISODate, ids: string[], today: ISODate): Pick<Routine, 'overrides'> {
+  const cutoff = addDays(today, -1);
+  const kept = Object.fromEntries(Object.entries(routine.overrides ?? {}).filter(([d]) => d >= cutoff));
+  return { overrides: { ...kept, [date]: ids } };
 }
 
 /** Add a bhaji to a day, or take it off if it is already there. Keeps at most two. */

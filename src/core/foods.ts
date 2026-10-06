@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js';
 import { kcalForGrams } from './nutrition';
-import type { FoodItem, ISODate, Lang, Meal, MealItem } from './types';
+import type { Diet, FoodItem, ISODate, Lang, Meal, MealItem } from './types';
 
 export function foodName(food: FoodItem, lang: Lang): string {
   if (lang === 'mr') return food.name_mr || food.name_en;
@@ -17,6 +17,35 @@ export function portionLabel(p: FoodItem['portions'][number], lang: Lang): strin
 export function defaultPortion(food: FoodItem) {
   return food.portions.find((p) => p.unit === food.default_portion) ?? food.portions[0];
 }
+
+const EGG_NAME = /\begg\b|\bomelet|अंड/i;
+
+export function isNonVeg(f: FoodItem): boolean {
+  return f.category === 'nonveg' || f.tags.includes('nonveg');
+}
+
+export function isEgg(f: FoodItem): boolean {
+  return f.tags.includes('egg') || EGG_NAME.test(`${f.name_en} ${f.name_mr} ${f.name_hi}`);
+}
+
+/** The food list a person should see at all, given what they eat. */
+export function foodsForDiet(foods: FoodItem[], diet: Diet): FoodItem[] {
+  if (diet === 'nonveg') return foods;
+  return foods.filter((f) => !isNonVeg(f) && (diet === 'egg' || !isEgg(f)));
+}
+
+/**
+ * Household measures anyone can picture, for foods whose own portions do not
+ * fit what is on the plate. Grams are typical cooked weights.
+ */
+export const MEASURES: { unit: string; grams: number }[] = [
+  { unit: 'bowl', grams: 150 },
+  { unit: 'half_bowl', grams: 75 },
+  { unit: 'spoon_big', grams: 15 },
+  { unit: 'spoon_small', grams: 5 },
+  { unit: 'glass', grams: 220 },
+  { unit: 'handful', grams: 30 },
+];
 
 let cached: { list: FoodItem[]; fuse: Fuse<FoodItem> } | null = null;
 

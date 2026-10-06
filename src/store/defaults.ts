@@ -38,6 +38,8 @@ export const DEFAULT_SETTINGS: Settings = {
   quietEndHour: 7,
   waterGoalMl: 3000,
   glassMl: 250,
+  // Most of the people this is built for are vegetarian; the setting is one tap away.
+  diet: 'veg',
 };
 
 export const EMPTY_STATE: AppState = {

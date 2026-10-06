@@ -11,6 +11,7 @@ import { MealSheet } from '../../components/MealSheet';
 import { NowStrip } from '../../components/NowStrip';
 import { PlanCard, useMotivation } from '../../components/PlanCard';
 import { RoutineCard } from '../../components/RoutineCard';
+import { TomorrowCard } from '../../components/TomorrowCard';
 import { TipCard } from '../../components/TipCard';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { addDays, formatDayLabel, localHHMM, localHour } from '../../core/date';
@@ -23,8 +24,7 @@ import type { Meal } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
 import { useApp } from '../../store/AppProvider';
-import { Card, Divider, ListRow, MeterRow, Micro, Quote, Row, Small } from '../../ui/components';
-import { HeroRing } from '../../ui/HeroRing';
+import { Bar, Card, Divider, ListRow, MeterRow, Micro, Quote, Row, Small } from '../../ui/components';
 import { Page } from '../../ui/TopBar';
 import { Cols } from '../../ui/tiles';
 import { C, F, S } from '../../ui/theme';
@@ -118,16 +118,19 @@ export default function TodayScreen() {
 
   const heroCard = (
     <Card>
-      <View style={wide ? { flexDirection: 'row', gap: 18, alignItems: 'center' } : { alignItems: 'center', gap: 16 }}>
-        <HeroRing
-          value={dayBudget.consumed}
-          max={dayBudget.target}
-          size={wide ? 176 : 150}
-          color={over ? C.red : C.accent}
-          big={String(Math.abs(dayBudget.remaining))}
-          caption={over ? t('kcal_over') : t('kcal_left')}
-        />
-        <View style={{ flex: wide ? 1 : undefined, alignSelf: 'stretch', gap: 13 }}>
+      <View style={{ gap: 14 }}>
+        {/* One line and one bar: what is left today. The ring was pretty, but a bar reads at a glance. */}
+        <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <View>
+            <Text style={{ color: over ? C.red : C.text, fontSize: F.display, fontWeight: '300', letterSpacing: -1.5, lineHeight: F.display + 4 }}>
+              {Math.abs(dayBudget.remaining).toLocaleString()}
+              <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400', letterSpacing: 0 }}>{`  ${over ? t('kcal_over') : t('kcal_left')}`}</Text>
+            </Text>
+          </View>
+          <Micro>{`${dayBudget.consumed.toLocaleString()} / ${dayBudget.target.toLocaleString()} kcal`}</Micro>
+        </Row>
+        <Bar value={dayBudget.consumed} max={dayBudget.target} color={over ? C.red : C.accent} height={8} />
+        <View style={{ gap: 13 }}>
           <MeterRow label={en('eaten')} alt={lang === 'en' ? undefined : t('eaten')} value={dayBudget.consumed} total={dayBudget.target} unit="kcal" color={C.accent} />
           <MeterRow label={en('protein')} alt={lang === 'en' ? undefined : t('protein')} value={dayBudget.proteinConsumed} total={dayBudget.proteinTarget} unit="g" color={C.violet} />
           <MeterRow label={en('water')} alt={lang === 'en' ? undefined : t('water')} value={dayWater} total={state.settings.waterGoalMl} unit="ml" color={C.cyan} marker={waterMarker} />
@@ -186,12 +189,13 @@ export default function TodayScreen() {
           <>
             {heroCard}
             {isToday ? <BreakCheckin /> : null}
-            {isToday ? <PlanCard /> : null}
             {isToday ? <RoutineCard /> : null}
+            {isToday ? <TomorrowCard /> : null}
             {mealsBlock}
           </>
           <>
             {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
+            {isToday ? <PlanCard /> : null}
             {isToday ? <TipCard /> : null}
             {isToday ? <DayReview /> : null}
           </>
@@ -208,8 +212,8 @@ export default function TodayScreen() {
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
       {isToday ? <BreakCheckin /> : null}
-      {isToday ? <PlanCard /> : null}
       {isToday ? <RoutineCard /> : null}
+      {isToday ? <TomorrowCard /> : null}
       {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
       {mealsBlock}
       <Pressable
@@ -221,6 +225,7 @@ export default function TodayScreen() {
       </Pressable>
       {more ? (
         <>
+          {isToday ? <PlanCard /> : null}
           {isToday ? <NowStrip /> : null}
           <DayScoreCard score={score} />
           {isToday ? <TipCard /> : null}

@@ -2,16 +2,10 @@ import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { formatDayLabel } from '../core/date';
-import { foodName, suggestMeals, toMealItem } from '../core/foods';
-import { newId } from '../core/id';
-import { dietFrom } from '../core/memory';
-import { mealTypeForHour } from '../core/nutrition';
 import { motivationKey, planFrom } from '../core/plan';
-import { avoidedFoodIds } from '../core/routine';
 import { fill, makeT } from '../i18n';
-import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
-import { Bar, Card, Divider, Micro, Pill, Row, Small } from '../ui/components';
+import { Bar, Card, Micro, Row, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 /** The day's line about where the weight is going, for the top of the Today screen. */
@@ -31,8 +25,7 @@ export function useMotivation(): string {
 export function PlanCard() {
   const app = useApp();
   const router = useRouter();
-  const fb = useFeedback();
-  const { state, targets, budget, today, hour, foods } = app;
+  const { state, targets, today } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
   const en = makeT('en');
@@ -40,21 +33,6 @@ export function PlanCard() {
   const plan = useMemo(() => planFrom(state.profile, state.weights, targets, today), [state.profile, state.weights, targets, today]);
   const total = Math.max(0, plan.startKg - plan.goalKg);
   const progress = total > 0 ? Math.min(1, Math.max(0, plan.lostKg / total)) : plan.toGoKg <= 0 ? 1 : 0;
-
-  const ideas = useMemo(() => {
-    if (budget.remaining < 150 || hour >= 22) return [];
-    const avoided = avoidedFoodIds(state.routine);
-    return suggestMeals(foods, budget.remaining, dietFrom(state.memory))
-      .filter((o) => !avoided.has(o.food.id))
-      .slice(0, 3);
-  }, [budget.remaining, hour, foods, state.memory, state.routine]);
-
-  function logIdea(idea: (typeof ideas)[number]) {
-    const item = toMealItem(idea.food, idea.grams);
-    app.addMeal({ id: newId(), at: new Date().toISOString(), date: today, type: mealTypeForHour(hour), items: [item], kcal: item.kcal, protein: Math.round(item.protein) });
-    fb.haptic('success');
-    fb.notify(fill(t('toast_meal_saved'), { kcal: item.kcal }));
-  }
 
   return (
     <Card rail={C.cyan}>
@@ -88,17 +66,6 @@ export function PlanCard() {
         <Small color={C.textDim}>{fill(t('plan_daily'), { kcal: plan.dailyKcal, p: plan.proteinG })}</Small>
       </View>
 
-      {ideas.length > 0 ? (
-        <>
-          <Divider />
-          <Micro>{fill(t('plan_next'), { kcal: budget.remaining })}</Micro>
-          <Row style={{ flexWrap: 'wrap', gap: 6 }}>
-            {ideas.map((o) => (
-              <Pill key={o.food.id} label={`${foodName(o.food, lang)} · ${o.kcal} kcal`} onPress={() => logIdea(o)} />
-            ))}
-          </Row>
-        </>
-      ) : null}
     </Card>
   );
 }

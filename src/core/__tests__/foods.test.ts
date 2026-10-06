@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { recentFoodIds, scaleMealItem } from '../foods';
-import type { Meal, MealItem } from '../types';
+import foodsJson from '../../data/foods.json';
+import { foodsForDiet, MEASURES, recentFoodIds, scaleMealItem } from '../foods';
+import type { FoodItem, Meal, MealItem } from '../types';
 
 describe('scaleMealItem', () => {
   const item: MealItem = { name_en: 'Chapati', name_mr: 'चपाती', grams: 80, kcal: 238, protein: 8, carbs: 42, fat: 4, estimated: false };
@@ -46,5 +47,24 @@ describe('recentFoodIds', () => {
   it('caps the list', () => {
     const meals = [mk('2026-09-22', ['a', 'b', 'c', 'd'])];
     expect(recentFoodIds(meals, '2026-09-01', 2)).toHaveLength(2);
+  });
+});
+
+describe('foodsForDiet', () => {
+  const ALL = foodsJson as unknown as FoodItem[];
+  it('hides meat, fish and eggs for pure veg, keeps eggs for veg + egg', () => {
+    const veg = foodsForDiet(ALL, 'veg');
+    expect(veg.some((f) => f.category === 'nonveg')).toBe(false);
+    expect(veg.some((f) => /\begg\b/i.test(f.name_en))).toBe(false);
+    expect(veg.some((f) => f.id === 'chapati')).toBe(true);
+    const egg = foodsForDiet(ALL, 'egg');
+    expect(egg.some((f) => /\begg\b/i.test(f.name_en))).toBe(true);
+    expect(egg.some((f) => f.category === 'nonveg')).toBe(false);
+    expect(foodsForDiet(ALL, 'nonveg')).toHaveLength(ALL.length);
+  });
+
+  it('offers household measures with sensible weights', () => {
+    expect(MEASURES.find((m) => m.unit === 'bowl')?.grams).toBe(150);
+    expect(MEASURES.every((m) => m.grams > 0 && m.grams <= 250)).toBe(true);
   });
 });

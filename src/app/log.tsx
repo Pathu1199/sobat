@@ -8,11 +8,12 @@ import { swapText } from '../components/RoutineCard';
 import { IconButton } from '../components/TopBarActions';
 import { addDays, formatDayLabel, lastNDates, localHHMM } from '../core/date';
 import { newId } from '../core/id';
-import { defaultPortion, foodName, portionLabel, recentFoodIds, searchFoods, toMealItem } from '../core/foods';
+import { defaultPortion, foodName, MEASURES, portionLabel, recentFoodIds, searchFoods, suggestMeals, toMealItem } from '../core/foods';
+import { dietFrom } from '../core/memory';
 import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../core/nutrition';
-import { avoidHits } from '../core/routine';
+import { avoidedFoodIds, avoidHits } from '../core/routine';
 import type { FoodItem, MealItem, MealType } from '../core/types';
-import { makeT } from '../i18n';
+import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, SectionHeader, Segmented } from '../ui/components';
@@ -35,7 +36,9 @@ export default function LogScreen() {
 
   const [query, setQuery] = useState('');
   const [mealType, setMealType] = useState<MealType>(() => mealTypeForHour(app.hour));
-  const [basket, setBasket] = useState<{ food: FoodItem; count: number; unit: string }[]>([]);
+  // A line is a food, a measure (one of the food's own portions or a household
+  // measure) and how many of it. gramsPerUnit is what the measure weighs.
+  const [basket, setBasket] = useState<{ food: FoodItem; count: number; unit: string; gramsPerUnit: number }[]>([]);
   const [weightInput, setWeightInput] = useState('');
   const [customOpen, setCustomOpen] = useState(false);
 
@@ -60,14 +63,20 @@ export default function LogScreen() {
   }, [app.state.meals, app.foods, app.today]);
   const yesterdaySame = app.state.meals.find((m) => m.date === addDays(viewDate, -1) && m.type === mealType);
 
-  const basketItems: MealItem[] = basket.map((b) => {
-    const p = b.food.portions.find((x) => x.unit === b.unit) ?? defaultPortion(b.food);
-    return toMealItem(b.food, (p?.grams ?? 100) * b.count);
-  });
+  const basketItems: MealItem[] = basket.map((b) => toMealItem(b.food, b.gramsPerUnit * b.count));
   const basketKcal = basketItems.reduce((a, i) => a + i.kcal, 0);
   const basketProtein = Math.round(basketItems.reduce((a, i) => a + i.protein, 0));
 
   const avoidRules = app.state.routine.enabled ? app.state.routine.avoid : [];
+
+  // What fits in what is left today, never from the avoid list. Shown where the choosing happens.
+  const ideas = useMemo(() => {
+    if (!isToday || app.budget.remaining < 150) return [];
+    const avoided = avoidedFoodIds(app.state.routine);
+    return suggestMeals(app.foods, app.budget.remaining, dietFrom(app.state.memory))
+      .filter((o) => !avoided.has(o.food.id))
+      .slice(0, 4);
+  }, [isToday, app.budget.remaining, app.foods, app.state.routine, app.state.memory]);
 
   /** Put the routine's suggested swap in place of an avoided food, keeping the portion count. */
   function swapInBasket(fromId: string, toId: string) {
@@ -77,7 +86,7 @@ export default function LogScreen() {
     setBasket((b) =>
       b.some((x) => x.food.id === toId)
         ? b.filter((x) => x.food.id !== fromId)
-        : b.map((x) => (x.food.id === fromId ? { food: to, count: 1, unit: to.default_portion } : x)),
+        : b.map((x) => (x.food.id === fromId ? { food: to, count: 1, unit: to.default_portion, gramsPerUnit: defaultPortion(to)?.grams ?? 150 } : x)),
     );
   }
 
@@ -86,7 +95,8 @@ export default function LogScreen() {
     setBasket((b) => {
       const existing = b.find((x) => x.food.id === food.id);
       if (existing) return b.map((x) => (x.food.id === food.id ? { ...x, count: x.count + 0.5 } : x));
-      return [...b, { food, count: 1, unit: food.default_portion }];
+      const p = defaultPortion(food);
+      return [...b, { food, count: 1, unit: p?.unit ?? 'bowl', gramsPerUnit: p?.grams ?? 150 }];
     });
   }
 
@@ -186,6 +196,16 @@ export default function LogScreen() {
       <SectionHeader title={en('add_food')} meta={t(mealType)} />
       <Segmented value={mealType} onChange={setMealType} options={MEAL_TYPES.map((m) => ({ key: m, label: en(m) }))} />
       <Field value={query} onChangeText={setQuery} placeholder={t('search_food')} autoFocus={!wide} />
+      {query.trim() === '' && ideas.length > 0 ? (
+        <View style={{ gap: 8 }}>
+          <Micro>{fill(t('ideas_now'), { kcal: app.budget.remaining })}</Micro>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            {ideas.map((o) => (
+              <Pill key={o.food.id} label={`${foodName(o.food, lang)} · ${o.kcal} kcal`} tone={C.cyan} textColor={C.text} onPress={() => addToBasket(o.food)} />
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
       {query.trim() === '' && (recents.length > 0 || yesterdaySame) ? (
         <View style={{ gap: 8 }}>
           <Micro>{t('recent')}</Micro>
@@ -204,7 +224,8 @@ export default function LogScreen() {
     basket.length > 0 ? (
       <Card tone={C.accent}>
         {basket.map((b, idx) => {
-          const p = b.food.portions.find((x) => x.unit === b.unit) ?? defaultPortion(b.food);
+          const own = b.food.portions.find((x) => x.unit === b.unit);
+          const measureText = own ? portionLabel(own, lang) : `${t(`measure_${b.unit}`)} (${b.gramsPerUnit} g)`;
           const item = basketItems[idx];
           const hit = avoidHits([item], avoidRules)[0];
           const swapTo = hit ? app.foods.find((f) => f.id === hit.rule.swapIds[0]) : undefined;
@@ -214,7 +235,7 @@ export default function LogScreen() {
               <Row style={{ justifyContent: 'space-between' }}>
                 <View style={{ flex: 1, gap: 3 }}>
                   <BiText en={b.food.name_en} alt={lang === 'en' ? undefined : b.food.name_mr} />
-                  <Micro>{`${p ? portionLabel(p, lang) : ''} · ${item.grams} g`}</Micro>
+                  <Micro>{`${b.count} × ${measureText} · ${item.grams} g`}</Micro>
                 </View>
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
                   {item.kcal}
@@ -228,11 +249,15 @@ export default function LogScreen() {
                 {[0.5, 1, 1.5, 2, 3].map((n) => (
                   <Pill key={n} label={`${n}x`} active={b.count === n} onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, count: n } : y)))} />
                 ))}
-                {b.food.portions.length > 1
-                  ? b.food.portions.map((pp) => (
-                      <Pill key={pp.unit} label={pp.unit} active={b.unit === pp.unit} onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, unit: pp.unit } : y)))} />
-                    ))
-                  : null}
+              </Row>
+              <Micro>{t('measure_q')}</Micro>
+              <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+                {b.food.portions.map((pp) => (
+                  <Pill key={pp.unit} label={portionLabel(pp, lang)} active={b.unit === pp.unit} onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, unit: pp.unit, gramsPerUnit: pp.grams } : y)))} />
+                ))}
+                {MEASURES.filter((m) => !b.food.portions.some((pp) => pp.unit === m.unit) && (m.unit !== 'glass' || ['beverage', 'dairy'].includes(b.food.category))).map((m) => (
+                  <Pill key={m.unit} label={`${t(`measure_${m.unit}`)} · ${Math.round((b.food.kcal_100g * m.grams) / 100)} kcal`} active={b.unit === m.unit} onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, unit: m.unit, gramsPerUnit: m.grams } : y)))} />
+                ))}
               </Row>
               {hit ? (
                 <Row style={{ gap: 8, alignItems: 'flex-start' }}>
