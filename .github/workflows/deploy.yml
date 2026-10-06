@@ -36,32 +36,45 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     steps:
+      # Without the key there is nothing safe to publish: a debug-signed APK
+      # could not update a release-signed one. So the job skips, with a warning,
+      # rather than failing the whole run while the website deploys fine.
       - name: Check the signing key is set
+        id: key
         env:
           KEY: ${{ secrets.SOBAT_RELEASE_KEYSTORE_BASE64 }}
         run: |
           if [ -z "$KEY" ]; then
-            echo "::error::The SOBAT_RELEASE_KEYSTORE_BASE64 secret is missing. The APK is signed with the release key kept in GitHub secrets; see SETUP.md, Rebuilding the APK."
-            exit 1
+            echo "::warning::APK not built: the SOBAT_RELEASE_KEYSTORE_BASE64 secret is missing. Add the four SOBAT_RELEASE_* secrets (see SETUP.md, Rebuilding the APK) and this job will sign and publish on the next push."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - if: steps.key.outputs.present == 'true'
+        uses: actions/checkout@v7
+      - if: steps.key.outputs.present == 'true'
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-java@v6
+      - if: steps.key.outputs.present == 'true'
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 17
           cache: gradle
-      - run: npm ci
-      - name: Write the signing key
+      - if: steps.key.outputs.present == 'true'
+        run: npm ci
+      - if: steps.key.outputs.present == 'true'
+        name: Write the signing key
         env:
           KEY: ${{ secrets.SOBAT_RELEASE_KEYSTORE_BASE64 }}
         run: echo "$KEY" | base64 -d > "$RUNNER_TEMP/sobat-release.keystore"
       # The android folder is generated; the signing config comes from plugins/withReleaseSigning.js.
-      - run: npx expo prebuild -p android --no-install
-      - name: Build the release APK
+      - if: steps.key.outputs.present == 'true'
+        run: npx expo prebuild -p android --no-install
+      - if: steps.key.outputs.present == 'true'
+        name: Build the release APK
         working-directory: android
         env:
           SOBAT_RELEASE_KEY_ALIAS: ${{ secrets.SOBAT_RELEASE_KEY_ALIAS }}
@@ -74,9 +87,11 @@ jobs:
             -PSOBAT_RELEASE_KEY_ALIAS="$SOBAT_RELEASE_KEY_ALIAS" \
             -PSOBAT_RELEASE_STORE_PASSWORD="$SOBAT_RELEASE_STORE_PASSWORD" \
             -PSOBAT_RELEASE_KEY_PASSWORD="$SOBAT_RELEASE_KEY_PASSWORD"
-      - run: cp android/app/build/outputs/apk/release/app-release.apk sobat.apk
+      - if: steps.key.outputs.present == 'true'
+        run: cp android/app/build/outputs/apk/release/app-release.apk sobat.apk
       # The site links to releases/latest/download/sobat.apk, so each build is a release.
-      - name: Publish as a GitHub Release
+      - if: steps.key.outputs.present == 'true'
+        name: Publish as a GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: build-${{ github.run_number }}
