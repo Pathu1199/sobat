@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { dailyTipPrompt, factsFrom, systemPrompt } from '../ai/prompts';
+import { planFrom } from '../core/plan';
+import { routineFacts } from '../core/routine';
 import { guardAdvice } from '../core/guardrails';
 import { contextFor, toPromptLines } from '../core/memory';
 import { KCAL_FLOOR } from '../core/nutrition';
@@ -53,6 +55,10 @@ export function TipCard() {
       waterGoalMl: app.state.settings.waterGoalMl,
       streak: app.streakDays,
     });
+    // The plan and the routine, so the tip speaks to this person's week, not a generic one.
+    const plan = planFrom(app.state.profile, app.state.weights, app.targets, app.today);
+    facts.push(`Weight journey: lost ${plan.lostKg} kg since the first weigh-in, ${plan.toGoKg} kg to go, stage "${plan.stage}".`);
+    facts.push(...routineFacts(app.state.routine, app.foods, app.today, app.state.meals.filter((m) => m.date === app.today), app.spentToday));
     facts.push(...toPromptLines(contextFor(app.state.memory, focus.join(' '), app.today, 6)));
 
     ask([

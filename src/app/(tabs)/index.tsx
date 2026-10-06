@@ -9,7 +9,8 @@ import { DayScoreCard } from '../../components/DayScore';
 import { DecisionCard } from '../../components/DecisionCard';
 import { MealSheet } from '../../components/MealSheet';
 import { NowStrip } from '../../components/NowStrip';
-import { PlanCard, useMotivation } from '../../components/PlanCard';
+import { PlanCard } from '../../components/PlanCard';
+import { RecoveryCard } from '../../components/RecoveryCard';
 import { RoutineCard } from '../../components/RoutineCard';
 import { TomorrowCard } from '../../components/TomorrowCard';
 import { TipCard } from '../../components/TipCard';
@@ -23,6 +24,7 @@ import { pendingCount } from '../../core/queue';
 import type { Meal } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
+import { useMantra } from '../../services/useMantra';
 import { useApp } from '../../store/AppProvider';
 import { Bar, Card, Divider, ListRow, MeterRow, Micro, Quote, Row, Small } from '../../ui/components';
 import { Page } from '../../ui/TopBar';
@@ -40,7 +42,8 @@ export default function TodayScreen() {
   // The design leads in English with the chosen language beside it.
   const en = makeT('en');
   const wide = useBreakpoint() === 'desktop';
-  const motivation = useMotivation();
+  const mantra = useMantra();
+  const [mantraWhy, setMantraWhy] = useState(false);
 
   // Today by default; the chevrons under the meals walk back a day at a time.
   // Held as an offset, not a date: the day can roll over while the app is open
@@ -139,7 +142,18 @@ export default function TodayScreen() {
       </View>
       {isToday ? (
         <>
-          <Quote color={C.cyan}>{motivation}</Quote>
+          {mantra ? (
+            <Pressable onPress={() => setMantraWhy((w) => !w)} accessibilityRole="button" accessibilityLabel={t('mantra_why')}>
+              <Micro color={C.cyan}>{t('mantra_title')}</Micro>
+              <View style={{ height: 6 }} />
+              <Quote color={C.cyan}>{mantra.text}</Quote>
+              {mantraWhy ? (
+                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 19, marginTop: 8, paddingLeft: 14 }}>{`${mantra.why}\n`}<Text style={{ color: C.textGhost }}>{t('mantra_source')}</Text></Text>
+              ) : (
+                <Micro color={C.textGhost}>{`${t('mantra_why')} ›`}</Micro>
+              )}
+            </Pressable>
+          ) : null}
           <Divider />
           <Row style={{ gap: 8 }}>
             <QuickAction icon="add" label={t('add_food')} onPress={() => router.push('/log')} />
@@ -188,6 +202,7 @@ export default function TodayScreen() {
         <Cols weights={[1.15, 1, 0.95]}>
           <>
             {heroCard}
+            {isToday ? <RecoveryCard /> : null}
             {isToday ? <BreakCheckin /> : null}
             {isToday ? <RoutineCard /> : null}
             {isToday ? <TomorrowCard /> : null}
@@ -211,6 +226,7 @@ export default function TodayScreen() {
     <Page title={titleName} alt={undefined} subtitle={subtitle} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
+      {isToday ? <RecoveryCard /> : null}
       {isToday ? <BreakCheckin /> : null}
       {isToday ? <RoutineCard /> : null}
       {isToday ? <TomorrowCard /> : null}

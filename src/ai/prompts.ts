@@ -15,6 +15,7 @@ export function systemPrompt(lang: Lang, facts: string[]): string {
     '- Never invent calorie numbers. Use only numbers given to you in the context.',
     '- If they sound very low or hopeless, gently suggest talking to a person they trust or a helpline.',
     '- No shame, no guilt, no lecturing about willpower. One bad day is just one day.',
+    '- When asked why weight is not dropping, answer from the numbers given (logging gaps, average intake, protein, sleep, water, late dinners, slips) and name the one or two most likely causes with one concrete change each. If the data is too thin to say, say so and ask for a week of full logging.',
     '',
     'What you know about them right now:',
     ...facts.map((f) => `- ${f}`),

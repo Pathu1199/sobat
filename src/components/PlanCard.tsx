@@ -5,17 +5,10 @@ import { formatDayLabel } from '../core/date';
 import { motivationKey, planFrom } from '../core/plan';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Bar, Card, Micro, Row, Small } from '../ui/components';
+import { wins } from '../core/review';
+import { Card, Micro, Pill, Quote, Row, Small } from '../ui/components';
+import { Mountain } from '../ui/Mountain';
 import { C, F } from '../ui/theme';
-
-/** The day's line about where the weight is going, for the top of the Today screen. */
-export function useMotivation(): string {
-  const { state, targets, today } = useApp();
-  const lang = state.profile.lang;
-  const t = makeT(lang);
-  const plan = useMemo(() => planFrom(state.profile, state.weights, targets, today), [state.profile, state.weights, targets, today]);
-  return fill(t(motivationKey(plan, today)), { lost: plan.lostKg, togo: plan.toGoKg, days: plan.daysLogging });
-}
 
 /**
  * Where the weight is going: lost so far, what is left, when the goal lands,
@@ -31,6 +24,7 @@ export function PlanCard() {
   const en = makeT('en');
 
   const plan = useMemo(() => planFrom(state.profile, state.weights, targets, today), [state.profile, state.weights, targets, today]);
+  const weekWins = useMemo(() => wins({ today, meals: state.meals, water: state.water, weights: state.weights, workouts: state.workouts, waterGoalMl: state.settings.waterGoalMl, streakDays: app.streakDays }), [today, state.meals, state.water, state.weights, state.workouts, state.settings.waterGoalMl, app.streakDays]);
   const total = Math.max(0, plan.startKg - plan.goalKg);
   const progress = total > 0 ? Math.min(1, Math.max(0, plan.lostKg / total)) : plan.toGoKg <= 0 ? 1 : 0;
 
@@ -46,7 +40,15 @@ export function PlanCard() {
         <Stat label={t('plan_to_go')} value={`${plan.toGoKg}`} unit="kg" />
         <Stat label={t('plan_goal')} value={`${plan.goalKg}`} unit="kg" />
       </Row>
-      <Bar value={progress} max={1} color={C.cyan} />
+      <Mountain progress={progress} startLabel={`${plan.startKg} kg`} nowLabel={`${plan.currentKg} kg`} goalLabel={`${plan.goalKg} kg`} />
+      <Quote>{fill(t(motivationKey(plan, today)), { lost: plan.lostKg, togo: plan.toGoKg, days: plan.daysLogging })}</Quote>
+      {weekWins.length > 0 ? (
+        <Row style={{ flexWrap: 'wrap', gap: 6 }}>
+          {weekWins.map((w) => (
+            <Pill key={w.key} label={`🏅 ${fill(t(`win_${w.key}`), { n: w.n })}`} color={C.cardAlt} textColor={C.text} />
+          ))}
+        </Row>
+      ) : null}
 
       <View style={{ gap: 4 }}>
         {plan.etaAtTarget && plan.toGoKg > 0 ? (

@@ -10,6 +10,8 @@ import { suggestMeals, toMealItem } from '../../core/foods';
 import { guardAdvice, HELPLINES, isCrisisText } from '../../core/guardrails';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
 import { KCAL_FLOOR, mealTypeForHour } from '../../core/nutrition';
+import { planFrom } from '../../core/plan';
+import { journey, journeyFacts } from '../../core/review';
 import { avoidedFoodIds, routineFacts } from '../../core/routine';
 import type { ChatOption } from '../../core/types';
 import { makeT } from '../../i18n';
@@ -67,10 +69,10 @@ export default function CoachScreen() {
 
   const quick =
     lang === 'mr'
-      ? ['आता काय खाऊ?', 'आज खूप खाल्ले', 'व्यायामाचा कंटाळा', 'झोप लागत नाही']
+      ? ['माझे वजन का कमी होत नाही?', 'आता काय खाऊ?', 'आज खूप खाल्ले', 'व्यायामाचा कंटाळा', 'झोप लागत नाही']
       : lang === 'hi'
-        ? ['अभी क्या खाऊँ?', 'आज ज़्यादा खा लिया', 'कसरत का मन नहीं', 'नींद नहीं आती']
-        : ['What should I eat now?', 'I overate today', 'No motivation to exercise', 'I cannot sleep'];
+        ? ['मेरा वज़न क्यों नहीं घट रहा?', 'अभी क्या खाऊँ?', 'आज ज़्यादा खा लिया', 'कसरत का मन नहीं', 'नींद नहीं आती']
+        : ['Why is my weight not dropping?', 'What should I eat now?', 'I overate today', 'No motivation to exercise', 'I cannot sleep'];
 
   async function send(text: string) {
     const clean = text.trim();
@@ -116,6 +118,22 @@ export default function CoachScreen() {
             options.slice(0, 8).map((o) => `${o.food.name_en} ${o.kcal} kcal ${o.protein} g protein`).join('; '),
         );
       }
+      // Two weeks of the person's own numbers, so "why am I not losing" is answered from evidence.
+      const plan = planFrom(app.state.profile, app.state.weights, app.targets, app.today);
+      const review = journey({
+        today: app.today,
+        meals: app.state.meals,
+        water: app.state.water,
+        sleep: app.state.sleep,
+        workouts: app.state.workouts,
+        weights: app.state.weights,
+        kcalTarget: app.targets.kcal,
+        proteinTarget: app.targets.proteinG,
+        waterGoalMl: app.state.settings.waterGoalMl,
+        avoid: app.state.routine.avoid,
+        plan,
+      });
+      facts.push(...journeyFacts(review, { kcalTarget: app.targets.kcal, proteinTarget: app.targets.proteinG, waterGoalMl: app.state.settings.waterGoalMl, plan }));
       facts.push(
         ...routineFacts(
           app.state.routine,

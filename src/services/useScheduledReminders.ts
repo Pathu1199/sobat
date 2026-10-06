@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { cancel, scheduleDaily, scheduleRepeating, setupAndroidChannel } from './notify';
 import { useApp } from '../store/AppProvider';
 import { makeT } from '../i18n';
+import { useMantra } from './useMantra';
 
 const IDS = {
   sleep: 'sobat-sleep-checkin',
@@ -10,6 +11,7 @@ const IDS = {
   dinner: 'sobat-dinner',
   review: 'sobat-day-review',
   long: 'sobat-long-break',
+  mantra: 'sobat-mantra',
 };
 
 /**
@@ -22,6 +24,8 @@ export function useScheduledReminders() {
   const { nudgesEnabled, waterGoalMl, quietStartHour } = app.state.settings;
   const lang = app.state.profile.lang;
   const onboarded = app.state.profile.onboarded;
+  const mantra = useMantra();
+  const mantraText = mantra?.text ?? '';
 
   useEffect(() => {
     if (Platform.OS === 'web' || !onboarded) return;
@@ -37,6 +41,8 @@ export function useScheduledReminders() {
 
       // Morning check-in, while last night is still fresh.
       await scheduleDaily(IDS.sleep, 7, 30, t('sleep_checkin'), t('bed_time'));
+      // The day's line, at eight. Re-registered daily so it is that day's line.
+      if (mantraText) await scheduleDaily(IDS.mantra, 8, 0, t('mantra_title'), mantraText);
       // A single mid-afternoon water prompt; the in-app engine handles the rest.
       await scheduleDaily(IDS.water, 15, 0, t('add_water'), t('act_drink_water'));
       // Nudge dinner earlier than the quiet hours start.
@@ -57,5 +63,5 @@ export function useScheduledReminders() {
     })().catch(() => {
       // Permission refused or the OS declined. The app still works.
     });
-  }, [nudgesEnabled, waterGoalMl, quietStartHour, lang, onboarded, app.state.breakSettings]);
+  }, [nudgesEnabled, waterGoalMl, quietStartHour, lang, onboarded, app.state.breakSettings, mantraText]);
 }
