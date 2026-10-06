@@ -60,7 +60,8 @@
           "cameraPermission": "Sobat uses the camera to read a barcode or the food on your plate."
         }
       ],
-      "./plugins/withReleaseSigning.js"
+      "./plugins/withReleaseSigning.js",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

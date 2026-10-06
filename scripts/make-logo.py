@@ -73,4 +73,8 @@ mark(512, scale=0.56).save(out + 'android-icon-foreground.png')
 Image.new('RGBA', (512, 512), BG + (255,)).save(out + 'android-icon-background.png')
 mark(512, scale=0.56, colour=WHITE).save(out + 'android-icon-monochrome.png')
 mark(512, scale=0.9, colour=WHITE).save(out + 'splash-icon.png')
+# iPhone home-screen icon and PWA manifest icons, served from public/.
+tile(1024).resize((180, 180), Image.LANCZOS).save('public/apple-touch-icon.png')
+tile(1024).resize((192, 192), Image.LANCZOS).save('public/icon-192.png')
+tile(1024).resize((512, 512), Image.LANCZOS).save('public/icon-512.png')
 print('wrote icons')
