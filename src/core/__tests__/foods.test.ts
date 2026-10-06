@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { foodIcon, foodsForDiet, MEASURES, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
+import { foodIcon, foodsForDiet, isCountable, MEASURES, measuresFor, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
 import type { FoodItem, Meal, MealItem } from '../types';
 
 describe('scaleMealItem', () => {
@@ -85,5 +85,19 @@ describe('Marathi names in English letters', () => {
     expect(styleOf(gravy)).toBe('gravy');
     expect(foodIcon(dry)).not.toBe(foodIcon(gravy));
     expect(ALL.filter((f) => f.category === 'veg' && !styleOf(f))).toEqual([]);
+  });
+});
+
+describe('measuresFor', () => {
+  const ALL = foodsJson as unknown as FoodItem[];
+  const by = (id: string) => ALL.find((f) => f.id === id)!;
+  it('never offers a bowl of chapati, but does offer a bowl of bhaji', () => {
+    expect(isCountable(by('chapati'))).toBe(true);
+    expect(measuresFor(by('chapati')).every((m) => m.own)).toBe(true);
+    const bhaji = measuresFor(by('aloo-gobi')).map((m) => m.unit);
+    expect(bhaji).toContain('bowl');
+    expect(bhaji).toContain('spoon_big');
+    expect(bhaji).not.toContain('glass');
+    expect(measuresFor(by('taak')).map((m) => m.unit)).toContain('glass');
   });
 });

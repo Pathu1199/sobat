@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { defaultPortion, foodIcon, MEASURES, portionLabel, styleOf } from '../core/foods';
+import { defaultPortion, foodIcon, measuresFor, portionLabel, styleOf } from '../core/foods';
 import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem } from '../core/types';
 import { FOOD_IMAGES } from '../data/foodImages';
@@ -32,7 +32,18 @@ export type Chosen = { food: FoodItem; unit: string; gramsPerUnit: number; count
  * in what measure, and the calories and macros for exactly that amount. The
  * same shape as the apps people already know, so nothing needs explaining.
  */
-export function FoodDetailSheet({ food, onAdd, onClose }: { food: FoodItem | null; onAdd: (c: Chosen) => void; onClose: () => void }) {
+export function FoodDetailSheet({
+  food,
+  initial,
+  onAdd,
+  onClose,
+}: {
+  food: FoodItem | null;
+  /** Editing a line already in the basket: start from its measure and amount. */
+  initial?: { unit: string; gramsPerUnit: number; count: number } | null;
+  onAdd: (c: Chosen) => void;
+  onClose: () => void;
+}) {
   const { state } = useApp();
   const lang = state.profile.lang;
   const t = makeT(lang);
@@ -44,20 +55,18 @@ export function FoodDetailSheet({ food, onAdd, onClose }: { food: FoodItem | nul
   const id = food?.id ?? null;
   if (id !== openId) {
     setOpenId(id);
-    setCount(1);
+    setCount(initial?.count ?? 1);
     const p = food ? defaultPortion(food) : undefined;
-    setMeasure(p ? { unit: p.unit, grams: p.grams } : { unit: 'bowl', grams: 150 });
+    setMeasure(initial ? { unit: initial.unit, grams: initial.gramsPerUnit } : p ? { unit: p.unit, grams: p.grams } : { unit: 'bowl', grams: 150 });
   }
   if (!food || !measure) return null;
   const f = food;
   const style = styleOf(f);
   const grams = Math.round(measure.grams * count);
   const n = kcalForGrams(f, grams);
-  const own = f.portions.map((p) => ({ unit: p.unit, grams: p.grams, label: portionLabel(p, lang) }));
-  const extra = MEASURES.filter((m) => !f.portions.some((p) => p.unit === m.unit) && (m.unit !== 'glass' || ['beverage', 'dairy'].includes(f.category))).map((m) => ({
-    unit: m.unit,
-    grams: m.grams,
-    label: t(`measure_${m.unit}`),
+  const options = measuresFor(f).map((m) => ({
+    ...m,
+    label: m.own ? portionLabel(f.portions.find((p) => p.unit === m.unit)!, lang) : t(`measure_${m.unit}`),
   }));
 
   return (
@@ -78,7 +87,7 @@ export function FoodDetailSheet({ food, onAdd, onClose }: { food: FoodItem | nul
         <View style={{ gap: 8 }}>
           <Micro>{t('measure_q')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-            {[...own, ...extra].map((m) => (
+            {options.map((m) => (
               <Pill key={m.unit} label={m.label} active={measure.unit === m.unit} onPress={() => setMeasure({ unit: m.unit, grams: m.grams })} />
             ))}
           </Row>
@@ -111,7 +120,7 @@ export function FoodDetailSheet({ food, onAdd, onClose }: { food: FoodItem | nul
         </View>
         {f.source === 'estimate' ? <Small color={C.textGhost}>{t('estimated_values')}</Small> : null}
 
-        <Btn label={t('add_item')} onPress={() => onAdd({ food: f, unit: measure.unit, gramsPerUnit: measure.grams, count })} />
+        <Btn label={initial ? t('done') : t('add_item')} onPress={() => onAdd({ food: f, unit: measure.unit, gramsPerUnit: measure.grams, count })} />
         <Pressable onPress={onClose} style={{ alignSelf: 'center', paddingVertical: 6 }}>
           <Micro color={C.textFaint}>{t('cancel')}</Micro>
         </Pressable>

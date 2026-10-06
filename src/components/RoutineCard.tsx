@@ -58,6 +58,7 @@ export function swapText(hit: AvoidHit, foods: FoodItem[], lang: Lang): string {
 export function RoutineCard() {
   const app = useApp();
   const router = useRouter();
+  const fb = useFeedback();
   const { state, foods, today } = app;
   const routine = state.routine;
   const lang = state.profile.lang;
@@ -79,6 +80,15 @@ export function RoutineCard() {
       : status === 'in'
         ? t('routine_budget_in')
         : fill(t('routine_budget_under'), { n: routine.budgetMin - app.spentToday });
+
+  /** Take back a routine meal logged by mistake: the newest meal of that type holding one of its foods. */
+  function unlog(slot: RoutineSlot) {
+    const ids = new Set([...slot.options.flat().map((l) => l.foodId), ...(slot.withBhaji ? bhaji : [])]);
+    const meal = [...todayMeals].reverse().find((m) => m.type === slot.type && m.items.some((it) => !!it.foodId && ids.has(it.foodId)));
+    if (!meal) return;
+    app.removeMeal(meal.id);
+    fb.notify(t('meal_removed'));
+  }
 
   return (
     <Card>
@@ -131,7 +141,13 @@ export function RoutineCard() {
                   </Text>
                 </View>
                 <Text style={{ color: C.textDim, fontSize: F.small }}>{`${kcal} kcal`}</Text>
-                {done ? <Micro color={C.accent}>{t('routine_logged')}</Micro> : <Pill label={t('routine_log')} onPress={() => setOpenSlot(slot)} />}
+                {done ? (
+                  <Pressable onPress={() => unlog(slot)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('undo')}>
+                    <Micro color={C.accent}>{`${t('routine_logged')} ×`}</Micro>
+                  </Pressable>
+                ) : (
+                  <Pill label={t('routine_log')} onPress={() => setOpenSlot(slot)} />
+                )}
               </Pressable>
             </View>
           );

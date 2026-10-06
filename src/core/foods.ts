@@ -76,6 +76,23 @@ export const MEASURES: { unit: string; grams: number }[] = [
   { unit: 'handful', grams: 30 },
 ];
 
+const COUNT_UNITS = ['piece', 'slice', 'small', 'medium', 'large'];
+
+/** Chapati, idli, an apple: things you count. A bowl of chapati is not a thing. */
+export function isCountable(f: FoodItem): boolean {
+  return f.portions.some((p) => COUNT_UNITS.includes(p.unit));
+}
+
+export type Measure = { unit: string; grams: number; own: boolean };
+
+/** The food's own portions, then household measures where they make sense: none for countable foods, a glass only for drinks. */
+export function measuresFor(f: FoodItem): Measure[] {
+  const own: Measure[] = f.portions.map((p) => ({ unit: p.unit, grams: p.grams, own: true }));
+  if (isCountable(f)) return own;
+  const extra = MEASURES.filter((m) => !f.portions.some((p) => p.unit === m.unit) && (m.unit !== 'glass' || ['beverage', 'dairy'].includes(f.category))).map((m) => ({ ...m, own: false }));
+  return [...own, ...extra];
+}
+
 let cached: { list: FoodItem[]; fuse: Fuse<FoodItem> } | null = null;
 
 export function buildIndex(foods: FoodItem[]) {

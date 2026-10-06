@@ -181,7 +181,19 @@ export default function TodayScreen() {
         {dayMeals.length === 0 ? (
           <Small color={C.textGhost}>{t('nothing_logged')}</Small>
         ) : (
-          dayMeals.map((m, i) => <MealRow key={m.id} meal={m} first={i === 0} lang={lang} onPress={() => setOpenMeal(m)} />)
+          dayMeals.map((m, i) => (
+            <MealRow
+              key={m.id}
+              meal={m}
+              first={i === 0}
+              lang={lang}
+              onPress={() => setOpenMeal(m)}
+              onDelete={() => {
+                app.removeMeal(m.id);
+                fb.notify(t('meal_removed'));
+              }}
+            />
+          ))
         )}
       </Card>
     </View>
@@ -255,7 +267,7 @@ export default function TodayScreen() {
 }
 
 /** One logged meal: type, first items, time, calories. */
-export function MealRow({ meal, first, lang, onPress }: { meal: Meal; first: boolean; lang: 'en' | 'mr' | 'hi'; onPress: () => void }) {
+export function MealRow({ meal, first, lang, onPress, onDelete }: { meal: Meal; first: boolean; lang: 'en' | 'mr' | 'hi'; onPress: () => void; onDelete?: () => void }) {
   const t = makeT(lang);
   const names = meal.items.map((x) => x.name_en).filter(Boolean);
   const alt = lang !== 'en' ? meal.items.map((x) => x.name_mr).filter(Boolean)[0] : undefined;
@@ -270,7 +282,15 @@ export function MealRow({ meal, first, lang, onPress }: { meal: Meal; first: boo
         value={String(meal.kcal)}
         valueUnit="kcal"
         onPress={onPress}
-        trailing={<Ionicons name="chevron-forward" size={15} color={C.textGhost} />}
+        trailing={
+          onDelete ? (
+            <Pressable onPress={onDelete} hitSlop={10} accessibilityLabel={t('delete')}>
+              <Ionicons name="trash-outline" size={17} color={C.textFaint} />
+            </Pressable>
+          ) : (
+            <Ionicons name="chevron-forward" size={15} color={C.textGhost} />
+          )
+        }
       />
     </View>
   );

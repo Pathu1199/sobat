@@ -9,7 +9,7 @@ import { swapText } from '../components/RoutineCard';
 import { IconButton } from '../components/TopBarActions';
 import { addDays, formatDayLabel, lastNDates, localHHMM } from '../core/date';
 import { newId } from '../core/id';
-import { defaultPortion, DISH_STYLES, foodName, MEASURES, portionLabel, recentFoodIds, searchFoods, styleOf, suggestMeals, toMealItem, type DishStyle } from '../core/foods';
+import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, suggestMeals, toMealItem, type DishStyle } from '../core/foods';
 import { dietFrom } from '../core/memory';
 import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../core/nutrition';
 import { avoidedFoodIds, avoidHits } from '../core/routine';
@@ -44,6 +44,7 @@ export default function LogScreen() {
   const [customOpen, setCustomOpen] = useState(false);
   // A tapped result opens its sheet: picture, measure, amount, numbers, then Add.
   const [detail, setDetail] = useState<FoodItem | null>(null);
+  const editing = detail ? basket.find((b) => b.food.id === detail.id) ?? null : null;
 
   const [styleFilter, setStyleFilter] = useState<DishStyle | null>(null);
   const found = useMemo(() => searchFoods(app.foods, query, 30), [app.foods, query]);
@@ -249,40 +250,26 @@ export default function LogScreen() {
       <Card tone={C.accent}>
         {basket.map((b, idx) => {
           const own = b.food.portions.find((x) => x.unit === b.unit);
-          const measureText = own ? portionLabel(own, lang) : `${t(`measure_${b.unit}`)} (${b.gramsPerUnit} g)`;
+          const measureText = own ? portionLabel(own, lang) : t(`measure_${b.unit}`);
           const item = basketItems[idx];
           const hit = avoidHits([item], avoidRules)[0];
           const swapTo = hit ? app.foods.find((f) => f.id === hit.rule.swapIds[0]) : undefined;
           return (
-            <View key={b.food.id} style={{ gap: 9 }}>
+            <View key={b.food.id} style={{ gap: 8 }}>
               {idx > 0 ? <Divider /> : null}
-              <Row style={{ justifyContent: 'space-between' }}>
+              <Row style={{ gap: 12 }}>
                 <FoodThumb food={b.food} size={40} />
-                <View style={{ flex: 1, gap: 3 }}>
+                <Pressable onPress={() => setDetail(b.food)} style={{ flex: 1, gap: 3 }} accessibilityRole="button" accessibilityLabel={t('edit')}>
                   <BiText en={b.food.name_en} alt={lang === 'en' ? undefined : b.food.name_mr} />
-                  <Micro>{`${b.count} × ${measureText} · ${item.grams} g`}</Micro>
-                </View>
+                  <Micro>{`${b.count} × ${measureText} · ${item.grams} g · ${t('edit')} ›`}</Micro>
+                </Pressable>
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
                   {item.kcal}
                   <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '400' }}> kcal</Text>
                 </Text>
-                <Pressable onPress={() => setBasket((x) => x.filter((y) => y.food.id !== b.food.id))} hitSlop={8}>
-                  <Ionicons name="close" size={17} color={C.textFaint} />
+                <Pressable onPress={() => setBasket((x) => x.filter((y) => y.food.id !== b.food.id))} hitSlop={10} accessibilityLabel={t('delete')}>
+                  <Ionicons name="close-circle" size={22} color={C.textFaint} />
                 </Pressable>
-              </Row>
-              <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-                {[0.5, 1, 1.5, 2, 3].map((n) => (
-                  <Pill key={n} label={`${n}x`} active={b.count === n} onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, count: n } : y)))} />
-                ))}
-              </Row>
-              <Micro>{t('measure_q')}</Micro>
-              <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-                {b.food.portions.map((pp) => (
-                  <Pill key={pp.unit} label={portionLabel(pp, lang)} active={b.unit === pp.unit} onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, unit: pp.unit, gramsPerUnit: pp.grams } : y)))} />
-                ))}
-                {MEASURES.filter((m) => !b.food.portions.some((pp) => pp.unit === m.unit) && (m.unit !== 'glass' || ['beverage', 'dairy'].includes(b.food.category))).map((m) => (
-                  <Pill key={m.unit} label={`${t(`measure_${m.unit}`)} · ${Math.round((b.food.kcal_100g * m.grams) / 100)} kcal`} active={b.unit === m.unit} onPress={() => setBasket((x) => x.map((y) => (y.food.id === b.food.id ? { ...y, unit: m.unit, gramsPerUnit: m.grams } : y)))} />
-                ))}
               </Row>
               {hit ? (
                 <Row style={{ gap: 8, alignItems: 'flex-start' }}>
@@ -410,7 +397,7 @@ export default function LogScreen() {
             {todayCard}
           </ScrollView>
         </View>
-        <FoodDetailSheet food={detail} onAdd={addChosen} onClose={() => setDetail(null)} />
+        <FoodDetailSheet food={detail} initial={editing ? { unit: editing.unit, gramsPerUnit: editing.gramsPerUnit, count: editing.count } : null} onAdd={addChosen} onClose={() => setDetail(null)} />
       </View>
     );
   }
@@ -452,7 +439,7 @@ export default function LogScreen() {
           <Btn label={t('save')} onPress={saveMeal} style={{ minWidth: 120 }} />
         </View>
       ) : null}
-      <FoodDetailSheet food={detail} onAdd={addChosen} onClose={() => setDetail(null)} />
+      <FoodDetailSheet food={detail} initial={editing ? { unit: editing.unit, gramsPerUnit: editing.gramsPerUnit, count: editing.count } : null} onAdd={addChosen} onClose={() => setDetail(null)} />
     </View>
   );
 }
