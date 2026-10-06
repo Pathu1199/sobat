@@ -7,6 +7,11 @@ import React, { type PropsWithChildren } from 'react';
  * highlight, and inputs at 16px so iOS does not zoom into them.
  */
 const APP_CSS = `
+@font-face { font-family: 'Mukta'; font-weight: 400; font-display: swap; src: url('/fonts/Mukta_400Regular.woff2') format('woff2'); }
+@font-face { font-family: 'Mukta'; font-weight: 500; font-display: swap; src: url('/fonts/Mukta_500Medium.woff2') format('woff2'); }
+@font-face { font-family: 'Mukta'; font-weight: 600; font-display: swap; src: url('/fonts/Mukta_600SemiBold.woff2') format('woff2'); }
+/* Mukta carries Devanagari and Latin in one design. Icons set their own font inline and are left alone. */
+#root div[dir="auto"]:not([style*="font-family"]), #root input, #root textarea, #root button { font-family: 'Mukta', -apple-system, 'Segoe UI', Roboto, sans-serif; }
 html, body { background: #0A0B10; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
 body { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-text-size-adjust: 100%; touch-action: pan-x pan-y; }
 input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; font-size: 16px !important; }

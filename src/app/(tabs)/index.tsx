@@ -237,7 +237,7 @@ export default function TodayScreen() {
   }
 
   return (
-    <Page title={titleName} alt={undefined} subtitle={subtitle} right={<TopBarActions streak={streakDays} />}>
+    <Page title={state.profile.name || greeting} alt={undefined} subtitle={`${greeting} · ${subtitle}`} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
       {isToday ? <NotificationNudge /> : null}
