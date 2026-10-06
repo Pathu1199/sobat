@@ -71,10 +71,13 @@ export function Micro({ children, color }: { children: React.ReactNode; color?: 
 }
 
 /** A section heading with an optional quiet note on the right. */
-export function SectionHeader({ title, meta, color }: { title: string; meta?: string; color?: string }) {
+export function SectionHeader({ title, meta, color, icon }: { title: string; meta?: string; color?: string; icon?: React.ReactNode }) {
   return (
     <View style={[st.row, { justifyContent: 'space-between', marginTop: 4 }]}>
-      <Micro color={color ?? C.textDim}>{title}</Micro>
+      <View style={[st.row, { gap: 7 }]}>
+        {icon}
+        <Micro color={color ?? C.textDim}>{title}</Micro>
+      </View>
       {meta ? <Micro>{meta}</Micro> : null}
     </View>
   );

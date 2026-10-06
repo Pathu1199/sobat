@@ -78,8 +78,9 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <View style={{ gap: 10 }}>
-        <SectionHeader title={t('language')} />
+        <SectionHeader title={t('general')} icon={<Ionicons name="options-outline" size={13} color={C.textFaint} />} />
         <Card>
+          <Micro>{t('language')}</Micro>
           <Row style={{ gap: 8 }}>
             {(Object.keys(LANG_NAMES) as Lang[]).map((l) => (
               <Pill key={l} label={LANG_NAMES[l]} active={lang === l} onPress={() => app.setProfile({ lang: l })} />
@@ -112,7 +113,7 @@ export default function SettingsScreen() {
 
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={t('nudge_every')} meta={s.nudgesEnabled ? 'On' : 'Off'} />
+        <SectionHeader title={t('reminders')} meta={s.nudgesEnabled ? 'On' : 'Off'} icon={<Ionicons name="notifications-outline" size={13} color={C.textFaint} />} />
         <Card>
           <Toggle
             title={t('nudge_every')}
@@ -150,7 +151,7 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={t('water_goal')} meta={`${s.waterGoalMl / 1000} L`} />
+        <SectionHeader title={t('water_goal')} meta={`${s.waterGoalMl / 1000} L`} icon={<Ionicons name="water-outline" size={13} color={C.textFaint} />} />
         <Card>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[2000, 2500, 3000, 3500, 4000].map((m) => (
@@ -161,7 +162,7 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={t('memory_title')} meta={`${app.state.memory.length}`} />
+        <SectionHeader title={t('memory_title')} meta={`${app.state.memory.length}`} icon={<Ionicons name="bookmark-outline" size={13} color={C.textFaint} />} />
         <Card>
           <ListRow
             icon={<Ionicons name="bookmark-outline" size={16} color={C.violet} />}
@@ -174,10 +175,10 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={t('sched_title')} />
+        <SectionHeader title={t('sched_title')} icon={<Ionicons name="cafe-outline" size={13} color={C.textFaint} />} />
         <ScheduleEditor />
 
-        <SectionHeader title={t('drive_title')} />
+        <SectionHeader title={t('data_title')} icon={<Ionicons name="cloud-upload-outline" size={13} color={C.textFaint} />} />
         <Card>
           <Small>{t('drive_note')}</Small>
           {!drive.configured ? (
@@ -215,7 +216,10 @@ export default function SettingsScreen() {
           accessibilityRole="button"
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, opacity: pressed ? 0.7 : 1 })}>
           <View style={{ gap: 3 }}>
-            <Micro color={C.textDim}>{t('advanced')}</Micro>
+            <Row style={{ gap: 7 }}>
+              <Ionicons name="construct-outline" size={13} color={C.textFaint} />
+              <Micro color={C.textDim}>{t('advanced')}</Micro>
+            </Row>
             <Small color={C.textFaint}>{t('advanced_desc')}</Small>
           </View>
           <Ionicons name={advanced ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />
@@ -357,7 +361,7 @@ export default function SettingsScreen() {
           </View>
         ) : null}
 
-        <SectionHeader title={t('about')} />
+        <SectionHeader title={t('about')} icon={<Ionicons name="information-circle-outline" size={13} color={C.textFaint} />} />
         <Card>
           <Row style={{ gap: 12 }}>
             <View style={{ flex: 1, gap: 3 }}>
@@ -373,7 +377,7 @@ export default function SettingsScreen() {
           </Row>
         </Card>
 
-        <SectionHeader title={t('export_data')} />
+        <Micro>{t('export_data')}</Micro>
         <Card>
           <Row style={{ flexWrap: 'wrap', rowGap: 14 }}>
             <Count label={t('logged_intake')} value={app.state.meals.length} />
