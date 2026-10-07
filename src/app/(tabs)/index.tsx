@@ -13,7 +13,7 @@ import { NutrientCard } from '../../components/NutrientCard';
 import { StartHereCard } from '../../components/StartHereCard';
 import { SuggestSheet } from '../../components/SuggestSheet';
 import { NowStrip } from '../../components/NowStrip';
-import { PlanCard } from '../../components/PlanCard';
+import { MountainCard } from '../../components/MountainCard';
 import { RecoveryCard } from '../../components/RecoveryCard';
 import { RoutineCard } from '../../components/RoutineCard';
 import { TomorrowCard } from '../../components/TomorrowCard';
@@ -228,8 +228,8 @@ export default function TodayScreen() {
             {mealsBlock}
           </>
           <>
+            {isToday ? <MountainCard /> : null}
             {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
-            {isToday ? <PlanCard /> : null}
             {isToday ? <TipCard /> : null}
             {isToday ? <DayReview /> : null}
           </>
@@ -248,6 +248,7 @@ export default function TodayScreen() {
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
       {isToday ? <TrackerGrid /> : null}
+      {isToday ? <MountainCard /> : null}
       {isToday ? <StartHereCard /> : null}
       {isToday ? <NutrientCard /> : null}
       {isToday ? <NotificationNudge /> : null}
@@ -267,7 +268,6 @@ export default function TodayScreen() {
       </Pressable>
       {more ? (
         <>
-          {isToday ? <PlanCard /> : null}
           <DayScoreCard score={score} />
           {isToday ? <TipCard /> : null}
           {isToday ? <DayReview /> : null}

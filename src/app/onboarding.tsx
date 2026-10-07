@@ -29,6 +29,7 @@ export default function Onboarding() {
     birthYear: Number(birthYear) || 1998,
     heightCm: Number(heightCm) || 170,
     weightKg: Number(weightKg) || 80,
+    startWeightKg: Number(weightKg) || 80,
     activity,
     goalWeightKg: Number(goalWeightKg) || 70,
     rateKgPerWeek: rate,

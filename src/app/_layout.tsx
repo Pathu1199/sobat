@@ -98,6 +98,7 @@ function AppShell() {
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="admin" options={{ title: 'Admin' }} />
+        <Stack.Screen name="journey" options={{ title: 'Journey' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="photo" options={{ title: 'Photo' }} />
         <Stack.Screen name="sleep" options={{ title: 'Sleep' }} />

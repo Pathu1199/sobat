@@ -58,7 +58,7 @@ describe('migrateState', () => {
 
   it('marks the result as version 2 and is idempotent', () => {
     const once = migrateState(v1);
-    expect(once.version).toBe(3);
+    expect(once.version).toBe(4);
     const twice = migrateState(once);
     expect(twice).toEqual(once);
   });

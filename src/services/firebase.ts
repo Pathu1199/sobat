@@ -14,7 +14,8 @@ export const ADMIN_EMAIL = 'shindeprathmesh999@gmail.com';
 type FirebaseExtra = { apiKey: string; authDomain: string; projectId: string; storageBucket: string; messagingSenderId: string; appId: string };
 const config = (Constants.expoConfig?.extra?.firebase ?? {}) as Partial<FirebaseExtra>;
 
-export const firebaseEnabled = !!config.apiKey && !!config.projectId;
+// EXPO_PUBLIC_NO_AUTH=1 in a local .env turns the gate off for development only.
+export const firebaseEnabled = !!config.apiKey && !!config.projectId && process.env.EXPO_PUBLIC_NO_AUTH !== '1';
 
 const app = firebaseEnabled ? (getApps().length ? getApp() : initializeApp(config as FirebaseExtra)) : null;
 

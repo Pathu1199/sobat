@@ -58,7 +58,7 @@ function eta(toGo: number, rate: number | null, today: ISODate): { weeks: number
 
 export function planFrom(profile: Profile, weights: WeightLog[], targets: Targets, today: ISODate): Plan {
   const sorted = [...weights].sort((a, b) => a.date.localeCompare(b.date));
-  const startKg = sorted[0]?.kg ?? profile.weightKg;
+  const startKg = profile.startWeightKg ?? sorted[0]?.kg ?? profile.weightKg;
   const currentKg = sorted[sorted.length - 1]?.kg ?? profile.weightKg;
   const goalKg = profile.goalWeightKg > 0 ? profile.goalWeightKg : currentKg;
   const lostKg = r1(startKg - currentKg);

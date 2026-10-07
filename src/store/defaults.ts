@@ -43,11 +43,11 @@ export const DEFAULT_SETTINGS: Settings = {
   appearance: 'system',
   textScale: 1,
   pushRelay: false,
-  weighDay: 1,
+  weighDay: 0,
 };
 
 export const EMPTY_STATE: AppState = {
-  version: 3,
+  version: 4,
   profile: DEFAULT_PROFILE,
   settings: DEFAULT_SETTINGS,
   meals: [],

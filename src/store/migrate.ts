@@ -89,16 +89,26 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
 export function migrateState(raw: unknown): AppState {
   if (!isRecord(raw) || !isRecord(raw.profile)) return { ...EMPTY_STATE };
   const breakSettings = upgradeSettings(raw.breakSettings);
+  const fromVersion = typeof raw.version === 'number' ? raw.version : 1;
+  const settings = upgradeAppSettings(raw.settings);
+  // Version 4: the weigh-in moved to Sunday, and the start weight became a
+  // fixed point rather than whichever weigh-in happened to be oldest.
+  if (fromVersion < 4 && settings.weighDay === 1) settings.weighDay = 0;
+  const profile = { ...EMPTY_STATE.profile, ...(raw.profile as object) } as AppState['profile'];
+  if (profile.startWeightKg === undefined) {
+    const weights = Array.isArray(raw.weights) ? ([...(raw.weights as AppState['weights'])].sort((a, b) => a.date.localeCompare(b.date))) : [];
+    profile.startWeightKg = weights[0]?.kg ?? profile.weightKg;
+  }
   return {
     ...EMPTY_STATE,
     ...(raw as Partial<AppState>),
-    version: 3,
-    profile: { ...EMPTY_STATE.profile, ...(raw.profile as object) },
-    settings: upgradeAppSettings(raw.settings),
+    version: 4,
+    profile,
+    settings,
     breakSettings,
     breaks: upgradeLogs(raw.breaks, breakSettings.micro.seconds),
     // Older stores have no routine; one saved before a field existed gets the default for it.
-    routine: upgradeRoutine(raw.routine, typeof raw.version === 'number' ? raw.version : 1),
+    routine: upgradeRoutine(raw.routine, fromVersion),
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
     schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}) },
   };

@@ -20,6 +20,8 @@ export type Profile = {
   weightKg: number;
   activity: Activity;
   goalWeightKg: number;
+  /** The foot of the mountain: set once at the first weigh-in and never moved by later ones. */
+  startWeightKg?: number;
   rateKgPerWeek: number;
   lang: Lang;
   onboarded: boolean;
