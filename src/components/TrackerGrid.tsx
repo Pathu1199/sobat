@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
+import { WeightSheet } from './WeightSheet';
 import { addDays, formatMinutes } from '../core/date';
 import { makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
@@ -21,6 +22,7 @@ export function TrackerGrid() {
   const monitor = useBreakMonitor();
   const { state, today, waterToday, stepsToday } = app;
   const t = makeT(state.profile.lang);
+  const [weightOpen, setWeightOpen] = useState(false);
 
   const glass = state.settings.glassMl;
   const glasses = Math.round(waterToday / glass);
@@ -61,7 +63,7 @@ export function TrackerGrid() {
       value={lastWeight ? `${lastWeight.kg}` : '—'}
       sub={lastWeight && daysSinceWeigh !== null ? (daysSinceWeigh === 0 ? t('today_short') : `${daysSinceWeigh} ${t('days_ago')}`) : t('tap_to_log')}
       color={daysSinceWeigh !== null && daysSinceWeigh > 9 ? C.amber : C.text}
-      onPress={() => router.push('/log')}
+      onPress={() => setWeightOpen(true)}
     />,
   ];
 
@@ -72,6 +74,7 @@ export function TrackerGrid() {
           {React.cloneElement(tile, { width: undefined })}
         </View>
       ))}
+      <WeightSheet open={weightOpen} onClose={() => setWeightOpen(false)} />
     </View>
   );
 }

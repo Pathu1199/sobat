@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { factsFrom, memoryExtractionPrompt, MEMORY_SCHEMA, systemPrompt } from '../../ai/prompts';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
@@ -30,6 +30,8 @@ export default function CoachScreen() {
   const t = makeT(lang);
   const wide = useBreakpoint() === 'desktop';
   const [input, setInput] = useState('');
+  const { ask: askParam } = useLocalSearchParams<{ ask?: string }>();
+  const asked = useRef<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [crisis, setCrisis] = useState(false);
   const scroller = useRef<ScrollView>(null);
@@ -163,6 +165,15 @@ export default function CoachScreen() {
       setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60);
     }
   }
+
+  // Arriving with ?ask=stall sends the stall question once, with the data pack behind it.
+  useEffect(() => {
+    if (askParam === 'stall' && asked.current !== askParam) {
+      asked.current = askParam;
+      void send(quick[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askParam]);
 
   /** Pull durable facts out in the background; failing to learn never breaks the chat. */
   async function learn(userText: string, assistantText: string) {

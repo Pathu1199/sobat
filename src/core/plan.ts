@@ -97,6 +97,21 @@ export function planFrom(profile: Profile, weights: WeightLog[], targets: Target
   };
 }
 
+export type Verdict = 'early' | 'working' | 'slow' | 'stalled' | 'gaining';
+
+/**
+ * Is the plan working? Judged on the real pace over the last month against
+ * the planned one. Needs two weigh-ins a week apart before it says anything.
+ */
+export function planVerdict(plan: Plan): Verdict {
+  if (plan.toGoKg <= 0) return 'working';
+  if (plan.actualRate === null) return 'early';
+  if (plan.actualRate < -0.15) return 'gaining';
+  if (plan.actualRate < 0.1) return 'stalled';
+  if (plan.actualRate < plan.targetRate * 0.6) return 'slow';
+  return 'working';
+}
+
 /**
  * Weigh on one day a week, and if that was missed, be asked again two days
  * later; never more often, since daily readings mislead. Due when nothing has

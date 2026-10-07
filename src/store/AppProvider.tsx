@@ -14,7 +14,7 @@ import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
 import { pruneSpend, spentOn, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
 import type { BreakKind, BreakSettings } from '../core/breaks';
-import type { AppState, ChatMsg, Exercise, FoodItem, Meal, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
+import type { AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
 import { migrateState } from './migrate';
 
@@ -43,6 +43,7 @@ type Ctx = {
   addWater: (ml: number) => void;
   undoWater: () => void;
   addWeight: (w: WeightLog) => void;
+  removeWeight: (date: ISODate) => void;
   addMood: (m: MoodLog) => void;
   addSleep: (s: SleepLog) => void;
   addWorkout: (w: WorkoutLog) => void;
@@ -161,7 +162,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (!idx) return s;
           return { ...s, water: s.water.filter((_, i) => i !== idx.i) };
         }),
-      addWeight: (w) => update((s) => ({ ...s, weights: [...s.weights.filter((x) => x.date !== w.date), w], profile: { ...s.profile, weightKg: w.kg } })),
+      addWeight: (w) =>
+        update((s) => {
+          const weights = [...s.weights.filter((x) => x.date !== w.date), w].sort((x, y) => x.date.localeCompare(y.date));
+          // The profile carries the newest reading, whichever date was just edited.
+          return { ...s, weights, profile: { ...s.profile, weightKg: weights[weights.length - 1].kg } };
+        }),
+      removeWeight: (date) =>
+        update((s) => {
+          const weights = s.weights.filter((x) => x.date !== date).sort((x, y) => x.date.localeCompare(y.date));
+          return { ...s, weights, profile: { ...s.profile, weightKg: weights.length ? weights[weights.length - 1].kg : s.profile.weightKg } };
+        }),
       addMood: (m) => update((s) => ({ ...s, moods: [...s.moods, m] })),
       addSleep: (sl) => update((s) => ({ ...s, sleep: [...s.sleep.filter((x) => x.date !== sl.date), sl] })),
       addWorkout: (w) => update((s) => ({ ...s, workouts: [...s.workouts.filter((x) => x.date !== w.date), w] })),

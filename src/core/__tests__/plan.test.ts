@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dailyTargets } from '../nutrition';
-import { actualRateKgPerWeek, motivationKey, planFrom, weighInDue } from '../plan';
+import { actualRateKgPerWeek, motivationKey, planFrom, planVerdict, weighInDue } from '../plan';
 import type { Profile, WeightLog } from '../types';
 
 const TODAY = '2026-10-06';
@@ -66,5 +66,18 @@ describe('weighInDue', () => {
     expect(weighInDue([], '2026-10-07', 1)).toBe(true);
     expect(weighInDue([w('2026-10-05', 95)], '2026-10-07', 1)).toBe(false);
     expect(weighInDue([w('2026-09-20', 95)], '2026-10-05', 1)).toBe(true);
+  });
+});
+
+describe('planVerdict', () => {
+  const p = (actualRate: number | null, toGoKg = 10, targetRate = 0.5) => planVerdict({ actualRate, toGoKg, targetRate } as never);
+  it('waits for data, then names the pace honestly', () => {
+    expect(p(null)).toBe('early');
+    expect(p(0.5)).toBe('working');
+    expect(p(0.35)).toBe('working');
+    expect(p(0.2)).toBe('slow');
+    expect(p(0.05)).toBe('stalled');
+    expect(p(-0.4)).toBe('gaining');
+    expect(p(-0.4, 0)).toBe('working');
   });
 });
