@@ -166,15 +166,6 @@ export default function CoachScreen() {
     }
   }
 
-  // Arriving with ?ask=stall sends the stall question once, with the data pack behind it.
-  useEffect(() => {
-    if (askParam === 'stall' && asked.current !== askParam) {
-      asked.current = askParam;
-      void send(quick[0]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [askParam]);
-
   /** Pull durable facts out in the background; failing to learn never breaks the chat. */
   async function learn(userText: string, assistantText: string) {
     try {
@@ -207,6 +198,15 @@ export default function CoachScreen() {
     });
     router.push('/');
   }
+
+  // Arriving with ?ask=stall sends the stall question once, with the data pack behind it.
+  useEffect(() => {
+    if (askParam === 'stall' && asked.current !== askParam) {
+      asked.current = askParam;
+      void send(quick[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askParam]);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
