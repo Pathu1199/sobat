@@ -64,8 +64,10 @@ function upgradeLogs(old: unknown, microSeconds: number): BreakLog[] {
 }
 
 /** Routine meals saved before they had times get the default time for their id, else a sensible one by meal. */
-function upgradeRoutine(old: unknown): AppState['routine'] {
+function upgradeRoutine(old: unknown, fromVersion: number): AppState['routine'] {
   const r = { ...EMPTY_STATE.routine, ...(isRecord(old) ? old : {}) } as AppState['routine'];
+  // Version 3 made the routine opt-in. Stores from before start with it off; one tap on the routine screen brings it back.
+  if (fromVersion < 3) r.enabled = false;
   const byType: Record<string, string> = { breakfast: '08:30', lunch: '13:00', snack: '16:00', dinner: '20:30' };
   r.slots = (Array.isArray(r.slots) ? r.slots : []).map((s) =>
     s.time ? s : { ...s, time: DEFAULT_ROUTINE.slots.find((d) => d.id === s.id)?.time ?? byType[s.type] ?? '13:00' },
@@ -90,13 +92,13 @@ export function migrateState(raw: unknown): AppState {
   return {
     ...EMPTY_STATE,
     ...(raw as Partial<AppState>),
-    version: 2,
+    version: 3,
     profile: { ...EMPTY_STATE.profile, ...(raw.profile as object) },
     settings: upgradeAppSettings(raw.settings),
     breakSettings,
     breaks: upgradeLogs(raw.breaks, breakSettings.micro.seconds),
     // Older stores have no routine; one saved before a field existed gets the default for it.
-    routine: upgradeRoutine(raw.routine),
+    routine: upgradeRoutine(raw.routine, typeof raw.version === 'number' ? raw.version : 1),
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
     schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}) },
   };

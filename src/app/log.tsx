@@ -79,7 +79,7 @@ export default function LogScreen() {
 
   // What fits in what is left today, never from the avoid list. Shown where the choosing happens.
   const ideas = useMemo(() => {
-    if (!isToday || app.budget.remaining < 150) return [];
+    if (!isToday || !app.state.routine.enabled || app.budget.remaining < 150) return [];
     const avoided = avoidedFoodIds(app.state.routine);
     return suggestMeals(app.foods, app.budget.remaining, dietFrom(app.state.memory))
       .filter((o) => !avoided.has(o.food.id))

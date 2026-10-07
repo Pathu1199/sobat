@@ -58,7 +58,7 @@ describe('migrateState', () => {
 
   it('marks the result as version 2 and is idempotent', () => {
     const once = migrateState(v1);
-    expect(once.version).toBe(2);
+    expect(once.version).toBe(3);
     const twice = migrateState(once);
     expect(twice).toEqual(once);
   });
@@ -86,6 +86,11 @@ describe('migrateState', () => {
     expect(custom.settings.ollamaUrl).toBe('http://10.0.0.5:11434');
     // vitest runs as a phone, where localhost would be the phone itself.
     expect(migrateState(v1).settings.ollamaUrl).toBe('http://192.168.1.10:11434');
+  });
+
+  it('switches an older store\'s routine off once, and leaves a version-3 store alone', () => {
+    expect(migrateState({ ...v1, routine: { ...EMPTY_STATE.routine, enabled: true } }).routine.enabled).toBe(false);
+    expect(migrateState({ ...v1, version: 3, routine: { ...EMPTY_STATE.routine, enabled: true } }).routine.enabled).toBe(true);
   });
 
   it('gives routine meals saved without a time their default time', () => {

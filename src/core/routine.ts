@@ -79,7 +79,8 @@ export const DEFAULT_SPREAD: Record<SpendCategory, number> = { fruit: 7, veg: 1,
 export const MAX_BHAJI_CHOICES = 2;
 
 export const DEFAULT_ROUTINE: Routine = {
-  enabled: true,
+  // Off until the person turns it on: Today should show what they ate, not a plan they did not ask for.
+  enabled: false,
   walk: true,
   week: [
     [],

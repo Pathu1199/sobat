@@ -46,7 +46,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const EMPTY_STATE: AppState = {
-  version: 2,
+  version: 3,
   profile: DEFAULT_PROFILE,
   settings: DEFAULT_SETTINGS,
   meals: [],

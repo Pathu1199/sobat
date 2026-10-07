@@ -203,8 +203,8 @@ describe('avoidHits', () => {
   it('builds a rule for a single food', () => {
     const rule = ruleForFood(FOODS.find((f) => f.id === 'gulab-jamun') ?? FOODS[0]);
     expect(rule.foodIds).toHaveLength(1);
-    expect(avoidedFoodIds({ ...DEFAULT_ROUTINE, avoid: [rule] }).has(rule.foodIds[0])).toBe(true);
-    expect(avoidedFoodIds({ ...DEFAULT_ROUTINE, enabled: false }).size).toBe(0);
+    expect(avoidedFoodIds({ ...DEFAULT_ROUTINE, enabled: true, avoid: [rule] }).has(rule.foodIds[0])).toBe(true);
+    expect(avoidedFoodIds(DEFAULT_ROUTINE).size).toBe(0);
   });
 });
 
@@ -235,7 +235,7 @@ describe('spending', () => {
 
 describe('routineFacts', () => {
   it('tells the coach the bhaji, the avoid list and the money', () => {
-    const facts = routineFacts(DEFAULT_ROUTINE, FOODS, MON, [meal('snack', ['cashews'], ['Cashews'])], 120).join('\n');
+    const facts = routineFacts({ ...DEFAULT_ROUTINE, enabled: true }, FOODS, MON, [meal('snack', ['cashews'], ['Cashews'])], 120).join('\n');
     expect(facts).toContain('Dudhi Bhaji');
     expect(facts).toContain('Cashews');
     expect(facts).toContain('₹170');
@@ -244,6 +244,6 @@ describe('routineFacts', () => {
   });
 
   it('says nothing when the routine is off', () => {
-    expect(routineFacts({ ...DEFAULT_ROUTINE, enabled: false }, FOODS, MON, [], 0)).toEqual([]);
+    expect(routineFacts(DEFAULT_ROUTINE, FOODS, MON, [], 0)).toEqual([]);
   });
 });

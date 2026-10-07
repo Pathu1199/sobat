@@ -5071,7 +5071,11 @@
     "tags": [
       "veg"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "doodh coffee",
+      "milk coffee"
+    ]
   },
   {
     "id": "filter-coffee",
@@ -5136,7 +5140,12 @@
       "veg",
       "healthy_swap"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "lemon juice",
+      "limbu sarbat",
+      "nimbu pani"
+    ]
   },
   {
     "id": "fresh-lime-soda",
@@ -5194,7 +5203,12 @@
       "veg",
       "healthy_swap"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "naral pani",
+      "nariyal pani",
+      "shahale"
+    ]
   },
   {
     "id": "sugarcane-juice",
@@ -5924,7 +5938,11 @@
     "tags": [
       "veg"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "khajoor",
+      "khajur"
+    ]
   },
   {
     "id": "pizza-slice",
@@ -6478,7 +6496,12 @@
       "veg",
       "high_protein"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "bhajlele shengdane",
+      "roasted groundnut",
+      "shengdane"
+    ]
   },
   {
     "id": "groundnut-chikki",
@@ -6513,7 +6536,12 @@
       "sweet",
       "packaged"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "chikki",
+      "gul shengdana",
+      "shengdana chikki"
+    ]
   },
   {
     "id": "roasted-chana",
@@ -6547,7 +6575,12 @@
       "high_protein",
       "healthy_swap"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "bhajke chane",
+      "chana",
+      "futane"
+    ]
   },
   {
     "id": "murmura-bhel",
@@ -6615,7 +6648,12 @@
       "veg",
       "healthy_swap"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "fox nuts",
+      "makhana",
+      "makhane"
+    ]
   },
   {
     "id": "moong-dal-chilla",
@@ -8111,6 +8149,214 @@
       "pivla rassa",
       "batata rassa",
       "haldi"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "peanuts-boiled",
+    "name_en": "Boiled Peanuts (Ukadlele Shengdane)",
+    "name_mr": "उकडलेले शेंगदाणे",
+    "name_hi": "उबली मूंगफली",
+    "category": "snack",
+    "kcal_100g": 320,
+    "protein_100g": 13.5,
+    "carbs_100g": 14,
+    "fat_100g": 24,
+    "portions": [
+      {
+        "unit": "handful",
+        "label_en": "1 handful (30 g)",
+        "label_mr": "१ मूठ (३० ग्रॅ)",
+        "label_hi": "1 मुट्ठी (30 ग्राम)",
+        "grams": 30
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "handful",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "high_protein",
+      "healthy_swap"
+    ],
+    "aliases": [
+      "shengdane",
+      "shengdana",
+      "ukadlele shengdane",
+      "boiled groundnut",
+      "peanut"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "black-coffee",
+    "name_en": "Black Coffee (no milk, no sugar)",
+    "name_mr": "ब्लॅक कॉफी (दूध-साखर नाही)",
+    "name_hi": "ब्लैक कॉफ़ी (बिना दूध, बिना चीनी)",
+    "category": "beverage",
+    "kcal_100g": 2,
+    "protein_100g": 0.1,
+    "carbs_100g": 0.3,
+    "fat_100g": 0,
+    "portions": [
+      {
+        "unit": "cup",
+        "label_en": "1 cup (150 ml)",
+        "label_mr": "१ कप (१५० मिली)",
+        "label_hi": "1 कप (150 मिली)",
+        "grams": 150
+      },
+      {
+        "unit": "glass",
+        "label_en": "1 mug (250 ml)",
+        "label_mr": "१ मग (२५० मिली)",
+        "label_hi": "1 मग (250 मिली)",
+        "grams": 250
+      }
+    ],
+    "default_portion": "cup",
+    "tags": [
+      "veg",
+      "healthy_swap"
+    ],
+    "aliases": [
+      "black coffee",
+      "kali coffee",
+      "coffee without sugar",
+      "americano"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "yoga-bar",
+    "name_en": "Yoga Bar (multigrain energy bar)",
+    "name_mr": "योगा बार",
+    "name_hi": "योगा बार",
+    "category": "snack",
+    "kcal_100g": 400,
+    "protein_100g": 12,
+    "carbs_100g": 55,
+    "fat_100g": 14,
+    "portions": [
+      {
+        "unit": "piece",
+        "label_en": "1 bar (38 g)",
+        "label_mr": "१ बार (३८ ग्रॅ)",
+        "label_hi": "1 बार (38 ग्राम)",
+        "grams": 38
+      }
+    ],
+    "default_portion": "piece",
+    "tags": [
+      "veg",
+      "packaged"
+    ],
+    "aliases": [
+      "yoga bar",
+      "energy bar",
+      "granola bar",
+      "protein bar",
+      "multigrain bar"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "warm-water",
+    "name_en": "Warm Water (Komat Pani)",
+    "name_mr": "कोमट पाणी",
+    "name_hi": "गुनगुना पानी",
+    "category": "beverage",
+    "kcal_100g": 0,
+    "protein_100g": 0,
+    "carbs_100g": 0,
+    "fat_100g": 0,
+    "portions": [
+      {
+        "unit": "glass",
+        "label_en": "1 glass (250 ml)",
+        "label_mr": "१ ग्लास (२५० मिली)",
+        "label_hi": "1 गिलास (250 मिली)",
+        "grams": 250
+      }
+    ],
+    "default_portion": "glass",
+    "tags": [
+      "veg",
+      "healthy_swap"
+    ],
+    "aliases": [
+      "komat pani",
+      "garam pani",
+      "hot water",
+      "warm water",
+      "pani"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "lemon-honey-water",
+    "name_en": "Warm Lemon Water (no honey)",
+    "name_mr": "कोमट लिंबू पाणी",
+    "name_hi": "गुनगुना नींबू पानी",
+    "category": "beverage",
+    "kcal_100g": 2,
+    "protein_100g": 0,
+    "carbs_100g": 0.6,
+    "fat_100g": 0,
+    "portions": [
+      {
+        "unit": "glass",
+        "label_en": "1 glass (250 ml)",
+        "label_mr": "१ ग्लास (२५० मिली)",
+        "label_hi": "1 गिलास (250 मिली)",
+        "grams": 250
+      }
+    ],
+    "default_portion": "glass",
+    "tags": [
+      "veg",
+      "healthy_swap"
+    ],
+    "aliases": [
+      "limbu pani",
+      "lemon water",
+      "nimbu pani warm"
+    ],
+    "source": "estimate"
+  },
+  {
+    "id": "green-tea",
+    "name_en": "Green Tea",
+    "name_mr": "ग्रीन टी",
+    "name_hi": "ग्रीन टी",
+    "category": "beverage",
+    "kcal_100g": 1,
+    "protein_100g": 0,
+    "carbs_100g": 0.2,
+    "fat_100g": 0,
+    "portions": [
+      {
+        "unit": "cup",
+        "label_en": "1 cup (150 ml)",
+        "label_mr": "१ कप (१५० मिली)",
+        "label_hi": "1 कप (150 मिली)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "cup",
+    "tags": [
+      "veg",
+      "healthy_swap"
+    ],
+    "aliases": [
+      "green tea",
+      "hirva chaha"
     ],
     "source": "estimate"
   }

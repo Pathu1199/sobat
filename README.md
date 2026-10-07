@@ -151,7 +151,7 @@ src/
     insights    Day scores, streaks, weight trend, patterns
     foods       Fuzzy search across English, Marathi and Hindi
   ai/           Ollama client, fallback routing, prompts, schemas
-  data/         234 Indian foods, 50 exercises, nudge messages
+  data/         240 Indian foods, 50 exercises, nudge messages
   store/        State and AsyncStorage persistence
   i18n/         English, Marathi, Hindi
   ui/           Theme tokens and shared components
@@ -163,7 +163,7 @@ docs/
 
 ## Data
 
-- **234 foods**, 90 of them Maharashtrian, with names in English, Marathi and
+- **240 foods**, 90 of them Maharashtrian, with names in English, Marathi and
   Hindi and portions in katori, vati, plate, piece and glass. Values based on the
   Indian Food Composition Tables 2017 where available.
 - **50 exercises**, all low impact, with steps in three languages and a safety

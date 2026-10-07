@@ -98,9 +98,14 @@ export function RoutineCard() {
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
         <Micro color={C.textDim}>{`${t('routine_title')} · ${t(`wd_${weekdayOf(today)}`)}`}</Micro>
-        <Pressable onPress={() => router.push('/routine')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('edit')}>
-          <Ionicons name="create-outline" size={18} color={C.textFaint} />
-        </Pressable>
+        <Row style={{ gap: 14 }}>
+          <Pressable onPress={() => router.push('/routine')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('edit')}>
+            <Ionicons name="create-outline" size={18} color={C.textFaint} />
+          </Pressable>
+          <Pressable onPress={() => app.setRoutine({ enabled: false })} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('routine_hide')}>
+            <Ionicons name="eye-off-outline" size={18} color={C.textFaint} />
+          </Pressable>
+        </Row>
       </Row>
 
       <View style={{ gap: 4 }}>

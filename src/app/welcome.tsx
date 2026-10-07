@@ -80,7 +80,7 @@ export default function Welcome() {
             borderBottomWidth: 1,
             borderColor: C.border,
           }}>
-          <Stat value="234" label={t('w_stat1')} />
+          <Stat value="240" label={t('w_stat1')} />
           <Stat value="50" label={t('w_stat2')} />
           <Stat value="0" label={t('w_stat3')} accent />
           <Stat value="3" label={t('w_stat4')} />
