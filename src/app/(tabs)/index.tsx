@@ -10,6 +10,7 @@ import { DecisionCard } from '../../components/DecisionCard';
 import { MealSheet } from '../../components/MealSheet';
 import { NotificationNudge } from '../../components/NotificationNudge';
 import { NutrientCard } from '../../components/NutrientCard';
+import { StartHereCard } from '../../components/StartHereCard';
 import { SuggestSheet } from '../../components/SuggestSheet';
 import { NowStrip } from '../../components/NowStrip';
 import { PlanCard } from '../../components/PlanCard';
@@ -216,6 +217,7 @@ export default function TodayScreen() {
           <>
             {heroCard}
             {isToday ? <TrackerGrid /> : null}
+            {isToday ? <StartHereCard /> : null}
             {isToday ? <NutrientCard /> : null}
             {isToday ? <NotificationNudge /> : null}
             {isToday ? <WeighInCard /> : null}
@@ -246,6 +248,7 @@ export default function TodayScreen() {
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
       {isToday ? <TrackerGrid /> : null}
+      {isToday ? <StartHereCard /> : null}
       {isToday ? <NutrientCard /> : null}
       {isToday ? <NotificationNudge /> : null}
       {isToday ? <WeighInCard /> : null}

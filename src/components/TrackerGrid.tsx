@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { WaterSheet } from './WaterSheet';
 import { WeightSheet } from './WeightSheet';
 import { addDays, formatMinutes } from '../core/date';
-import { makeT } from '../i18n';
+import { fill, makeT } from '../i18n';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
 import { Tile } from '../ui/tiles';
@@ -32,6 +32,9 @@ export function TrackerGrid() {
   const meals = state.meals.filter((m) => m.date === today).length;
   const lastWeight = [...state.weights].sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0];
   const daysSinceWeigh = lastWeight ? Math.round((new Date(today + 'T12:00:00').getTime() - new Date(lastWeight.date + 'T12:00:00').getTime()) / 86400000) : null;
+  // Empty tiles say what to do next rather than what is missing.
+  const mealHint = app.hour < 11 ? t('empty_log_breakfast') : app.hour < 17 ? t('empty_log_lunch') : t('empty_log_dinner');
+  const weighHint = fill(t('empty_weigh_on'), { day: t(`wd_${state.settings.weighDay}`) });
 
   const tiles = [
     <Tile
@@ -42,7 +45,7 @@ export function TrackerGrid() {
       color={glasses >= glassGoal ? C.green : C.cyan}
       onPress={() => setWaterOpen(true)}
     />,
-    <Tile key="sleep" label={t('sleep_title')} value={sleepFresh ? formatMinutes(sleep.minutes) : '—'} sub={sleepFresh ? `${t('score')} ${sleep.score}` : t('check_in')} color={sleepFresh ? scoreColor(sleep.score) : C.textDim} onPress={() => router.push('/sleep')} />,
+    <Tile key="sleep" label={t('sleep_title')} value={sleepFresh ? formatMinutes(sleep.minutes) : '—'} sub={sleepFresh ? `${t('score')} ${sleep.score}` : t('empty_sleep')} color={sleepFresh ? scoreColor(sleep.score) : C.textDim} onPress={() => router.push('/sleep')} />,
     <Tile key="steps" label={t('steps')} value={stepsToday > 0 ? stepsToday.toLocaleString() : '—'} sub={stepsToday > 0 ? `/ 8,000` : t('steps_phone_only')} color={stepsToday >= 8000 ? C.green : C.text} onPress={() => router.push('/fit')} />,
     <Tile
       key="breaks"
@@ -52,12 +55,12 @@ export function TrackerGrid() {
       color={monitor.enabled ? C.accent : C.textDim}
       onPress={() => router.push('/settings')}
     />,
-    <Tile key="meals" label={t('logged_intake')} value={String(meals)} sub={meals === 0 ? t('nothing_logged') : t('tap_to_log')} color={meals > 0 ? C.text : C.textDim} onPress={() => router.push('/log')} />,
+    <Tile key="meals" label={t('logged_intake')} value={String(meals)} sub={meals === 0 ? mealHint : t('tap_to_log')} color={meals > 0 ? C.text : C.textDim} onPress={() => router.push('/log')} />,
     <Tile
       key="weight"
       label={t('add_weight')}
       value={lastWeight ? `${lastWeight.kg}` : '—'}
-      sub={lastWeight && daysSinceWeigh !== null ? (daysSinceWeigh === 0 ? t('today_short') : `${daysSinceWeigh} ${t('days_ago')}`) : t('tap_to_log')}
+      sub={lastWeight && daysSinceWeigh !== null ? (daysSinceWeigh === 0 ? t('today_short') : `${daysSinceWeigh} ${t('days_ago')}`) : weighHint}
       color={daysSinceWeigh !== null && daysSinceWeigh > 9 ? C.amber : C.text}
       onPress={() => setWeightOpen(true)}
     />,

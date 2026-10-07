@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { TopBarActions } from '../../components/TopBarActions';
 import { WeeklyReport } from '../../components/WeeklyReport';
+import { WeekGrid } from '../../components/WeekGrid';
 import { breakStats } from '../../core/breaks';
 import { formatDayLabel, formatMinutes } from '../../core/date';
 import { changePct, isImprovement, summarize, type Metric, type Period } from '../../core/growth';
@@ -280,12 +281,14 @@ export default function GrowthScreen() {
       <Small>{t('log_more_days')}</Small>
     </Card>
   ) : null;
+  const weekGrid = <WeekGrid />;
 
   if (wide) {
     return (
       <Page title={t('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />} wide>
         <View style={{ maxWidth: 420 }}>{periodSwitch}</View>
         {empty}
+        {weekGrid}
         <Cols weights={[1.2, 1]}>
           {headline}
           {consistency}
@@ -312,8 +315,9 @@ export default function GrowthScreen() {
   return (
     <Page title={t('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />}>
       {periodSwitch}
-      {headline}
       {empty}
+      {weekGrid}
+      {headline}
       {tiles}
       {consistency}
       {period !== 'today' ? <WeeklyReport summary={summary} /> : null}
