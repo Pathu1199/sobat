@@ -4,7 +4,7 @@ import type { PushSchedule } from '../core/pushSchedule';
 
 /**
  * Background reminders for the web app: the browser's push subscription plus
- * the reminder schedule go to Sobat's small relay, which sends what is due
+ * the reminder schedule go to Fitoo's small relay, which sends what is due
  * while the app is closed. Only times, labels and the push address travel;
  * see core/pushSchedule.ts for exactly what.
  */

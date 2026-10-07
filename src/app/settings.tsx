@@ -407,7 +407,7 @@ export default function SettingsScreen() {
         <Card>
           <Row style={{ gap: 12 }}>
             <View style={{ flex: 1, gap: 3 }}>
-              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{`Sobat ${Constants.expoConfig?.version ?? ''}`}</Text>
+              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{`Fitoo ${Constants.expoConfig?.version ?? ''}`}</Text>
               <Small>{t('made_by')}</Small>
             </View>
           </Row>
@@ -446,7 +446,7 @@ export default function SettingsScreen() {
         </Card>
       </View>
 
-      <Micro>Sobat v0.3 · MIT · your data never leaves your devices.</Micro>
+      <Micro>Fitoo v0.3 · MIT · your data never leaves your devices.</Micro>
     </Screen>
   );
 }

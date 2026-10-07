@@ -1,4 +1,4 @@
-/* Sobat service worker: exists so the pinned web app can show notifications.
+/* Fitoo service worker: exists so the pinned web app can show notifications.
    iOS only displays web notifications through a service worker registration;
    the app calls registration.showNotification(). No caching, no push server. */
 self.addEventListener('install', () => self.skipWaiting());
@@ -23,9 +23,9 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: 'Sobat', body: event.data ? event.data.text() : '' };
+    data = { title: 'Fitoo', body: event.data ? event.data.text() : '' };
   }
-  const title = data.title || 'Sobat';
+  const title = data.title || 'Fitoo';
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || '',

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Sobat",
+  "productName": "Fitoo",
   "version": "0.1.0",
   "identifier": "com.varad.sobat",
   "build": {
@@ -10,7 +10,7 @@
   "app": {
     "windows": [
       {
-        "title": "Sobat",
+        "title": "Fitoo",
         "width": 1180,
         "height": 820,
         "minWidth": 380,

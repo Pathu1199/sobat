@@ -1,4 +1,4 @@
-# Sobat
+# Fitoo
 
 **सोबत** — Marathi for *company*, *being with you*.
 
@@ -21,7 +21,7 @@ is what the Windows desktop shell loads.
 Every push to `main` is tested, built and deployed by GitHub Actions; the
 website and the APK are always the latest `main`.
 
-> Sobat is not a doctor or a counsellor. Get your blood pressure, sugar and
+> Fitoo is not a doctor or a counsellor. Get your blood pressure, sugar and
 > thyroid checked before starting hard exercise, and talk to a real person when
 > things feel heavy.
 

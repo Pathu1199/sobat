@@ -94,8 +94,8 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: build-${{ github.run_number }}
-          name: Sobat build ${{ github.run_number }}
-          body: Automatic build of ${{ github.sha }}. Android 8+, arm64, signed with Sobat's release key.
+          name: Fitoo build ${{ github.run_number }}
+          body: Automatic build of ${{ github.sha }}. Android 8+, arm64, signed with Fitoo's release key.
           files: sobat.apk
           make_latest: true
 

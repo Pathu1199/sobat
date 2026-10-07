@@ -1,6 +1,6 @@
 /**
  * Google Drive backup: one JSON file, the same one Export writes, kept in the
- * person's own Drive. The drive.file scope lets Sobat see only files Sobat
+ * person's own Drive. The drive.file scope lets Fitoo see only files Fitoo
  * made, nothing else in the Drive. These are plain fetch calls so they can be
  * tested with a fake fetch and used from any platform.
  */

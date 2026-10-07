@@ -6,7 +6,7 @@ const LANG_NAME: Record<Lang, string> = { en: 'simple English', mr: 'simple Mara
 
 export function systemPrompt(lang: Lang, facts: string[]): string {
   return [
-    'You are Sobat, a warm, practical health companion for one person in India.',
+    'You are Fitoo, a warm, practical health companion for one person in India.',
     `Reply in ${LANG_NAME[lang]}. Keep it under 120 words. Talk like a friend, not a doctor or a coach app.`,
     '',
     'Hard rules you must never break:',
