@@ -4,7 +4,7 @@ type Dict = Record<string, string>;
 
 const en: Dict = {
   app_name: 'Fitoo',
-  tagline: 'Your health companion',
+  tagline: 'Roz thoda, fit sada',
   tab_today: 'Today', tab_log: 'Log', tab_fit: 'Move', tab_mind: 'Mind', tab_coach: 'Coach',
   good_morning: 'Good morning', good_afternoon: 'Good afternoon', good_evening: 'Good evening',
   kcal_left: 'kcal left', kcal_over: 'kcal over', eaten: 'Eaten', target: 'Target', burned: 'Moved',
@@ -108,7 +108,7 @@ const en: Dict = {
   calories_vs_target: 'Calories against target',
   weight_trend: 'Weight',
   sleep_hours: 'Sleep',
-  w_eyebrow: 'Private by design',
+  w_eyebrow: 'Roz thoda, fit sada · private by design',
   w_headline: 'Your health, on your own machine.',
   w_sub: 'Fitoo tracks what you eat, how you sleep and how you move, then turns it into a few concrete things to do today. The AI runs on your own PC. Nothing is uploaded.',
   w_cta: 'Get started',
@@ -629,7 +629,7 @@ const en: Dict = {
 
 const mr: Dict = {
   ...en,
-  tagline: 'तुमचा आरोग्य सोबती',
+  tagline: 'रोज थोडं, फिट सदा',
   tab_today: 'आज', tab_log: 'नोंद', tab_fit: 'हालचाल', tab_mind: 'मन', tab_coach: 'मदत',
   good_morning: 'शुभ सकाळ', good_afternoon: 'शुभ दुपार', good_evening: 'शुभ संध्याकाळ',
   kcal_left: 'कॅलरी शिल्लक', kcal_over: 'कॅलरी जास्त', eaten: 'खाल्ले', target: 'लक्ष्य', burned: 'हालचाल',
@@ -732,7 +732,7 @@ const mr: Dict = {
   calories_vs_target: 'कॅलरी विरुद्ध लक्ष्य',
   weight_trend: 'वजन',
   sleep_hours: 'झोप',
-  w_eyebrow: 'सुरुवातीपासून खाजगी',
+  w_eyebrow: 'रोज थोडं, फिट सदा · सुरुवातीपासून खाजगी',
   w_headline: 'तुमचे आरोग्य, तुमच्याच मशीनवर.',
   w_sub: 'फिटू तुम्ही काय खाता, कशी झोप घेता आणि किती हालचाल करता याची नोंद ठेवते, आणि त्यातून आजसाठी काही ठोस गोष्टी सांगते. एआय तुमच्याच पीसीवर चालते. काहीही अपलोड होत नाही.',
   w_cta: 'सुरुवात करा',
@@ -1258,7 +1258,7 @@ const mr: Dict = {
 
 const hi: Dict = {
   ...en,
-  tagline: 'आपका सेहत साथी',
+  tagline: 'रोज़ थोड़ा, फ़िट सदा',
   tab_today: 'आज', tab_log: 'दर्ज', tab_fit: 'हलचल', tab_mind: 'मन', tab_coach: 'मदद',
   good_morning: 'सुप्रभात', good_afternoon: 'नमस्कार', good_evening: 'शुभ संध्या',
   kcal_left: 'कैलोरी बची', kcal_over: 'कैलोरी ज़्यादा', eaten: 'खाया', target: 'लक्ष्य', burned: 'हलचल',
@@ -1361,7 +1361,7 @@ const hi: Dict = {
   calories_vs_target: 'कैलोरी बनाम लक्ष्य',
   weight_trend: 'वज़न',
   sleep_hours: 'नींद',
-  w_eyebrow: 'शुरू से ही निजी',
+  w_eyebrow: 'रोज़ थोड़ा, फ़िट सदा · शुरू से ही निजी',
   w_headline: 'आपकी सेहत, आपकी अपनी मशीन पर.',
   w_sub: 'फिटू दर्ज करता है कि आप क्या खाते हैं, कैसे सोते हैं और कितना चलते हैं, फिर उससे आज के लिए कुछ ठोस काम बताता है. एआई आपके अपने पीसी पर चलता है. कुछ भी अपलोड नहीं होता.',
   w_cta: 'शुरू करें',

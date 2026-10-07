@@ -70,7 +70,7 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "description": "Local-first health companion: calories, food photos, sleep, joint-safe fitness and gentle reminders. Runs on Android and Windows, uses your own Ollama for AI.",
+    "description": "Roz thoda, fit sada. Local-first health companion: calories, food photos, sleep, joint-safe fitness and gentle reminders. Runs on Android and Windows, uses your own Ollama for AI.",
     "primaryColor": "#5B86F5",
     "androidStatusBar": {
       "barStyle": "light-content",

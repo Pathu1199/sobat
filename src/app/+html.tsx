@@ -35,7 +35,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         {/* maximum-scale=1 stops iOS zooming the page when a text box is tapped. */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no, viewport-fit=cover" />
-        <meta name="description" content="A local-first health companion. Food, sleep, movement and mind, with the AI on your own PC." />
+        <meta name="description" content="Roz thoda, fit sada. A local-first health companion. Food, sleep, movement and mind, with the AI on your own PC." />
         <meta name="theme-color" content="#0A0B10" />
         <meta name="color-scheme" content="dark light" />
         {/* Pinned to an iPhone home screen: this icon and name, and no Safari chrome around the app. */}

@@ -1,7 +1,7 @@
 {
   "name": "Fitoo",
   "short_name": "Fitoo",
-  "description": "A local-first health companion. Food, sleep, movement and mind, with the AI on your own PC.",
+  "description": "Roz thoda, fit sada. A local-first health companion. Food, sleep, movement and mind, with the AI on your own PC.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
