@@ -489,7 +489,7 @@ const en: Dict = {
   auth_err_generic: 'Something went wrong. Try again.',
   account: 'Account',
   signed_in_as: 'Signed in as',
-  sign_out: 'Sign out',
+  sign_out: 'Log out',
   sign_out_note: 'Your data is saved to your account and cleared from this device.',
   sync_now: 'Synced just now',
   sync_pending: 'Saving to your account…',

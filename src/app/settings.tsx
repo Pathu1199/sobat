@@ -96,7 +96,7 @@ export default function SettingsScreen() {
               </Row>
               <Row style={{ gap: 8 }}>
                 {auth.isAdmin ? <Btn small tone="soft" label={t('admin_title')} onPress={() => router.push('/admin')} icon={<Ionicons name="shield-checkmark-outline" size={14} color={C.text} />} style={{ flex: 1 }} /> : null}
-                <Btn small tone="ghost" label={t('sign_out')} onPress={() => authApi.signOut().then(() => router.replace('/login'))} icon={<Ionicons name="log-out-outline" size={14} color={C.text} />} style={{ flex: 1 }} />
+                <Btn small tone="danger" label={t('sign_out')} onPress={() => authApi.signOut().then(() => router.replace('/welcome'))} icon={<Ionicons name="log-out-outline" size={14} color={C.red} />} style={{ flex: 1 }} />
               </Row>
               <Micro>{t('sign_out_note')}</Micro>
             </Card>

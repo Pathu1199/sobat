@@ -80,7 +80,7 @@ function AppShell() {
   // and the login are the door; anywhere else without a session goes to it.
   const open = segments[0] === 'login' || segments[0] === 'welcome';
   if (firebaseEnabled && stateReady && authReady && !user && !open) {
-    return <Redirect href={Platform.OS === 'web' && segments.length === 0 ? '/welcome' : '/login'} />;
+    return <Redirect href="/welcome" />;
   }
 
   return (

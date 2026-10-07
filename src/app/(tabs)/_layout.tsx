@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 import { NudgeToast } from '../../components/NudgeToast';
 import { TabBar } from '../../components/TabBar';
 import { Sidebar } from '../../components/Sidebar';
@@ -32,7 +32,8 @@ export default function TabsLayout() {
   }
   // On the web a first-time visitor gets the landing page; on a phone the app
   // is already installed, so go straight to setup.
-  if (firebaseEnabled && !auth.user) return <Redirect href={Platform.OS === 'web' ? '/welcome' : '/login'} />;
+  // Not signed in: the landing page and nothing else, on every platform.
+  if (firebaseEnabled && !auth.user) return <Redirect href="/welcome" />;
   if (!state.profile.onboarded) return <Redirect href="/onboarding" />;
 
   return (
