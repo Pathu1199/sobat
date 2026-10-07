@@ -10,6 +10,8 @@ import { pushConfigured, stopPush, testPush } from '../services/push';
 import Constants from 'expo-constants';
 import { ScheduleEditor } from '../components/ScheduleEditor';
 import { useDriveBackup } from '../services/useDriveBackup';
+import { firebaseEnabled } from '../services/firebase';
+import { authApi, useAuth } from '../services/useAuth';
 import { useApp } from '../store/AppProvider';
 import { DEFAULT_OLLAMA_URL } from '../store/defaults';
 import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
@@ -22,6 +24,7 @@ export default function SettingsScreen() {
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const router = useRouter();
+  const auth = useAuth();
 
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
@@ -80,6 +83,26 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <View style={{ gap: 10 }}>
+        {firebaseEnabled && auth.user ? (
+          <>
+            <SectionHeader title={t('account')} icon={<Ionicons name="person-circle-outline" size={13} color={C.textFaint} />} />
+            <Card>
+              <Row style={{ justifyContent: 'space-between', gap: 12 }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Micro>{t('signed_in_as')}</Micro>
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{auth.user.email}</Text>
+                </View>
+                {auth.isAdmin ? <Pill label={t('admin')} color={C.accent} textColor={C.white} /> : null}
+              </Row>
+              <Row style={{ gap: 8 }}>
+                {auth.isAdmin ? <Btn small tone="soft" label={t('admin_title')} onPress={() => router.push('/admin')} icon={<Ionicons name="shield-checkmark-outline" size={14} color={C.text} />} style={{ flex: 1 }} /> : null}
+                <Btn small tone="ghost" label={t('sign_out')} onPress={() => authApi.signOut().then(() => router.replace('/login'))} icon={<Ionicons name="log-out-outline" size={14} color={C.text} />} style={{ flex: 1 }} />
+              </Row>
+              <Micro>{t('sign_out_note')}</Micro>
+            </Card>
+          </>
+        ) : null}
+
         <SectionHeader title={t('general')} icon={<Ionicons name="options-outline" size={13} color={C.textFaint} />} />
         <Card>
           <Micro>{t('language')}</Micro>

@@ -4,7 +4,14 @@
     {
       "name": "sobat-web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web", "--port", "8082"],
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8082",
+        "--clear"
+      ],
       "port": 8082
     }
   ]

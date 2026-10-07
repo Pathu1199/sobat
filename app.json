@@ -77,6 +77,14 @@
       "backgroundColor": "#111F1C"
     },
     "extra": {
+      "firebase": {
+        "apiKey": "AIzaSyB3Q628mgS6-s_vSOsmAEEsNmu9gJXwBGs",
+        "authDomain": "sobat-a56c7.firebaseapp.com",
+        "projectId": "sobat-a56c7",
+        "storageBucket": "sobat-a56c7.firebasestorage.app",
+        "messagingSenderId": "761404659186",
+        "appId": "1:761404659186:web:9f37dcfb38570b6fc9876b"
+      },
       "google": {
         "webClientId": "",
         "androidClientId": ""

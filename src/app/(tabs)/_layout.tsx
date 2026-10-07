@@ -7,12 +7,16 @@ import { TabBar } from '../../components/TabBar';
 import { Sidebar } from '../../components/Sidebar';
 import { useIsWide } from '../../ui/useBreakpoint';
 import { makeT } from '../../i18n';
+import { firebaseEnabled } from '../../services/firebase';
+import { useAuth } from '../../services/useAuth';
 import { useApp } from '../../store/AppProvider';
 import { C } from '../../ui/theme';
 import { Skeleton } from '../../ui/tiles';
 
 export default function TabsLayout() {
-  const { state, ready } = useApp();
+  const { state, ready: stateReady } = useApp();
+  const auth = useAuth();
+  const ready = stateReady && auth.ready;
   const wide = useIsWide();
   const t = makeT(state.profile.lang);
 
@@ -28,7 +32,8 @@ export default function TabsLayout() {
   }
   // On the web a first-time visitor gets the landing page; on a phone the app
   // is already installed, so go straight to setup.
-  if (!state.profile.onboarded) return <Redirect href={Platform.OS === 'web' ? '/welcome' : '/onboarding'} />;
+  if (firebaseEnabled && !auth.user) return <Redirect href={Platform.OS === 'web' ? '/welcome' : '/login'} />;
+  if (!state.profile.onboarded) return <Redirect href="/onboarding" />;
 
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: C.bg }}>

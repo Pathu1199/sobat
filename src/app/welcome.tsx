@@ -36,7 +36,7 @@ export default function Welcome() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 20 }}>
           <Wordmark size={20} />
           <Pressable
-            onPress={() => router.replace('/onboarding')}
+            onPress={() => router.replace('/login')}
             style={{ backgroundColor: C.accent, paddingVertical: 9, paddingHorizontal: 18, borderRadius: 999 }}>
             <Text style={{ color: C.white, fontWeight: '600', fontSize: F.small }}>{t('w_cta')}</Text>
           </Pressable>
@@ -54,7 +54,7 @@ export default function Welcome() {
 
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 30, flexWrap: 'wrap' }}>
             <Pressable
-              onPress={() => router.replace('/onboarding')}
+              onPress={() => router.replace('/login')}
               style={{ backgroundColor: C.accent, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999 }}>
               <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
             </Pressable>
@@ -82,7 +82,7 @@ export default function Welcome() {
           }}>
           <Stat value="240" label={t('w_stat1')} />
           <Stat value="50" label={t('w_stat2')} />
-          <Stat value="0" label={t('w_stat3')} accent />
+          <Stat value="1" label={t('w_stat3')} accent />
           <Stat value="3" label={t('w_stat4')} />
         </View>
 
@@ -141,7 +141,7 @@ export default function Welcome() {
 
         <View style={{ paddingTop: 44, alignItems: 'flex-start', gap: 12 }}>
           <Pressable
-            onPress={() => router.replace('/onboarding')}
+            onPress={() => router.replace('/login')}
             style={{ backgroundColor: C.accent, paddingVertical: 15, paddingHorizontal: 34, borderRadius: 999 }}>
             <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
           </Pressable>

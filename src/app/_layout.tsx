@@ -1,11 +1,14 @@
-import { Stack } from 'expo-router';
+import { Redirect, Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Platform, useColorScheme, View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
 import { BreakToast } from '../components/BreakToast';
 import { FeedbackProvider } from '../services/feedback';
+import { firebaseEnabled } from '../services/firebase';
 import { enableAutostart } from '../services/platform';
+import { useAuth } from '../services/useAuth';
+import { useCloudSync } from '../services/useCloudSync';
 import { BreakMonitorProvider } from '../services/useBreakMonitor';
 import { usePhotoQueue } from '../services/usePhotoQueue';
 import { useScheduledReminders } from '../services/useScheduledReminders';
@@ -61,6 +64,10 @@ function AppShell() {
   usePhotoQueue();
   useWorkSchedule();
   usePushSync();
+  useCloudSync();
+  const { user, ready: authReady } = useAuth();
+  const segments = useSegments() as string[];
+  const { ready: stateReady } = useApp();
 
   // The break monitor is only useful if it is running, so the Windows shell
   // registers itself to start with the machine. Idempotent, and a no-op in a
@@ -68,6 +75,13 @@ function AppShell() {
   useEffect(() => {
     enableAutostart().catch(() => {});
   }, []);
+
+  // Everything past the front door belongs to an account. The welcome page
+  // and the login are the door; anywhere else without a session goes to it.
+  const open = segments[0] === 'login' || segments[0] === 'welcome';
+  if (firebaseEnabled && stateReady && authReady && !user && !open) {
+    return <Redirect href={Platform.OS === 'web' && segments.length === 0 ? '/welcome' : '/login'} />;
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -83,6 +97,8 @@ function AppShell() {
         <Stack.Screen name="log" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="admin" options={{ title: 'Admin' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="photo" options={{ title: 'Photo' }} />
         <Stack.Screen name="sleep" options={{ title: 'Sleep' }} />

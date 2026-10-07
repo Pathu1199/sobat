@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // The admin sees and manages every account; everyone else only their own.
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'shindeprathmesh999@gmail.com';
+    }
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      // A blocked account can still be read (so the app can show why), not written.
+      allow create, update: if isAdmin() || (isOwner(uid) && !(resource != null && resource.data.disabled == true));
+      allow delete: if isAdmin();
+    }
+  }
+}
