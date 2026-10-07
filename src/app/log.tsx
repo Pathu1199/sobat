@@ -10,7 +10,7 @@ import { swapText } from '../components/RoutineCard';
 import { IconButton } from '../components/TopBarActions';
 import { addDays, formatDayLabel, lastNDates, localHHMM } from '../core/date';
 import { newId } from '../core/id';
-import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, suggestMeals, toMealItem, type DishStyle } from '../core/foods';
+import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, toMealItem, type DishStyle } from '../core/foods';
 import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../core/nutrition';
 import { avoidHits } from '../core/routine';
 import type { FoodItem, MealItem, MealType } from '../core/types';
