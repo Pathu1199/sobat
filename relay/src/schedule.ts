@@ -15,6 +15,7 @@ export type PushSchedule = {
   water: { everyMinutes: number; from: string; to: string; title: string; body: string } | null;
   mantras: { date: string; title: string; text: string }[];
   quiet: { from: number; to: number };
+  weigh?: { weekday: number; title: string; body: string } | null;
 };
 
 export type Reminder = { key: string; title: string; body: string; url: string };
@@ -54,6 +55,7 @@ export function dueAt(s: PushSchedule, now: LocalTime): Reminder[] {
 
   const m = s.mantras.find((x) => x.date === now.date);
   if (m && now.minutes === 8 * 60) out.push({ key: `mantra-${now.date}`, title: m.title, body: m.text, url: '/' });
+  if (s.weigh && s.weigh.weekday === now.weekday && now.minutes === 7 * 60 + 45) out.push({ key: `weigh-${now.date}`, title: s.weigh.title, body: s.weigh.body, url: '/' });
 
   if (workDay) {
     for (const b of s.blocks) if (toMinutes(b.start) === now.minutes) out.push({ key: `block-${b.kind}-${now.date}`, title: b.title, body: b.body, url: '/' });

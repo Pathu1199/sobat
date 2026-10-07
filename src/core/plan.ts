@@ -98,6 +98,18 @@ export function planFrom(profile: Profile, weights: WeightLog[], targets: Target
 }
 
 /**
+ * Weigh on one day a week, and if that was missed, be asked again two days
+ * later; never more often, since daily readings mislead. Due when nothing has
+ * been logged in the last six days and today is the weigh day or two after it.
+ */
+export function weighInDue(weights: WeightLog[], today: ISODate, weighDay: number): boolean {
+  const recent = weights.some((w) => daysBetween(w.date, today) <= 6 && w.date <= today);
+  if (recent) return false;
+  const wd = new Date(today + 'T12:00:00').getDay();
+  return wd === weighDay || wd === (weighDay + 2) % 7;
+}
+
+/**
  * Which line to say today. The day number keeps it from repeating the same
  * sentence every morning; the stage keeps it honest about where things are.
  */

@@ -14,6 +14,8 @@ import { PlanCard } from '../../components/PlanCard';
 import { RecoveryCard } from '../../components/RecoveryCard';
 import { RoutineCard } from '../../components/RoutineCard';
 import { TomorrowCard } from '../../components/TomorrowCard';
+import { TrackerGrid } from '../../components/TrackerGrid';
+import { WeighInCard } from '../../components/WeighInCard';
 import { TipCard } from '../../components/TipCard';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { addDays, formatDayLabel, localHHMM, localHour } from '../../core/date';
@@ -215,7 +217,9 @@ export default function TodayScreen() {
         <Cols weights={[1.15, 1, 0.95]}>
           <>
             {heroCard}
+            {isToday ? <TrackerGrid /> : null}
             {isToday ? <NotificationNudge /> : null}
+            {isToday ? <WeighInCard /> : null}
             {isToday ? <RecoveryCard /> : null}
             {isToday ? <BreakCheckin /> : null}
             {isToday ? <RoutineCard /> : null}
@@ -240,7 +244,9 @@ export default function TodayScreen() {
     <Page title={state.profile.name || greeting} alt={undefined} subtitle={`${greeting} · ${subtitle}`} left={<Logo size={26} />} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
+      {isToday ? <TrackerGrid /> : null}
       {isToday ? <NotificationNudge /> : null}
+      {isToday ? <WeighInCard /> : null}
       {isToday ? <RecoveryCard /> : null}
       {isToday ? <BreakCheckin /> : null}
       {isToday ? <RoutineCard /> : null}
@@ -257,7 +263,6 @@ export default function TodayScreen() {
       {more ? (
         <>
           {isToday ? <PlanCard /> : null}
-          {isToday ? <NowStrip /> : null}
           <DayScoreCard score={score} />
           {isToday ? <TipCard /> : null}
           {isToday ? <DayReview /> : null}

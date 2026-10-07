@@ -296,7 +296,9 @@ export default function LogScreen() {
       </Card>
     ) : null;
 
-  const resultsCard = (
+  const resultsCard = query.trim() === '' ? (
+    <Btn small tone="soft" icon={<Ionicons name="book-outline" size={15} color={C.accent} />} label={fill(t('browse_foods'), { n: app.foods.length })} onPress={() => router.push('/foods')} />
+  ) : (
     <Card>
       {results.length === 0 ? (
         <View style={{ gap: 10 }}>

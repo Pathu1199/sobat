@@ -46,6 +46,8 @@ export type Settings = {
   textScale: number;
   /** Web only: reminders through the relay while the app is closed. */
   pushRelay: boolean;
+  /** Weekday to weigh in, 0 = Sunday. */
+  weighDay: number;
 };
 
 export type Diet = 'veg' | 'egg' | 'nonveg';

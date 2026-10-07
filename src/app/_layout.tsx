@@ -90,6 +90,7 @@ function AppShell() {
         <Stack.Screen name="routine" options={{ title: 'My routine' }} />
         <Stack.Screen name="guide" options={{ title: 'Guide' }} />
         <Stack.Screen name="tour" options={{ headerShown: false }} />
+        <Stack.Screen name="foods" options={{ title: 'Foods' }} />
         <Stack.Screen name="session" options={{ title: 'Session' }} />
         <Stack.Screen name="scan" options={{ title: 'Scan' }} />
         <Stack.Screen name="permissions" options={{ headerShown: false }} />

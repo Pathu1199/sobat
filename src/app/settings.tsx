@@ -103,6 +103,13 @@ export default function SettingsScreen() {
             ))}
           </Row>
           <Divider />
+          <Micro>{t('weigh_day')}</Micro>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+              <Pill key={d} label={t(`wd_${d}`)} active={(s.weighDay ?? 1) === d} onPress={() => app.setSettings({ weighDay: d })} />
+            ))}
+          </Row>
+          <Divider />
           <Micro>{t('diet')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {(['veg', 'egg', 'nonveg'] as const).map((d) => (

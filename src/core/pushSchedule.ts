@@ -28,6 +28,8 @@ export type PushSchedule = {
   /** One line a day at eight, precomputed for the week ahead. */
   mantras: { date: ISODate; title: string; text: string }[];
   quiet: { from: number; to: number };
+  /** The weigh day, once a week at eight. */
+  weigh: { weekday: number; title: string; body: string } | null;
 };
 
 function addMinutes(hhmm: string, mins: number): string {
@@ -71,5 +73,6 @@ export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string
         : null,
     mantras,
     quiet: { from: state.settings.quietStartHour, to: state.settings.quietEndHour },
+    weigh: { weekday: state.settings.weighDay ?? 1, title: t('weigh_q'), body: t('weigh_hint') },
   };
 }

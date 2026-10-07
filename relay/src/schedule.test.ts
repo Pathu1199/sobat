@@ -15,6 +15,7 @@ const S: PushSchedule = {
   water: { everyMinutes: 30, from: '09:00', to: '18:00', title: 'Water', body: 'glass' },
   mantras: [{ date: '2026-10-06', title: 'Mantra', text: 'Sleep.' }],
   quiet: { from: 22, to: 7 },
+  weigh: { weekday: 2, title: 'Weigh?', body: 'morning' },
 };
 // 2026-10-06 is a Tuesday. Kolkata is UTC+5:30, so 09:20 local is 03:50Z.
 const at = (hhmm: string) => Date.parse(`2026-10-06T${hhmm}:00+05:30`);
@@ -35,6 +36,7 @@ describe('dueAt', () => {
     expect(dueAt(S, now('09:40')).map((r) => r.key)).toEqual(['break-2026-10-06-580', 'water-2026-10-06-580']);
     expect(dueAt(S, now('08:00')).map((r) => r.key)).toEqual(['mantra-2026-10-06']);
     expect(dueAt(S, now('09:21'))).toEqual([]);
+    expect(dueAt(S, now('07:45')).map((r) => r.key)).toEqual(['weigh-2026-10-06']);
   });
   it('stays quiet at night and off days', () => {
     expect(dueAt(S, localTime(Date.parse('2026-10-06T23:00:00+05:30'), S.tz))).toEqual([]);

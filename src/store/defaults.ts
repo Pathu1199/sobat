@@ -43,6 +43,7 @@ export const DEFAULT_SETTINGS: Settings = {
   appearance: 'system',
   textScale: 1,
   pushRelay: false,
+  weighDay: 1,
 };
 
 export const EMPTY_STATE: AppState = {

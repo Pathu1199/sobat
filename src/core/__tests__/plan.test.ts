@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dailyTargets } from '../nutrition';
-import { actualRateKgPerWeek, motivationKey, planFrom } from '../plan';
+import { actualRateKgPerWeek, motivationKey, planFrom, weighInDue } from '../plan';
 import type { Profile, WeightLog } from '../types';
 
 const TODAY = '2026-10-06';
@@ -55,5 +55,16 @@ describe('planFrom', () => {
     const p = planFrom(profile, [], targets, TODAY);
     expect(motivationKey(p, TODAY)).toMatch(/^mot_start_[012]$/);
     expect(motivationKey(p, '2026-10-07')).not.toBe(motivationKey(p, TODAY));
+  });
+});
+
+describe('weighInDue', () => {
+  // 2026-10-05 is a Monday.
+  it('asks on the weigh day, again two days later if missed, and never when weighed this week', () => {
+    expect(weighInDue([], '2026-10-05', 1)).toBe(true);
+    expect(weighInDue([], '2026-10-06', 1)).toBe(false);
+    expect(weighInDue([], '2026-10-07', 1)).toBe(true);
+    expect(weighInDue([w('2026-10-05', 95)], '2026-10-07', 1)).toBe(false);
+    expect(weighInDue([w('2026-09-20', 95)], '2026-10-05', 1)).toBe(true);
   });
 });
