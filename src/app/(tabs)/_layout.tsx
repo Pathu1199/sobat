@@ -53,6 +53,8 @@ export default function TabsLayout() {
           <Tabs.Screen name="fit" options={{ title: t('tab_fit'), tabBarIcon: ({ color, size }) => <Ionicons name="walk-outline" color={color} size={size} /> }} />
           <Tabs.Screen name="mind" options={{ title: t('tab_mind'), tabBarIcon: ({ color, size }) => <Ionicons name="heart-outline" color={color} size={size} /> }} />
           <Tabs.Screen name="coach" options={{ title: t('tab_coach'), href: null }} />
+          {/* Inside the tabs so the bar stays under it; the + button is its only entry. */}
+          <Tabs.Screen name="log" options={{ title: t('tab_log'), href: null }} />
         </Tabs>
         <NudgeToast />
       </View>

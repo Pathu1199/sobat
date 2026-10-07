@@ -26,7 +26,7 @@ type TabBarProps = {
   };
 };
 
-const HIDDEN = new Set(['coach']);
+const HIDDEN = new Set(['coach', 'log']);
 const CENTRE_AFTER = 'growth';
 
 export function TabBar({ state, descriptors, navigation }: TabBarProps) {
@@ -35,6 +35,7 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
   const { state: app } = useApp();
   const t = makeT(app.profile.lang);
 
+  const onLog = state.routes[state.index]?.name === 'log';
   const slots: React.ReactNode[] = [];
   state.routes.forEach((route, index) => {
     if (HIDDEN.has(route.name)) return;
@@ -75,7 +76,7 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
               height: 52,
               borderRadius: 26,
               marginTop: -22,
-              backgroundColor: C.accent,
+              backgroundColor: onLog ? C.cyan : C.accent,
               alignItems: 'center',
               justifyContent: 'center',
               borderWidth: 4,
