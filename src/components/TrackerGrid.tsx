@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { View } from 'react-native';
+import { WaterSheet } from './WaterSheet';
 import { WeightSheet } from './WeightSheet';
 import { addDays, formatMinutes } from '../core/date';
 import { makeT } from '../i18n';
-import { useFeedback } from '../services/feedback';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
 import { Tile } from '../ui/tiles';
@@ -18,11 +18,11 @@ import { C, scoreColor } from '../ui/theme';
 export function TrackerGrid() {
   const app = useApp();
   const router = useRouter();
-  const fb = useFeedback();
   const monitor = useBreakMonitor();
   const { state, today, waterToday, stepsToday } = app;
   const t = makeT(state.profile.lang);
   const [weightOpen, setWeightOpen] = useState(false);
+  const [waterOpen, setWaterOpen] = useState(false);
 
   const glass = state.settings.glassMl;
   const glasses = Math.round(waterToday / glass);
@@ -38,13 +38,9 @@ export function TrackerGrid() {
       key="water"
       label={t('water')}
       value={`${glasses}/${glassGoal}`}
-      sub={t('tap_add_glass')}
+      sub={`${(waterToday / 1000).toFixed(1)} L · ${t('tap_to_log')}`}
       color={glasses >= glassGoal ? C.green : C.cyan}
-      onPress={() => {
-        app.addWater(glass);
-        fb.haptic('light');
-        fb.notify(t('toast_water_added'));
-      }}
+      onPress={() => setWaterOpen(true)}
     />,
     <Tile key="sleep" label={t('sleep_title')} value={sleepFresh ? formatMinutes(sleep.minutes) : '—'} sub={sleepFresh ? `${t('score')} ${sleep.score}` : t('check_in')} color={sleepFresh ? scoreColor(sleep.score) : C.textDim} onPress={() => router.push('/sleep')} />,
     <Tile key="steps" label={t('steps')} value={stepsToday > 0 ? stepsToday.toLocaleString() : '—'} sub={stepsToday > 0 ? `/ 8,000` : t('steps_phone_only')} color={stepsToday >= 8000 ? C.green : C.text} onPress={() => router.push('/fit')} />,
@@ -75,6 +71,7 @@ export function TrackerGrid() {
         </View>
       ))}
       <WeightSheet open={weightOpen} onClose={() => setWeightOpen(false)} />
+      <WaterSheet open={waterOpen} onClose={() => setWaterOpen(false)} />
     </View>
   );
 }

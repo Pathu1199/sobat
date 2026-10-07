@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
 import { foodIcon, foodsForDiet, isCountable, MEASURES, measuresFor, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
 import type { FoodItem, Meal, MealItem } from '../types';
+import { isSourceOf, nutrientSourcesEaten } from '../nutrients';
+import { RECIPES } from '../../data/recipes';
 
 describe('scaleMealItem', () => {
   const item: MealItem = { name_en: 'Chapati', name_mr: 'चपाती', grams: 80, kcal: 238, protein: 8, carbs: 42, fat: 4, estimated: false };
@@ -99,5 +101,34 @@ describe('measuresFor', () => {
     expect(bhaji).toContain('spoon_big');
     expect(bhaji).not.toContain('glass');
     expect(measuresFor(by('taak')).map((m) => m.unit)).toContain('glass');
+  });
+});
+
+describe('nutrient sources and recipes', () => {
+  const ALL = foodsJson as unknown as FoodItem[];
+  const by = (id: string) => ALL.find((f) => f.id === id)!;
+  it('names B12, iron and calcium sources a vegetarian can use', () => {
+    expect(isSourceOf(by('curd'), 'b12')).toBe(true);
+    expect(isSourceOf(by('palak-bhaji'), 'iron')).toBe(true);
+    expect(isSourceOf(by('toned-milk'), 'calcium')).toBe(true);
+    expect(isSourceOf(by('chapati'), 'b12')).toBe(false);
+    expect(isSourceOf(by('moong-dal'), 'protein')).toBe(true);
+  });
+  it('reports which sources were eaten today', () => {
+    const meal = { id: 'm', at: '2026-10-07T13:00:00', date: '2026-10-07', type: 'lunch', kcal: 1, protein: 1, items: [{ foodId: 'curd', name_en: 'Curd', name_mr: '', grams: 100, kcal: 1, protein: 1, carbs: 0, fat: 0, estimated: false }] } as Meal;
+    const s = nutrientSourcesEaten([meal], ALL);
+    expect(s.b12).toEqual([by('curd').name_en]);
+    expect(s.iron).toEqual([]);
+  });
+  it('every recipe points at a real food with portions and three languages', () => {
+    for (const r of RECIPES) {
+      const f = by(r.foodId);
+      expect(f, r.id).toBeDefined();
+      expect(f.portions.length).toBeGreaterThan(0);
+      for (const lang of ['en', 'mr', 'hi'] as const) {
+        expect(r.ingredients[lang].length).toBeGreaterThan(1);
+        expect(r.steps[lang].length).toBeGreaterThan(0);
+      }
+    }
   });
 });

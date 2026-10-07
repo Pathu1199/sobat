@@ -9,6 +9,8 @@ import { DayScoreCard } from '../../components/DayScore';
 import { DecisionCard } from '../../components/DecisionCard';
 import { MealSheet } from '../../components/MealSheet';
 import { NotificationNudge } from '../../components/NotificationNudge';
+import { NutrientCard } from '../../components/NutrientCard';
+import { SuggestSheet } from '../../components/SuggestSheet';
 import { NowStrip } from '../../components/NowStrip';
 import { PlanCard } from '../../components/PlanCard';
 import { RecoveryCard } from '../../components/RecoveryCard';
@@ -58,6 +60,7 @@ export default function TodayScreen() {
   const [openMeal, setOpenMeal] = useState<Meal | null>(null);
   // The phone shows the essentials; the rest waits behind one tap.
   const [more, setMore] = useState(false);
+  const [suggestOpen, setSuggestOpen] = useState(false);
 
   const greetKey = hour < 12 ? 'good_morning' : hour < 17 ? 'good_afternoon' : 'good_evening';
   const greeting = en(greetKey);
@@ -117,11 +120,6 @@ export default function TodayScreen() {
   const titleName = `${greeting}, ${state.profile.name || 'there'}`;
   const waterMarker = isToday ? expectedWaterByHour(hour, state.settings.waterGoalMl) / Math.max(1, state.settings.waterGoalMl) : undefined;
 
-  function addGlass() {
-    app.addWater(state.settings.glassMl);
-    fb.haptic('light');
-    fb.notify(t('toast_water_added'));
-  }
 
   const heroCard = (
     <Card>
@@ -161,7 +159,7 @@ export default function TodayScreen() {
           <Row style={{ gap: 8 }}>
             <QuickAction icon="add" label={t('add_food')} onPress={() => router.push('/log')} />
             <QuickAction icon="camera-outline" label={t('add_photo')} onPress={() => router.push('/photo')} />
-            <QuickAction icon="water-outline" label={t('add_water')} onPress={addGlass} />
+            <QuickAction icon="bulb-outline" label={t('suggest')} onPress={() => setSuggestOpen(true)} />
           </Row>
         </>
       ) : null}
@@ -218,6 +216,7 @@ export default function TodayScreen() {
           <>
             {heroCard}
             {isToday ? <TrackerGrid /> : null}
+            {isToday ? <NutrientCard /> : null}
             {isToday ? <NotificationNudge /> : null}
             {isToday ? <WeighInCard /> : null}
             {isToday ? <RecoveryCard /> : null}
@@ -236,6 +235,8 @@ export default function TodayScreen() {
         </Cols>
         <Small color={C.textGhost}>{t('medical_note')}</Small>
         <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
+      <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
+        <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
       </Page>
     );
   }
@@ -245,6 +246,7 @@ export default function TodayScreen() {
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
       {isToday ? <TrackerGrid /> : null}
+      {isToday ? <NutrientCard /> : null}
       {isToday ? <NotificationNudge /> : null}
       {isToday ? <WeighInCard /> : null}
       {isToday ? <RecoveryCard /> : null}

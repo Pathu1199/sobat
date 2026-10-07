@@ -5,16 +5,16 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CustomFoodForm } from '../components/CustomFoodForm';
 import { FoodDetailSheet, FoodThumb, type Chosen } from '../components/FoodDetailSheet';
+import { SuggestSheet } from '../components/SuggestSheet';
 import { swapText } from '../components/RoutineCard';
 import { IconButton } from '../components/TopBarActions';
 import { addDays, formatDayLabel, lastNDates, localHHMM } from '../core/date';
 import { newId } from '../core/id';
 import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, suggestMeals, toMealItem, type DishStyle } from '../core/foods';
-import { dietFrom } from '../core/memory';
 import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../core/nutrition';
-import { avoidedFoodIds, avoidHits } from '../core/routine';
+import { avoidHits } from '../core/routine';
 import type { FoodItem, MealItem, MealType } from '../core/types';
-import { fill, makeT } from '../i18n';
+import { makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, SectionHeader, Segmented } from '../ui/components';
@@ -77,16 +77,8 @@ export default function LogScreen() {
 
   const avoidRules = app.state.routine.enabled ? app.state.routine.avoid : [];
 
-  // What fits in what is left today, never from the avoid list. Shown where the choosing happens.
-  const ideas = useMemo(() => {
-    if (!isToday || !app.state.routine.enabled || app.budget.remaining < 150) return [];
-    const avoided = avoidedFoodIds(app.state.routine);
-    return suggestMeals(app.foods, app.budget.remaining, dietFrom(app.state.memory))
-      .filter((o) => !avoided.has(o.food.id))
-      .slice(0, 4);
-  }, [isToday, app.budget.remaining, app.foods, app.state.routine, app.state.memory]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
 
-  /** Put the routine's suggested swap in place of an avoided food, keeping the portion count. */
   function swapInBasket(fromId: string, toId: string) {
     const to = app.foods.find((f) => f.id === toId);
     if (!to) return;
@@ -221,16 +213,6 @@ export default function LogScreen() {
           ))}
         </Row>
       ) : null}
-      {query.trim() === '' && ideas.length > 0 ? (
-        <View style={{ gap: 8 }}>
-          <Micro>{fill(t('ideas_now'), { kcal: app.budget.remaining })}</Micro>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-            {ideas.map((o) => (
-              <Pill key={o.food.id} label={`${foodName(o.food, lang)} · ${o.kcal} kcal`} tone={C.cyan} textColor={C.text} onPress={() => addToBasket(o.food)} />
-            ))}
-          </ScrollView>
-        </View>
-      ) : null}
       {query.trim() === '' && (recents.length > 0 || yesterdaySame) ? (
         <View style={{ gap: 8 }}>
           <Micro>{t('recent')}</Micro>
@@ -297,7 +279,11 @@ export default function LogScreen() {
     ) : null;
 
   const resultsCard = query.trim() === '' ? (
-    <Btn small tone="soft" icon={<Ionicons name="book-outline" size={15} color={C.accent} />} label={fill(t('browse_foods'), { n: app.foods.length })} onPress={() => router.push('/foods')} />
+    <Row style={{ gap: 8 }}>
+      <Btn small tone="soft" icon={<Ionicons name="bulb-outline" size={15} color={C.accent} />} label={t('suggest')} onPress={() => setSuggestOpen(true)} style={{ flex: 1 }} />
+      <Btn small tone="soft" icon={<Ionicons name="restaurant-outline" size={15} color={C.accent} />} label={t('recipes')} onPress={() => router.push('/recipes')} style={{ flex: 1 }} />
+      <Btn small tone="soft" icon={<Ionicons name="book-outline" size={15} color={C.accent} />} label={t('foods')} onPress={() => router.push('/foods')} style={{ flex: 1 }} />
+    </Row>
   ) : (
     <Card>
       {results.length === 0 ? (
@@ -400,6 +386,7 @@ export default function LogScreen() {
           </ScrollView>
         </View>
         <FoodDetailSheet food={detail} initial={editing ? { unit: editing.unit, gramsPerUnit: editing.gramsPerUnit, count: editing.count } : null} onAdd={addChosen} onClose={() => setDetail(null)} />
+        <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
       </View>
     );
   }
@@ -442,6 +429,7 @@ export default function LogScreen() {
         </View>
       ) : null}
       <FoodDetailSheet food={detail} initial={editing ? { unit: editing.unit, gramsPerUnit: editing.gramsPerUnit, count: editing.count } : null} onAdd={addChosen} onClose={() => setDetail(null)} />
+      <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
     </View>
   );
 }

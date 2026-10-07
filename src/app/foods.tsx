@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { FoodDetailSheet, FoodThumb, type Chosen } from '../components/FoodDetailSheet';
 import { defaultPortion, portionLabel, searchFoods, styleOf, toMealItem } from '../core/foods';
+import { isSourceOf, NUTRIENT_TAGS, type NutrientTag } from '../core/nutrients';
 import { newId } from '../core/id';
 import { mealTypeForHour } from '../core/nutrition';
 import type { FoodItem } from '../core/types';
@@ -27,12 +29,17 @@ export default function FoodsScreen() {
   const t = makeT(lang);
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('all');
+  const { n: nParam } = useLocalSearchParams<{ n?: string }>();
+  const [nutrient, setNutrient] = useState<NutrientTag | null>((NUTRIENT_TAGS as readonly string[]).includes(nParam ?? '') ? (nParam as NutrientTag) : null);
   const [detail, setDetail] = useState<FoodItem | null>(null);
 
   const list = useMemo(() => {
     const base = query.trim() ? searchFoods(foods, query, 60) : [...foods].sort((a, b) => a.name_en.localeCompare(b.name_en));
-    return cat === 'all' ? base : base.filter((f) => f.category === cat);
-  }, [foods, query, cat]);
+    const byCat = cat === 'all' ? base : base.filter((f) => f.category === cat);
+    const byNut = nutrient ? byCat.filter((f) => isSourceOf(f, nutrient)) : byCat;
+    // When looking for a nutrient, the richest sources first.
+    return nutrient === 'protein' ? [...byNut].sort((a, b) => b.protein_100g - a.protein_100g) : byNut;
+  }, [foods, query, cat, nutrient]);
 
   function add(c: Chosen) {
     const item = toMealItem(c.food, c.gramsPerUnit * c.count);
@@ -51,6 +58,15 @@ export default function FoodsScreen() {
           <Pill key={c} label={t(`cat_${c}`)} active={cat === c} onPress={() => setCat(c)} />
         ))}
       </ScrollView>
+      <View style={{ gap: 6 }}>
+        <Micro>{t('nutrient_filter')}</Micro>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+          {NUTRIENT_TAGS.map((n) => (
+            <Pill key={n} label={t(`nut_${n}`)} active={nutrient === n} onPress={() => setNutrient(nutrient === n ? null : n)} />
+          ))}
+        </ScrollView>
+        {nutrient ? <Small color={C.textFaint}>{t(`nut_${nutrient}_why`)}</Small> : null}
+      </View>
       <Card>
         {list.length === 0 ? <Small color={C.textGhost}>{t('no_results')}</Small> : null}
         {list.map((f, i) => {
@@ -64,7 +80,7 @@ export default function FoodsScreen() {
                 icon={<FoodThumb food={f} size={44} />}
                 title={f.name_en}
                 alt={lang === 'en' ? undefined : f.name_mr}
-                sub={[style ? t(`style_${style}`) : null, p ? portionLabel(p, lang) : null, `${Math.round(f.protein_100g * ((p?.grams ?? 100) / 100))} g ${t('protein').toLowerCase()}`].filter(Boolean).join(' · ')}
+                sub={[style ? t(`style_${style}`) : null, p ? portionLabel(p, lang) : null, `${Math.round(f.protein_100g * ((p?.grams ?? 100) / 100))} g ${t('protein').toLowerCase()}`, `${Math.round(f.fat_100g * ((p?.grams ?? 100) / 100))} g ${t('fat').toLowerCase()}`].filter(Boolean).join(' · ')}
                 value={String(kcal)}
                 valueUnit="kcal"
                 onPress={() => setDetail(f)}

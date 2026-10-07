@@ -189,7 +189,9 @@
     "default_portion": "piece",
     "tags": [
       "veg",
-      "maharashtrian"
+      "maharashtrian",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "IFCT2017"
   },
@@ -222,7 +224,9 @@
     "default_portion": "piece",
     "tags": [
       "veg",
-      "maharashtrian"
+      "maharashtrian",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "IFCT2017"
   },
@@ -788,7 +792,8 @@
     "tags": [
       "veg",
       "high_protein",
-      "dal"
+      "dal",
+      "src_fibre"
     ],
     "source": "IFCT2017",
     "aliases": [
@@ -861,7 +866,10 @@
     "tags": [
       "veg",
       "high_protein",
-      "gravy"
+      "gravy",
+      "src_iron",
+      "src_calcium",
+      "src_fibre"
     ],
     "source": "IFCT2017",
     "aliases": [
@@ -898,7 +906,10 @@
     "tags": [
       "veg",
       "high_protein",
-      "gravy"
+      "gravy",
+      "src_iron",
+      "src_calcium",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -935,7 +946,8 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "dal"
+      "dal",
+      "src_fibre"
     ],
     "source": "IFCT2017",
     "aliases": [
@@ -972,7 +984,9 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "gravy"
+      "gravy",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "estimate",
     "aliases": [
@@ -1012,7 +1026,9 @@
       "veg",
       "maharashtrian",
       "high_protein",
-      "usal"
+      "usal",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -1052,7 +1068,9 @@
       "veg",
       "maharashtrian",
       "high_protein",
-      "usal"
+      "usal",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -1092,7 +1110,9 @@
       "veg",
       "maharashtrian",
       "high_protein",
-      "usal"
+      "usal",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -1131,7 +1151,8 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "dal"
+      "dal",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -1170,7 +1191,8 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "dal"
+      "dal",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -1210,7 +1232,9 @@
       "veg",
       "maharashtrian",
       "high_protein",
-      "usal"
+      "usal",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -1250,7 +1274,9 @@
       "veg",
       "high_protein",
       "healthy_swap",
-      "usal"
+      "usal",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "IFCT2017",
     "aliases": [
@@ -1289,7 +1315,9 @@
     "tags": [
       "veg",
       "high_protein",
-      "dry"
+      "dry",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "estimate",
     "aliases": [
@@ -1326,7 +1354,10 @@
     "tags": [
       "veg",
       "high_protein",
-      "gravy"
+      "gravy",
+      "src_iron",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "estimate",
     "aliases": [
@@ -1362,7 +1393,8 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "dry"
+      "dry",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -1400,7 +1432,8 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "dry"
+      "dry",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -1440,7 +1473,8 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "gravy"
+      "gravy",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -1479,7 +1513,8 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "dry"
+      "dry",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -1554,7 +1589,9 @@
     "tags": [
       "veg",
       "high_protein",
-      "gravy"
+      "gravy",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "estimate",
     "aliases": [
@@ -1591,7 +1628,9 @@
     "tags": [
       "veg",
       "high_protein",
-      "gravy"
+      "gravy",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "estimate",
     "aliases": [
@@ -1732,7 +1771,9 @@
     "tags": [
       "veg",
       "high_protein",
-      "dry"
+      "dry",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "estimate",
     "aliases": []
@@ -2143,7 +2184,10 @@
       "veg",
       "maharashtrian",
       "healthy_swap",
-      "dry"
+      "dry",
+      "src_iron",
+      "src_calcium",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -2183,7 +2227,9 @@
       "veg",
       "maharashtrian",
       "healthy_swap",
-      "dry"
+      "dry",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -4815,7 +4861,9 @@
     ],
     "default_portion": "glass",
     "tags": [
-      "veg"
+      "veg",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "IFCT2017"
   },
@@ -4847,7 +4895,9 @@
     ],
     "default_portion": "glass",
     "tags": [
-      "veg"
+      "veg",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "IFCT2017"
   },
@@ -4879,7 +4929,9 @@
     ],
     "default_portion": "katori",
     "tags": [
-      "veg"
+      "veg",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "IFCT2017"
   },
@@ -5331,7 +5383,9 @@
     "default_portion": "glass",
     "tags": [
       "veg",
-      "sweet"
+      "sweet",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "estimate"
   },
@@ -5364,7 +5418,8 @@
     "default_portion": "glass",
     "tags": [
       "veg",
-      "sweet"
+      "sweet",
+      "src_b12"
     ],
     "source": "estimate"
   },
@@ -5431,7 +5486,9 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "healthy_swap"
+      "healthy_swap",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "estimate"
   },
@@ -5464,7 +5521,9 @@
     "default_portion": "glass",
     "tags": [
       "veg",
-      "healthy_swap"
+      "healthy_swap",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "estimate"
   },
@@ -5497,7 +5556,9 @@
     "default_portion": "glass",
     "tags": [
       "veg",
-      "sweet"
+      "sweet",
+      "src_calcium",
+      "src_b12"
     ],
     "source": "estimate"
   },
@@ -5536,7 +5597,8 @@
     ],
     "default_portion": "medium",
     "tags": [
-      "veg"
+      "veg",
+      "src_fibre"
     ],
     "source": "IFCT2017"
   },
@@ -5575,7 +5637,8 @@
     ],
     "default_portion": "medium",
     "tags": [
-      "veg"
+      "veg",
+      "src_fibre"
     ],
     "source": "IFCT2017"
   },
@@ -5647,7 +5710,8 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "healthy_swap"
+      "healthy_swap",
+      "src_fibre"
     ],
     "source": "IFCT2017"
   },
@@ -5679,7 +5743,8 @@
     ],
     "default_portion": "medium",
     "tags": [
-      "veg"
+      "veg",
+      "src_fibre"
     ],
     "source": "IFCT2017"
   },
@@ -5936,7 +6001,9 @@
     ],
     "default_portion": "handful",
     "tags": [
-      "veg"
+      "veg",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "IFCT2017",
     "aliases": [
@@ -6494,7 +6561,8 @@
     "default_portion": "handful",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "src_iron"
     ],
     "source": "IFCT2017",
     "aliases": [
@@ -6534,7 +6602,8 @@
       "veg",
       "maharashtrian",
       "sweet",
-      "packaged"
+      "packaged",
+      "src_iron"
     ],
     "source": "estimate",
     "aliases": [
@@ -6573,7 +6642,9 @@
     "tags": [
       "veg",
       "high_protein",
-      "healthy_swap"
+      "healthy_swap",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -6613,7 +6684,8 @@
       "veg",
       "maharashtrian",
       "street_food",
-      "healthy_swap"
+      "healthy_swap",
+      "src_fibre"
     ],
     "source": "estimate"
   },
@@ -6790,7 +6862,9 @@
       "high_protein",
       "street_food",
       "healthy_swap",
-      "usal"
+      "usal",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -6828,7 +6902,9 @@
     "tags": [
       "veg",
       "breakfast",
-      "healthy_swap"
+      "healthy_swap",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate"
   },
@@ -6862,7 +6938,9 @@
     "tags": [
       "veg",
       "breakfast",
-      "healthy_swap"
+      "healthy_swap",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate"
   },
@@ -6895,7 +6973,8 @@
     "default_portion": "katori",
     "tags": [
       "veg",
-      "healthy_swap"
+      "healthy_swap",
+      "src_fibre"
     ],
     "source": "estimate"
   },
@@ -7057,7 +7136,9 @@
     "default_portion": "handful",
     "tags": [
       "veg",
-      "high_protein"
+      "high_protein",
+      "src_iron",
+      "src_calcium"
     ],
     "source": "IFCT2017"
   },
@@ -7190,7 +7271,8 @@
       "veg",
       "maharashtrian",
       "healthy_swap",
-      "dry"
+      "dry",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -7231,7 +7313,8 @@
       "veg",
       "maharashtrian",
       "healthy_swap",
-      "dry"
+      "dry",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -7273,7 +7356,8 @@
       "veg",
       "maharashtrian",
       "healthy_swap",
-      "gravy"
+      "gravy",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -7314,7 +7398,8 @@
       "veg",
       "maharashtrian",
       "healthy_swap",
-      "dry"
+      "dry",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -7355,7 +7440,10 @@
       "veg",
       "maharashtrian",
       "healthy_swap",
-      "dry"
+      "dry",
+      "src_iron",
+      "src_calcium",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -7395,7 +7483,9 @@
       "veg",
       "high_protein",
       "healthy_swap",
-      "dal"
+      "dal",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -7435,7 +7525,9 @@
       "veg",
       "high_protein",
       "healthy_swap",
-      "dal"
+      "dal",
+      "src_iron",
+      "src_fibre"
     ],
     "source": "estimate",
     "aliases": [
@@ -7532,7 +7624,8 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "gravy"
+      "gravy",
+      "src_fibre"
     ],
     "aliases": [
       "flower rassa",
@@ -7573,7 +7666,8 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "dry"
+      "dry",
+      "src_fibre"
     ],
     "aliases": [
       "vangi batata",
@@ -7655,7 +7749,8 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "dry"
+      "dry",
+      "src_iron"
     ],
     "aliases": [
       "methi batata",
@@ -7695,7 +7790,8 @@
       "veg",
       "maharashtrian",
       "dry",
-      "healthy_swap"
+      "healthy_swap",
+      "src_fibre"
     ],
     "aliases": [
       "farasbi",
@@ -7737,7 +7833,9 @@
       "veg",
       "maharashtrian",
       "dry",
-      "healthy_swap"
+      "healthy_swap",
+      "src_iron",
+      "src_fibre"
     ],
     "aliases": [
       "gavar",
@@ -7778,7 +7876,8 @@
       "veg",
       "maharashtrian",
       "dry",
-      "healthy_swap"
+      "healthy_swap",
+      "src_fibre"
     ],
     "aliases": [
       "dodka",
@@ -7819,7 +7918,8 @@
       "veg",
       "maharashtrian",
       "dry",
-      "healthy_swap"
+      "healthy_swap",
+      "src_fibre"
     ],
     "aliases": [
       "padwal",
@@ -7857,7 +7957,8 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "dry"
+      "dry",
+      "src_fibre"
     ],
     "aliases": [
       "karle",
@@ -7898,7 +7999,8 @@
       "veg",
       "maharashtrian",
       "dry",
-      "healthy_swap"
+      "healthy_swap",
+      "src_fibre"
     ],
     "aliases": [
       "tondli",
@@ -7939,7 +8041,9 @@
       "veg",
       "maharashtrian",
       "usal",
-      "high_protein"
+      "high_protein",
+      "src_iron",
+      "src_fibre"
     ],
     "aliases": [
       "vatana",
@@ -7980,7 +8084,9 @@
       "veg",
       "maharashtrian",
       "usal",
-      "high_protein"
+      "high_protein",
+      "src_iron",
+      "src_fibre"
     ],
     "aliases": [
       "pavta",
@@ -8020,7 +8126,9 @@
       "veg",
       "maharashtrian",
       "usal",
-      "high_protein"
+      "high_protein",
+      "src_iron",
+      "src_fibre"
     ],
     "aliases": [
       "chavli",
@@ -8100,7 +8208,9 @@
     "tags": [
       "veg",
       "maharashtrian",
-      "gravy"
+      "gravy",
+      "src_iron",
+      "src_fibre"
     ],
     "aliases": [
       "alu",
@@ -8183,7 +8293,9 @@
       "veg",
       "maharashtrian",
       "high_protein",
-      "healthy_swap"
+      "healthy_swap",
+      "src_iron",
+      "src_fibre"
     ],
     "aliases": [
       "shengdane",
