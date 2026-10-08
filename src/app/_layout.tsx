@@ -9,6 +9,7 @@ import { firebaseEnabled } from '../services/firebase';
 import { enableAutostart } from '../services/platform';
 import { useAuth } from '../services/useAuth';
 import { useCloudSync } from '../services/useCloudSync';
+import { useCoachMonitor } from '../services/useCoachMonitor';
 import { BreakMonitorProvider } from '../services/useBreakMonitor';
 import { usePhotoQueue } from '../services/usePhotoQueue';
 import { useScheduledReminders } from '../services/useScheduledReminders';
@@ -65,6 +66,7 @@ function AppShell() {
   useWorkSchedule();
   usePushSync();
   useCloudSync();
+  useCoachMonitor();
   const { user, ready: authReady } = useAuth();
   const segments = useSegments() as string[];
   const { ready: stateReady } = useApp();

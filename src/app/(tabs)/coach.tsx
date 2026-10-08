@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { factsFrom, memoryExtractionPrompt, MEMORY_SCHEMA, systemPrompt } from '../../ai/prompts';
+import { CoachStrip } from '../../components/CoachStrip';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { formatMinutes, toISODate } from '../../core/date';
 import { newId } from '../../core/id';
@@ -233,6 +234,8 @@ export default function CoachScreen() {
                 </Pressable>
               ) : null}
             </Row>
+
+            <CoachStrip max={8} />
 
             {crisis ? (
               <Card tone={C.red}>
