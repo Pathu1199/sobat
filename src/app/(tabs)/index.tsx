@@ -129,9 +129,9 @@ export default function TodayScreen() {
         {/* One line and one bar: what is left today. The ring was pretty, but a bar reads at a glance. */}
         <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <View>
-            <Text style={{ color: over ? C.red : C.text, fontSize: F.display, fontWeight: '300', letterSpacing: -1.5, lineHeight: F.display + 4 }}>
+            <Text style={{ color: over ? C.red : C.text, fontSize: F.display, fontWeight: '700', letterSpacing: -1.5, lineHeight: F.display + 4 }}>
               {Math.abs(dayBudget.remaining).toLocaleString()}
-              <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400', letterSpacing: 0 }}>{`  ${over ? t('kcal_over') : t('kcal_left')}`}</Text>
+              <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500', letterSpacing: 0 }}>{`  ${over ? t('kcal_over') : t('kcal_left')}`}</Text>
             </Text>
           </View>
         </Row>

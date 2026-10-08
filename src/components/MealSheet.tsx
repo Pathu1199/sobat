@@ -84,7 +84,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
               </View>
               <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
                 {it.kcal}
-                <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '400' }}> kcal</Text>
+                <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '500' }}> kcal</Text>
               </Text>
               <Pressable
                 onPress={() => {
@@ -107,7 +107,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
       <Divider />
       <Row style={{ justifyContent: 'space-between' }}>
         <View>
-          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>{kcal}</Text>
+          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{kcal}</Text>
           <Micro>{`kcal · ${protein} g ${t('protein')}`}</Micro>
         </View>
         <Row style={{ gap: 8 }}>

@@ -47,7 +47,7 @@ export default function Welcome() {
             <Logo size={wide ? 64 : 52} />
           </View>
           <Text style={[MICRO, { color: C.accent, marginBottom: 16 }]}>{t('w_eyebrow')}</Text>
-          <Text style={{ color: C.text, fontSize: wide ? 52 : 34, fontWeight: '300', lineHeight: wide ? 60 : 42, letterSpacing: -1 }}>
+          <Text style={{ color: C.text, fontSize: wide ? 52 : 34, fontWeight: '700', lineHeight: wide ? 60 : 42, letterSpacing: -1 }}>
             {t('w_headline')}
           </Text>
           <Text style={{ color: C.textDim, fontSize: wide ? F.h3 : F.body, lineHeight: 26, marginTop: 18 }}>{t('w_sub')}</Text>

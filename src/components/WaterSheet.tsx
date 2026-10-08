@@ -34,9 +34,9 @@ export function WaterSheet({ open, onClose }: { open: boolean; onClose: () => vo
   return (
     <Sheet open={open} title={t('water')} onClose={onClose}>
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <Text style={{ color: waterToday >= goal ? C.green : C.text, fontSize: F.display - 8, fontWeight: '300', letterSpacing: -1 }}>
+        <Text style={{ color: waterToday >= goal ? C.green : C.text, fontSize: F.display - 8, fontWeight: '700', letterSpacing: -1 }}>
           {(waterToday / 1000).toFixed(2)}
-          <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400', letterSpacing: 0 }}>{` / ${goal / 1000} L`}</Text>
+          <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500', letterSpacing: 0 }}>{` / ${goal / 1000} L`}</Text>
         </Text>
         <Micro>{`${Math.round(waterToday / state.settings.glassMl)} ${t('glasses')}`}</Micro>
       </Row>

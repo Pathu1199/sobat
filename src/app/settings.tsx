@@ -418,7 +418,7 @@ export default function SettingsScreen() {
                 <Micro>{t('break_compliance')}</Micro>
                 <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
                   {app.state.breaks.filter((b) => b.action === 'taken').length}
-                  <Text style={{ color: C.textFaint, fontWeight: '400' }}> / {app.state.breaks.length}</Text>
+                  <Text style={{ color: C.textFaint, fontWeight: '500' }}> / {app.state.breaks.length}</Text>
                 </Text>
               </Row>
             </Card>
@@ -477,7 +477,7 @@ export default function SettingsScreen() {
 function Count({ label, value }: { label: string; value: number }) {
   return (
     <View style={{ minWidth: 72, flexGrow: 1, gap: 4 }}>
-      <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '300' }}>{value}</Text>
+      <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '700' }}>{value}</Text>
       <Micro>{label}</Micro>
     </View>
   );

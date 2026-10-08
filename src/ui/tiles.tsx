@@ -36,7 +36,7 @@ export function Tile({
       <Text style={[MICRO, { color: C.textFaint }]} numberOfLines={1}>
         {label}
       </Text>
-      <Text style={{ color, fontSize: F.h2, fontWeight: '300', letterSpacing: -0.5 }} numberOfLines={1}>
+      <Text style={{ color, fontSize: F.h2, fontWeight: '700', letterSpacing: -0.5 }} numberOfLines={1}>
         {value}
       </Text>
       {sub ? (

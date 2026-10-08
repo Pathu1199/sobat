@@ -51,7 +51,7 @@ export function BreakPanel() {
                 <Micro>{t('break_compliance')}</Micro>
                 <Text style={{ color: stats.compliancePct >= 60 ? C.cyan : C.textDim, fontSize: F.small, fontWeight: '600' }}>
                   {stats.taken}
-                  <Text style={{ color: C.textFaint, fontWeight: '400' }}> / {todayBreaks.length}</Text>
+                  <Text style={{ color: C.textFaint, fontWeight: '500' }}> / {todayBreaks.length}</Text>
                 </Text>
               </Row>
               <Bar value={stats.taken} max={Math.max(1, todayBreaks.length)} color={C.cyan} />

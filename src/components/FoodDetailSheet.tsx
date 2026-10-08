@@ -106,9 +106,9 @@ export function FoodDetailSheet({
         <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <View>
             <Micro>{t('calories')}</Micro>
-            <Text style={{ color: C.text, fontSize: F.display - 6, fontWeight: '300', letterSpacing: -1 }}>
+            <Text style={{ color: C.text, fontSize: F.display - 6, fontWeight: '700', letterSpacing: -1 }}>
               {n.kcal}
-              <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400', letterSpacing: 0 }}> kcal</Text>
+              <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500', letterSpacing: 0 }}> kcal</Text>
             </Text>
           </View>
           <Small color={C.textFaint}>{`${grams} g`}</Small>

@@ -84,7 +84,7 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
   return (
     <View style={{ gap: 2, minWidth: 56 }}>
       <Micro>{label}</Micro>
-      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '300', letterSpacing: -0.5 }}>{value}</Text>
+      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '700', letterSpacing: -0.5 }}>{value}</Text>
     </View>
   );
 }

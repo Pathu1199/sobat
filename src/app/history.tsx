@@ -68,7 +68,7 @@ export default function History() {
                 ) : (
                   <Text style={{ color: over ? C.amber : C.text, fontSize: F.h3, fontWeight: '600' }}>
                     {d.kcal}
-                    <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400' }}>{` / ${targets.kcal} kcal`}</Text>
+                    <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${targets.kcal} kcal`}</Text>
                   </Text>
                 )}
               </Row>
@@ -95,9 +95,9 @@ function Stat({ label, value, unit, color }: { label: string; value: string; uni
   return (
     <View style={{ gap: 2, minWidth: 72 }}>
       <Micro>{label}</Micro>
-      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '300', letterSpacing: -0.5 }}>
+      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '700', letterSpacing: -0.5 }}>
         {value}
-        {unit ? <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400' }}> {unit}</Text> : null}
+        {unit ? <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> {unit}</Text> : null}
       </Text>
     </View>
   );

@@ -219,7 +219,7 @@ export function Toggle({ title, desc, on, onToggle }: { title: string; desc: str
     <Row style={{ justifyContent: 'space-between', gap: 14 }}>
       <View style={{ flex: 1, gap: 3 }}>
         <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{title}</Text>
-        <Text style={{ color: C.textFaint, fontSize: F.tiny, lineHeight: 16 }}>{desc}</Text>
+        <Text style={{ color: C.textFaint, fontSize: F.tiny, lineHeight: 18 }}>{desc}</Text>
       </View>
       <Pressable
         onPress={onToggle}
@@ -285,11 +285,11 @@ export function MeterRow({
     <View style={{ gap: 7 }}>
       <View style={[st.row, { justifyContent: 'space-between', gap: 10 }]}>
         <View style={{ flexShrink: 1, minWidth: 0 }}>
-          <BiText en={label} alt={alt} size={F.small} color={C.textDim} weight="400" />
+          <BiText en={label} alt={alt} size={F.small} color={C.textDim} weight="500" />
         </View>
         <Text numberOfLines={1} style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
           {value.toLocaleString()}
-          <Text style={{ color: C.textFaint, fontWeight: '400' }}>
+          <Text style={{ color: C.textFaint, fontWeight: '500' }}>
             {' / '}
             {total.toLocaleString()}
             {unit ? ` ${unit}` : ''}
@@ -376,7 +376,7 @@ export function StatQuad({ items }: { items: { label: string; value: string; col
 export function Quote({ children, color = C.cyan }: { children: React.ReactNode; color?: string }) {
   return (
     <View style={{ borderLeftWidth: 2, borderLeftColor: color, paddingLeft: 12, paddingVertical: 2 }}>
-      <Text style={{ color, fontSize: F.small, fontStyle: 'italic', lineHeight: 19 }}>{children}</Text>
+      <Text style={{ color, fontSize: F.small, fontStyle: 'italic', lineHeight: 22, fontWeight: '500' }}>{children}</Text>
     </View>
   );
 }
@@ -411,7 +411,7 @@ export function ListRow({
       {value ? (
         <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
           {value}
-          {valueUnit ? <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '400' }}> {valueUnit}</Text> : null}
+          {valueUnit ? <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '500' }}> {valueUnit}</Text> : null}
         </Text>
       ) : null}
       {trailing}
@@ -441,8 +441,8 @@ function buildStyles() {
   h1: { color: C.text, fontSize: F.h1, fontWeight: '600', letterSpacing: -0.5 },
   h2: { color: C.text, fontSize: F.h2, fontWeight: '600', letterSpacing: -0.3 },
   h3: { color: C.text, fontSize: F.h3, fontWeight: '600' },
-  p: { color: C.text, fontSize: F.body, lineHeight: 21 },
-  small: { color: C.textDim, fontSize: F.small, lineHeight: 18 },
+  p: { color: C.text, fontSize: F.body, lineHeight: 24, fontWeight: '500' },
+  small: { color: C.textDim, fontSize: F.small, lineHeight: 21, fontWeight: '500' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   rowIcon: { width: 32, height: 32, borderRadius: 9, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' },
   btn: {

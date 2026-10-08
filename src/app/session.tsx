@@ -130,7 +130,7 @@ export default function SessionScreen() {
       <Screen>
         <Card tone={C.accent}>
           <Micro color={C.accent}>{en(done ? 'session_complete' : 'session_stopped')}</Micro>
-          <Text style={{ color: C.text, fontSize: 30, fontWeight: '300' }}>
+          <Text style={{ color: C.text, fontSize: 30, fontWeight: '700' }}>
             {reached}
             <Text style={{ color: C.textFaint, fontSize: F.h2 }}> / {session.exercises.length}</Text>
           </Text>

@@ -65,7 +65,7 @@ export default function Admin() {
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
                   {u.name || '—'}
-                  {me ? <Text style={{ color: C.textFaint, fontWeight: '400' }}>{`  (${t('admin_you')})`}</Text> : null}
+                  {me ? <Text style={{ color: C.textFaint, fontWeight: '500' }}>{`  (${t('admin_you')})`}</Text> : null}
                 </Text>
                 <Small color={C.textDim}>{u.email}</Small>
               </View>

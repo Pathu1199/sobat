@@ -161,7 +161,7 @@ export default function LogScreen() {
             <Ionicons name="water-outline" size={15} color={C.cyan} />
             <Micro>{t('water')}</Micro>
           </Row>
-          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '300' }}>
+          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '700' }}>
             +1 <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${glasses} / ${glassGoal}`}</Text>
           </Text>
         </Pressable>
@@ -207,10 +207,10 @@ export default function LogScreen() {
       <DateStrip dates={stripDates} selected={viewDate} onSelect={setViewDate} marked={loggedDates} lang={lang} today={app.today} />
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <BiText en={isToday ? t('tab_today') : formatDayLabel(viewDate, 'en')} alt={lang === 'en' ? undefined : isToday ? t('tab_today') : formatDayLabel(viewDate, lang)} size={F.small} color={C.textDim} weight="400" />
-          <Text style={{ color: dayKcal > app.targets.kcal ? C.red : C.text, fontSize: F.h2, fontWeight: '300' }}>
+          <BiText en={isToday ? t('tab_today') : formatDayLabel(viewDate, 'en')} alt={lang === 'en' ? undefined : isToday ? t('tab_today') : formatDayLabel(viewDate, lang)} size={F.small} color={C.textDim} weight="500" />
+          <Text style={{ color: dayKcal > app.targets.kcal ? C.red : C.text, fontSize: F.h2, fontWeight: '700' }}>
             {dayKcal}
-            <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400' }}>{` / ${app.targets.kcal} kcal`}</Text>
+            <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${app.targets.kcal} kcal`}</Text>
           </Text>
         </Row>
         <Bar value={dayKcal} max={app.targets.kcal} color={dayKcal > app.targets.kcal ? C.red : C.accent} />
@@ -264,7 +264,7 @@ export default function LogScreen() {
                 </Pressable>
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
                   {item.kcal}
-                  <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '400' }}> kcal</Text>
+                  <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '500' }}> kcal</Text>
                 </Text>
                 <Pressable onPress={() => setBasket((x) => x.filter((y) => y.food.id !== b.food.id))} hitSlop={10} accessibilityLabel={t('delete')}>
                   <Ionicons name="close-circle" size={22} color={C.textFaint} />
@@ -285,7 +285,7 @@ export default function LogScreen() {
             <Divider />
             <Row style={{ justifyContent: 'space-between' }}>
               <View>
-                <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>{basketKcal}</Text>
+                <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{basketKcal}</Text>
                 <Micro>{`kcal · ${basketProtein} g ${t('protein')}`}</Micro>
               </View>
               <Btn label={t('save')} onPress={saveMeal} />
@@ -439,7 +439,7 @@ export default function LogScreen() {
             gap: 12,
           }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>{basketKcal}</Text>
+            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{basketKcal}</Text>
             <Micro>{`${basket.length} ${t('items').toLowerCase()} · ${basketProtein} g ${t('protein')}`}</Micro>
           </View>
           <Btn label={t('save')} onPress={saveMeal} style={{ minWidth: 120 }} />

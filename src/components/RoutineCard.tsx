@@ -197,7 +197,7 @@ export function RoutineCard() {
           <BiText en={t('routine_budget')} alt={lang === 'en' ? undefined : t('routine_budget')} size={F.small} color={C.textDim} weight="400" />
           <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
             {`₹${app.spentToday}`}
-            <Text style={{ color: C.textFaint, fontWeight: '400' }}>{` / ₹${routine.budgetMin}–${routine.budgetMax}`}</Text>
+            <Text style={{ color: C.textFaint, fontWeight: '500' }}>{` / ₹${routine.budgetMin}–${routine.budgetMax}`}</Text>
           </Text>
         </Row>
         <Bar value={app.spentToday} max={routine.budgetMax} color={spendColor} marker={routine.budgetMin / Math.max(1, routine.budgetMax)} />
@@ -302,7 +302,7 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
               </View>
               <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
                 {it.kcal}
-                <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '400' }}> kcal</Text>
+                <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '500' }}> kcal</Text>
               </Text>
             </Row>
           </View>
@@ -311,7 +311,7 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
       <Divider />
       <Row style={{ justifyContent: 'space-between' }}>
         <View>
-          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>{kcal}</Text>
+          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{kcal}</Text>
           <Micro>{`kcal · ${protein} g ${t('protein').toLowerCase()} · ${t(current.type)}`}</Micro>
         </View>
         <Btn label={t('routine_log')} onPress={log} disabled={items.length === 0} style={{ minWidth: 120 }} />

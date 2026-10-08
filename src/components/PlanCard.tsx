@@ -75,9 +75,9 @@ function Stat({ label, value, unit, color }: { label: string; value: string; uni
   return (
     <View style={{ gap: 3, minWidth: 64 }}>
       <Micro>{label}</Micro>
-      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '300', letterSpacing: -0.5 }}>
+      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '700', letterSpacing: -0.5 }}>
         {value}
-        <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400' }}> {unit}</Text>
+        <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> {unit}</Text>
       </Text>
     </View>
   );

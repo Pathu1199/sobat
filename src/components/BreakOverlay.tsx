@@ -101,7 +101,7 @@ export function BreakOverlay() {
         opacity: fade,
         zIndex: 999,
       }}>
-      <Text style={{ color: C.textDim, fontSize: F.h2, fontWeight: '300', marginBottom: 8, textAlign: 'center', paddingHorizontal: 24, letterSpacing: -0.2 }}>
+      <Text style={{ color: C.textDim, fontSize: F.h2, fontWeight: '700', marginBottom: 8, textAlign: 'center', paddingHorizontal: 24, letterSpacing: -0.2 }}>
         {t(`brk_${kind}`)}
       </Text>
       <Text style={{ color: C.textFaint, fontSize: F.body, marginBottom: 36, textAlign: 'center', paddingHorizontal: 32 }}>{t(`brk_${kind}_hint`)}</Text>

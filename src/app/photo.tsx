@@ -281,7 +281,7 @@ export default function PhotoScreen() {
           <Card>
             <Row style={{ justifyContent: 'space-between' }}>
               <View>
-                <Text style={{ color: C.text, fontSize: 28, fontWeight: '300' }}>{totalKcal}</Text>
+                <Text style={{ color: C.text, fontSize: 28, fontWeight: '700' }}>{totalKcal}</Text>
                 <Micro>{`kcal · ${totalProtein} g ${t('protein')}`}</Micro>
               </View>
               <Btn label={t('save')} onPress={save} />

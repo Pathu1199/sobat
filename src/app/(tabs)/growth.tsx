@@ -203,7 +203,7 @@ export default function GrowthScreen() {
           <Micro>{t('break_compliance')}</Micro>
           <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
             {breaksTaken}
-            <Text style={{ color: C.textFaint, fontWeight: '400' }}> / {breaksToday.length}</Text>
+            <Text style={{ color: C.textFaint, fontWeight: '500' }}> / {breaksToday.length}</Text>
           </Text>
         </Row>
       </Card>
@@ -221,7 +221,7 @@ export default function GrowthScreen() {
               <View key={k} style={{ minWidth: 92, flexGrow: 1, gap: 5 }}>
                 <Micro>{t(`brk_${k}`)}</Micro>
                 <Row style={{ gap: 5, alignItems: 'baseline' }}>
-                  <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '300' }}>{s.taken}</Text>
+                  <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '700' }}>{s.taken}</Text>
                   <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{`/ ${s.offered} ${t('brk_offered')}`}</Text>
                 </Row>
               </View>
@@ -355,7 +355,7 @@ function MetricTile({ metric, label, lang, wide }: { metric: Metric; label: stri
       }}>
       <Micro>{label}</Micro>
       <Row style={{ alignItems: 'baseline', gap: 4 }}>
-        <Text style={{ color: C.text, fontSize: 24, fontWeight: '300', letterSpacing: -0.5 }}>{value}</Text>
+        <Text style={{ color: C.text, fontSize: 24, fontWeight: '700', letterSpacing: -0.5 }}>{value}</Text>
         {unit ? <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{unit}</Text> : null}
       </Row>
       <View style={{ alignSelf: 'flex-start', backgroundColor: C.cardAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, borderWidth: S.hairline, borderColor: C.border }}>
@@ -370,7 +370,7 @@ function Stat({ label, value, delta, deltaGood }: { label: string; value: string
     <View style={{ minWidth: 76, flexGrow: 1, gap: 5 }}>
       <Micro>{label}</Micro>
       <Row style={{ gap: 6, alignItems: 'baseline' }}>
-        <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>{value}</Text>
+        <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{value}</Text>
         {delta ? <Text style={{ color: deltaGood ? C.cyan : C.amber, fontSize: F.tiny }}>{delta}</Text> : null}
       </Row>
     </View>

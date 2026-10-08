@@ -57,7 +57,7 @@ export default function FitScreen() {
 
       <Row style={{ gap: 20, alignItems: 'center' }}>
         <Ring value={r.score} max={100} size={96} stroke={6} color={readinessColor(r.level)}>
-          <Text style={{ color: C.text, fontSize: 26, fontWeight: '300' }}>{r.score}</Text>
+          <Text style={{ color: C.text, fontSize: 26, fontWeight: '700' }}>{r.score}</Text>
           <Micro>{t('readiness')}</Micro>
         </Ring>
         <View style={{ flex: 1, gap: 9 }}>

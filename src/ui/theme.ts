@@ -124,15 +124,15 @@ export const M = { fast: 180, base: 320, slow: 600 };
 
 /** Base type sizes at scale 1. Read on a phone, often outdoors. */
 const F_BASE = {
-  display: 40,
-  h1: 28,
-  h2: 22,
-  h3: 16,
-  body: 15,
-  small: 13,
-  tiny: 12,
-  micro: 11,
-  hero: 52,
+  display: 42,
+  h1: 30,
+  h2: 24,
+  h3: 18,
+  body: 17,
+  small: 15,
+  tiny: 13,
+  micro: 12,
+  hero: 54,
 };
 
 /** The live type sizes: F_BASE times the person's text-size setting. Mutated by applyTextScale, like C. */
@@ -155,9 +155,9 @@ export function applyTextScale(scale: number): void {
 /** Small uppercase label style used for every section heading and stat caption. */
 export const MICRO = {
   fontSize: F.micro,
+  fontWeight: '600' as const,
   letterSpacing: 0.9,
   textTransform: 'uppercase' as const,
-  fontWeight: '500' as const,
 };
 
 export function severityColor(s: 'good' | 'watch' | 'act') {

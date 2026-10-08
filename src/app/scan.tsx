@@ -118,7 +118,7 @@ export default function ScanScreen() {
           <Divider />
           <Row style={{ justifyContent: 'space-between' }}>
             <Micro>{per.label_en}</Micro>
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '400' }}>
+            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>
               {n.kcal}
               <Text style={{ color: C.textFaint, fontSize: F.tiny }}> kcal</Text>
             </Text>

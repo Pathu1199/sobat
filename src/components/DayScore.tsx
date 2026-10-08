@@ -18,7 +18,7 @@ export function DayScoreCard({ score }: { score: DayScore }) {
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Micro>{t('day_score')}</Micro>
         <Row style={{ gap: 6, alignItems: 'baseline' }}>
-          <Text style={{ color: known > 0 ? scoreColor(score.total) : C.textGhost, fontSize: F.h1, fontWeight: '300', letterSpacing: -1 }}>
+          <Text style={{ color: known > 0 ? scoreColor(score.total) : C.textGhost, fontSize: F.h1, fontWeight: '700', letterSpacing: -1 }}>
             {known > 0 ? score.total : '--'}
           </Text>
           <Micro>/ 100</Micro>

@@ -59,9 +59,9 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <View>
           <Micro>{todayEntry ? t('today_short') : t('weight_carried')}</Micro>
-          <Text style={{ color: C.text, fontSize: F.display - 8, fontWeight: '300', letterSpacing: -1 }}>
+          <Text style={{ color: C.text, fontSize: F.display - 8, fontWeight: '700', letterSpacing: -1 }}>
             {last ? last.kg : state.profile.weightKg}
-            <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400', letterSpacing: 0 }}> {t('unit_kg')}</Text>
+            <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500', letterSpacing: 0 }}> {t('unit_kg')}</Text>
           </Text>
         </View>
         {last && !todayEntry ? <Small color={C.textFaint}>{formatDayLabel(last.date, lang)}</Small> : null}
@@ -131,9 +131,9 @@ function Stat({ label, value, sub, color }: { label: string; value: string; sub?
   return (
     <View style={{ gap: 3, minWidth: 64 }}>
       <Micro>{label}</Micro>
-      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '300', letterSpacing: -0.5 }}>
+      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '700', letterSpacing: -0.5 }}>
         {value}
-        {sub ? <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400' }}> {sub}</Text> : null}
+        {sub ? <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> {sub}</Text> : null}
       </Text>
     </View>
   );
