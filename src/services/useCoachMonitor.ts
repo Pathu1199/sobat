@@ -39,8 +39,12 @@ export function useCoachMonitor() {
     said.current.keys.add(a.key);
     const kind: StoryKind = a.kind === 'water' ? 'water' : a.kind === 'stop' ? 'stop' : a.kind === 'move' ? 'walk' : a.kind === 'sleep' ? 'sleep' : a.kind === 'weigh' ? 'weigh' : a.kind === 'log' ? 'log' : 'meal';
     const body = `${adviceText(a, t)} ${storyLine(kind, app.state.profile.lang, storySeed(app.today, said.current.keys.size), { consumed: app.budget.consumed, target: app.budget.target })}`;
-    fb.notify(body);
-    notifyNow(t('coach_says'), body).catch(() => {});
+    notifyNow(t('coach_says'), body)
+      .then((sent) => {
+        if (sent) fb.notify(body);
+        else said.current.keys.delete(a.key);
+      })
+      .catch(() => {});
     // Only the minute should speak; a log landing mid-minute waits for the next tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minute]);

@@ -158,8 +158,16 @@ export default function SettingsScreen() {
             onToggle={() => app.setSettings({ nudgesEnabled: !s.nudgesEnabled })}
           />
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-            {[15, 30, 45, 60, 90].map((m) => (
+            {[30, 60, 90, 120].map((m) => (
               <Pill key={m} label={`${m}m`} active={s.nudgeMinutes === m} onPress={() => app.setSettings({ nudgeMinutes: m })} />
+            ))}
+          </Row>
+          <Divider />
+          <Micro>{t('notify_gap')}</Micro>
+          <Small color={C.textFaint}>{t('notify_gap_desc')}</Small>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {[30, 60, 90, 120, 180].map((m) => (
+              <Pill key={m} label={m < 60 ? `${m}m` : m % 60 === 0 ? `${m / 60}h` : `${Math.floor(m / 60)}h ${m % 60}m`} active={(s.notifyGapMinutes ?? 60) === m} onPress={() => app.setSettings({ notifyGapMinutes: m })} />
             ))}
           </Row>
           <Row style={{ gap: 8 }}>
@@ -171,7 +179,7 @@ export default function SettingsScreen() {
               onPress={async () => {
                 const ok = await requestPermission();
                 setNotifyMsg(ok ? 'sent' : 'blocked');
-                if (ok) await notifyNow(t('test_notification_title'), t('test_notification_body'));
+                if (ok) await notifyNow(t('test_notification_title'), t('test_notification_body'), { force: true });
               }}
               style={{ flex: 1 }}
             />

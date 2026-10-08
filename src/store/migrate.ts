@@ -94,6 +94,8 @@ export function migrateState(raw: unknown): AppState {
   // Version 4: the weigh-in moved to Sunday, and the start weight became a
   // fixed point rather than whichever weigh-in happened to be oldest.
   if (fromVersion < 4 && settings.weighDay === 1) settings.weighDay = 0;
+  // Version 5: reminders space out. Nothing closer than an hour unless chosen.
+  if (fromVersion < 5 && settings.nudgeMinutes < 60) settings.nudgeMinutes = 60;
   const profile = { ...EMPTY_STATE.profile, ...(raw.profile as object) } as AppState['profile'];
   if (profile.startWeightKg === undefined) {
     const weights = Array.isArray(raw.weights) ? ([...(raw.weights as AppState['weights'])].sort((a, b) => a.date.localeCompare(b.date))) : [];
@@ -102,7 +104,7 @@ export function migrateState(raw: unknown): AppState {
   return {
     ...EMPTY_STATE,
     ...(raw as Partial<AppState>),
-    version: 4,
+    version: 5,
     profile,
     settings,
     breakSettings,

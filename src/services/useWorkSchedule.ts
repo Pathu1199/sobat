@@ -55,8 +55,12 @@ export function useWorkSchedule() {
       const title = t(`ntf_${b.kind}`);
       const kind: StoryKind = b.kind === 'break' ? 'break' : b.kind === 'end' ? 'walk' : b.kind === 'start' ? 'mantra' : 'meal';
       const body = `${t(`ntf_${b.kind}_body`)} ${storyLine(kind, profile.lang, storySeed(app.today, minute), { consumed: app.budget.consumed, target: app.budget.target })}`;
-      fb.notify(`${title} · ${body}`);
-      notifyNow(title, body).catch(() => {});
+      // The office day is the person's own timetable: it passes the gap, not the cap.
+      notifyNow(title, body, { priority: 'high' })
+        .then((sent) => {
+          if (sent) fb.notify(`${title} · ${body}`);
+        })
+        .catch(() => {});
     }
     // A routine meal whose time passed with nothing logged: ask once, log or skip.
     if (routine.enabled) {
@@ -65,8 +69,11 @@ export function useWorkSchedule() {
       for (const s of slotsDueBetween(routine, from, minute)) {
         if (slotLogged(s, bhaji, todayMeals) || app.actionsDoneToday.includes(skipKey(s))) continue;
         const title = `${slotLabel(s, profile.lang)}?`;
-        fb.notify(`${title} · ${t('slot_prompt')}`);
-        notifyNow(title, t('slot_prompt')).catch(() => {});
+        notifyNow(title, t('slot_prompt'), { priority: 'high' })
+          .then((sent) => {
+            if (sent) fb.notify(`${title} · ${t('slot_prompt')}`);
+          })
+          .catch(() => {});
       }
     }
     // Only the minute changing should speak; a schedule edit should not replay the day.

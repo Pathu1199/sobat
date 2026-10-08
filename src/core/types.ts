@@ -34,6 +34,8 @@ export type Settings = {
   visionModel: string;
   nudgeMinutes: number;
   nudgesEnabled: boolean;
+  /** Minimum minutes between any two reminders the app sends on its own. */
+  notifyGapMinutes: number;
   quietStartHour: number;
   quietEndHour: number;
   waterGoalMl: number;

@@ -6,6 +6,7 @@ import { BreakOverlay } from '../components/BreakOverlay';
 import { BreakToast } from '../components/BreakToast';
 import { FeedbackProvider } from '../services/feedback';
 import { firebaseEnabled } from '../services/firebase';
+import { configureNotifyGate } from '../services/notify';
 import { enableAutostart } from '../services/platform';
 import { useAuth } from '../services/useAuth';
 import { useCloudSync } from '../services/useCloudSync';
@@ -68,6 +69,10 @@ function AppShell() {
   useCloudSync();
   useCoachMonitor();
   const { user, ready: authReady } = useAuth();
+  const { notifyGapMinutes, quietStartHour, quietEndHour } = useApp().state.settings;
+  useEffect(() => {
+    configureNotifyGate({ gapMinutes: notifyGapMinutes || 60, quietStartHour, quietEndHour });
+  }, [notifyGapMinutes, quietStartHour, quietEndHour]);
   const segments = useSegments() as string[];
   const { ready: stateReady } = useApp();
 

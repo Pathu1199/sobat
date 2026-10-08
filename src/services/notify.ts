@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 /**
@@ -84,7 +85,71 @@ export async function setupAndroidChannel(): Promise<void> {
 }
 
 /** Fire right now. Used by the in-app nudge timer. */
-export async function notifyNow(title: string, body: string): Promise<void> {
+/**
+ * How often the app may speak up on its own. One gate for every reminder,
+ * so water, breaks, the coach and the office day together never exceed it:
+ * a minimum gap between two notifications, a daily cap, and quiet hours.
+ * The person's own taps (test, "notifications on") pass with `force`.
+ */
+export type NotifyGate = { gapMinutes: number; maxPerDay: number; quietStartHour: number; quietEndHour: number };
+let gate: NotifyGate = { gapMinutes: 60, maxPerDay: 8, quietStartHour: 22, quietEndHour: 7 };
+let lastAt = 0;
+let sentOn = '';
+let sentCount = 0;
+const GATE_KEY = 'sobat.notify.gate';
+
+export function configureNotifyGate(g: Partial<NotifyGate>): void {
+  gate = { ...gate, ...g };
+}
+
+async function loadGateState(): Promise<void> {
+  if (lastAt) return;
+  try {
+    const raw = await AsyncStorage.getItem(GATE_KEY);
+    if (raw) {
+      const v = JSON.parse(raw) as { lastAt: number; sentOn: string; sentCount: number };
+      lastAt = v.lastAt || 0;
+      sentOn = v.sentOn || '';
+      sentCount = v.sentCount || 0;
+    }
+  } catch {
+    // A missing record means nothing was sent yet.
+  }
+}
+
+function inQuiet(hour: number): boolean {
+  const { quietStartHour: a, quietEndHour: b } = gate;
+  if (a === b) return false;
+  return a > b ? hour >= a || hour < b : hour >= a && hour < b;
+}
+
+/** True if a reminder may go out now; records it if so. */
+export async function mayNotify(opts?: { force?: boolean; priority?: 'high' | 'normal' }): Promise<boolean> {
+  if (opts?.force) return true;
+  await loadGateState();
+  const now = new Date();
+  if (inQuiet(now.getHours())) return false;
+  const today = now.toISOString().slice(0, 10);
+  if (sentOn !== today) {
+    sentOn = today;
+    sentCount = 0;
+  }
+  if (sentCount >= gate.maxPerDay) return false;
+  const gapMs = (opts?.priority === 'high' ? gate.gapMinutes / 2 : gate.gapMinutes) * 60000;
+  if (Date.now() - lastAt < gapMs) return false;
+  lastAt = Date.now();
+  sentCount += 1;
+  AsyncStorage.setItem(GATE_KEY, JSON.stringify({ lastAt, sentOn, sentCount })).catch(() => {});
+  return true;
+}
+
+export async function notifyNow(title: string, body: string, opts?: { force?: boolean; priority?: 'high' | 'normal' }): Promise<boolean> {
+  if (!(await mayNotify(opts))) return false;
+  await deliver(title, body);
+  return true;
+}
+
+async function deliver(title: string, body: string): Promise<void> {
   if (Platform.OS === 'web') {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
     const reg = await serviceWorker();

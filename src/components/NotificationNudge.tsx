@@ -28,7 +28,7 @@ export function NotificationNudge() {
     setStatus(ok ? 'granted' : webPermission());
     if (ok) {
       if (pushConfigured()) setSettings({ pushRelay: true });
-      await notifyNow(t('ntf_on_title'), t('ntf_on_body'));
+      await notifyNow(t('ntf_on_title'), t('ntf_on_body'), { force: true });
     }
   }
 

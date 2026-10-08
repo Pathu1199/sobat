@@ -79,8 +79,11 @@ export function useNudges() {
       const kind: StoryKind = choice.type === 'water' ? 'water' : choice.type === 'eyes' ? 'eyes' : choice.type === 'posture' ? 'posture' : choice.type === 'log' ? 'log' : 'break';
       const story = storyLine(kind, app.state.profile.lang, storySeed(app.today, todayNudges.length), { consumed: app.budget.consumed, target: app.budget.target });
       const msg = { ...base, body: `${base.body} ${story}` };
-      setCurrent({ id: newId(), choice, ...msg });
-      notifyNow(msg.title, msg.body).catch(() => {});
+      notifyNow(msg.title, msg.body)
+        .then((sent) => {
+          if (sent) setCurrent({ id: newId(), choice, ...msg });
+        })
+        .catch(() => {});
     }, every);
     return () => clearInterval(timer);
   }, [nudgeMinutes, nudgesEnabled, quietStartHour, quietEndHour, waterGoalMl, app.state.nudges, app.state.meals, app.waterToday, app.today, app.state.profile.lang, app.budget.consumed, app.budget.target]);

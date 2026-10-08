@@ -32,7 +32,8 @@ export const DEFAULT_SETTINGS: Settings = {
   ollamaFallbackUrl: '',
   textModel: 'qwen3:8b',
   visionModel: 'qwen2.5vl:7b',
-  nudgeMinutes: 30,
+  nudgeMinutes: 60,
+  notifyGapMinutes: 60,
   nudgesEnabled: true,
   quietStartHour: 22,
   quietEndHour: 7,
@@ -47,7 +48,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const EMPTY_STATE: AppState = {
-  version: 4,
+  version: 5,
   profile: DEFAULT_PROFILE,
   settings: DEFAULT_SETTINGS,
   meals: [],
