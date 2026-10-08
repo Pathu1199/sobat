@@ -55,7 +55,7 @@ export function TrackerGrid() {
       color={monitor.enabled ? C.accent : C.textDim}
       onPress={() => router.push('/settings')}
     />,
-    <Tile key="meals" label={t('logged_intake')} value={String(meals)} sub={meals === 0 ? mealHint : t('tap_to_log')} color={meals > 0 ? C.text : C.textDim} onPress={() => router.push('/log')} />,
+    <Tile key="meals" label={t('tile_meals')} value={String(meals)} sub={meals === 0 ? mealHint : t('tap_to_log')} color={meals > 0 ? C.text : C.textDim} onPress={() => router.push('/log')} />,
     <Tile
       key="weight"
       label={t('add_weight')}

@@ -33,14 +33,14 @@ export function Tile({
         paddingHorizontal: 13,
         gap: 5,
       }}>
-      <Text style={[MICRO, { color: C.textFaint }]} numberOfLines={1}>
+      <Text style={[MICRO, { color: C.textFaint }]} numberOfLines={2}>
         {label}
       </Text>
       <Text style={{ color, fontSize: F.h2, fontWeight: '700', letterSpacing: -0.5 }} numberOfLines={1}>
         {value}
       </Text>
       {sub ? (
-        <Text style={{ color: C.textFaint, fontSize: F.tiny }} numberOfLines={1}>
+        <Text style={{ color: C.textFaint, fontSize: F.tiny, lineHeight: 17 }} numberOfLines={2}>
           {sub}
         </Text>
       ) : null}

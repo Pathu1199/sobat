@@ -19,7 +19,7 @@ import { FoodThumb } from './FoodDetailSheet';
  * tap; a shuffle shows other plates. When what is left is too little, it
  * says stop, plainly.
  */
-export function FitsCard() {
+export function FitsCard({ compact }: { compact?: boolean }) {
   const app = useApp();
   const fb = useFeedback();
   const { state, foods, budget, today, hour } = app;
@@ -28,6 +28,8 @@ export function FitsCard() {
   const [seed, setSeed] = useState(0);
   const [open, setOpen] = useState(true);
   const [mode, setMode] = useState<'rest' | 'day'>('rest');
+  const [allMeals, setAllMeals] = useState(false);
+  const [swapsFor, setSwapsFor] = useState<string | null>(null);
 
   const loggedTypes = useMemo(() => Array.from(new Set(state.meals.filter((m) => m.date === today).map((m) => m.type))), [state.meals, today]);
   const plan = useMemo(() => {
@@ -85,7 +87,7 @@ export function FitsCard() {
         </Row>
       ) : null}
       {open
-        ? plan.slots.map((s, i) => (
+        ? plan.slots.filter((s) => !compact || allMeals || mode === 'day' || s.type === plan.now || plan.slots[0] === s).map((s, i) => (
             <View key={s.type} style={{ gap: 6 }}>
               {i > 0 ? <Divider /> : null}
               <Row style={{ justifyContent: 'space-between' }}>
@@ -107,7 +109,12 @@ export function FitsCard() {
                   <Ionicons name="add-circle-outline" size={16} color={C.accent} />
                 </Pressable>
               ))}
-              {s.picks.some((p) => p.alts?.length) ? (
+              {s.picks.some((p) => p.alts?.length) && compact && swapsFor !== s.type ? (
+                <Pressable onPress={() => setSwapsFor(s.type)} style={{ paddingLeft: 40, paddingVertical: 2 }}>
+                  <Micro color={C.accent}>{`${t('fits_show_swaps')} ›`}</Micro>
+                </Pressable>
+              ) : null}
+              {s.picks.some((p) => p.alts?.length) && (!compact || swapsFor === s.type) ? (
                 <View style={{ gap: 2, paddingLeft: 40 }}>
                   {s.picks
                     .filter((p) => p.alts?.length)
@@ -126,6 +133,11 @@ export function FitsCard() {
             </View>
           ))
         : null}
+      {open && compact && mode === 'rest' && plan.slots.length > 1 ? (
+        <Pressable onPress={() => setAllMeals((a) => !a)} accessibilityRole="button" style={{ paddingVertical: 2 }}>
+          <Micro color={C.accent}>{allMeals ? `${t('fits_hide_rest')} ‹` : `${fill(t('fits_show_rest'), { n: plan.slots.length - 1 })} ›`}</Micro>
+        </Pressable>
+      ) : null}
       {open ? <Micro color={C.textGhost}>{t('fits_hint')}</Micro> : null}
     </Card>
   );

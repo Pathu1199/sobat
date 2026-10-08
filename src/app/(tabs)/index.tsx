@@ -264,19 +264,15 @@ export default function TodayScreen() {
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
       {isToday ? <CoachStrip onSuggest={() => setSuggestOpen(true)} /> : null}
-      {isToday ? <FitsCard /> : null}
+      {isToday ? <FitsCard compact /> : null}
       {isToday ? <TrackerGrid /> : null}
-      {isToday ? <MountainCard /> : null}
       {isToday ? <StartHereCard /> : null}
-      {isToday ? <NutrientCard /> : null}
-      {isToday ? <NotificationNudge /> : null}
       {isToday ? <WeighInCard /> : null}
       {isToday ? <RecoveryCard /> : null}
       {isToday ? <BreakCheckin /> : null}
       {isToday ? <RoutineCard /> : null}
-      {isToday ? <TomorrowCard /> : null}
-      {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
       {mealsBlock}
+      {isToday ? <MountainCard /> : null}
       <Pressable
         onPress={() => setMore((m) => !m)}
         accessibilityRole="button"
@@ -286,6 +282,10 @@ export default function TodayScreen() {
       </Pressable>
       {more ? (
         <>
+          {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
+          {isToday ? <NutrientCard /> : null}
+          {isToday ? <TomorrowCard /> : null}
+          {isToday ? <NotificationNudge /> : null}
           <DayScoreCard score={score} />
           {isToday ? <TipCard /> : null}
           {isToday ? <DayReview /> : null}
