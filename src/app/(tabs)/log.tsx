@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CustomFoodForm } from '../../components/CustomFoodForm';
@@ -54,6 +54,16 @@ export default function LogScreen() {
   // Any day of the last two weeks can be logged; today unless another is picked.
   const [viewDate, setViewDate] = useState(app.today);
   const isToday = viewDate === app.today;
+  // Today each time the + opens it, unless a screen handed over a day (Today's
+  // "add food for yesterday"), which is read as ?date=YYYY-MM-DD.
+  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+  const wanted = typeof dateParam === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : app.today;
+  useFocusEffect(
+    useCallback(() => {
+      // The day shown follows the way in, so a stale pick from last time never sticks.
+      setViewDate(wanted);
+    }, [wanted]),
+  );
   const stripDates = useMemo(() => [...lastNDates(11, app.today), ...[1, 2, 3].map((n) => addDays(app.today, n))], [app.today]);
   const loggedDates = useMemo(() => new Set(app.state.meals.map((m) => m.date)), [app.state.meals]);
   const dayMeals = app.state.meals.filter((m) => m.date === viewDate);
@@ -187,6 +197,13 @@ export default function LogScreen() {
 
   const dayBlock = (
     <View style={{ gap: 10 }}>
+      <Row style={{ gap: 6 }}>
+        <Pill label={t('tab_today')} active={isToday} onPress={() => setViewDate(app.today)} />
+        <Pill label={t('yesterday')} active={viewDate === addDays(app.today, -1)} onPress={() => setViewDate(addDays(app.today, -1))} />
+        {!isToday && viewDate !== addDays(app.today, -1) ? <Pill label={formatDayLabel(viewDate, lang)} active /> : null}
+        <View style={{ flex: 1 }} />
+        <Pill label={`${t('history')} ›`} onPress={() => router.push('/history')} />
+      </Row>
       <DateStrip dates={stripDates} selected={viewDate} onSelect={setViewDate} marked={loggedDates} lang={lang} today={app.today} />
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>

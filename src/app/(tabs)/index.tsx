@@ -28,7 +28,7 @@ import { expectedWaterByHour } from '../../core/nudge';
 import { sumTotals } from '../../core/nutrition';
 import { pendingCount } from '../../core/queue';
 import type { Meal } from '../../core/types';
-import { makeT } from '../../i18n';
+import { fill, makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
 import { useMantra } from '../../services/useMantra';
 import { useApp } from '../../store/AppProvider';
@@ -177,8 +177,20 @@ export default function TodayScreen() {
           <Micro color={C.textDim}>{`${t('logged_intake')} · ${dayLabel}`}</Micro>
           <IconButton name="chevron-forward" label={t('tab_today')} disabled={isToday} onPress={() => setDayOffset((d) => Math.min(0, d + 1))} />
         </Row>
-        <Micro>{`${dayMeals.length} ${dayMeals.length === 1 ? t('session_one') : t('session_many')}`}</Micro>
+        <Pressable onPress={() => router.push('/history')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Micro>{`${dayMeals.length} ${dayMeals.length === 1 ? t('session_one') : t('session_many')}`}</Micro>
+          <Micro color={C.accent}>{` · ${t('history')} ›`}</Micro>
+        </Pressable>
       </Row>
+      {!isToday ? (
+        <Pressable
+          onPress={() => router.push({ pathname: '/log', params: { date: viewDate } })}
+          accessibilityRole="button"
+          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, opacity: pressed ? 0.7 : 1 })}>
+          <Ionicons name="add-circle-outline" size={18} color={C.accent} />
+          <Small color={C.accent}>{fill(t('add_food_for'), { day: dayLabel })}</Small>
+        </Pressable>
+      ) : null}
       <Card>
         {dayMeals.length === 0 ? (
           <Small color={C.textGhost}>{t('nothing_logged')}</Small>

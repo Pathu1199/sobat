@@ -80,6 +80,12 @@ export function Sidebar() {
 
       <View style={{ gap: 4 }}>
         <Pressable
+          onPress={() => router.push('/history')}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: S.radiusSm }}>
+          <Ionicons name="calendar-outline" size={19} color={C.textFaint} />
+          <Text style={{ color: C.textDim, fontSize: F.body }}>{t('history')}</Text>
+        </Pressable>
+        <Pressable
           onPress={() => router.push('/recipes')}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: S.radiusSm }}>
           <Ionicons name="restaurant-outline" size={19} color={C.textFaint} />
