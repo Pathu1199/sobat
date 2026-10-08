@@ -33,7 +33,7 @@ export default function CoachScreen() {
   const { ask, askJSON, ai } = useAI();
   const { canUseAI } = useAuth();
   const aiOnline = ai.route === 'primary' || ai.route === 'fallback';
-  const aiLive = canUseAI && aiOnline;
+  const aiLive = aiOnline;
   const chatOpen = true;
   const minute = useMinute();
   const advice = useCoach(minute);
@@ -80,12 +80,21 @@ export default function CoachScreen() {
     </View>
   );
 
-  const quick =
+  // Always on screen: the questions the offline coach answers from the numbers,
+  // and, while the PC answers, a few that need a model.
+  const offlineQuick =
     lang === 'mr'
-      ? ['माझे वजन का कमी होत नाही?', 'आता काय खाऊ?', 'आज खूप खाल्ले', 'व्यायामाचा कंटाळा', 'झोप लागत नाही']
+      ? ['आता काय खाऊ?', 'किती कॅलरी बाकी?', '३०० kcal मध्ये काय खाऊ?', 'माझे वजन का कमी होत नाही?', 'आज खूप खाल्ले', 'प्रथिने कशी वाढवू?', 'पाणी किती प्यायचे?', 'झोप लागत नाही', 'व्यायामाचा कंटाळा', 'पूर्ण दिवसाचा प्लॅन दे']
       : lang === 'hi'
-        ? ['मेरा वज़न क्यों नहीं घट रहा?', 'अभी क्या खाऊँ?', 'आज ज़्यादा खा लिया', 'कसरत का मन नहीं', 'नींद नहीं आती']
-        : ['Why is my weight not dropping?', 'What should I eat now?', 'I overate today', 'No motivation to exercise', 'I cannot sleep'];
+        ? ['अभी क्या खाऊँ?', 'कितनी कैलोरी बाकी?', '300 kcal में क्या खाऊँ?', 'मेरा वज़न क्यों नहीं घट रहा?', 'आज ज़्यादा खा लिया', 'प्रोटीन कैसे बढ़ाऊँ?', 'पानी कितना पिऊँ?', 'नींद नहीं आती', 'कसरत का मन नहीं', 'पूरे दिन का प्लान दो']
+        : ['What should I eat now?', 'How many calories are left?', 'What fits in 300 kcal?', 'Why is my weight not dropping?', 'I overate today', 'How do I get more protein?', 'How much water should I drink?', 'I cannot sleep', 'No motivation to exercise', 'Give me a full-day plan'];
+  const aiQuick =
+    lang === 'mr'
+      ? ['रात्री उशिरा भूक लागते, काय करू?', 'ऑफिसमध्ये टिफिनसाठी काय न्यावे?', 'माझ्या वयात रोज किती प्रथिने?', 'उपवासाने वजन कमी होते का?']
+      : lang === 'hi'
+        ? ['रात में देर से भूख लगती है, क्या करूँ?', 'ऑफ़िस टिफ़िन में क्या ले जाऊँ?', 'मेरी उम्र में रोज़ कितना प्रोटीन?', 'उपवास से वज़न घटता है क्या?']
+        : ['I get hungry late at night, what do I do?', 'What should I pack for office lunch?', 'How much protein a day at my age?', 'Does fasting help weight loss?'];
+  const quick = aiLive ? [...offlineQuick.slice(0, 6), ...aiQuick] : offlineQuick;
 
   async function send(text: string) {
     const clean = text.trim();
@@ -322,7 +331,7 @@ export default function CoachScreen() {
               </Card>
             ) : null}
 
-            {!aiLive ? <Micro color={C.textFaint}>{t('offline_coach')}</Micro> : null}
+            <Micro color={aiLive ? C.green : C.textFaint}>{aiLive ? t('ai_coach_open') : t('offline_coach')}</Micro>
             {canUseAI && !aiOnline ? (
               <Card rail={C.textGhost}>
                 <Row style={{ gap: 10 }}>
@@ -336,9 +345,9 @@ export default function CoachScreen() {
               </Card>
             ) : null}
 
-            {chatOpen && app.state.chat.length === 0 ? (
+            {chatOpen ? (
               <>
-                <Small color={C.textDim}>{t('no_chat_yet')}</Small>
+                {app.state.chat.length === 0 ? <Small color={C.textDim}>{t('no_chat_yet')}</Small> : null}
                 <Row style={{ flexWrap: 'wrap', gap: 8 }}>
                   {quick.map((q) => (
                     <Pill key={q} label={q} onPress={() => send(q)} />
