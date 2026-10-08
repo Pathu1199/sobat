@@ -1,19 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCoach } from '../../components/useCoach';
+import { useMinute } from '../../services/useWorkSchedule';
+import { dayPlan } from '../../core/dayPlan';
+import { answerOffline } from '../../core/offlineCoach';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { factsFrom, memoryExtractionPrompt, MEMORY_SCHEMA, systemPrompt } from '../../ai/prompts';
-import { CoachStrip } from '../../components/CoachStrip';
+import { adviceText, CoachStrip } from '../../components/CoachStrip';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { formatMinutes, toISODate } from '../../core/date';
 import { newId } from '../../core/id';
-import { suggestMeals, toMealItem } from '../../core/foods';
+import { foodName, suggestMeals, toMealItem } from '../../core/foods';
 import { guardAdvice, HELPLINES, isCrisisText } from '../../core/guardrails';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
 import { KCAL_FLOOR, mealTypeForHour } from '../../core/nutrition';
 import { planFrom } from '../../core/plan';
 import { journey, journeyFacts } from '../../core/review';
-import { avoidedFoodIds, routineFacts } from '../../core/routine';
+import { avoidedFoodIds, bhajiFor, routineFacts } from '../../core/routine';
 import type { ChatOption } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useAI } from '../../services/useAI';
@@ -29,7 +33,10 @@ export default function CoachScreen() {
   const { ask, askJSON, ai } = useAI();
   const { canUseAI } = useAuth();
   const aiOnline = ai.route === 'primary' || ai.route === 'fallback';
-  const chatOpen = canUseAI && aiOnline;
+  const aiLive = canUseAI && aiOnline;
+  const chatOpen = true;
+  const minute = useMinute();
+  const advice = useCoach(minute);
   const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
@@ -106,6 +113,61 @@ export default function CoachScreen() {
       kcal: o.kcal,
       protein: o.protein,
     }));
+
+    // No model: answer from the numbers, at once.
+    if (!aiLive) {
+      const plan = planFrom(app.state.profile, app.state.weights, app.targets, app.today);
+      const review = journey({
+        today: app.today,
+        meals: app.state.meals,
+        water: app.state.water,
+        sleep: app.state.sleep,
+        workouts: app.state.workouts,
+        weights: app.state.weights,
+        kcalTarget: app.targets.kcal,
+        proteinTarget: app.targets.proteinG,
+        waterGoalMl: app.state.settings.waterGoalMl,
+        avoid: app.state.routine.avoid,
+        plan,
+      });
+      const loggedTypes = Array.from(new Set(app.state.meals.filter((m) => m.date === app.today).map((m) => m.type)));
+      const dp = dayPlan({ remaining: app.budget.remaining, hour: app.hour, loggedTypes, foods: app.foods, avoided, preferred: app.state.routine.enabled ? bhajiFor(app.state.routine, app.today) : [] });
+      const lastSleep = [...app.state.sleep].sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0];
+      const answer = answerOffline(
+        clean,
+        {
+          budget: app.budget,
+          hour: app.hour,
+          plan,
+          journey: review,
+          dayPlan: dp,
+          advice,
+          waterMl: app.waterToday,
+          waterGoalMl: app.state.settings.waterGoalMl,
+          streakDays: app.streakDays,
+          lastSleepMinutes: lastSleep?.minutes ?? null,
+          stepsToday: app.stepsToday,
+          kcalTarget: app.targets.kcal,
+          proteinTarget: app.targets.proteinG,
+          optionsFor: (max) =>
+            suggestMeals(app.foods, max, { ...diet, minKcal: 40 })
+              .filter((o) => !avoided.has(o.food.id))
+              .slice(0, 3)
+              .map((o) => ({ foodId: o.food.id, name_en: o.food.name_en, name_mr: o.food.name_mr, grams: o.grams, kcal: o.kcal, protein: o.protein })),
+          foodName: (id) => {
+            const fd = app.foods.find((x) => x.id === id);
+            return fd ? foodName(fd, lang) : id;
+          },
+          mealName: (m) => t(m),
+        },
+        t,
+      );
+      const extra = answer.text.includes(t('oc_right_now')) ? '\n\n' + advice.slice(0, 2).map((a) => `• ${adviceText(a, t)}`).join('\n') : '';
+      app.addChat({ id: newId(), role: 'assistant', text: answer.text + extra, at: new Date().toISOString(), options: answer.options.length ? answer.options : undefined });
+      setBusy(false);
+      setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60);
+      return;
+    }
 
     try {
       const floor = KCAL_FLOOR[app.state.profile.sex];
@@ -260,6 +322,7 @@ export default function CoachScreen() {
               </Card>
             ) : null}
 
+            {!aiLive ? <Micro color={C.textFaint}>{t('offline_coach')}</Micro> : null}
             {canUseAI && !aiOnline ? (
               <Card rail={C.textGhost}>
                 <Row style={{ gap: 10 }}>
