@@ -8,6 +8,7 @@ import { fill, LANG_NAMES, makeT } from '../i18n';
 import { notifyNow, requestPermission } from '../services/notify';
 import { pushConfigured, stopPush, testPush } from '../services/push';
 import Constants from 'expo-constants';
+import { OllamaSetup } from '../components/OllamaSetup';
 import { ScheduleEditor } from '../components/ScheduleEditor';
 import { useDriveBackup } from '../services/useDriveBackup';
 import { firebaseEnabled } from '../services/firebase';
@@ -305,13 +306,7 @@ export default function SettingsScreen() {
               </Row>
               <Small color={C.textDim}>{t('local_ai_body')}</Small>
               <Divider />
-              <Micro>{t('local_ai_steps_title')}</Micro>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <Row key={n} style={{ gap: 10, alignItems: 'flex-start' }}>
-                  <Text style={{ color: C.cyan, fontSize: F.h3, fontWeight: '700', width: 20 }}>{n}</Text>
-                  <Text style={{ flex: 1, color: C.textDim, fontSize: F.small, lineHeight: 21 }}>{t(`local_ai_step_${n}`)}</Text>
-                </Row>
-              ))}
+              <OllamaSetup onTest={test} testing={testing} />
               <Divider />
               <Field label={t('ollama_url')} value={s.ollamaUrl} onChangeText={(v) => app.setSettings({ ollamaUrl: v })} placeholder={DEFAULT_OLLAMA_URL} />
               <Field label="Fallback (Tailscale)" value={s.ollamaFallbackUrl} onChangeText={(v) => app.setSettings({ ollamaFallbackUrl: v })} placeholder="http://varad-pc:11434" />
@@ -319,7 +314,6 @@ export default function SettingsScreen() {
                 <Field label={t('text_model')} value={s.textModel} onChangeText={(v) => app.setSettings({ textModel: v })} />
                 <Field label={t('vision_model')} value={s.visionModel} onChangeText={(v) => app.setSettings({ visionModel: v })} />
               </Row>
-              <Btn small tone="soft" label={testing ? '...' : t('test_connection')} onPress={test} />
               {result ? <Small color={result.ok ? C.cyan : C.amber}>{result.text}</Small> : null}
             </Card>
           </View>
