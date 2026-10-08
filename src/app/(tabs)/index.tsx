@@ -13,6 +13,7 @@ import { NutrientCard } from '../../components/NutrientCard';
 import { StartHereCard } from '../../components/StartHereCard';
 import { SuggestSheet } from '../../components/SuggestSheet';
 import { NowStrip } from '../../components/NowStrip';
+import { FitsCard } from '../../components/FitsCard';
 import { MountainCard } from '../../components/MountainCard';
 import { RecoveryCard } from '../../components/RecoveryCard';
 import { RoutineCard } from '../../components/RoutineCard';
@@ -228,6 +229,7 @@ export default function TodayScreen() {
         <Cols weights={[1.15, 1, 0.95]}>
           <>
             {heroCard}
+            {isToday ? <FitsCard /> : null}
             {isToday ? <TrackerGrid /> : null}
             {isToday ? <StartHereCard /> : null}
             {isToday ? <NutrientCard /> : null}
@@ -259,6 +261,7 @@ export default function TodayScreen() {
     <Page title={state.profile.name || greeting} alt={undefined} subtitle={`${greeting} · ${subtitle}`} left={<Logo size={26} />} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
+      {isToday ? <FitsCard /> : null}
       {isToday ? <TrackerGrid /> : null}
       {isToday ? <MountainCard /> : null}
       {isToday ? <StartHereCard /> : null}
