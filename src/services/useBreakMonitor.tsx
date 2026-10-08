@@ -12,6 +12,8 @@ import {
   type BreakKind,
   type ForegroundState,
 } from '../core/breaks';
+import { storyLine, storySeed } from '../core/storyLines';
+import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { notifyNow } from './notify';
 import { foregroundState, systemIdleSeconds } from './platform';
@@ -32,6 +34,7 @@ const UNSTARTED_CLOCKS: BreakClocks = { micro: 0, long: 0, posture: 0, blink: 0 
  */
 function useBreakClock() {
   const app = useApp();
+  const t = makeT(app.state.profile.lang);
   const settings = app.state.breakSettings;
 
   const [phase, setPhase] = useState<BreakPhase>('working');
@@ -250,7 +253,7 @@ function useBreakClock() {
       if (takesScreen(due.kind) && due.inSeconds <= WARNING_SECONDS) {
         if (warnedFor.current !== due.kind) {
           warnedFor.current = due.kind;
-          notifyNow('Break in 1 minute', 'Finish what you are typing.').catch(() => {});
+          notifyNow(t('ntf_break_soon'), `${t('ntf_break_soon_body')} ${storyLine('break', app.state.profile.lang, storySeed(app.today, due.inSeconds))}`).catch(() => {});
         }
         setPhase('warning');
         return;
@@ -259,6 +262,8 @@ function useBreakClock() {
       setPhase('working');
     }, TICK_MS);
     return () => clearInterval(id);
+    // The tick reads the language and the day when it fires; neither should restart the timer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildCtx, start]);
 
   // Only on unmount: the tick effect must not cancel a nudge that is still

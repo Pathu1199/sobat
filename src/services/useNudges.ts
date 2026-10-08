@@ -3,6 +3,7 @@ import { AppState as RNAppState, Platform } from 'react-native';
 import { newId } from '../core/id';
 import { pickNudge, type NudgeChoice } from '../core/nudge';
 import { pickMessage } from '../data/nudges';
+import { storyLine, storySeed, type StoryKind } from '../core/storyLines';
 import { useApp } from '../store/AppProvider';
 import { notifyNow } from './notify';
 
@@ -73,12 +74,16 @@ export function useNudges() {
         enabled: nudgesEnabled,
       });
       if (!choice) return;
-      const msg = pickMessage(app.state.profile.lang, choice.type);
+      const base = pickMessage(app.state.profile.lang, choice.type);
+      // The line under it changes every time and knows where the day's calories stand.
+      const kind: StoryKind = choice.type === 'water' ? 'water' : choice.type === 'eyes' ? 'eyes' : choice.type === 'posture' ? 'posture' : choice.type === 'log' ? 'log' : 'break';
+      const story = storyLine(kind, app.state.profile.lang, storySeed(app.today, todayNudges.length), { consumed: app.budget.consumed, target: app.budget.target });
+      const msg = { ...base, body: `${base.body} ${story}` };
       setCurrent({ id: newId(), choice, ...msg });
       notifyNow(msg.title, msg.body).catch(() => {});
     }, every);
     return () => clearInterval(timer);
-  }, [nudgeMinutes, nudgesEnabled, quietStartHour, quietEndHour, waterGoalMl, app.state.nudges, app.state.meals, app.waterToday, app.today, app.state.profile.lang]);
+  }, [nudgeMinutes, nudgesEnabled, quietStartHour, quietEndHour, waterGoalMl, app.state.nudges, app.state.meals, app.waterToday, app.today, app.state.profile.lang, app.budget.consumed, app.budget.target]);
 
   function respond(action: 'done' | 'snooze' | 'skip') {
     if (!current?.choice) return;

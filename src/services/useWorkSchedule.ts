@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { msToNextMinute } from '../core/date';
 import { skipKey, slotLabel, slotLogged, slotMinutes, slotsDueBetween, SLOT_GRACE_MIN, bhajiFor } from '../core/routine';
 import { orderedBlocks, startedBetween, toMinutes } from '../core/schedule';
+import { storyLine, storySeed, type StoryKind } from '../core/storyLines';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useFeedback } from './feedback';
@@ -52,7 +53,8 @@ export function useWorkSchedule() {
     if (minute <= from) return;
     for (const b of startedBetween(schedule, app.today, from, minute)) {
       const title = t(`ntf_${b.kind}`);
-      const body = t(`ntf_${b.kind}_body`);
+      const kind: StoryKind = b.kind === 'break' ? 'break' : b.kind === 'end' ? 'walk' : b.kind === 'start' ? 'mantra' : 'meal';
+      const body = `${t(`ntf_${b.kind}_body`)} ${storyLine(kind, profile.lang, storySeed(app.today, minute), { consumed: app.budget.consumed, target: app.budget.target })}`;
       fb.notify(`${title} · ${body}`);
       notifyNow(title, body).catch(() => {});
     }
