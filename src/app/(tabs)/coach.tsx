@@ -17,6 +17,7 @@ import { avoidedFoodIds, routineFacts } from '../../core/routine';
 import type { ChatOption } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useAI } from '../../services/useAI';
+import { useAuth } from '../../services/useAuth';
 import { useApp } from '../../store/AppProvider';
 import { BiText, Btn, Card, Divider, Micro, Pill, Row, Small } from '../../ui/components';
 import { C, F, S } from '../../ui/theme';
@@ -25,7 +26,10 @@ import { useBreakpoint } from '../../ui/useBreakpoint';
 
 export default function CoachScreen() {
   const app = useApp();
-  const { ask, askJSON } = useAI();
+  const { ask, askJSON, ai } = useAI();
+  const { canUseAI } = useAuth();
+  const aiOnline = ai.route === 'primary' || ai.route === 'fallback';
+  const chatOpen = canUseAI && aiOnline;
   const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
@@ -256,7 +260,20 @@ export default function CoachScreen() {
               </Card>
             ) : null}
 
-            {app.state.chat.length === 0 ? (
+            {canUseAI && !aiOnline ? (
+              <Card rail={C.textGhost}>
+                <Row style={{ gap: 10 }}>
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.textGhost }} />
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', flex: 1 }}>{t('local_ai_down')}</Text>
+                </Row>
+                <Small color={C.textDim}>{t('coach_ai_off_hint')}</Small>
+                <Pressable onPress={() => router.push('/settings')}>
+                  <Micro color={C.accent}>{`${t('local_ai')} ›`}</Micro>
+                </Pressable>
+              </Card>
+            ) : null}
+
+            {chatOpen && app.state.chat.length === 0 ? (
               <>
                 <Small color={C.textDim}>{t('no_chat_yet')}</Small>
                 <Row style={{ flexWrap: 'wrap', gap: 8 }}>
@@ -267,7 +284,7 @@ export default function CoachScreen() {
               </>
             ) : null}
 
-            {app.state.chat.map((m) =>
+            {chatOpen ? app.state.chat.map((m) =>
               m.role === 'user' ? (
                 <View key={m.id} style={{ alignSelf: 'flex-end', maxWidth: '86%', backgroundColor: C.accent, borderRadius: 16, borderBottomRightRadius: 5, padding: 13 }}>
                   <Text style={{ color: C.white, fontSize: F.body, lineHeight: 20 }}>{m.text}</Text>
@@ -316,12 +333,13 @@ export default function CoachScreen() {
                   ) : null}
                 </View>
               ),
-            )}
+            ) : null}
 
             {busy ? <ActivityIndicator color={C.accent} /> : null}
             <View style={{ height: 8 }} />
           </ScrollView>
 
+          {chatOpen ? (
           <View style={{ padding: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
             <View style={{ maxWidth: 780, width: '100%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View style={{ flex: 1 }}>
@@ -342,6 +360,7 @@ export default function CoachScreen() {
               </Pressable>
             </View>
           </View>
+          ) : null}
         </View>
         {wide ? rail : null}
       </View>

@@ -12,6 +12,7 @@ import { ScheduleEditor } from '../components/ScheduleEditor';
 import { useDriveBackup } from '../services/useDriveBackup';
 import { firebaseEnabled } from '../services/firebase';
 import { authApi, useAuth } from '../services/useAuth';
+import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
 import { DEFAULT_OLLAMA_URL } from '../store/defaults';
 import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
@@ -25,6 +26,8 @@ export default function SettingsScreen() {
   const t = makeT(lang);
   const router = useRouter();
   const auth = useAuth();
+  const { ai } = useAI();
+  const aiOnline = ai.route === 'primary' || ai.route === 'fallback';
 
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
@@ -276,6 +279,8 @@ export default function SettingsScreen() {
           )}
         </Card>
 
+        {auth.canUseAI ? (
+        <>
         <Pressable
           onPress={() => setAdvanced((a) => !a)}
           accessibilityRole="button"
@@ -292,8 +297,22 @@ export default function SettingsScreen() {
         {advanced ? (
           <View style={{ gap: 20 }}>
           <View style={{ gap: 10 }}>
-            <SectionHeader title="Ollama" meta={result?.ok ? t('connected') : undefined} />
-            <Card>
+            <SectionHeader title={t('local_ai')} meta={aiOnline ? t('ai_on') : t('ai_off')} color={aiOnline ? C.green : undefined} />
+            <Card rail={aiOnline ? C.green : C.textGhost}>
+              <Row style={{ gap: 10 }}>
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: aiOnline ? C.green : C.textGhost }} />
+                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', flex: 1 }}>{aiOnline ? fill(t('local_ai_up'), { url: ai.url }) : t('local_ai_down')}</Text>
+              </Row>
+              <Small color={C.textDim}>{t('local_ai_body')}</Small>
+              <Divider />
+              <Micro>{t('local_ai_steps_title')}</Micro>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Row key={n} style={{ gap: 10, alignItems: 'flex-start' }}>
+                  <Text style={{ color: C.cyan, fontSize: F.h3, fontWeight: '700', width: 20 }}>{n}</Text>
+                  <Text style={{ flex: 1, color: C.textDim, fontSize: F.small, lineHeight: 21 }}>{t(`local_ai_step_${n}`)}</Text>
+                </Row>
+              ))}
+              <Divider />
               <Field label={t('ollama_url')} value={s.ollamaUrl} onChangeText={(v) => app.setSettings({ ollamaUrl: v })} placeholder={DEFAULT_OLLAMA_URL} />
               <Field label="Fallback (Tailscale)" value={s.ollamaFallbackUrl} onChangeText={(v) => app.setSettings({ ollamaFallbackUrl: v })} placeholder="http://varad-pc:11434" />
               <Row style={{ gap: 12 }}>
@@ -302,8 +321,6 @@ export default function SettingsScreen() {
               </Row>
               <Btn small tone="soft" label={testing ? '...' : t('test_connection')} onPress={test} />
               {result ? <Small color={result.ok ? C.cyan : C.amber}>{result.text}</Small> : null}
-              <Divider />
-              <Micro>On the PC: setx OLLAMA_HOST 0.0.0.0, restart Ollama, allow port 11434 on the private network.</Micro>
             </Card>
           </View>
     
@@ -424,6 +441,8 @@ export default function SettingsScreen() {
             </Card>
           </View>
           </View>
+        ) : null}
+        </>
         ) : null}
 
         <SectionHeader title={t('about')} icon={<Ionicons name="information-circle-outline" size={13} color={C.textFaint} />} />

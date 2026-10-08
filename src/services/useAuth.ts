@@ -45,7 +45,10 @@ const getSnapshot = (): Snapshot => current;
  */
 export function useAuth() {
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  return { ...snap, isAdmin: snap.user?.email?.toLowerCase() === ADMIN_EMAIL };
+  const isAdmin = snap.user?.email?.toLowerCase() === ADMIN_EMAIL;
+  // The local AI (Ollama on the admin's own PC) is the admin's: only they see
+  // whether it is up, set its address, and ask it questions.
+  return { ...snap, isAdmin, canUseAI: isAdmin || !firebaseEnabled };
 }
 
 function need() {

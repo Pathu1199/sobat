@@ -4,6 +4,7 @@ import React from 'react';
 import { Pressable, View } from 'react-native';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
+import { useAuth } from '../services/useAuth';
 import { useApp } from '../store/AppProvider';
 import { Row, StatusChip } from '../ui/components';
 import { C } from '../ui/theme';
@@ -13,6 +14,7 @@ import { useBreakpoint } from '../ui/useBreakpoint';
 export function TopBarActions({ streak }: { streak?: number }) {
   const router = useRouter();
   const { ai } = useAI();
+  const { canUseAI } = useAuth();
   const { state } = useApp();
   const t = makeT(state.profile.lang);
   const wide = useBreakpoint() === 'desktop';
@@ -21,10 +23,12 @@ export function TopBarActions({ streak }: { streak?: number }) {
   return (
     <Row style={{ gap: 4 }}>
       {wide && streak && streak > 0 ? <StatusChip label={`${streak}d`} color={C.amber} /> : null}
-      <View
-        accessibilityLabel={online ? t('ai_lan') : t('ai_offline')}
-        style={{ width: 7, height: 7, borderRadius: 4, marginHorizontal: 6, backgroundColor: online ? C.accent : C.textGhost }}
-      />
+      {canUseAI ? (
+        <Row style={{ gap: 5, marginHorizontal: 6 }} >
+          <View accessibilityLabel={online ? t('ai_on') : t('ai_off')} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: online ? C.green : C.textGhost }} />
+          {wide ? <StatusChip label={online ? t('ai_on') : t('ai_off')} color={online ? C.green : C.textFaint} /> : null}
+        </Row>
+      ) : null}
       {wide ? (
         <IconButton name="add-circle-outline" label={t('tab_log')} onPress={() => router.push('/log')} />
       ) : (

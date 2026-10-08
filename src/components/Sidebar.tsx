@@ -4,6 +4,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
+import { useAuth } from '../services/useAuth';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
 import { Ring } from '../ui/components';
@@ -29,6 +30,7 @@ export function Sidebar() {
   const app = useApp();
   const { state } = app;
   const { ai } = useAI();
+  const { canUseAI } = useAuth();
   const t = makeT(state.profile.lang);
 
   const online = ai.route === 'primary' || ai.route === 'fallback';
@@ -133,10 +135,12 @@ export function Sidebar() {
             </Text>
           </View>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 10 }}>
-          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: online ? C.accent : C.textFaint }} />
-          <Text style={[MICRO, { color: C.textFaint }]}>{online ? t('ai_lan') : t('ai_offline')}</Text>
-        </View>
+        {canUseAI ? (
+          <Pressable onPress={() => router.push('/settings')} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 10 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: online ? C.green : C.textFaint }} />
+            <Text style={[MICRO, { color: online ? C.green : C.textFaint }]}>{online ? t('ai_on') : t('ai_off')}</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
