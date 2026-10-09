@@ -14,6 +14,7 @@ import { StartHereCard } from '../../components/StartHereCard';
 import { SuggestSheet } from '../../components/SuggestSheet';
 import { NowStrip } from '../../components/NowStrip';
 import { CoachStrip } from '../../components/CoachStrip';
+import { PlanTodayCard } from '../../components/PlanTodayCard';
 import { FitsCard } from '../../components/FitsCard';
 import { MountainCard } from '../../components/MountainCard';
 import { RecoveryCard } from '../../components/RecoveryCard';
@@ -231,6 +232,7 @@ export default function TodayScreen() {
           <>
             {heroCard}
             {isToday ? <CoachStrip onSuggest={() => setSuggestOpen(true)} /> : null}
+      {isToday ? <PlanTodayCard /> : null}
             {isToday ? <FitsCard /> : null}
             {isToday ? <TrackerGrid /> : null}
             {isToday ? <StartHereCard /> : null}
@@ -264,7 +266,8 @@ export default function TodayScreen() {
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
       {isToday ? <CoachStrip onSuggest={() => setSuggestOpen(true)} /> : null}
-      {isToday ? <FitsCard compact /> : null}
+      {isToday ? <PlanTodayCard /> : null}
+      {isToday && !state.weekPlan ? <FitsCard compact /> : null}
       {isToday ? <TrackerGrid /> : null}
       {isToday ? <StartHereCard /> : null}
       {isToday ? <WeighInCard /> : null}
@@ -282,6 +285,7 @@ export default function TodayScreen() {
       </Pressable>
       {more ? (
         <>
+          {isToday && state.weekPlan ? <FitsCard compact /> : null}
           {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
           {isToday ? <NutrientCard /> : null}
           {isToday ? <TomorrowCard /> : null}

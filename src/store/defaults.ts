@@ -71,4 +71,5 @@ export const EMPTY_STATE: AppState = {
   routine: DEFAULT_ROUTINE,
   spend: [],
   schedule: DEFAULT_SCHEDULE,
+  weekPlan: null,
 };

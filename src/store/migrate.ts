@@ -113,5 +113,7 @@ export function migrateState(raw: unknown): AppState {
     routine: upgradeRoutine(raw.routine, fromVersion),
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
     schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}) },
+    // A plan that is not seven days of meals is not a plan; rebuild it from the routine on next open.
+    weekPlan: isRecord(raw.weekPlan) && Array.isArray((raw.weekPlan as { days?: unknown }).days) && (raw.weekPlan as { days: unknown[] }).days.length === 7 ? (raw.weekPlan as AppState['weekPlan']) : null,
   };
 }

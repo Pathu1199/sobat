@@ -202,6 +202,7 @@ export default function LogScreen() {
         <Pill label={t('yesterday')} active={viewDate === addDays(app.today, -1)} onPress={() => setViewDate(addDays(app.today, -1))} />
         {!isToday && viewDate !== addDays(app.today, -1) ? <Pill label={formatDayLabel(viewDate, lang)} active /> : null}
         <View style={{ flex: 1 }} />
+        <Pill label={t('diet_title')} onPress={() => router.push('/plan')} />
         <Pill label={`${t('history')} ›`} onPress={() => router.push('/history')} />
       </Row>
       <DateStrip dates={stripDates} selected={viewDate} onSelect={setViewDate} marked={loggedDates} lang={lang} today={app.today} />

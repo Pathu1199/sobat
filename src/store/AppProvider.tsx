@@ -13,6 +13,7 @@ import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
 import { pruneSpend, spentOn, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
+import type { WeekPlan } from '../core/weekPlan';
 import type { BreakKind, BreakSettings } from '../core/breaks';
 import type { AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
@@ -67,6 +68,7 @@ type Ctx = {
   actionsDoneToday: string[];
   toggleAction: (key: string) => void;
   setRoutine: (r: Partial<Routine>) => void;
+  setWeekPlan: (plan: WeekPlan | null) => void;
   setSchedule: (s: Partial<WorkSchedule>) => void;
   addSpend: (s: Pick<SpendLog, 'category' | 'rupees' | 'spreadDays'>) => void;
   removeSpend: (id: string) => void;
@@ -225,6 +227,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return { ...s, actionsDone: has ? kept.filter((a) => a.key !== key) : [...kept, { date: today, key }] };
         }),
       setRoutine: (r) => update((s) => ({ ...s, routine: { ...s.routine, ...r } })),
+      setWeekPlan: (plan) => update((s) => ({ ...s, weekPlan: plan })),
       setSchedule: (x) => update((s) => ({ ...s, schedule: { ...s.schedule, ...x } })),
       addSpend: (x) =>
         update((s) => ({

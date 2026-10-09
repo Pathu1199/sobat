@@ -107,6 +107,7 @@ function AppShell() {
         <Stack.Screen name="admin" options={{ title: 'Admin' }} />
         <Stack.Screen name="journey" options={{ title: 'Journey' }} />
         <Stack.Screen name="history" options={{ title: 'History' }} />
+        <Stack.Screen name="plan" options={{ title: 'Diet plan' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="photo" options={{ title: 'Photo' }} />
         <Stack.Screen name="sleep" options={{ title: 'Sleep' }} />
