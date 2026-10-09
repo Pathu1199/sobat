@@ -35,11 +35,12 @@ import { fill, makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
 import { useMantra } from '../../services/useMantra';
 import { useApp } from '../../store/AppProvider';
-import { Bar, Card, Divider, ListRow, MeterRow, Micro, Quote, Row, Small } from '../../ui/components';
+import { Card, Divider, ListRow, MeterRow, Micro, Quote, Row, Small } from '../../ui/components';
 import { Logo } from '../../ui/Logo';
+import { BannerBar, GradientBanner } from '../../ui/GradientBanner';
 import { Page } from '../../ui/TopBar';
 import { Cols } from '../../ui/tiles';
-import { C, F, S } from '../../ui/theme';
+import { C, F } from '../../ui/theme';
 import { useBreakpoint } from '../../ui/useBreakpoint';
 
 export default function TodayScreen() {
@@ -128,18 +129,14 @@ export default function TodayScreen() {
   const heroCard = (
     <Card>
       <View style={{ gap: 14 }}>
-        {/* One line and one bar: what is left today. The ring was pretty, but a bar reads at a glance. */}
-        <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <View>
-            <Text style={{ color: over ? C.red : C.text, fontSize: F.display, fontWeight: '700', letterSpacing: -1.5, lineHeight: F.display + 4 }}>
-              {Math.abs(dayBudget.remaining).toLocaleString()}
-              <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500', letterSpacing: 0 }}>{`  ${over ? t('kcal_over') : t('kcal_left')}`}</Text>
-            </Text>
-          </View>
-        </Row>
-        <Bar value={dayBudget.consumed} max={dayBudget.target} color={over ? C.red : C.accent} height={8} />
+        {/* The one number the day is about, on the brand gradient: what is left, and how far through the day's food. */}
+        <GradientBanner from={over ? C.red : C.heroFrom} to={over ? C.amber : C.heroTo}>
+          <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: F.tiny, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' }}>{over ? t('kcal_over') : t('kcal_left')}</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: F.hero, fontWeight: '800', letterSpacing: -2, lineHeight: F.hero + 4 }}>{Math.abs(dayBudget.remaining).toLocaleString()}</Text>
+          <BannerBar value={dayBudget.consumed} max={dayBudget.target} />
+          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.small, fontWeight: '600' }}>{`${dayBudget.consumed.toLocaleString()} / ${dayBudget.target.toLocaleString()} kcal · ${dayBudget.proteinConsumed} / ${dayBudget.proteinTarget} g ${t('protein').toLowerCase()}`}</Text>
+        </GradientBanner>
         <View style={{ gap: 13 }}>
-          <MeterRow label={t('eaten')} alt={lang === 'en' ? undefined : t('eaten')} value={dayBudget.consumed} total={dayBudget.target} unit="kcal" color={C.accent} />
           <MeterRow label={t('protein')} alt={lang === 'en' ? undefined : t('protein')} value={dayBudget.proteinConsumed} total={dayBudget.proteinTarget} unit="g" color={C.violet} />
           <MeterRow label={t('water')} alt={lang === 'en' ? undefined : t('water')} value={dayWater} total={state.settings.waterGoalMl} unit="ml" color={C.cyan} marker={waterMarker} />
           {daySteps > 0 ? <MeterRow label={t('steps_today')} alt={lang === 'en' ? undefined : t('steps_today')} value={daySteps} total={8000} color={C.green} /> : null}
@@ -337,19 +334,19 @@ function QuickAction({ icon, label, onPress }: { icon: keyof typeof Ionicons.gly
       onPress={onPress}
       style={({ pressed }) => ({
         flex: 1,
-        backgroundColor: C.cardAlt,
-        borderWidth: S.hairline,
-        borderColor: C.border,
-        borderRadius: S.radiusSm,
-        paddingVertical: 13,
-        flexDirection: 'row',
+        backgroundColor: C.accentDim,
+        borderRadius: 16,
+        paddingVertical: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 7,
-        opacity: pressed ? 0.7 : 1,
+        gap: 6,
+        opacity: pressed ? 0.75 : 1,
+        transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
-      <Ionicons name={icon} size={15} color={C.textDim} />
-      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{label}</Text>
+      <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center' }}>
+        <Ionicons name={icon} size={18} color={C.accent} />
+      </View>
+      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '700' }}>{label}</Text>
     </Pressable>
   );
 }

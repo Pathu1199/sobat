@@ -2,7 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useEased, useEntrance } from './animated';
-import { C, F, MICRO, onThemeChange, S } from './theme';
+import { C, F, lift, MICRO, onThemeChange, S } from './theme';
 
 export function Screen({ children, refreshing, wide }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean }) {
   return (
@@ -38,9 +38,9 @@ export function Card({
     <Animated.View
       style={[
         st.card,
-        flat && { backgroundColor: 'transparent', borderColor: 'transparent', padding: 0 },
+        flat ? { backgroundColor: 'transparent', borderColor: 'transparent', padding: 0, shadowOpacity: 0, elevation: 0 } : lift(1),
         tone ? { borderColor: tone } : null,
-        rail ? { borderLeftWidth: 2, borderLeftColor: rail } : null,
+        rail ? { borderLeftWidth: 4, borderLeftColor: rail } : null,
         style,
         still ? null : { opacity, transform: [{ translateY }] },
       ]}>
@@ -110,16 +110,17 @@ export function Btn({
   style?: ViewStyle;
   icon?: React.ReactNode;
 }) {
-  const bg = tone === 'primary' ? C.accent : tone === 'danger' ? C.redSoft : tone === 'soft' ? C.cardAlt : 'transparent';
-  const border = tone === 'ghost' ? C.border : tone === 'soft' ? C.border : bg;
-  const fg = tone === 'primary' ? C.white : tone === 'danger' ? C.text : C.text;
+  const bg = tone === 'primary' ? C.accent : tone === 'danger' ? C.redSoft : tone === 'soft' ? C.accentDim : 'transparent';
+  const border = tone === 'ghost' ? C.borderStrong : bg;
+  const fg = tone === 'primary' ? C.white : tone === 'danger' ? C.red : tone === 'soft' ? C.accent : C.text;
   return (
     <Pressable
       onPress={disabled ? undefined : onPress}
       style={({ pressed }) => [
         st.btn,
-        { backgroundColor: bg, borderColor: border, opacity: disabled ? 0.4 : pressed ? 0.75 : 1 },
-        small && { paddingVertical: 9, paddingHorizontal: 13 },
+        { backgroundColor: bg, borderColor: border, opacity: disabled ? 0.4 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+        tone === 'primary' && !disabled ? { ...lift(1), shadowColor: C.accent, shadowOpacity: 0.28 } : null,
+        small && { paddingVertical: 10, paddingHorizontal: 14 },
         style,
       ]}>
       {icon ? <View style={{ marginRight: 7 }}>{icon}</View> : null}
@@ -143,9 +144,9 @@ export function Pill({
   active?: boolean;
   tone?: string;
 }) {
-  const bg = active ? C.accent : color ?? C.cardAlt;
+  const bg = active ? C.accent : color ?? C.card;
   const bd = active ? C.accent : tone ?? C.border;
-  const fg = active ? C.white : textColor ?? C.textDim;
+  const fg = active ? C.white : textColor ?? C.text;
   const body = (
     <View style={[st.pill, { backgroundColor: bg, borderColor: bd }]}>
       <Text style={[st.pillText, { color: fg }]}>{label}</Text>
@@ -170,8 +171,8 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
       {options.map((o) => {
         const on = o.key === value;
         return (
-          <Pressable key={o.key} onPress={() => onChange(o.key)} style={[st.segment, on && { backgroundColor: C.accent }]}>
-            <Text style={[MICRO, { color: on ? C.white : C.textDim }]}>{o.label}</Text>
+          <Pressable key={o.key} onPress={() => onChange(o.key)} style={[st.segment, on && { backgroundColor: C.card, ...lift(1) }]}>
+            <Text style={[MICRO, { color: on ? C.accent : C.textDim }]}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -438,9 +439,9 @@ function buildStyles() {
   screen: { flex: 1, backgroundColor: C.bg },
   screenContent: { padding: S.pad, gap: S.gap, maxWidth: 780, width: '100%', alignSelf: 'center' },
   card: { backgroundColor: C.card, borderRadius: S.radius, borderWidth: S.hairline, borderColor: C.border, padding: S.padLg, gap: 12 },
-  h1: { color: C.text, fontSize: F.h1, fontWeight: '600', letterSpacing: -0.5 },
-  h2: { color: C.text, fontSize: F.h2, fontWeight: '600', letterSpacing: -0.3 },
-  h3: { color: C.text, fontSize: F.h3, fontWeight: '600' },
+  h1: { color: C.text, fontSize: F.h1, fontWeight: '800', letterSpacing: -0.6 },
+  h2: { color: C.text, fontSize: F.h2, fontWeight: '800', letterSpacing: -0.4 },
+  h3: { color: C.text, fontSize: F.h3, fontWeight: '700' },
   p: { color: C.text, fontSize: F.body, lineHeight: 24, fontWeight: '500' },
   small: { color: C.textDim, fontSize: F.small, lineHeight: 21, fontWeight: '500' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -448,22 +449,22 @@ function buildStyles() {
   btn: {
     paddingVertical: 13,
     paddingHorizontal: 16,
-    borderRadius: S.radiusSm,
+    borderRadius: 14,
     borderWidth: S.hairline,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
   },
-  btnText: { fontSize: F.body, fontWeight: '600' },
-  pill: { paddingVertical: 6, paddingHorizontal: 11, borderRadius: 999, borderWidth: S.hairline },
-  pillText: { fontSize: F.tiny, fontWeight: '500' },
-  segmented: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 999, borderWidth: S.hairline, borderColor: C.border, padding: 3 },
-  segment: { flex: 1, paddingVertical: 9, borderRadius: 999, alignItems: 'center' },
+  btnText: { fontSize: F.body, fontWeight: '700', letterSpacing: 0.1 },
+  pill: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: 999, borderWidth: S.hairline },
+  pillText: { fontSize: F.tiny, fontWeight: '700' },
+  segmented: { flexDirection: 'row', backgroundColor: C.cardAlt, borderRadius: 999, padding: 4 },
+  segment: { flex: 1, paddingVertical: 10, borderRadius: 999, alignItems: 'center' },
   input: {
-    backgroundColor: C.bgAlt,
+    backgroundColor: C.cardAlt,
     borderWidth: S.hairline,
     borderColor: C.border,
-    borderRadius: S.radiusSm,
+    borderRadius: 14,
     paddingHorizontal: 13,
     paddingVertical: 11,
     color: C.text,

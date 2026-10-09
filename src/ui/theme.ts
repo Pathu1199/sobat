@@ -2,81 +2,87 @@
  * Design tokens. Everything visual comes from here, so a change to the palette
  * moves the whole app at once.
  *
- * The language is a deep ink panel: a near-black with a faint indigo warmth,
- * cards a shade lighter with soft hairline edges, a calm indigo-blue as the
- * primary accent and a mint-cyan as its brighter partner. Secondary text is
- * kept readable on a phone in daylight. Numbers are light; labels are small,
- * uppercase and quiet.
+ * A fresh health palette: a leaf green as the brand colour with a teal
+ * partner (the hero gradient and the logo run between them), soft
+ * off-white or deep slate behind, and cards that float on a soft shadow
+ * rather than sit inside a hard outline. Numbers are bold; labels are
+ * small, uppercase and quiet.
  */
 const listeners = new Set<() => void>();
 
 export type ThemeMode = 'dark' | 'light';
 
 const DARK = {
-  bg: '#0A0B10',
-  bgAlt: '#0E1017',
-  card: '#141721',
-  cardAlt: '#1B1F2B',
-  cardHigh: '#222736',
-  border: '#232838',
-  borderStrong: '#323A4F',
+  bg: '#0B1014',
+  bgAlt: '#0F161B',
+  card: '#151D23',
+  cardAlt: '#1C262D',
+  cardHigh: '#24313A',
+  border: '#22303A',
+  borderStrong: '#30414D',
 
-  text: '#F2F4F8',
-  textDim: '#A4ACBF',
-  textFaint: '#6E778C',
-  textGhost: '#474E60',
+  text: '#F1F6F5',
+  textDim: '#A3B3B8',
+  textFaint: '#6F8288',
+  textGhost: '#465A61',
 
-  accent: '#5B86F5',
-  accentSoft: '#2B3F7A',
-  accentDim: '#1C2540',
+  accent: '#2DD4A3',
+  accentSoft: '#145243',
+  accentDim: '#10302A',
 
-  cyan: '#3FD3E6',
-  cyanSoft: '#17606B',
-  violet: '#9B7CFF',
-  violetSoft: '#4A3590',
-  green: '#34C98E',
-  amber: '#F0B23F',
+  cyan: '#38C6E8',
+  cyanSoft: '#14566A',
+  violet: '#A48BFF',
+  violetSoft: '#463A86',
+  green: '#3BD68B',
+  amber: '#F5B941',
   amberSoft: '#6E4A12',
-  red: '#F06270',
-  redSoft: '#6E2630',
+  red: '#F2677A',
+  redSoft: '#5E2430',
   pink: '#F06AA7',
 
   white: '#FFFFFF',
-  scrim: 'rgba(4, 6, 11, 0.7)',
+  scrim: 'rgba(3, 8, 10, 0.72)',
+  shadow: '#000000',
+  heroFrom: '#0FA67E',
+  heroTo: '#1386B8',
 };
 
 /** The same roles in daylight: paper-white panels, ink text, the accents a shade deeper so they hold on white. */
 const LIGHT: typeof DARK = {
-  bg: '#F4F5F9',
+  bg: '#F2F6F7',
   bgAlt: '#FFFFFF',
   card: '#FFFFFF',
-  cardAlt: '#EEF1F7',
-  cardHigh: '#E3E8F2',
-  border: '#E1E5EE',
-  borderStrong: '#C9D1E0',
+  cardAlt: '#F0F5F4',
+  cardHigh: '#E2ECEA',
+  border: '#E3EBEA',
+  borderStrong: '#C8D6D4',
 
-  text: '#141826',
-  textDim: '#4A536F',
-  textFaint: '#7A8399',
-  textGhost: '#A7AFC2',
+  text: '#0E1B1F',
+  textDim: '#45575D',
+  textFaint: '#76878C',
+  textGhost: '#A9B7BA',
 
-  accent: '#3F6AE0',
-  accentSoft: '#D5DEFB',
-  accentDim: '#E7ECFC',
+  accent: '#12A57F',
+  accentSoft: '#CFF1E6',
+  accentDim: '#E7F7F2',
 
-  cyan: '#0E9FB6',
-  cyanSoft: '#CBEDF3',
-  violet: '#7656EE',
-  violetSoft: '#E5DEFE',
-  green: '#1E9A67',
-  amber: '#C4860E',
-  amberSoft: '#FAE9C3',
-  red: '#D7475A',
-  redSoft: '#FAD8DD',
+  cyan: '#0B9CC2',
+  cyanSoft: '#CDEEF6',
+  violet: '#6E52E6',
+  violetSoft: '#E6E0FD',
+  green: '#16A05E',
+  amber: '#C98A0B',
+  amberSoft: '#FBEBC6',
+  red: '#D9445A',
+  redSoft: '#FBDDE2',
   pink: '#D4478A',
 
   white: '#FFFFFF',
-  scrim: 'rgba(20, 24, 38, 0.45)',
+  scrim: 'rgba(14, 27, 31, 0.45)',
+  shadow: '#0E2A2A',
+  heroFrom: '#12A57F',
+  heroTo: '#0B8FC2',
 };
 
 export const PALETTES: Record<ThemeMode, typeof DARK> = { dark: DARK, light: LIGHT };
@@ -110,9 +116,9 @@ export const S = {
   gap: 12,
   pad: 16,
   padLg: 20,
-  radius: 18,
-  radiusSm: 13,
-  radiusXs: 9,
+  radius: 22,
+  radiusSm: 15,
+  radiusXs: 10,
   hairline: 1,
   gutter: 16,
   gutterWide: 24,
@@ -155,8 +161,8 @@ export function applyTextScale(scale: number): void {
 /** Small uppercase label style used for every section heading and stat caption. */
 export const MICRO = {
   fontSize: F.micro,
-  fontWeight: '600' as const,
-  letterSpacing: 0.9,
+  fontWeight: '700' as const,
+  letterSpacing: 0.7,
   textTransform: 'uppercase' as const,
 };
 
@@ -175,4 +181,16 @@ export function scoreColor(value: number | null) {
   if (value >= 60) return C.accent;
   if (value >= 35) return C.amber;
   return C.red;
+}
+
+/** The lift under a card: soft and wide in daylight, barely there in the dark. */
+export function lift(level: 1 | 2 = 1) {
+  const dark = current === 'dark';
+  return {
+    shadowColor: C.shadow,
+    shadowOpacity: dark ? 0.35 : level === 1 ? 0.07 : 0.14,
+    shadowRadius: level === 1 ? 18 : 24,
+    shadowOffset: { width: 0, height: level === 1 ? 6 : 10 },
+    elevation: level === 1 ? 2 : 6,
+  };
 }

@@ -3,7 +3,7 @@ import { Animated, Pressable, Text, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useReducedMotion } from './animated';
 import { PressScale } from './PressScale';
-import { C, F, M, MICRO, S } from './theme';
+import { C, F, lift, M, MICRO, S } from './theme';
 
 /** A compact stat for horizontal strips: caption, value, one quiet line. */
 export function Tile({
@@ -13,6 +13,8 @@ export function Tile({
   color = C.text,
   onPress,
   width = 112,
+  icon,
+  tint,
 }: {
   label: string;
   value: string;
@@ -20,7 +22,11 @@ export function Tile({
   color?: string;
   onPress?: () => void;
   width?: number;
+  /** An Ionicons name, drawn in a circle tinted with `tint` (or the value colour). */
+  icon?: keyof typeof Ionicons.glyphMap;
+  tint?: string;
 }) {
+  const hue = tint ?? (color === C.text ? C.accent : color);
   const body = (
     <View
       style={{
@@ -28,15 +34,23 @@ export function Tile({
         backgroundColor: C.card,
         borderWidth: S.hairline,
         borderColor: C.border,
-        borderRadius: S.radiusSm,
-        paddingVertical: 12,
+        borderRadius: 18,
+        paddingVertical: 13,
         paddingHorizontal: 13,
-        gap: 5,
+        gap: 6,
+        ...lift(1),
       }}>
-      <Text style={[MICRO, { color: C.textFaint }]} numberOfLines={2}>
-        {label}
-      </Text>
-      <Text style={{ color, fontSize: F.h2, fontWeight: '700', letterSpacing: -0.5 }} numberOfLines={1}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+        {icon ? (
+          <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: `${hue}22`, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name={icon} size={14} color={hue} />
+          </View>
+        ) : null}
+        <Text style={[MICRO, { color: C.textFaint, flex: 1 }]} numberOfLines={2}>
+          {label}
+        </Text>
+      </View>
+      <Text style={{ color, fontSize: F.h2, fontWeight: '800', letterSpacing: -0.6 }} numberOfLines={1}>
         {value}
       </Text>
       {sub ? (

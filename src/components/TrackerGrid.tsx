@@ -40,25 +40,31 @@ export function TrackerGrid() {
     <Tile
       key="water"
       label={t('water')}
+      icon="water"
+      tint={C.cyan}
       value={`${glasses}/${glassGoal}`}
       sub={`${(waterToday / 1000).toFixed(1)} L · ${t('tap_to_log')}`}
       color={glasses >= glassGoal ? C.green : C.cyan}
       onPress={() => setWaterOpen(true)}
     />,
-    <Tile key="sleep" label={t('sleep_title')} value={sleepFresh ? formatMinutes(sleep.minutes) : '—'} sub={sleepFresh ? `${t('score')} ${sleep.score}` : t('empty_sleep')} color={sleepFresh ? scoreColor(sleep.score) : C.textDim} onPress={() => router.push('/sleep')} />,
-    <Tile key="steps" label={t('steps')} value={stepsToday > 0 ? stepsToday.toLocaleString() : '—'} sub={stepsToday > 0 ? `/ 8,000` : t('steps_phone_only')} color={stepsToday >= 8000 ? C.green : C.text} onPress={() => router.push('/fit')} />,
+    <Tile key="sleep" icon="moon" tint={C.violet} label={t('sleep_title')} value={sleepFresh ? formatMinutes(sleep.minutes) : '—'} sub={sleepFresh ? `${t('score')} ${sleep.score}` : t('empty_sleep')} color={sleepFresh ? scoreColor(sleep.score) : C.textDim} onPress={() => router.push('/sleep')} />,
+    <Tile key="steps" icon="footsteps" tint={C.green} label={t('steps')} value={stepsToday > 0 ? stepsToday.toLocaleString() : '—'} sub={stepsToday > 0 ? `/ 8,000` : t('steps_phone_only')} color={stepsToday >= 8000 ? C.green : C.text} onPress={() => router.push('/fit')} />,
     <Tile
       key="breaks"
       label={t('brk_eye_care')}
+      icon="eye"
+      tint={C.accent}
       value={monitor.enabled ? String(monitor.takenToday) : '—'}
       sub={monitor.enabled && Number.isFinite(monitor.secondsLeft) ? `${t('next_break')} ${Math.max(0, Math.ceil(monitor.secondsLeft / 60))}m` : t('break_off')}
       color={monitor.enabled ? C.accent : C.textDim}
       onPress={() => router.push('/settings')}
     />,
-    <Tile key="meals" label={t('tile_meals')} value={String(meals)} sub={meals === 0 ? mealHint : t('tap_to_log')} color={meals > 0 ? C.text : C.textDim} onPress={() => router.push('/log')} />,
+    <Tile key="meals" icon="restaurant" tint={C.amber} label={t('tile_meals')} value={String(meals)} sub={meals === 0 ? mealHint : t('tap_to_log')} color={meals > 0 ? C.text : C.textDim} onPress={() => router.push('/log')} />,
     <Tile
       key="weight"
       label={t('add_weight')}
+      icon="scale"
+      tint={C.pink}
       value={lastWeight ? `${lastWeight.kg}` : '—'}
       sub={lastWeight && daysSinceWeigh !== null ? (daysSinceWeigh === 0 ? t('today_short') : `${daysSinceWeigh} ${t('days_ago')}`) : weighHint}
       color={daysSinceWeigh !== null && daysSinceWeigh > 9 ? C.amber : C.text}
