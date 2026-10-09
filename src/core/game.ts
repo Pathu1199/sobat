@@ -1,7 +1,7 @@
 import { lastNDates } from './date';
 import { streak } from './insights';
 import type { ISODate, Meal, SleepLog, StepLog, WaterLog, WeightLog, WorkoutLog } from './types';
-import { weekSummary } from './week';
+import { isOffDay, weekSummary } from './week';
 
 /**
  * The game around the climb: points for the things that move the weight,
@@ -21,6 +21,7 @@ export type GameInput = {
   waterGoalMl: number;
   startKg: number;
   goalKg: number;
+  offDays?: number[];
 };
 
 export const LEVELS = ['base', 'camp1', 'camp2', 'camp3', 'camp4', 'summit'] as const;
@@ -40,7 +41,7 @@ function dayCounts(input: GameInput) {
 /** Points: meals 10 each, a water-goal day 15, a weigh-in 25, a night logged 10, a workout 20, plus 5 per streak day. */
 export function xp(input: GameInput): number {
   const { waterGoalDays } = dayCounts(input);
-  const s = streak(lastNDates(365, input.today), (d) => input.meals.some((m) => m.date === d));
+  const s = streak(lastNDates(365, input.today), (d) => input.meals.some((m) => m.date === d) || isOffDay(input.offDays, d));
   return input.meals.length * 10 + waterGoalDays * 15 + input.weights.length * 25 + input.sleep.length * 10 + input.workouts.length * 20 + s * 5;
 }
 
@@ -58,7 +59,7 @@ export type Badge = { key: string; earned: boolean; progress: number; n: number;
 export function badges(input: GameInput): Badge[] {
   const { mealDays, waterGoalDays } = dayCounts(input);
   const dates = lastNDates(365, input.today);
-  const mealStreak = streak(dates, (d) => mealDays.has(d));
+  const mealStreak = streak(dates, (d) => mealDays.has(d) || isOffDay(input.offDays, d));
   const sorted = [...input.weights].sort((a, b) => a.date.localeCompare(b.date));
   const lost = sorted.length ? Math.max(0, input.startKg - sorted[sorted.length - 1].kg) : 0;
   const total = Math.max(0, input.startKg - input.goalKg);
@@ -113,7 +114,7 @@ export function weeklyChallenge(input: GameInput, weekStartDay = 0): Challenge {
   let n = 0;
   let target = 7;
   if (key === 'log_all_7') {
-    n = inWeek.filter((x) => x.logged).length;
+    n = inWeek.filter((x) => x.logged || x.off).length;
     target = 7;
   } else if (key === 'water_5') {
     n = inWeek.filter((x) => x.waterGoal).length;
@@ -122,7 +123,7 @@ export function weeklyChallenge(input: GameInput, weekStartDay = 0): Challenge {
     n = inWeek.filter((x) => x.steps >= 7000).length;
     target = 4;
   } else if (key === 'no_heavy') {
-    n = inWeek.filter((x) => x.logged && x.kcalBand !== 'heavy').length;
+    n = inWeek.filter((x) => x.off || (x.logged && x.kcalBand !== 'heavy')).length;
     target = 7;
   } else {
     n = inWeek.filter((x) => (x.sleepMinutes ?? 0) >= 420).length;

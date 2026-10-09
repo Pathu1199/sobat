@@ -5,6 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { addDays, formatDayLabel, lastNDates } from '../core/date';
 import { sumTotals } from '../core/nutrition';
 import { fill, makeT } from '../i18n';
+import { isOffDay } from '../core/week';
 import { useApp } from '../store/AppProvider';
 import { Bar, Card, Micro, Row, Screen, Segmented, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
@@ -33,11 +34,11 @@ export default function History() {
         const kcal = Math.max(totals.kcal, meals.reduce((a, m) => a + m.kcal, 0));
         const protein = Math.max(Math.round(totals.protein), meals.reduce((a, m) => a + (m.protein ?? 0), 0));
         const water = state.water.filter((w) => w.date === date).reduce((a, w) => a + w.ml, 0);
-        return { date, meals: meals.length, kcal, protein, water };
+        return { date, meals: meals.length, kcal, protein, water, off: isOffDay(state.settings.offDays, date) };
       });
-  }, [span, today, state.meals, state.water]);
+  }, [span, today, state.meals, state.water, state.settings.offDays]);
 
-  const logged = days.filter((d) => d.meals > 0);
+  const logged = days.filter((d) => d.meals > 0 && !d.off);
   const avg = logged.length ? Math.round(logged.reduce((a, d) => a + d.kcal, 0) / logged.length) : 0;
   const onTarget = logged.filter((d) => d.kcal <= targets.kcal).length;
 
@@ -46,7 +47,7 @@ export default function History() {
       <Segmented value={String(span)} onChange={(v) => setSpan(Number(v) as Span)} options={[{ key: '14', label: fill(t('n_days'), { n: 14 }) }, { key: '30', label: fill(t('n_days'), { n: 30 }) }, { key: '90', label: fill(t('n_days'), { n: 90 }) }]} />
       <Card>
         <Row style={{ gap: 18, flexWrap: 'wrap' }}>
-          <Stat label={t('history_logged')} value={`${logged.length}/${days.length}`} />
+          <Stat label={t('history_logged')} value={`${logged.length}/${days.filter((d) => !d.off).length}`} />
           <Stat label={t('history_avg')} value={`${avg}`} unit="kcal" color={avg > targets.kcal ? C.amber : C.cyan} />
           <Stat label={t('history_on_target')} value={`${onTarget}/${logged.length}`} color={C.green} />
         </Row>
@@ -60,7 +61,9 @@ export default function History() {
             <Card rail={d.meals === 0 ? undefined : over ? C.amber : C.green}>
               <Row style={{ justifyContent: 'space-between' }}>
                 <Text style={{ color: d.meals === 0 ? C.textFaint : C.text, fontSize: F.body, fontWeight: '600' }}>{label}</Text>
-                {d.meals === 0 ? (
+                {d.off && d.meals === 0 ? (
+                  <Micro color={C.cyan}>{`🌿 ${t('free_day')}`}</Micro>
+                ) : d.meals === 0 ? (
                   <Row style={{ gap: 6 }}>
                     <Micro color={C.accent}>{t('history_add')}</Micro>
                     <Ionicons name="add-circle-outline" size={15} color={C.accent} />

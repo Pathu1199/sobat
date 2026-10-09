@@ -8,6 +8,7 @@ import { newId } from '../core/id';
 import { useClock } from '../services/useClock';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
 import { streak } from '../core/insights';
+import { isOffDay } from '../core/week';
 import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryType } from '../core/memory';
 import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
@@ -131,7 +132,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const waterToday = state.water.filter((w) => w.date === today).reduce((a, w) => a + w.ml, 0);
     const dates = lastNDates(60, today);
     const mealDates = new Set(state.meals.map((m) => m.date));
-    const streakDays = streak(dates, (d) => mealDates.has(d));
+    const streakDays = streak(dates, (d) => mealDates.has(d) || isOffDay(state.settings.offDays, d));
     const screenMinutesToday = minutesOn(state.usage, today);
     // A tip is only today's if it was also written in the language now selected.
     const tipRecord = state.tips.find((t) => t.date === today && t.lang === state.profile.lang);

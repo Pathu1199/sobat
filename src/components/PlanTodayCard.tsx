@@ -10,6 +10,7 @@ import { dayStatus, dayTotals, lineInfo, mealTotals, type PlanMeal } from '../co
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useMinute } from '../services/useWorkSchedule';
+import { isOffDay } from '../core/week';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Micro, Row, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
@@ -33,6 +34,16 @@ export function PlanTodayCard() {
   const day = plan?.days[weekdayOf(today)];
 
   const todayMeals = useMemo(() => state.meals.filter((m) => m.date === today), [state.meals, today]);
+  if (isOffDay(state.settings.offDays, today)) {
+    return (
+      <Pressable onPress={() => router.push('/plan')} accessibilityRole="button">
+        <Card rail={C.cyan}>
+          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700' }}>{`🌿 ${t('free_day')}`}</Text>
+          <Small color={C.textDim}>{t('free_day_today')}</Small>
+        </Card>
+      </Pressable>
+    );
+  }
   if (!plan || !day) {
     return (
       <Pressable onPress={() => router.push('/plan')} accessibilityRole="button">

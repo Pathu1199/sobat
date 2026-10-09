@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Meal } from '../types';
-import { weekSummary } from '../week';
+import { isOffDay, weekSummary } from '../week';
 
 const TODAY = '2026-10-07';
 const meal = (date: string, kcal: number): Meal => ({ id: date + kcal, at: `${date}T13:00:00`, date, type: 'lunch', items: [], kcal, protein: 10 });
@@ -36,5 +36,29 @@ describe('weekSummary', () => {
     expect(s.avgKcal).toBe(0);
     expect(s.avgSleepMinutes).toBeNull();
     expect(s.weightChange).toBeNull();
+  });
+
+  it('leaves a free day out of the counting', () => {
+    // 2026-10-04 is a Sunday.
+    expect(isOffDay([0], '2026-10-04')).toBe(true);
+    expect(isOffDay([0], '2026-10-05')).toBe(false);
+    expect(isOffDay([], '2026-10-04')).toBe(false);
+    const s = weekSummary({
+      today: TODAY,
+      meals: [meal('2026-10-04', 3200), meal('2026-10-05', 1700)],
+      water: [],
+      sleep: [],
+      steps: [],
+      weights: [],
+      kcalTarget: 1800,
+      waterGoalMl: 3000,
+      offDays: [0],
+    });
+    const sunday = s.days.find((d) => d.date === '2026-10-04')!;
+    expect(sunday.kcalBand).toBe('off');
+    expect(s.trackedDays).toBe(6);
+    expect(s.loggedDays).toBe(1);
+    expect(s.heavyDays).toBe(0);
+    expect(s.avgKcal).toBe(1700);
   });
 });

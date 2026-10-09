@@ -52,6 +52,8 @@ export type Settings = {
   pushRelay: boolean;
   /** Weekday to weigh in, 0 = Sunday. */
   weighDay: number;
+  /** Weekdays (Date.getDay(), 0 = Sunday) the person takes off: nothing is tracked or judged. */
+  offDays: number[];
 };
 
 export type Diet = 'veg' | 'egg' | 'nonveg';

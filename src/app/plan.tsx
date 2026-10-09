@@ -25,7 +25,7 @@ import {
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
-import { Bar, Btn, Card, Field, Micro, Row, Screen, Small } from '../ui/components';
+import { Bar, Btn, Card, Field, Micro, Row, Screen, Small, Toggle } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
 import { C, F, S } from '../ui/theme';
 
@@ -71,6 +71,9 @@ export default function PlanScreen() {
   const [note, setNote] = useState<string | null>(null);
 
   const day = plan.days[dayIdx];
+  const offDays = state.settings.offDays ?? [];
+  const isFree = offDays.includes(dayIdx);
+  const toggleFree = () => app.setSettings({ offDays: isFree ? offDays.filter((d) => d !== dayIdx) : [...offDays, dayIdx].sort() });
   const totals = dayTotals(day, foods);
   const status = dayStatus(totals.kcal, targets.kcal, floor);
   const isToday = dayIdx === weekdayOf(today);
@@ -146,12 +149,24 @@ export default function PlanScreen() {
               accessibilityRole="button"
               style={{ flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: S.radiusSm, backgroundColor: active ? C.accent : C.card, borderWidth: S.hairline, borderColor: d === weekdayOf(today) ? C.accent : C.border }}>
               <Text style={{ color: active ? C.white : C.text, fontSize: F.small, fontWeight: '700' }}>{t(`wd_${d}`)}</Text>
-              <Text style={{ color: active ? C.white : st === 'low' ? C.red : st === 'on' ? C.green : C.textFaint, fontSize: F.micro, fontWeight: '600' }}>{k}</Text>
+              <Text style={{ color: active ? C.white : offDays.includes(d) ? C.textFaint : st === 'low' ? C.red : st === 'on' ? C.green : C.textFaint, fontSize: F.micro, fontWeight: '600' }}>{offDays.includes(d) ? t('free_short') : k}</Text>
             </Pressable>
           );
         })}
       </Row>
 
+      <Card>
+        <Toggle title={t('plan_free_toggle')} desc={t('plan_free_desc')} on={isFree} onToggle={toggleFree} />
+      </Card>
+
+      {isFree ? (
+        <Card rail={C.cyan}>
+          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '700' }}>{`🌿 ${t('free_day')}`}</Text>
+          <Small color={C.textDim}>{t('free_day_body')}</Small>
+        </Card>
+      ) : null}
+
+      {isFree ? null : (
       <Card rail={statusColor}>
         <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <View style={{ gap: 2 }}>
@@ -172,8 +187,9 @@ export default function PlanScreen() {
           <Btn small tone="ghost" label={t('plan_rebuild')} icon={<Ionicons name="refresh" size={14} color={C.text} />} onPress={rebuild} style={{ flexGrow: 1 }} />
         </Row>
       </Card>
+      )}
 
-      {day.meals.map((meal) => {
+      {(isFree ? [] : day.meals).map((meal) => {
         const mt = mealTotals(meal, foods);
         const done = isToday && logged(meal);
         return (
@@ -227,7 +243,7 @@ export default function PlanScreen() {
           </Card>
         );
       })}
-      <Small color={C.textFaint}>{t('plan_footer')}</Small>
+      {isFree ? null : <Small color={C.textFaint}>{t('plan_footer')}</Small>}
 
       {/* Swap one line for another of the same kind, or remove it. */}
       <Sheet open={!!swapInfo} title={swapInfo ? fill(t('plan_swap_title'), { food: foodName(swapInfo.food, lang) }) : ''} onClose={() => setSwap(null)}>

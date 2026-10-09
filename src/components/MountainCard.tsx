@@ -27,13 +27,14 @@ export function useGame() {
       waterGoalMl: state.settings.waterGoalMl,
       startKg: plan.startKg,
       goalKg: plan.goalKg,
+      offDays: state.settings.offDays,
     };
     const total = Math.max(0, plan.startKg - plan.goalKg);
     const progress = total > 0 ? Math.min(1, Math.max(0, plan.lostKg / total)) : plan.toGoKg <= 0 ? 1 : 0;
     const camps = total > 0 ? [0.25, 0.5, 0.75].map((p) => ({ p, label: `${Math.round((plan.startKg - total * p) * 10) / 10}` })) : [];
     const points = xp(input);
     return { plan, input, progress, camps, trail: climbTrail(state.weights, plan.startKg, plan.goalKg).map((t) => t.p), points, level: level(points), badges: badges(input), challenge: weeklyChallenge(input, state.settings.weighDay) };
-  }, [state.profile, state.weights, state.meals, state.water, state.sleep, state.steps, state.workouts, state.settings.waterGoalMl, state.settings.weighDay, targets, today]);
+  }, [state.profile, state.weights, state.meals, state.water, state.sleep, state.steps, state.workouts, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, targets, today]);
 }
 
 /**

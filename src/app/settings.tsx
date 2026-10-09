@@ -136,6 +136,14 @@ export default function SettingsScreen() {
               <Pill key={d} label={t(`wd_${d}`)} active={(s.weighDay ?? 1) === d} onPress={() => app.setSettings({ weighDay: d })} />
             ))}
           </Row>
+          <Micro>{t('free_days')}</Micro>
+          <Small color={C.textFaint}>{t('plan_free_desc')}</Small>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {[1, 2, 3, 4, 5, 6, 0].map((d) => {
+              const on = (s.offDays ?? []).includes(d);
+              return <Pill key={d} label={t(`wd_${d}`)} active={on} onPress={() => app.setSettings({ offDays: on ? (s.offDays ?? []).filter((x) => x !== d) : [...(s.offDays ?? []), d].sort() })} />;
+            })}
+          </Row>
           <Divider />
           <Micro>{t('diet')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>

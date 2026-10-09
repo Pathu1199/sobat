@@ -8,6 +8,7 @@ import { avoidedFoodIds, bhajiFor } from '../core/routine';
 import type { MealType } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
+import { isOffDay } from '../core/week';
 import { useApp } from '../store/AppProvider';
 import { Card, Divider, Micro, Pill, Row, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
@@ -46,6 +47,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
     fb.notify(fill(t('toast_meal_saved'), { kcal: item.kcal }));
   }
 
+  if (isOffDay(state.settings.offDays, today)) return null;
   if (plan.stop && mode === 'rest') {
     return (
       <Card rail={C.amber}>

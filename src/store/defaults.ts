@@ -45,6 +45,7 @@ export const DEFAULT_SETTINGS: Settings = {
   textScale: 1,
   pushRelay: false,
   weighDay: 0,
+  offDays: [0],
 };
 
 export const EMPTY_STATE: AppState = {

@@ -9,7 +9,7 @@ import { Card, Divider, Micro, Row, Small } from '../ui/components';
 import { C, F, MICRO } from '../ui/theme';
 
 function bandColor(b: WeekDay['kcalBand']): string {
-  return b === 'none' ? C.border : b === 'heavy' ? C.red : b === 'over' ? C.amber : C.green;
+  return b === 'off' ? C.cardAlt : b === 'none' ? C.border : b === 'heavy' ? C.red : b === 'over' ? C.amber : C.green;
 }
 
 /**
@@ -21,8 +21,8 @@ export function WeekGrid() {
   const { state, targets, today } = useApp();
   const t = makeT(state.profile.lang);
   const s = useMemo(
-    () => weekSummary({ today, meals: state.meals, water: state.water, sleep: state.sleep, steps: state.steps, weights: state.weights, kcalTarget: targets.kcal, waterGoalMl: state.settings.waterGoalMl }),
-    [today, state.meals, state.water, state.sleep, state.steps, state.weights, targets.kcal, state.settings.waterGoalMl],
+    () => weekSummary({ today, meals: state.meals, water: state.water, sleep: state.sleep, steps: state.steps, weights: state.weights, kcalTarget: targets.kcal, waterGoalMl: state.settings.waterGoalMl, offDays: state.settings.offDays }),
+    [today, state.meals, state.water, state.sleep, state.steps, state.weights, targets.kcal, state.settings.waterGoalMl, state.settings.offDays],
   );
   const maxKcal = Math.max(targets.kcal * 1.3, ...s.days.map((d) => d.kcal));
 
@@ -30,7 +30,7 @@ export function WeekGrid() {
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
         <Micro color={C.textDim}>{t('week_view')}</Micro>
-        <Micro>{fill(t('week_logged'), { n: s.loggedDays })}</Micro>
+        <Micro>{fill(t('week_logged'), { n: s.loggedDays, total: s.trackedDays })}</Micro>
       </Row>
 
       {/* Calories: a bar per day against the target line. */}

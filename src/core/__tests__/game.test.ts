@@ -69,4 +69,13 @@ describe('game', () => {
     expect(trail.map((t) => t.p)).toEqual([0, 0.08, 0.14, 0.2]);
     expect(climbTrail(base.weights, 88, 98)).toEqual([]);
   });
+
+  it('keeps the streak across a free day', () => {
+    // Seven days of meals but none on Sunday 2026-10-04: the streak breaks without a free day and holds with one.
+    const gap = { ...base, meals: base.meals.filter((m) => m.date !== '2026-10-04') };
+    const broken = badges(gap).find((b) => b.key === 'streak_7')!;
+    const held = badges({ ...gap, offDays: [0] }).find((b) => b.key === 'streak_7')!;
+    expect(broken.earned).toBe(false);
+    expect(held.earned).toBe(true);
+  });
 });
