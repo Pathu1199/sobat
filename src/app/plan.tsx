@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { FoodDetailSheet, FoodThumb } from '../components/FoodDetailSheet';
 import { foodName, searchFoods } from '../core/foods';
 import { newId } from '../core/id';
@@ -14,6 +14,7 @@ import {
   copyToWeekdays,
   dayStatus,
   dayTotals,
+  lineFor,
   lineInfo,
   mealTotals,
   setDay,
@@ -25,12 +26,14 @@ import {
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
-import { Bar, Btn, Card, Field, Micro, Row, Screen, Small, Toggle } from '../ui/components';
+import { Bar, Btn, Card, Field, Micro, Pill, Row, Screen, Small, Toggle } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
 import { C, F, S } from '../ui/theme';
 
 /** Monday first, the way a working week is read. Values are Date.getDay() indexes. */
 const ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+const ADD_CATS = ['all', 'veg', 'vegetable', 'fruit', 'dryfruit', 'dal', 'grain', 'dairy', 'snack', 'beverage', 'sweet'];
 
 const MEAL_KEY: Record<string, string> = { breakfast: 'breakfast', mid: 'plan_meal_mid', lunch: 'lunch', tea: 'plan_meal_tea', evening: 'plan_meal_evening', dinner: 'dinner', night: 'plan_meal_night' };
 
@@ -129,7 +132,13 @@ export default function PlanScreen() {
   const gap = Math.abs(targets.kcal - totals.kcal);
   const swapLine = swap ? day.meals.find((m) => m.id === swap.mealId)?.lines[swap.lineIdx] : undefined;
   const swapInfo = swapLine ? lineInfo(swapLine, foods, lang) : null;
-  const results = useMemo(() => (adding ? searchFoods(foods, query, 20).filter((f) => !avoided.has(f.id)) : []), [adding, foods, query, avoided]);
+  // Every food is offered; a category narrows the list, and avoided foods are marked, not hidden.
+  const [addCat, setAddCat] = useState<string>('all');
+  const results = useMemo(() => {
+    if (!adding) return [];
+    const pool = addCat === 'all' ? foods : foods.filter((f) => f.category === addCat);
+    return query.trim() ? searchFoods(pool, query, 40) : pool.slice().sort((a, b) => foodName(a, lang).localeCompare(foodName(b, lang)));
+  }, [adding, foods, query, addCat, lang]);
 
   return (
     <Screen>
@@ -280,13 +289,28 @@ export default function PlanScreen() {
       {/* Add any food: search, then the detail sheet asks how much. */}
       <Sheet open={!!adding && !picked} title={t('plan_add_food')} onClose={() => setAdding(null)}>
         <Field value={query} onChangeText={setQuery} placeholder={t('plan_search')} autoFocus />
-        {results.map((f) => (
-          <Pressable key={f.id} onPress={() => setPicked(f)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, opacity: pressed ? 0.7 : 1 })}>
-            <FoodThumb food={f} size={30} />
-            <Text style={{ flex: 1, color: C.text, fontSize: F.body }} numberOfLines={1}>{foodName(f, lang)}</Text>
-            <Ionicons name="chevron-forward" size={15} color={C.textGhost} />
-          </Pressable>
-        ))}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+          {ADD_CATS.map((c) => (
+            <Pill key={c} label={t(`cat_${c}`)} active={addCat === c} onPress={() => setAddCat(c)} />
+          ))}
+        </ScrollView>
+        <Micro>{fill(t('plan_add_count'), { n: results.length })}</Micro>
+        {results.map((f) => {
+          const one = lineInfo(lineFor(f), foods, lang);
+          return (
+            <Pressable key={f.id} onPress={() => setPicked(f)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, opacity: pressed ? 0.7 : 1 })}>
+              <FoodThumb food={f} size={30} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }} numberOfLines={1}>{foodName(f, lang)}</Text>
+                <Text style={{ color: avoided.has(f.id) ? C.amber : C.textFaint, fontSize: F.tiny }} numberOfLines={1}>
+                  {avoided.has(f.id) ? `${t('plan_on_avoid')} · ` : ''}
+                  {one ? `${unitName(one.unit)} · ${one.kcal} kcal` : ''}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={15} color={C.textGhost} />
+            </Pressable>
+          );
+        })}
       </Sheet>
       <FoodDetailSheet
         food={picked}

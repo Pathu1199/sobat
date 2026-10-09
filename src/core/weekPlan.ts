@@ -28,6 +28,8 @@ export function roleOf(f: FoodItem): Role {
     return f.portions.some((p) => p.unit === 'piece') ? 'bread' : 'rice';
   }
   if (f.category === 'veg') return 'bhaji';
+  if (f.category === 'dryfruit') return 'nuts';
+  if (f.category === 'vegetable') return 'salad';
   if (f.category === 'dal' || f.tags.includes('usal')) return 'dal';
   if (f.category === 'dairy') return 'dairy';
   if (f.category === 'fruit') return 'fruit';

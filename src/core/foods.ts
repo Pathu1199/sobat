@@ -42,7 +42,9 @@ export function foodIcon(f: FoodItem): string {
     case 'dairy': return '🥛';
     case 'beverage': return '🥤';
     case 'sweet': return '🍮';
-    case 'snack': return '🥜';
+    case 'snack': return '🍿';
+    case 'dryfruit': return '🥜';
+    case 'vegetable': return '🥕';
     case 'fast_food': return '🍔';
     case 'nonveg': return '🍗';
     default: return '🍽️';

@@ -5870,7 +5870,13 @@
     "tags": [
       "veg"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "chiku",
+      "chikku",
+      "sapota",
+      "sapodilla"
+    ]
   },
   {
     "id": "watermelon",
@@ -6038,7 +6044,7 @@
     "name_en": "Dates",
     "name_mr": "खजूर",
     "name_hi": "खजूर",
-    "category": "fruit",
+    "category": "dryfruit",
     "kcal_100g": 282,
     "protein_100g": 2.5,
     "carbs_100g": 75,
@@ -6068,7 +6074,8 @@
     "source": "IFCT2017",
     "aliases": [
       "khajoor",
-      "khajur"
+      "khajur",
+      "dates"
     ]
   },
   {
@@ -6597,7 +6604,7 @@
     "name_en": "Roasted Peanuts",
     "name_mr": "भाजलेले शेंगदाणे",
     "name_hi": "भुनी मूंगफली",
-    "category": "snack",
+    "category": "dryfruit",
     "kcal_100g": 570,
     "protein_100g": 25,
     "carbs_100g": 16,
@@ -6628,7 +6635,12 @@
     "aliases": [
       "bhajlele shengdane",
       "roasted groundnut",
-      "shengdane"
+      "shengdane",
+      "shengdana",
+      "mungfali",
+      "moongphali",
+      "groundnut",
+      "peanuts"
     ]
   },
   {
@@ -6754,7 +6766,7 @@
     "name_en": "Roasted Makhana",
     "name_mr": "भाजलेले मखाणे",
     "name_hi": "भुना मखाना",
-    "category": "snack",
+    "category": "dryfruit",
     "kcal_100g": 350,
     "protein_100g": 9.5,
     "carbs_100g": 74,
@@ -6784,7 +6796,10 @@
     "aliases": [
       "fox nuts",
       "makhana",
-      "makhane"
+      "makhane",
+      "phool makhana",
+      "lotus seeds",
+      "kamal bij"
     ]
   },
   {
@@ -7177,7 +7192,7 @@
     "name_en": "Almonds",
     "name_mr": "बदाम",
     "name_hi": "बादाम",
-    "category": "snack",
+    "category": "dryfruit",
     "kcal_100g": 575,
     "protein_100g": 21,
     "carbs_100g": 22,
@@ -7205,14 +7220,21 @@
       "src_iron",
       "src_calcium"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "badam",
+      "badaam",
+      "soaked badam",
+      "bhijvalele badam",
+      "almond"
+    ]
   },
   {
     "id": "cashews",
     "name_en": "Cashews",
     "name_mr": "काजू",
     "name_hi": "काजू",
-    "category": "snack",
+    "category": "dryfruit",
     "kcal_100g": 553,
     "protein_100g": 18,
     "carbs_100g": 30,
@@ -7238,14 +7260,19 @@
       "veg",
       "high_protein"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "kaju",
+      "kaaju",
+      "cashew"
+    ]
   },
   {
     "id": "raisins",
     "name_en": "Raisins",
     "name_mr": "मनुका",
     "name_hi": "किशमिश",
-    "category": "fruit",
+    "category": "dryfruit",
     "kcal_100g": 299,
     "protein_100g": 2.5,
     "carbs_100g": 79,
@@ -7270,14 +7297,20 @@
     "tags": [
       "veg"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "manuka",
+      "kishmish",
+      "bedana",
+      "kali manuka"
+    ]
   },
   {
     "id": "dry-fruit-mix",
     "name_en": "Mixed Dry Fruits",
     "name_mr": "मिश्र सुकामेवा",
     "name_hi": "मिश्रित ड्राई फ्रूट्स",
-    "category": "snack",
+    "category": "dryfruit",
     "kcal_100g": 570,
     "protein_100g": 16,
     "carbs_100g": 35,
@@ -7303,7 +7336,13 @@
       "veg",
       "high_protein"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "dry fruits",
+      "sukha meva",
+      "sukamewa",
+      "mixed nuts"
+    ]
   },
   {
     "id": "dudhi-bhaji",
@@ -7605,7 +7644,7 @@
     "name_en": "Walnuts (Akrod)",
     "name_mr": "अक्रोड",
     "name_hi": "अखरोट",
-    "category": "snack",
+    "category": "dryfruit",
     "kcal_100g": 654,
     "protein_100g": 15,
     "carbs_100g": 14,
@@ -7631,7 +7670,13 @@
       "veg",
       "healthy_swap"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "akrod",
+      "akhrot",
+      "akhrod",
+      "walnut"
+    ]
   },
   {
     "id": "black-tea",
@@ -8332,7 +8377,7 @@
     "name_en": "Boiled Peanuts (Ukadlele Shengdane)",
     "name_mr": "उकडलेले शेंगदाणे",
     "name_hi": "उबली मूंगफली",
-    "category": "snack",
+    "category": "dryfruit",
     "kcal_100g": 320,
     "protein_100g": 13.5,
     "carbs_100g": 14,
@@ -8367,7 +8412,8 @@
       "shengdana",
       "ukadlele shengdane",
       "boiled groundnut",
-      "peanut"
+      "peanut",
+      "boiled shengdana"
     ],
     "source": "estimate"
   },
@@ -9286,37 +9332,6 @@
     ]
   },
   {
-    "id": "chiku",
-    "name_en": "Chiku (Sapota)",
-    "name_mr": "चिकू",
-    "name_hi": "चीकू",
-    "category": "fruit",
-    "kcal_100g": 94,
-    "protein_100g": 0.7,
-    "carbs_100g": 24,
-    "fat_100g": 1.1,
-    "portions": [
-      {
-        "unit": "medium",
-        "label_en": "1 medium (100 g)",
-        "label_mr": "१ मध्यम (१०० ग्रॅ)",
-        "label_hi": "1 मध्यम (100 ग्राम)",
-        "grams": 100
-      }
-    ],
-    "default_portion": "medium",
-    "tags": [
-      "veg"
-    ],
-    "source": "estimate",
-    "aliases": [
-      "chiku",
-      "chikoo",
-      "sapota",
-      "sapodilla"
-    ]
-  },
-  {
     "id": "soya-chunks",
     "name_en": "Soya Chunks (Dry)",
     "name_mr": "सोया चंक्स",
@@ -9674,6 +9689,2147 @@
     "aliases": [
       "pasta",
       "macaroni"
+    ]
+  },
+  {
+    "id": "pistachios",
+    "name_en": "Pistachios",
+    "name_mr": "पिस्ता",
+    "name_hi": "पिस्ता",
+    "category": "dryfruit",
+    "kcal_100g": 562,
+    "protein_100g": 20,
+    "carbs_100g": 28,
+    "fat_100g": 45,
+    "portions": [
+      {
+        "unit": "handful",
+        "label_en": "1 handful (20 g)",
+        "label_mr": "१ मूठभर (२० ग्रॅ)",
+        "label_hi": "1 मुट्ठी (20 ग्राम)",
+        "grams": 20
+      },
+      {
+        "unit": "tbsp",
+        "label_en": "1 tbsp (10 g)",
+        "label_mr": "१ मोठा चमचा (१० ग्रॅ)",
+        "label_hi": "1 बड़ा चम्मच (10 ग्राम)",
+        "grams": 10
+      }
+    ],
+    "default_portion": "handful",
+    "tags": [
+      "veg",
+      "high_protein",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "pista",
+      "pistachio"
+    ]
+  },
+  {
+    "id": "anjeer",
+    "name_en": "Anjeer (Dried Fig)",
+    "name_mr": "अंजीर",
+    "name_hi": "अंजीर",
+    "category": "dryfruit",
+    "kcal_100g": 249,
+    "protein_100g": 3.3,
+    "carbs_100g": 64,
+    "fat_100g": 0.9,
+    "portions": [
+      {
+        "unit": "piece",
+        "label_en": "1 piece (20 g)",
+        "label_mr": "१ नग (२० ग्रॅ)",
+        "label_hi": "1 पीस (20 ग्राम)",
+        "grams": 20
+      }
+    ],
+    "default_portion": "piece",
+    "tags": [
+      "veg",
+      "src_fibre",
+      "src_calcium",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "anjeer",
+      "anjir",
+      "dried fig",
+      "figs"
+    ]
+  },
+  {
+    "id": "kharik",
+    "name_en": "Kharik (Dry Dates)",
+    "name_mr": "खारीक",
+    "name_hi": "छुहारा",
+    "category": "dryfruit",
+    "kcal_100g": 314,
+    "protein_100g": 2.5,
+    "carbs_100g": 75,
+    "fat_100g": 0.4,
+    "portions": [
+      {
+        "unit": "piece",
+        "label_en": "1 piece (8 g)",
+        "label_mr": "१ नग (८ ग्रॅ)",
+        "label_hi": "1 पीस (8 ग्राम)",
+        "grams": 8
+      }
+    ],
+    "default_portion": "piece",
+    "tags": [
+      "veg",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "kharik",
+      "chuara",
+      "chhuara",
+      "dry dates"
+    ]
+  },
+  {
+    "id": "jardalu",
+    "name_en": "Dried Apricot (Jardalu)",
+    "name_mr": "जर्दाळू",
+    "name_hi": "खुबानी",
+    "category": "dryfruit",
+    "kcal_100g": 241,
+    "protein_100g": 3.4,
+    "carbs_100g": 63,
+    "fat_100g": 0.5,
+    "portions": [
+      {
+        "unit": "piece",
+        "label_en": "1 piece (8 g)",
+        "label_mr": "१ नग (८ ग्रॅ)",
+        "label_hi": "1 पीस (8 ग्राम)",
+        "grams": 8
+      }
+    ],
+    "default_portion": "piece",
+    "tags": [
+      "veg",
+      "src_fibre",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "jardalu",
+      "apricot",
+      "khubani"
+    ]
+  },
+  {
+    "id": "khobra",
+    "name_en": "Dry Coconut (Khobra)",
+    "name_mr": "सुके खोबरे",
+    "name_hi": "सूखा नारियल",
+    "category": "dryfruit",
+    "kcal_100g": 660,
+    "protein_100g": 7,
+    "carbs_100g": 24,
+    "fat_100g": 65,
+    "portions": [
+      {
+        "unit": "tbsp",
+        "label_en": "1 tbsp (8 g)",
+        "label_mr": "१ मोठा चमचा (८ ग्रॅ)",
+        "label_hi": "1 बड़ा चम्मच (8 ग्राम)",
+        "grams": 8
+      },
+      {
+        "unit": "piece",
+        "label_en": "1 piece (20 g)",
+        "label_mr": "१ नग (२० ग्रॅ)",
+        "label_hi": "1 पीस (20 ग्राम)",
+        "grams": 20
+      }
+    ],
+    "default_portion": "tbsp",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "khobra",
+      "kopra",
+      "suka khobra",
+      "dry coconut",
+      "copra"
+    ]
+  },
+  {
+    "id": "flax-seeds",
+    "name_en": "Flax Seeds (Alsi)",
+    "name_mr": "जवस",
+    "name_hi": "अलसी",
+    "category": "dryfruit",
+    "kcal_100g": 534,
+    "protein_100g": 18,
+    "carbs_100g": 29,
+    "fat_100g": 42,
+    "portions": [
+      {
+        "unit": "tbsp",
+        "label_en": "1 tbsp (10 g)",
+        "label_mr": "१ मोठा चमचा (१० ग्रॅ)",
+        "label_hi": "1 बड़ा चम्मच (10 ग्राम)",
+        "grams": 10
+      },
+      {
+        "unit": "tsp",
+        "label_en": "1 tsp (4 g)",
+        "label_mr": "१ छोटा चमचा (४ ग्रॅ)",
+        "label_hi": "1 छोटा चम्मच (4 ग्राम)",
+        "grams": 4
+      }
+    ],
+    "default_portion": "tbsp",
+    "tags": [
+      "veg",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "alsi",
+      "javas",
+      "flaxseed",
+      "jawas"
+    ]
+  },
+  {
+    "id": "pumpkin-seeds",
+    "name_en": "Pumpkin Seeds",
+    "name_mr": "भोपळ्याच्या बिया",
+    "name_hi": "कद्दू के बीज",
+    "category": "dryfruit",
+    "kcal_100g": 559,
+    "protein_100g": 30,
+    "carbs_100g": 11,
+    "fat_100g": 49,
+    "portions": [
+      {
+        "unit": "tbsp",
+        "label_en": "1 tbsp (10 g)",
+        "label_mr": "१ मोठा चमचा (१० ग्रॅ)",
+        "label_hi": "1 बड़ा चम्मच (10 ग्राम)",
+        "grams": 10
+      }
+    ],
+    "default_portion": "tbsp",
+    "tags": [
+      "veg",
+      "high_protein",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "pumpkin seeds",
+      "bhoplyache bi"
+    ]
+  },
+  {
+    "id": "sunflower-seeds",
+    "name_en": "Sunflower Seeds",
+    "name_mr": "सूर्यफुलाच्या बिया",
+    "name_hi": "सूरजमुखी के बीज",
+    "category": "dryfruit",
+    "kcal_100g": 584,
+    "protein_100g": 21,
+    "carbs_100g": 20,
+    "fat_100g": 51,
+    "portions": [
+      {
+        "unit": "tbsp",
+        "label_en": "1 tbsp (10 g)",
+        "label_mr": "१ मोठा चमचा (१० ग्रॅ)",
+        "label_hi": "1 बड़ा चम्मच (10 ग्राम)",
+        "grams": 10
+      }
+    ],
+    "default_portion": "tbsp",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "sunflower seeds"
+    ]
+  },
+  {
+    "id": "chia-seeds",
+    "name_en": "Chia Seeds",
+    "name_mr": "चिया बिया",
+    "name_hi": "चिया बीज",
+    "category": "dryfruit",
+    "kcal_100g": 486,
+    "protein_100g": 17,
+    "carbs_100g": 42,
+    "fat_100g": 31,
+    "portions": [
+      {
+        "unit": "tbsp",
+        "label_en": "1 tbsp (12 g)",
+        "label_mr": "१ मोठा चमचा (१२ ग्रॅ)",
+        "label_hi": "1 बड़ा चम्मच (12 ग्राम)",
+        "grams": 12
+      }
+    ],
+    "default_portion": "tbsp",
+    "tags": [
+      "veg",
+      "src_fibre",
+      "src_calcium"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "chia",
+      "sabja"
+    ]
+  },
+  {
+    "id": "til-seeds",
+    "name_en": "Til (Sesame Seeds)",
+    "name_mr": "तीळ",
+    "name_hi": "तिल",
+    "category": "dryfruit",
+    "kcal_100g": 573,
+    "protein_100g": 18,
+    "carbs_100g": 23,
+    "fat_100g": 50,
+    "portions": [
+      {
+        "unit": "tbsp",
+        "label_en": "1 tbsp (9 g)",
+        "label_mr": "१ मोठा चमचा (९ ग्रॅ)",
+        "label_hi": "1 बड़ा चम्मच (9 ग्राम)",
+        "grams": 9
+      },
+      {
+        "unit": "tsp",
+        "label_en": "1 tsp (3 g)",
+        "label_mr": "१ छोटा चमचा (३ ग्रॅ)",
+        "label_hi": "1 छोटा चम्मच (3 ग्राम)",
+        "grams": 3
+      }
+    ],
+    "default_portion": "tbsp",
+    "tags": [
+      "veg",
+      "src_calcium",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "til",
+      "sesame"
+    ]
+  },
+  {
+    "id": "peanut-butter",
+    "name_en": "Peanut Butter (Unsweetened)",
+    "name_mr": "पीनट बटर",
+    "name_hi": "पीनट बटर",
+    "category": "dryfruit",
+    "kcal_100g": 588,
+    "protein_100g": 25,
+    "carbs_100g": 20,
+    "fat_100g": 50,
+    "portions": [
+      {
+        "unit": "tbsp",
+        "label_en": "1 tbsp (16 g)",
+        "label_mr": "१ मोठा चमचा (१६ ग्रॅ)",
+        "label_hi": "1 बड़ा चम्मच (16 ग्राम)",
+        "grams": 16
+      }
+    ],
+    "default_portion": "tbsp",
+    "tags": [
+      "veg",
+      "high_protein",
+      "packaged"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "peanut butter"
+    ]
+  },
+  {
+    "id": "mosambi",
+    "name_en": "Mosambi (Sweet Lime)",
+    "name_mr": "मोसंबी",
+    "name_hi": "मौसमी",
+    "category": "fruit",
+    "kcal_100g": 43,
+    "protein_100g": 0.8,
+    "carbs_100g": 9,
+    "fat_100g": 0.3,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (150 g)",
+        "label_mr": "१ मध्यम (१५० ग्रॅ)",
+        "label_hi": "1 मध्यम (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "mosambi",
+      "sweet lime",
+      "musambi"
+    ]
+  },
+  {
+    "id": "kharbuja",
+    "name_en": "Kharbuja (Muskmelon)",
+    "name_mr": "खरबूज",
+    "name_hi": "खरबूजा",
+    "category": "fruit",
+    "kcal_100g": 34,
+    "protein_100g": 0.8,
+    "carbs_100g": 8,
+    "fat_100g": 0.2,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "slice",
+        "label_en": "1 slice (100 g)",
+        "label_mr": "१ स्लाइस (१०० ग्रॅ)",
+        "label_hi": "1 स्लाइस (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "kharbuja",
+      "muskmelon",
+      "kharbooj"
+    ]
+  },
+  {
+    "id": "jamun",
+    "name_en": "Jamun",
+    "name_mr": "जांभूळ",
+    "name_hi": "जामुन",
+    "category": "fruit",
+    "kcal_100g": 62,
+    "protein_100g": 0.7,
+    "carbs_100g": 14,
+    "fat_100g": 0.2,
+    "portions": [
+      {
+        "unit": "handful",
+        "label_en": "1 handful (50 g)",
+        "label_mr": "१ मूठभर (५० ग्रॅ)",
+        "label_hi": "1 मुट्ठी (50 ग्राम)",
+        "grams": 50
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "handful",
+    "tags": [
+      "veg",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "jamun",
+      "jambhul",
+      "jaamun"
+    ]
+  },
+  {
+    "id": "phanas",
+    "name_en": "Phanas (Jackfruit)",
+    "name_mr": "फणस",
+    "name_hi": "कटहल",
+    "category": "fruit",
+    "kcal_100g": 95,
+    "protein_100g": 1.7,
+    "carbs_100g": 23,
+    "fat_100g": 0.6,
+    "portions": [
+      {
+        "unit": "piece",
+        "label_en": "1 piece (20 g)",
+        "label_mr": "१ नग (२० ग्रॅ)",
+        "label_hi": "1 पीस (20 ग्राम)",
+        "grams": 20
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "phanas",
+      "jackfruit",
+      "kathal"
+    ]
+  },
+  {
+    "id": "lichi",
+    "name_en": "Lichi",
+    "name_mr": "लिची",
+    "name_hi": "लीची",
+    "category": "fruit",
+    "kcal_100g": 66,
+    "protein_100g": 0.8,
+    "carbs_100g": 17,
+    "fat_100g": 0.4,
+    "portions": [
+      {
+        "unit": "piece",
+        "label_en": "1 piece (12 g)",
+        "label_mr": "१ नग (१२ ग्रॅ)",
+        "label_hi": "1 पीस (12 ग्राम)",
+        "grams": 12
+      },
+      {
+        "unit": "handful",
+        "label_en": "1 handful (60 g)",
+        "label_mr": "१ मूठभर (६० ग्रॅ)",
+        "label_hi": "1 मुट्ठी (60 ग्राम)",
+        "grams": 60
+      }
+    ],
+    "default_portion": "handful",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "lichi",
+      "litchi",
+      "lychee"
+    ]
+  },
+  {
+    "id": "strawberry",
+    "name_en": "Strawberry",
+    "name_mr": "स्ट्रॉबेरी",
+    "name_hi": "स्ट्रॉबेरी",
+    "category": "fruit",
+    "kcal_100g": 32,
+    "protein_100g": 0.7,
+    "carbs_100g": 7.7,
+    "fat_100g": 0.3,
+    "portions": [
+      {
+        "unit": "piece",
+        "label_en": "1 piece (12 g)",
+        "label_mr": "१ नग (१२ ग्रॅ)",
+        "label_hi": "1 पीस (12 ग्राम)",
+        "grams": 12
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "strawberry",
+      "mahabaleshwar strawberry"
+    ]
+  },
+  {
+    "id": "kiwi",
+    "name_en": "Kiwi",
+    "name_mr": "किवी",
+    "name_hi": "कीवी",
+    "category": "fruit",
+    "kcal_100g": 61,
+    "protein_100g": 1.1,
+    "carbs_100g": 15,
+    "fat_100g": 0.5,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (70 g)",
+        "label_mr": "१ मध्यम (७० ग्रॅ)",
+        "label_hi": "1 मध्यम (70 ग्राम)",
+        "grams": 70
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "kiwi"
+    ]
+  },
+  {
+    "id": "pear",
+    "name_en": "Pear (Nashpati)",
+    "name_mr": "नासपती",
+    "name_hi": "नाशपाती",
+    "category": "fruit",
+    "kcal_100g": 57,
+    "protein_100g": 0.4,
+    "carbs_100g": 15,
+    "fat_100g": 0.1,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (170 g)",
+        "label_mr": "१ मध्यम (१७० ग्रॅ)",
+        "label_hi": "1 मध्यम (170 ग्राम)",
+        "grams": 170
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "nashpati",
+      "naspati",
+      "pear"
+    ]
+  },
+  {
+    "id": "plum",
+    "name_en": "Plum",
+    "name_mr": "आलुबुखार",
+    "name_hi": "आलूबुखारा",
+    "category": "fruit",
+    "kcal_100g": 46,
+    "protein_100g": 0.7,
+    "carbs_100g": 11,
+    "fat_100g": 0.3,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (66 g)",
+        "label_mr": "१ मध्यम (६६ ग्रॅ)",
+        "label_hi": "1 मध्यम (66 ग्राम)",
+        "grams": 66
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "plum",
+      "aloobukhara"
+    ]
+  },
+  {
+    "id": "peach",
+    "name_en": "Peach",
+    "name_mr": "पीच",
+    "name_hi": "आड़ू",
+    "category": "fruit",
+    "kcal_100g": 39,
+    "protein_100g": 0.9,
+    "carbs_100g": 10,
+    "fat_100g": 0.3,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (150 g)",
+        "label_mr": "१ मध्यम (१५० ग्रॅ)",
+        "label_hi": "1 मध्यम (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "peach",
+      "aadu"
+    ]
+  },
+  {
+    "id": "amla",
+    "name_en": "Amla",
+    "name_mr": "आवळा",
+    "name_hi": "आंवला",
+    "category": "fruit",
+    "kcal_100g": 44,
+    "protein_100g": 0.9,
+    "carbs_100g": 10,
+    "fat_100g": 0.6,
+    "portions": [
+      {
+        "unit": "piece",
+        "label_en": "1 piece (30 g)",
+        "label_mr": "१ नग (३० ग्रॅ)",
+        "label_hi": "1 पीस (30 ग्राम)",
+        "grams": 30
+      }
+    ],
+    "default_portion": "piece",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "amla",
+      "awla",
+      "avla",
+      "indian gooseberry"
+    ]
+  },
+  {
+    "id": "bor",
+    "name_en": "Bor (Ber)",
+    "name_mr": "बोरं",
+    "name_hi": "बेर",
+    "category": "fruit",
+    "kcal_100g": 79,
+    "protein_100g": 1.2,
+    "carbs_100g": 20,
+    "fat_100g": 0.2,
+    "portions": [
+      {
+        "unit": "handful",
+        "label_en": "1 handful (50 g)",
+        "label_mr": "१ मूठभर (५० ग्रॅ)",
+        "label_hi": "1 मुट्ठी (50 ग्राम)",
+        "grams": 50
+      }
+    ],
+    "default_portion": "handful",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "bor",
+      "ber",
+      "bore",
+      "jujube"
+    ]
+  },
+  {
+    "id": "cherries",
+    "name_en": "Cherries",
+    "name_mr": "चेरी",
+    "name_hi": "चेरी",
+    "category": "fruit",
+    "kcal_100g": 63,
+    "protein_100g": 1.1,
+    "carbs_100g": 16,
+    "fat_100g": 0.2,
+    "portions": [
+      {
+        "unit": "handful",
+        "label_en": "1 handful (60 g)",
+        "label_mr": "१ मूठभर (६० ग्रॅ)",
+        "label_hi": "1 मुट्ठी (60 ग्राम)",
+        "grams": 60
+      }
+    ],
+    "default_portion": "handful",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "cherry",
+      "cherries"
+    ]
+  },
+  {
+    "id": "fresh-anjeer",
+    "name_en": "Fresh Anjeer (Fig)",
+    "name_mr": "ताजे अंजीर",
+    "name_hi": "ताज़ा अंजीर",
+    "category": "fruit",
+    "kcal_100g": 74,
+    "protein_100g": 0.8,
+    "carbs_100g": 19,
+    "fat_100g": 0.3,
+    "portions": [
+      {
+        "unit": "piece",
+        "label_en": "1 piece (50 g)",
+        "label_mr": "१ नग (५० ग्रॅ)",
+        "label_hi": "1 पीस (50 ग्राम)",
+        "grams": 50
+      }
+    ],
+    "default_portion": "piece",
+    "tags": [
+      "veg",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "fresh anjeer",
+      "fresh fig"
+    ]
+  },
+  {
+    "id": "dragon-fruit",
+    "name_en": "Dragon Fruit",
+    "name_mr": "ड्रॅगन फ्रूट",
+    "name_hi": "ड्रैगन फ्रूट",
+    "category": "fruit",
+    "kcal_100g": 60,
+    "protein_100g": 1.2,
+    "carbs_100g": 13,
+    "fat_100g": 0.4,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (200 g)",
+        "label_mr": "१ मध्यम (२०० ग्रॅ)",
+        "label_hi": "1 मध्यम (200 ग्राम)",
+        "grams": 200
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "dragon fruit",
+      "pitaya"
+    ]
+  },
+  {
+    "id": "cucumber",
+    "name_en": "Cucumber (Kakdi)",
+    "name_mr": "काकडी",
+    "name_hi": "खीरा",
+    "category": "vegetable",
+    "kcal_100g": 15,
+    "protein_100g": 0.7,
+    "carbs_100g": 3.6,
+    "fat_100g": 0.1,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (150 g)",
+        "label_mr": "१ मध्यम (१५० ग्रॅ)",
+        "label_hi": "1 मध्यम (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg",
+      "healthy_swap",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "kakdi",
+      "khira",
+      "cucumber"
+    ]
+  },
+  {
+    "id": "tomato",
+    "name_en": "Tomato",
+    "name_mr": "टोमॅटो",
+    "name_hi": "टमाटर",
+    "category": "vegetable",
+    "kcal_100g": 18,
+    "protein_100g": 0.9,
+    "carbs_100g": 3.9,
+    "fat_100g": 0.2,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (100 g)",
+        "label_mr": "१ मध्यम (१०० ग्रॅ)",
+        "label_hi": "1 मध्यम (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg",
+      "healthy_swap"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "tomato",
+      "tamatar"
+    ]
+  },
+  {
+    "id": "carrot",
+    "name_en": "Carrot (Gajar)",
+    "name_mr": "गाजर",
+    "name_hi": "गाजर",
+    "category": "vegetable",
+    "kcal_100g": 41,
+    "protein_100g": 0.9,
+    "carbs_100g": 10,
+    "fat_100g": 0.2,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (70 g)",
+        "label_mr": "१ मध्यम (७० ग्रॅ)",
+        "label_hi": "1 मध्यम (70 ग्राम)",
+        "grams": 70
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg",
+      "healthy_swap",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "gajar",
+      "carrot"
+    ]
+  },
+  {
+    "id": "beetroot",
+    "name_en": "Beetroot",
+    "name_mr": "बीट",
+    "name_hi": "चुकंदर",
+    "category": "vegetable",
+    "kcal_100g": 43,
+    "protein_100g": 1.6,
+    "carbs_100g": 10,
+    "fat_100g": 0.2,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (100 g)",
+        "label_mr": "१ मध्यम (१०० ग्रॅ)",
+        "label_hi": "1 मध्यम (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg",
+      "healthy_swap",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "beet",
+      "beetroot",
+      "chukandar"
+    ]
+  },
+  {
+    "id": "onion",
+    "name_en": "Onion (Kanda)",
+    "name_mr": "कांदा",
+    "name_hi": "प्याज़",
+    "category": "vegetable",
+    "kcal_100g": 40,
+    "protein_100g": 1.1,
+    "carbs_100g": 9,
+    "fat_100g": 0.1,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (110 g)",
+        "label_mr": "१ मध्यम (११० ग्रॅ)",
+        "label_hi": "1 मध्यम (110 ग्राम)",
+        "grams": 110
+      },
+      {
+        "unit": "small",
+        "label_en": "1 small (60 g)",
+        "label_mr": "१ लहान (६० ग्रॅ)",
+        "label_hi": "1 छोटा (60 ग्राम)",
+        "grams": 60
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "kanda",
+      "pyaz",
+      "onion"
+    ]
+  },
+  {
+    "id": "radish",
+    "name_en": "Radish (Mula)",
+    "name_mr": "मुळा",
+    "name_hi": "मूली",
+    "category": "vegetable",
+    "kcal_100g": 16,
+    "protein_100g": 0.7,
+    "carbs_100g": 3.4,
+    "fat_100g": 0.1,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (100 g)",
+        "label_mr": "१ मध्यम (१०० ग्रॅ)",
+        "label_hi": "1 मध्यम (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg",
+      "healthy_swap",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "mula",
+      "mooli",
+      "radish"
+    ]
+  },
+  {
+    "id": "sweet-potato",
+    "name_en": "Ratale (Sweet Potato, Boiled)",
+    "name_mr": "उकडलेले रताळे",
+    "name_hi": "उबली शकरकंद",
+    "category": "vegetable",
+    "kcal_100g": 76,
+    "protein_100g": 1.4,
+    "carbs_100g": 18,
+    "fat_100g": 0.1,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (130 g)",
+        "label_mr": "१ मध्यम (१३० ग्रॅ)",
+        "label_hi": "1 मध्यम (130 ग्राम)",
+        "grams": 130
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "ratale",
+      "ratala",
+      "shakarkand",
+      "sweet potato"
+    ]
+  },
+  {
+    "id": "potato-boiled",
+    "name_en": "Boiled Potato",
+    "name_mr": "उकडलेला बटाटा",
+    "name_hi": "उबला आलू",
+    "category": "vegetable",
+    "kcal_100g": 87,
+    "protein_100g": 1.9,
+    "carbs_100g": 20,
+    "fat_100g": 0.1,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (150 g)",
+        "label_mr": "१ मध्यम (१५० ग्रॅ)",
+        "label_hi": "1 मध्यम (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "ukadlela batata",
+      "boiled potato",
+      "aloo",
+      "batata"
+    ]
+  },
+  {
+    "id": "sweet-corn",
+    "name_en": "Sweet Corn (Boiled)",
+    "name_mr": "उकडलेले मक्याचे दाणे",
+    "name_hi": "उबले भुट्टे",
+    "category": "vegetable",
+    "kcal_100g": 96,
+    "protein_100g": 3.4,
+    "carbs_100g": 21,
+    "fat_100g": 1.5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      },
+      {
+        "unit": "piece",
+        "label_en": "1 piece (150 g)",
+        "label_mr": "१ नग (१५० ग्रॅ)",
+        "label_hi": "1 पीस (150 ग्राम)",
+        "grams": 150
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "corn",
+      "bhutta",
+      "makka",
+      "sweet corn",
+      "american corn"
+    ]
+  },
+  {
+    "id": "capsicum",
+    "name_en": "Capsicum (Shimla Mirchi)",
+    "name_mr": "भोपळी मिरची",
+    "name_hi": "शिमला मिर्च",
+    "category": "vegetable",
+    "kcal_100g": 20,
+    "protein_100g": 0.9,
+    "carbs_100g": 4.6,
+    "fat_100g": 0.2,
+    "portions": [
+      {
+        "unit": "medium",
+        "label_en": "1 medium (120 g)",
+        "label_mr": "१ मध्यम (१२० ग्रॅ)",
+        "label_hi": "1 मध्यम (120 ग्राम)",
+        "grams": 120
+      }
+    ],
+    "default_portion": "medium",
+    "tags": [
+      "veg",
+      "healthy_swap"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "capsicum",
+      "shimla mirchi",
+      "bhopli mirchi"
+    ]
+  },
+  {
+    "id": "cabbage-raw",
+    "name_en": "Cabbage (Raw)",
+    "name_mr": "कोबी (कच्ची)",
+    "name_hi": "पत्ता गोभी (कच्ची)",
+    "category": "vegetable",
+    "kcal_100g": 25,
+    "protein_100g": 1.3,
+    "carbs_100g": 6,
+    "fat_100g": 0.1,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (70 g)",
+        "label_mr": "१ वाटी (७० ग्रॅ)",
+        "label_hi": "1 कटोरी (70 ग्राम)",
+        "grams": 70
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "healthy_swap",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "raw cabbage",
+      "kobi"
+    ]
+  },
+  {
+    "id": "green-peas",
+    "name_en": "Green Peas (Boiled)",
+    "name_mr": "उकडलेले मटार",
+    "name_hi": "उबले मटर",
+    "category": "vegetable",
+    "kcal_100g": 84,
+    "protein_100g": 5.4,
+    "carbs_100g": 16,
+    "fat_100g": 0.2,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "high_protein",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "matar",
+      "vatana",
+      "green peas",
+      "peas"
+    ]
+  },
+  {
+    "id": "broccoli",
+    "name_en": "Broccoli",
+    "name_mr": "ब्रोकोली",
+    "name_hi": "ब्रोकली",
+    "category": "vegetable",
+    "kcal_100g": 34,
+    "protein_100g": 2.8,
+    "carbs_100g": 7,
+    "fat_100g": 0.4,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (90 g)",
+        "label_mr": "१ वाटी (९० ग्रॅ)",
+        "label_hi": "1 कटोरी (90 ग्राम)",
+        "grams": 90
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "healthy_swap",
+      "src_calcium",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "broccoli"
+    ]
+  },
+  {
+    "id": "mushroom",
+    "name_en": "Mushroom (Boiled)",
+    "name_mr": "मशरूम",
+    "name_hi": "मशरूम",
+    "category": "vegetable",
+    "kcal_100g": 28,
+    "protein_100g": 2.2,
+    "carbs_100g": 5,
+    "fat_100g": 0.5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "healthy_swap",
+      "src_b12"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "mushroom",
+      "khumb"
+    ]
+  },
+  {
+    "id": "lemon",
+    "name_en": "Lemon (Limbu)",
+    "name_mr": "लिंबू",
+    "name_hi": "नींबू",
+    "category": "vegetable",
+    "kcal_100g": 29,
+    "protein_100g": 1.1,
+    "carbs_100g": 9,
+    "fat_100g": 0.3,
+    "portions": [
+      {
+        "unit": "piece",
+        "label_en": "1 piece (40 g)",
+        "label_mr": "१ नग (४० ग्रॅ)",
+        "label_hi": "1 पीस (40 ग्राम)",
+        "grams": 40
+      }
+    ],
+    "default_portion": "piece",
+    "tags": [
+      "veg"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "limbu",
+      "nimbu",
+      "lemon"
+    ]
+  },
+  {
+    "id": "lal-math-bhaji",
+    "name_en": "Lal Math Bhaji (Red Amaranth)",
+    "name_mr": "लाल माठाची भाजी",
+    "name_hi": "लाल चौलाई की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 75,
+    "protein_100g": 3,
+    "carbs_100g": 6,
+    "fat_100g": 4.5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_iron",
+      "src_calcium"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "lal math",
+      "laal maath",
+      "rajgira bhaji",
+      "math bhaji"
+    ]
+  },
+  {
+    "id": "ambadi-bhaji",
+    "name_en": "Ambadi Bhaji",
+    "name_mr": "अंबाडीची भाजी",
+    "name_hi": "अंबाड़ी की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 70,
+    "protein_100g": 2.5,
+    "carbs_100g": 6,
+    "fat_100g": 4,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "ambadi",
+      "gongura"
+    ]
+  },
+  {
+    "id": "chakvat-bhaji",
+    "name_en": "Chakvat Bhaji",
+    "name_mr": "चाकवताची भाजी",
+    "name_hi": "बथुआ की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 70,
+    "protein_100g": 3,
+    "carbs_100g": 5,
+    "fat_100g": 4,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_iron",
+      "src_calcium"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "chakvat",
+      "bathua"
+    ]
+  },
+  {
+    "id": "mula-bhaji",
+    "name_en": "Mulyachi Bhaji (Radish Leaves)",
+    "name_mr": "मुळ्याची भाजी",
+    "name_hi": "मूली के पत्तों की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 70,
+    "protein_100g": 2.5,
+    "carbs_100g": 6,
+    "fat_100g": 4,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_iron",
+      "src_calcium"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "mulyachi bhaji",
+      "mula bhaji",
+      "radish leaves"
+    ]
+  },
+  {
+    "id": "kanda-pat-bhaji",
+    "name_en": "Kandyachi Paat Bhaji (Spring Onion)",
+    "name_mr": "कांद्याच्या पातीची भाजी",
+    "name_hi": "हरे प्याज़ की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 85,
+    "protein_100g": 2,
+    "carbs_100g": 8,
+    "fat_100g": 5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "kanda paat",
+      "kandyachi paat",
+      "spring onion bhaji",
+      "pat bhaji"
+    ]
+  },
+  {
+    "id": "kurdu-bhaji",
+    "name_en": "Kurdu Bhaji",
+    "name_mr": "कुरडूची भाजी",
+    "name_hi": "कुरडू की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 70,
+    "protein_100g": 2.8,
+    "carbs_100g": 6,
+    "fat_100g": 4,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "kurdu",
+      "kurdu bhaji"
+    ]
+  },
+  {
+    "id": "suran-bhaji",
+    "name_en": "Suran Bhaji (Yam)",
+    "name_mr": "सुरणाची भाजी",
+    "name_hi": "जिमीकंद की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 130,
+    "protein_100g": 2,
+    "carbs_100g": 20,
+    "fat_100g": 5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "suran",
+      "jimikand",
+      "yam"
+    ]
+  },
+  {
+    "id": "lal-bhopla-bhaji",
+    "name_en": "Lal Bhopla Bhaji (Red Pumpkin)",
+    "name_mr": "लाल भोपळ्याची भाजी",
+    "name_hi": "कद्दू की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 70,
+    "protein_100g": 1.2,
+    "carbs_100g": 9,
+    "fat_100g": 3.5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "bhopla",
+      "lal bhopla",
+      "kaddu",
+      "pumpkin bhaji"
+    ]
+  },
+  {
+    "id": "kachcha-kela-bhaji",
+    "name_en": "Kachchya Kelyachi Bhaji (Raw Banana)",
+    "name_mr": "कच्च्या केळ्याची भाजी",
+    "name_hi": "कच्चे केले की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 130,
+    "protein_100g": 1.5,
+    "carbs_100g": 20,
+    "fat_100g": 5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "kachcha kela",
+      "kelyachi bhaji",
+      "raw banana bhaji"
+    ]
+  },
+  {
+    "id": "gajar-matar",
+    "name_en": "Gajar Matar",
+    "name_mr": "गाजर मटार भाजी",
+    "name_hi": "गाजर मटर",
+    "category": "veg",
+    "kcal_100g": 85,
+    "protein_100g": 3,
+    "carbs_100g": 11,
+    "fat_100g": 3.5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "gajar matar",
+      "carrot peas"
+    ]
+  },
+  {
+    "id": "beet-bhaji",
+    "name_en": "Beet Bhaji",
+    "name_mr": "बीटाची भाजी",
+    "name_hi": "चुकंदर की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 80,
+    "protein_100g": 1.8,
+    "carbs_100g": 10,
+    "fat_100g": 4,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "beet bhaji",
+      "beetroot bhaji"
+    ]
+  },
+  {
+    "id": "bhopli-mirchi-besan",
+    "name_en": "Bhopli Mirchi Besan (Capsicum)",
+    "name_mr": "भोपळी मिरचीची पीठ पेरून भाजी",
+    "name_hi": "बेसन शिमला मिर्च",
+    "category": "veg",
+    "kcal_100g": 120,
+    "protein_100g": 4.5,
+    "carbs_100g": 10,
+    "fat_100g": 7,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "shimla mirchi bhaji",
+      "capsicum besan",
+      "bhopli mirchi"
+    ]
+  },
+  {
+    "id": "kobi-bhaji",
+    "name_en": "Kobi Bhaji (Cabbage)",
+    "name_mr": "कोबीची भाजी",
+    "name_hi": "पत्ता गोभी की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 75,
+    "protein_100g": 1.8,
+    "carbs_100g": 7,
+    "fat_100g": 4.5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "kobi bhaji",
+      "patta gobi",
+      "cabbage bhaji"
+    ]
+  },
+  {
+    "id": "flower-bhaji",
+    "name_en": "Flower Bhaji (Cauliflower, Dry)",
+    "name_mr": "फ्लॉवरची भाजी",
+    "name_hi": "गोभी की सूखी सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 80,
+    "protein_100g": 2.2,
+    "carbs_100g": 7,
+    "fat_100g": 4.5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "flower bhaji",
+      "phool gobi",
+      "cauliflower"
+    ]
+  },
+  {
+    "id": "val-papdi-bhaji",
+    "name_en": "Val Papdi Bhaji (Flat Beans)",
+    "name_mr": "वाल पापडीची भाजी",
+    "name_hi": "सेम की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 85,
+    "protein_100g": 3,
+    "carbs_100g": 9,
+    "fat_100g": 4,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "dry",
+      "src_fibre"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "val papdi",
+      "papdi",
+      "sem"
+    ]
+  },
+  {
+    "id": "shevga-shenga-bhaji",
+    "name_en": "Shevgyachya Shenga Rassa (Drumstick)",
+    "name_mr": "शेवग्याच्या शेंगांची भाजी",
+    "name_hi": "सहजन की सब्ज़ी",
+    "category": "veg",
+    "kcal_100g": 80,
+    "protein_100g": 2.5,
+    "carbs_100g": 8,
+    "fat_100g": 4,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "gravy",
+      "src_calcium",
+      "src_iron"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "shevga",
+      "shevgyachya shenga",
+      "drumstick",
+      "saijan"
+    ]
+  },
+  {
+    "id": "mushroom-masala",
+    "name_en": "Mushroom Masala",
+    "name_mr": "मशरूम मसाला",
+    "name_hi": "मशरूम मसाला",
+    "category": "veg",
+    "kcal_100g": 95,
+    "protein_100g": 3.5,
+    "carbs_100g": 6,
+    "fat_100g": 6.5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "gravy",
+      "src_b12"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "mushroom masala",
+      "mushroom bhaji"
+    ]
+  },
+  {
+    "id": "alu-matar",
+    "name_en": "Batata Matar Rassa",
+    "name_mr": "बटाटा मटार रस्सा",
+    "name_hi": "आलू मटर",
+    "category": "veg",
+    "kcal_100g": 95,
+    "protein_100g": 3,
+    "carbs_100g": 13,
+    "fat_100g": 3.5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "gravy"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "aloo matar",
+      "alu matar",
+      "batata matar"
+    ]
+  },
+  {
+    "id": "dudhi-chana-dal",
+    "name_en": "Dudhi Chana Dal",
+    "name_mr": "दुधी चणाडाळ",
+    "name_hi": "लौकी चना दाल",
+    "category": "veg",
+    "kcal_100g": 110,
+    "protein_100g": 5,
+    "carbs_100g": 13,
+    "fat_100g": 4.5,
+    "portions": [
+      {
+        "unit": "katori",
+        "label_en": "1 katori (150 g)",
+        "label_mr": "१ वाटी (१५० ग्रॅ)",
+        "label_hi": "1 कटोरी (150 ग्राम)",
+        "grams": 150
+      },
+      {
+        "unit": "vati",
+        "label_en": "1 vati (100 g)",
+        "label_mr": "१ वाटी (१०० ग्रॅ)",
+        "label_hi": "1 कटोरी (100 ग्राम)",
+        "grams": 100
+      }
+    ],
+    "default_portion": "katori",
+    "tags": [
+      "veg",
+      "maharashtrian",
+      "gravy",
+      "high_protein"
+    ],
+    "source": "estimate",
+    "aliases": [
+      "dudhi chana dal",
+      "lauki chana"
     ]
   }
 ]

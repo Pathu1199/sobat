@@ -132,3 +132,27 @@ describe('nutrient sources and recipes', () => {
     }
   });
 });
+
+describe('everyday names in English letters', () => {
+  const ALL = foodsJson as unknown as FoodItem[];
+  it('finds dry fruits, fruits, vegetables and sabji by the names people type', () => {
+    const top = (q: string) => searchFoods(ALL, q, 3).map((f) => f.id);
+    expect(top('badam')).toContain('almonds');
+    expect(top('kaju')).toContain('cashews');
+    expect(top('akrod')).toContain('walnuts');
+    expect(top('shengdane')).toContain('peanuts-roasted');
+    expect(top('pista')).toContain('pistachios');
+    expect(top('anjeer')).toContain('anjeer');
+    expect(top('mosambi')).toContain('mosambi');
+    expect(top('kakdi')).toEqual(expect.arrayContaining(['cucumber']));
+    expect(top('lal math')).toContain('lal-math-bhaji');
+    expect(top('chiku')).toContain('chikoo');
+  });
+
+  it('has no food twice and puts nuts under dry fruits', () => {
+    const ids = ALL.map((f) => f.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ['almonds', 'walnuts', 'cashews', 'pistachios', 'raisins']) expect(ALL.find((f) => f.id === id)!.category).toBe('dryfruit');
+  });
+});
+

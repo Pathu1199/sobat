@@ -14,7 +14,7 @@ import { useApp } from '../store/AppProvider';
 import { Card, Divider, Field, ListRow, Micro, Pill, Screen, Small } from '../ui/components';
 import { C } from '../ui/theme';
 
-const CATEGORIES = ['all', 'veg', 'dal', 'grain', 'snack', 'fruit', 'dairy', 'beverage', 'sweet', 'fast_food'] as const;
+const CATEGORIES = ['all', 'veg', 'vegetable', 'fruit', 'dryfruit', 'dal', 'grain', 'snack', 'dairy', 'beverage', 'sweet', 'fast_food'] as const;
 
 /**
  * The whole food list, for looking things up: picture, dry or gravy, and the

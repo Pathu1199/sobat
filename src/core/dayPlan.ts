@@ -56,7 +56,7 @@ function candidates(foods: FoodItem[], avoided: Set<string>, role: 'grain' | 've
       if (role === 'veg') return f.category === 'veg';
       if (role === 'dal') return f.category === 'dal' || f.tags.includes('usal');
       if (role === 'breakfast') return f.tags.includes('breakfast') || f.category === 'dairy' || f.category === 'fruit';
-      return f.category === 'fruit' || f.category === 'dairy' || (f.category === 'snack' && f.tags.includes('healthy_swap'));
+      return f.category === 'fruit' || f.category === 'dairy' || f.category === 'dryfruit' || (f.category === 'snack' && f.tags.includes('healthy_swap'));
     })
     .map(portionOf)
     .filter((p): p is Pick => !!p && p.kcal <= max && p.kcal >= 30)
