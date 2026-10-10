@@ -178,7 +178,7 @@ export default function TodayScreen() {
           <Micro color={C.textDim}>{`${t('logged_intake')} · ${dayLabel}`}</Micro>
           <IconButton name="chevron-forward" label={t('tab_today')} disabled={isToday} onPress={() => setDayOffset((d) => Math.min(0, d + 1))} />
         </Row>
-        <Pressable onPress={() => router.push('/history')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <Pressable onPress={() => router.push('/food?s=history')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <Micro>{`${dayMeals.length} ${dayMeals.length === 1 ? t('session_one') : t('session_many')}`}</Micro>
           <Micro color={C.accent}>{` · ${t('history')} ›`}</Micro>
         </Pressable>

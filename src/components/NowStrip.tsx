@@ -32,14 +32,14 @@ export function NowStrip({ wide }: { wide?: boolean }) {
   const glassGoal = Math.round(state.settings.waterGoalMl / glass);
 
   const tiles = [
-    <Tile key="energy" label={t('energy')} value={String(r.score)} sub={t(`reason_${r.reasons[0] ?? 'good_sleep'}`)} color={readinessColor(r.level)} onPress={() => router.push('/fit')} />,
+    <Tile key="energy" label={t('energy')} value={String(r.score)} sub={t(`reason_${r.reasons[0] ?? 'good_sleep'}`)} color={readinessColor(r.level)} onPress={() => router.push('/body')} />,
     <Tile
       key="sleep"
       label={t('sleep_title')}
       value={sleepToday && sleepLast ? formatMinutes(sleepLast.minutes) : t('check_in')}
       sub={sleepToday && sleepLast ? `${t('score')} ${sleepLast.score}` : undefined}
       color={sleepToday && sleepLast ? scoreColor(sleepLast.score) : C.cyan}
-      onPress={() => router.push('/sleep')}
+      onPress={() => router.push('/body?s=sleep')}
     />,
     <Tile
       key="break"
@@ -55,7 +55,7 @@ export function NowStrip({ wide }: { wide?: boolean }) {
       value={moodToday ? `${moodToday.score}/5` : t('log_mood')}
       sub={moodToday?.note}
       color={moodToday ? scoreColor(((moodToday.score - 1) / 4) * 100) : C.violet}
-      onPress={() => router.push('/mind')}
+      onPress={() => router.push('/body?s=mind')}
     />,
     <Tile key="water" label={t('water')} value={`${glasses}/${glassGoal}`} sub={waterSub} color={diffGlasses < 0 ? C.amber : C.cyan} onPress={() => router.push('/log')} />,
   ];

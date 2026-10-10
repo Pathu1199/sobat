@@ -202,8 +202,8 @@ export default function LogScreen() {
         <Pill label={t('yesterday')} active={viewDate === addDays(app.today, -1)} onPress={() => setViewDate(addDays(app.today, -1))} />
         {!isToday && viewDate !== addDays(app.today, -1) ? <Pill label={formatDayLabel(viewDate, lang)} active /> : null}
         <View style={{ flex: 1 }} />
-        <Pill label={t('diet_title')} onPress={() => router.push('/plan')} />
-        <Pill label={`${t('history')} ›`} onPress={() => router.push('/history')} />
+        <Pill label={t('diet_title')} onPress={() => router.push('/food?s=plan')} />
+        <Pill label={`${t('history')} ›`} onPress={() => router.push('/food?s=history')} />
       </Row>
       <DateStrip dates={stripDates} selected={viewDate} onSelect={setViewDate} marked={loggedDates} lang={lang} today={app.today} />
       <Card>
@@ -299,8 +299,8 @@ export default function LogScreen() {
   const resultsCard = query.trim() === '' ? (
     <Row style={{ gap: 8 }}>
       <Btn small tone="soft" icon={<Ionicons name="bulb-outline" size={15} color={C.accent} />} label={t('suggest')} onPress={() => setSuggestOpen(true)} style={{ flex: 1 }} />
-      <Btn small tone="soft" icon={<Ionicons name="restaurant-outline" size={15} color={C.accent} />} label={t('recipes')} onPress={() => router.push('/recipes')} style={{ flex: 1 }} />
-      <Btn small tone="soft" icon={<Ionicons name="book-outline" size={15} color={C.accent} />} label={t('foods')} onPress={() => router.push('/foods')} style={{ flex: 1 }} />
+      <Btn small tone="soft" icon={<Ionicons name="restaurant-outline" size={15} color={C.accent} />} label={t('recipes')} onPress={() => router.push('/food?s=recipes')} style={{ flex: 1 }} />
+      <Btn small tone="soft" icon={<Ionicons name="book-outline" size={15} color={C.accent} />} label={t('foods')} onPress={() => router.push('/food?s=foods')} style={{ flex: 1 }} />
     </Row>
   ) : (
     <Card>

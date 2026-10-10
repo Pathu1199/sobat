@@ -35,9 +35,9 @@ export function useAdviceAction() {
     if (a.action === 'log') router.push('/log');
     else if (a.action === 'plan') (open?.suggest ?? (() => router.push('/log')))();
     else if (a.action === 'water') app.addWater(app.state.settings.glassMl);
-    else if (a.action === 'walk') router.push('/fit');
-    else if (a.action === 'sleep') router.push('/sleep');
-    else if (a.action === 'weigh') (open?.weigh ?? (() => router.push('/journey')))();
+    else if (a.action === 'walk') router.push('/body');
+    else if (a.action === 'sleep') router.push('/body?s=sleep');
+    else if (a.action === 'weigh') (open?.weigh ?? (() => router.push('/progress')))();
   };
 }
 

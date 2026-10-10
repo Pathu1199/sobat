@@ -43,7 +43,7 @@ export function TopBarActions({ streak }: { streak?: number }) {
       ) : (
         <>
           {/* The guide lives in Settings; the phone header keeps room for the name. */}
-          <IconButton name="chatbubble-ellipses-outline" label={t('tab_coach')} onPress={() => router.push('/coach')} />
+          <IconButton name="chatbubble-ellipses-outline" label={t('tab_coach')} onPress={() => router.push('/progress?s=coach')} />
           <IconButton name="settings-outline" label={t('settings')} onPress={() => router.push('/settings')} />
         </>
       )}

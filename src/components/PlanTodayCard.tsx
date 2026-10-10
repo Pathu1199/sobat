@@ -36,7 +36,7 @@ export function PlanTodayCard() {
   const todayMeals = useMemo(() => state.meals.filter((m) => m.date === today), [state.meals, today]);
   if (isOffDay(state.settings.offDays, today)) {
     return (
-      <Pressable onPress={() => router.push('/plan')} accessibilityRole="button">
+      <Pressable onPress={() => router.push('/food?s=plan')} accessibilityRole="button">
         <Card rail={C.cyan}>
           <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700' }}>{`🌿 ${t('free_day')}`}</Text>
           <Small color={C.textDim}>{t('free_day_today')}</Small>
@@ -46,7 +46,7 @@ export function PlanTodayCard() {
   }
   if (!plan || !day) {
     return (
-      <Pressable onPress={() => router.push('/plan')} accessibilityRole="button">
+      <Pressable onPress={() => router.push('/food?s=plan')} accessibilityRole="button">
         <Card rail={C.accent}>
           <Row style={{ justifyContent: 'space-between' }}>
             <View style={{ flex: 1, gap: 3 }}>
@@ -85,7 +85,7 @@ export function PlanTodayCard() {
   const color = status === 'low' ? C.red : status === 'on' ? C.green : C.amber;
   return (
     <Card rail={color}>
-      <Pressable onPress={() => router.push('/plan')} accessibilityRole="button">
+      <Pressable onPress={() => router.push('/food?s=plan')} accessibilityRole="button">
         <Row style={{ justifyContent: 'space-between' }}>
           <View style={{ gap: 2 }}>
             <Micro color={C.textDim}>{t('plan_today')}</Micro>

@@ -124,7 +124,7 @@ export default function Journey() {
         })}
       </Card>
 
-      <Pressable onPress={() => router.push('/growth')} style={{ alignSelf: 'center', paddingVertical: 6 }}>
+      <Pressable onPress={() => router.push('/progress?s=charts')} style={{ alignSelf: 'center', paddingVertical: 6 }}>
         <Micro color={C.accent}>{`${t('growth')} ›`}</Micro>
       </Pressable>
       <WeightSheet open={weighOpen} onClose={() => setWeighOpen(false)} />

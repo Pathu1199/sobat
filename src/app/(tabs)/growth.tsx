@@ -32,7 +32,7 @@ const METRIC_LABEL: Record<string, string> = {
 
 const WEEKDAY = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-export default function GrowthScreen() {
+export default function GrowthScreen({ embedded }: { embedded?: boolean } = {}) {
   const app = useApp();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
@@ -285,7 +285,7 @@ export default function GrowthScreen() {
 
   if (wide) {
     return (
-      <Page title={t('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />} wide>
+      <Page title={t('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />} header={!embedded} wide>
         <View style={{ maxWidth: 420 }}>{periodSwitch}</View>
         {empty}
         {weekGrid}
@@ -313,7 +313,7 @@ export default function GrowthScreen() {
   }
 
   return (
-    <Page title={t('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />}>
+    <Page title={t('growth')} alt={lang === 'en' ? undefined : t('growth')} right={<TopBarActions />} header={!embedded}>
       {periodSwitch}
       {empty}
       {weekGrid}

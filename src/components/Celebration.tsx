@@ -62,7 +62,7 @@ export function Celebration() {
         label={t('celebrate_see')}
         onPress={() => {
           done();
-          router.push('/journey');
+          router.push('/progress');
         }}
       />
       <Text style={{ color: C.textFaint, fontSize: F.tiny, textAlign: 'center' }}>{t('celebrate_footer')}</Text>

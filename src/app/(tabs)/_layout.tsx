@@ -49,11 +49,14 @@ export default function TabsLayout() {
             tabBarInactiveTintColor: C.textFaint,
           }}>
           <Tabs.Screen name="index" options={{ title: t('tab_today'), tabBarIcon: ({ color, size }) => <Ionicons name="today-outline" color={color} size={size} /> }} />
-          <Tabs.Screen name="growth" options={{ title: t('growth'), tabBarIcon: ({ color, size }) => <Ionicons name="trending-up-outline" color={color} size={size} /> }} />
-          <Tabs.Screen name="fit" options={{ title: t('tab_fit'), tabBarIcon: ({ color, size }) => <Ionicons name="walk-outline" color={color} size={size} /> }} />
-          <Tabs.Screen name="mind" options={{ title: t('tab_mind'), tabBarIcon: ({ color, size }) => <Ionicons name="heart-outline" color={color} size={size} /> }} />
-          <Tabs.Screen name="coach" options={{ title: t('tab_coach'), href: null }} />
-          {/* Inside the tabs so the bar stays under it; the + button is its only entry. */}
+          <Tabs.Screen name="food" options={{ title: t('tab_food'), tabBarIcon: ({ color, size }) => <Ionicons name="restaurant-outline" color={color} size={size} /> }} />
+          <Tabs.Screen name="body" options={{ title: t('tab_body'), tabBarIcon: ({ color, size }) => <Ionicons name="body-outline" color={color} size={size} /> }} />
+          <Tabs.Screen name="progress" options={{ title: t('tab_progress'), tabBarIcon: ({ color, size }) => <Ionicons name="trending-up-outline" color={color} size={size} /> }} />
+          {/* Old addresses keep working; they are not in the bar. */}
+          <Tabs.Screen name="growth" options={{ href: null }} />
+          <Tabs.Screen name="fit" options={{ href: null }} />
+          <Tabs.Screen name="mind" options={{ href: null }} />
+          <Tabs.Screen name="coach" options={{ href: null }} />
           <Tabs.Screen name="log" options={{ title: t('tab_log'), href: null }} />
         </Tabs>
         <NudgeToast />

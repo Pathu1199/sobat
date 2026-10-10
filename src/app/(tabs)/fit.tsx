@@ -15,7 +15,7 @@ import { Cols } from '../../ui/tiles';
 import { Page } from '../../ui/TopBar';
 import { useBreakpoint } from '../../ui/useBreakpoint';
 
-export default function FitScreen() {
+export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
   const app = useApp();
   const router = useRouter();
   const lang = app.state.profile.lang;
@@ -200,7 +200,7 @@ export default function FitScreen() {
 
   if (wide) {
     return (
-      <Page title={t('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />} wide>
+      <Page title={t('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />} header={!embedded} wide>
         <Cols weights={[1.3, 1]}>
           <>
             {hero}
@@ -217,7 +217,7 @@ export default function FitScreen() {
   }
 
   return (
-    <Page title={t('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />}>
+    <Page title={t('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />} header={!embedded}>
       {hero}
       {moves}
       {weekCard}

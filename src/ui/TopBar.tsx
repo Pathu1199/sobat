@@ -61,6 +61,7 @@ export function Page({
   right,
   left,
   wide,
+  header = true,
   children,
 }: {
   title: string;
@@ -69,11 +70,13 @@ export function Page({
   right?: React.ReactNode;
   left?: React.ReactNode;
   wide?: boolean;
+  /** False when a parent tab already draws the header and the section switch. */
+  header?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <TopBar title={title} alt={alt} subtitle={subtitle} right={right} left={left} />
+      {header ? <TopBar title={title} alt={alt} subtitle={subtitle} right={right} left={left} /> : null}
       <Screen wide={wide}>{children}</Screen>
     </View>
   );

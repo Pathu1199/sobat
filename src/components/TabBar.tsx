@@ -26,8 +26,8 @@ type TabBarProps = {
   };
 };
 
-const HIDDEN = new Set(['coach', 'log']);
-const CENTRE_AFTER = 'growth';
+const HIDDEN = new Set(['coach', 'log', 'growth', 'fit', 'mind']);
+const CENTRE_AFTER = 'food';
 
 export function TabBar({ state, descriptors, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();

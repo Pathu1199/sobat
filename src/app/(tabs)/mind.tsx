@@ -17,7 +17,7 @@ import { Cols } from '../../ui/tiles';
 import { Page } from '../../ui/TopBar';
 import { useBreakpoint } from '../../ui/useBreakpoint';
 
-export default function MindScreen() {
+export default function MindScreen({ embedded }: { embedded?: boolean } = {}) {
   const app = useApp();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
@@ -139,7 +139,7 @@ export default function MindScreen() {
 
   if (wide) {
     return (
-      <Page title={t('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />} wide>
+      <Page title={t('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />} header={!embedded} wide>
         {crisisCard}
         <Cols weights={[1.1, 1]}>
           <>
@@ -158,7 +158,7 @@ export default function MindScreen() {
   }
 
   return (
-    <Page title={t('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />}>
+    <Page title={t('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />} header={!embedded}>
       {crisisCard}
       {checkIn}
       {toolTiles}

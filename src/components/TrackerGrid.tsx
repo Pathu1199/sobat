@@ -47,8 +47,8 @@ export function TrackerGrid() {
       color={glasses >= glassGoal ? C.green : C.cyan}
       onPress={() => setWaterOpen(true)}
     />,
-    <Tile key="sleep" icon="moon" tint={C.violet} label={t('sleep_title')} value={sleepFresh ? formatMinutes(sleep.minutes) : '—'} sub={sleepFresh ? `${t('score')} ${sleep.score}` : t('empty_sleep')} color={sleepFresh ? scoreColor(sleep.score) : C.textDim} onPress={() => router.push('/sleep')} />,
-    <Tile key="steps" icon="footsteps" tint={C.green} label={t('steps')} value={stepsToday > 0 ? stepsToday.toLocaleString() : '—'} sub={stepsToday > 0 ? `/ 8,000` : t('steps_phone_only')} color={stepsToday >= 8000 ? C.green : C.text} onPress={() => router.push('/fit')} />,
+    <Tile key="sleep" icon="moon" tint={C.violet} label={t('sleep_title')} value={sleepFresh ? formatMinutes(sleep.minutes) : '—'} sub={sleepFresh ? `${t('score')} ${sleep.score}` : t('empty_sleep')} color={sleepFresh ? scoreColor(sleep.score) : C.textDim} onPress={() => router.push('/body?s=sleep')} />,
+    <Tile key="steps" icon="footsteps" tint={C.green} label={t('steps')} value={stepsToday > 0 ? stepsToday.toLocaleString() : '—'} sub={stepsToday > 0 ? `/ 8,000` : t('steps_phone_only')} color={stepsToday >= 8000 ? C.green : C.text} onPress={() => router.push('/body')} />,
     <Tile
       key="breaks"
       label={t('brk_eye_care')}

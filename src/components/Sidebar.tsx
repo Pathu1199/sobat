@@ -15,11 +15,10 @@ type Item = { href: string; icon: keyof typeof Ionicons.glyphMap; labelKey: stri
 
 const ITEMS: Item[] = [
   { href: '/', icon: 'today-outline', labelKey: 'tab_today' },
+  { href: '/food', icon: 'restaurant-outline', labelKey: 'tab_food' },
   { href: '/log', icon: 'add-circle-outline', labelKey: 'tab_log' },
-  { href: '/growth', icon: 'trending-up-outline', labelKey: 'growth' },
-  { href: '/fit', icon: 'walk-outline', labelKey: 'tab_fit' },
-  { href: '/mind', icon: 'heart-outline', labelKey: 'tab_mind' },
-  { href: '/coach', icon: 'chatbubble-ellipses-outline', labelKey: 'tab_coach' },
+  { href: '/body', icon: 'body-outline', labelKey: 'tab_body' },
+  { href: '/progress', icon: 'trending-up-outline', labelKey: 'tab_progress' },
 ];
 
 /** Replaces the bottom tab bar on wide screens. */
@@ -82,34 +81,10 @@ export function Sidebar() {
 
       <View style={{ gap: 4 }}>
         <Pressable
-          onPress={() => router.push('/plan')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: S.radiusSm }}>
-          <Ionicons name="clipboard-outline" size={19} color={C.textFaint} />
-          <Text style={{ color: C.textDim, fontSize: F.body }}>{t('diet_title')}</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.push('/history')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: S.radiusSm }}>
-          <Ionicons name="calendar-outline" size={19} color={C.textFaint} />
-          <Text style={{ color: C.textDim, fontSize: F.body }}>{t('history')}</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.push('/recipes')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: S.radiusSm }}>
-          <Ionicons name="restaurant-outline" size={19} color={C.textFaint} />
-          <Text style={{ color: C.textDim, fontSize: F.body }}>{t('recipes')}</Text>
-        </Pressable>
-        <Pressable
           onPress={() => router.push('/guide')}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: S.radiusSm }}>
           <Ionicons name="help-circle-outline" size={19} color={C.textFaint} />
           <Text style={{ color: C.textDim, fontSize: F.body }}>{t('guide_title')}</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.push('/routine')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: S.radiusSm }}>
-          <Ionicons name="restaurant-outline" size={19} color={C.textFaint} />
-          <Text style={{ color: C.textDim, fontSize: F.body }}>{t('routine_title')}</Text>
         </Pressable>
         <Pressable
           onPress={() => router.push('/memory')}

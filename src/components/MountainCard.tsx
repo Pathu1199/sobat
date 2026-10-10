@@ -51,7 +51,7 @@ export function MountainCard() {
   const newest = earned[earned.length - 1];
 
   return (
-    <Pressable onPress={() => router.push('/journey')} accessibilityRole="button">
+    <Pressable onPress={() => router.push('/progress')} accessibilityRole="button">
       <Card rail={C.cyan}>
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro color={C.textDim}>{t('journey_title')}</Micro>
