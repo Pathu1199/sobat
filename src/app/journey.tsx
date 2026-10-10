@@ -7,6 +7,7 @@ import { BADGE_ICON } from '../core/game';
 import { WeightSheet } from '../components/WeightSheet';
 import { formatDayLabel } from '../core/date';
 import { fill, makeT } from '../i18n';
+import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, Card, Divider, Micro, Pill, Row, Screen, SectionHeader, Small } from '../ui/components';
 import { Mountain } from '../ui/Mountain';
@@ -16,6 +17,7 @@ import { C, F } from '../ui/theme';
 export default function Journey() {
   const app = useApp();
   const router = useRouter();
+  const fb = useFeedback();
   const { state } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
@@ -98,9 +100,23 @@ export default function Journey() {
               {i > 0 ? <Divider /> : null}
               <Row style={{ justifyContent: 'space-between' }}>
                 <Small>{formatDayLabel(w.date, lang)}</Small>
-                <Row style={{ gap: 10 }}>
+                <Row style={{ gap: 6 }}>
                   {diff !== null ? <Micro color={diff < 0 ? C.green : diff > 0 ? C.amber : C.textFaint}>{`${diff > 0 ? '+' : ''}${diff}`}</Micro> : null}
-                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{`${w.kg} kg`}</Text>
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', marginRight: 4 }}>{`${w.kg} kg`}</Text>
+                  {/* Edit and delete on the row, 44-point targets; delete can be undone. */}
+                  <Pressable onPress={() => setWeighOpen(true)} accessibilityRole="button" accessibilityLabel={t('edit')} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.cardAlt : 'transparent' })}>
+                    <Ionicons name="create-outline" size={20} color={C.textDim} />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      app.removeWeight(w.date);
+                      fb.notify(t('weight_removed'), { label: t('undo'), onPress: () => app.addWeight(w) });
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('delete')}
+                    style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.redSoft : 'transparent' })}>
+                    <Ionicons name="trash-outline" size={20} color={C.textDim} />
+                  </Pressable>
                 </Row>
               </Row>
             </React.Fragment>

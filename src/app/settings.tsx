@@ -79,7 +79,7 @@ export default function SettingsScreen() {
       const blob = new Blob([json], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `sobat-${app.today}.json`;
+      a.download = `fitoo-${app.today}.json`;
       a.click();
     }
   }

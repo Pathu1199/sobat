@@ -54,14 +54,14 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
           if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
         }}
-        style={({ pressed }) => ({ flex: 1, alignItems: 'center', justifyContent: 'flex-start', gap: 4, paddingHorizontal: 2, opacity: pressed ? 0.6 : 1 })}>
-        {/* The active tab sits on a soft tinted pill, the way premium health apps mark it. */}
-        <View style={{ paddingHorizontal: 16, paddingVertical: 4, borderRadius: 999, backgroundColor: focused ? C.accentDim : 'transparent' }}>
-          {options.tabBarIcon ? options.tabBarIcon({ focused, color, size: 22 }) : null}
+        style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'flex-start', gap: 3, paddingHorizontal: 2, opacity: pressed ? 0.6 : 1 })}>
+        {/* The active tab sits on a 48 × 32 tinted pill: seen before it is read. */}
+        <View style={{ width: 48, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: focused ? C.accentDim : 'transparent' }}>
+          {options.tabBarIcon ? options.tabBarIcon({ focused, color, size: 24 }) : null}
         </View>
         <Text
           numberOfLines={1}
-          style={{ color: focused ? C.accent : C.textFaint, fontSize: F.micro, lineHeight: 15, fontWeight: focused ? '800' : '600', letterSpacing: 0.2, includeFontPadding: false, textAlign: 'center' }}>
+          style={{ color: focused ? C.accent : C.textFaint, fontSize: Math.max(12, F.micro), lineHeight: 16, fontWeight: focused ? '800' : '600', letterSpacing: 0.2, includeFontPadding: false, textAlign: 'center' }}>
           {label}
         </Text>
       </Pressable>,
@@ -75,9 +75,9 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
             accessibilityRole="button"
             accessibilityLabel={t('tab_log')}
             style={({ pressed }) => ({
-              width: 58,
-              height: 58,
-              borderRadius: 29,
+              width: 60,
+              height: 60,
+              borderRadius: 30,
               marginTop: -26,
               backgroundColor: onLog ? C.cyan : C.accent,
               alignItems: 'center',
@@ -105,7 +105,8 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
         borderTopColor: C.border,
         ...lift(2),
         shadowOffset: { width: 0, height: -4 },
-        paddingTop: 10,
+        minHeight: 64 + Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6),
+        paddingTop: 8,
         paddingBottom: Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6),
       }}>
       {slots}

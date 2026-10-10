@@ -6,7 +6,7 @@
  */
 
 export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-export const BACKUP_NAME = 'sobat-backup.json';
+export const BACKUP_NAME = 'fitoo-backup.json';
 
 const API = 'https://www.googleapis.com/drive/v3/files';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';

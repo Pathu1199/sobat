@@ -42,7 +42,7 @@ export function TopBarActions({ streak }: { streak?: number }) {
         <IconButton name="add-circle-outline" label={t('tab_log')} onPress={() => router.push('/log')} />
       ) : (
         <>
-          <IconButton name="help-circle-outline" label={t('guide_title')} onPress={() => router.push('/guide')} />
+          {/* The guide lives in Settings; the phone header keeps room for the name. */}
           <IconButton name="chatbubble-ellipses-outline" label={t('tab_coach')} onPress={() => router.push('/coach')} />
           <IconButton name="settings-outline" label={t('settings')} onPress={() => router.push('/settings')} />
         </>
@@ -68,17 +68,17 @@ export function IconButton({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
-      hitSlop={6}
+      hitSlop={4}
       style={({ pressed }) => ({
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: pressed ? C.cardAlt : 'transparent',
         opacity: disabled ? 0.3 : 1,
       })}>
-      <Ionicons name={name} size={20} color={C.textDim} />
+      <Ionicons name={name} size={22} color={C.textDim} />
     </Pressable>
   );
 }

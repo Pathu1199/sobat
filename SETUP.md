@@ -296,7 +296,7 @@ Done — the Windows side is complete.
 ### 7.1 Install the APK
 
 On the phone, open <https://sobat-a56c7.web.app> and tap **Download for
-Android**. The file is `sobat.apk`, about 55 MB, built for any 64-bit phone
+Android**. The file is `fitoo.apk`, about 55 MB, built for any 64-bit phone
 from roughly 2017 on. Android will ask you to allow installing from that
 source — allow it, then install.
 
@@ -453,7 +453,7 @@ You normally do not. Every push to `main` runs the **Deploy to Firebase**
 workflow under the repo's Actions tab, which tests the code, deploys the
 website, builds the signed APK and publishes it as a GitHub Release. The
 newest APK is always at
-<https://github.com/Pathu1199/sobat/releases/latest/download/sobat.apk>.
+<https://github.com/Pathu1199/sobat/releases/latest/download/fitoo.apk>.
 (Firebase's free plan does not allow hosting `.apk` files, so it is not
 served from the site itself.) The release key lives in the repo's
 Actions secrets (`SOBAT_RELEASE_KEYSTORE_BASE64`, `SOBAT_RELEASE_KEY_ALIAS`,
@@ -488,7 +488,7 @@ builds a debug-signed APK, which still runs but cannot update a release one.
 | Thing | Where |
 | --- | --- |
 | Windows installer | `desktop\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\Sobat_0.1.0_x64-setup.exe` |
-| Phone APK | <https://github.com/Pathu1199/sobat/releases/latest/download/sobat.apk>, or `dist-apk\Sobat-0.2.0-arm64.apk` |
+| Phone APK | <https://github.com/Pathu1199/sobat/releases/latest/download/fitoo.apk>, or `dist-apk\Sobat-0.2.0-arm64.apk` |
 | Web build the shell loads | `dist\` |
 | Ollama API | `http://127.0.0.1:11434` on the PC, `http://<pc-ip>:11434` from the phone |
 

@@ -205,7 +205,7 @@ export default function TodayScreen() {
               onPress={() => setOpenMeal(m)}
               onDelete={() => {
                 app.removeMeal(m.id);
-                fb.notify(t('meal_removed'));
+                fb.notify(t('meal_removed'), { label: t('undo'), onPress: () => app.addMeal(m) });
               }}
             />
           ))
@@ -319,9 +319,15 @@ export function MealRow({ meal, first, lang, onPress, onDelete }: { meal: Meal; 
         onPress={onPress}
         trailing={
           onDelete ? (
-            <Pressable onPress={onDelete} hitSlop={10} accessibilityLabel={t('delete')}>
-              <Ionicons name="trash-outline" size={17} color={C.textFaint} />
-            </Pressable>
+            // Edit and delete live on the row, each a 44-point target.
+            <Row style={{ gap: 2 }}>
+              <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={t('edit')} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.cardAlt : 'transparent' })}>
+                <Ionicons name="create-outline" size={20} color={C.textDim} />
+              </Pressable>
+              <Pressable onPress={onDelete} accessibilityRole="button" accessibilityLabel={t('delete')} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.redSoft : 'transparent' })}>
+                <Ionicons name="trash-outline" size={20} color={C.textDim} />
+              </Pressable>
+            </Row>
           ) : (
             <Ionicons name="chevron-forward" size={15} color={C.textGhost} />
           )

@@ -87,8 +87,8 @@ jobs:
             -PSOBAT_RELEASE_STORE_PASSWORD="$SOBAT_RELEASE_STORE_PASSWORD" \
             -PSOBAT_RELEASE_KEY_PASSWORD="$SOBAT_RELEASE_KEY_PASSWORD"
       - if: steps.key.outputs.present == 'true'
-        run: cp android/app/build/outputs/apk/release/app-release.apk sobat.apk
-      # The site links to releases/latest/download/sobat.apk, so each build is a release.
+        run: cp android/app/build/outputs/apk/release/app-release.apk fitoo.apk
+      # The site links to releases/latest/download/fitoo.apk, so each build is a release.
       - if: steps.key.outputs.present == 'true'
         name: Publish as a GitHub Release
         uses: softprops/action-gh-release@v3
@@ -96,7 +96,7 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: Fitoo build ${{ github.run_number }}
           body: Automatic build of ${{ github.sha }}. Android 8+, arm64, signed with Fitoo's release key.
-          files: sobat.apk
+          files: fitoo.apk
           make_latest: true
 
   deploy:

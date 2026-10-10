@@ -115,8 +115,15 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
               <Small>{formatDayLabel(w.date, lang)}</Small>
               <Row style={{ gap: 14 }}>
                 <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>{`${w.kg} ${t('unit_kg')}`}</Text>
-                <Pressable onPress={() => app.removeWeight(w.date)} hitSlop={10} accessibilityLabel={t('delete')}>
-                  <Ionicons name="close" size={16} color={C.textGhost} />
+                <Pressable
+                  onPress={() => {
+                    app.removeWeight(w.date);
+                    fb.notify(t('weight_removed'), { label: t('undo'), onPress: () => app.addWeight(w) });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('delete')}
+                  style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.redSoft : 'transparent' })}>
+                  <Ionicons name="trash-outline" size={18} color={C.textFaint} />
                 </Pressable>
               </Row>
             </Row>
