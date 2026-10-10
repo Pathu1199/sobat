@@ -213,6 +213,8 @@ export type AppState = {
   celebrated?: string[] | null;
   /** Activities done, by the person's own choice. */
   activities: ActivityLog[];
+  /** Grocery lines ticked off, for one week at a time. */
+  groceryTicks?: { week: string; ids: string[] } | null;
 };
 
 export type StepLog = { date: ISODate; count: number };

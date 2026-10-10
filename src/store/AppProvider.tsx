@@ -75,6 +75,7 @@ type Ctx = {
   removeActivity: (id: string) => void;
   burnedToday: number;
   markCelebrated: (ids: string[]) => void;
+  toggleGrocery: (week: string, foodId: string) => void;
   setSchedule: (s: Partial<WorkSchedule>) => void;
   addSpend: (s: Pick<SpendLog, 'category' | 'rupees' | 'spreadDays'>) => void;
   removeSpend: (id: string) => void;
@@ -238,6 +239,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addActivity: (a) => update((s) => ({ ...s, activities: [...(s.activities ?? []), a] })),
       removeActivity: (id) => update((s) => ({ ...s, activities: (s.activities ?? []).filter((x) => x.id !== id) })),
       burnedToday,
+      toggleGrocery: (week, foodId) =>
+        update((s) => {
+          const cur = s.groceryTicks?.week === week ? s.groceryTicks.ids : [];
+          return { ...s, groceryTicks: { week, ids: cur.includes(foodId) ? cur.filter((x) => x !== foodId) : [...cur, foodId] } };
+        }),
       markCelebrated: (ids) => update((s) => ({ ...s, celebrated: Array.from(new Set([...(s.celebrated ?? []), ...ids])) })),
       setSchedule: (x) => update((s) => ({ ...s, schedule: { ...s.schedule, ...x } })),
       addSpend: (x) =>

@@ -77,4 +77,5 @@ export const EMPTY_STATE: AppState = {
   weekPlan: null,
   celebrated: null,
   activities: [],
+  groceryTicks: null,
 };

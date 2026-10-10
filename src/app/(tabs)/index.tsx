@@ -24,6 +24,7 @@ import { TomorrowCard } from '../../components/TomorrowCard';
 import { TrackerGrid } from '../../components/TrackerGrid';
 import { WeighInCard } from '../../components/WeighInCard';
 import { TipCard } from '../../components/TipCard';
+import { TimingCard } from '../../components/TimingCard';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { addDays, formatDayLabel, localHHMM, localHour } from '../../core/date';
 import { decide } from '../../core/decide';
@@ -193,6 +194,7 @@ export default function TodayScreen() {
           <Small color={C.accent}>{fill(t('add_food_for'), { day: dayLabel })}</Small>
         </Pressable>
       ) : null}
+      <TimingCard date={viewDate} />
       <Card>
         {dayMeals.length === 0 ? (
           <Small color={C.textGhost}>{t('nothing_logged')}</Small>

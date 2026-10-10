@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { FoodDetailSheet, FoodThumb } from '../components/FoodDetailSheet';
+import { GrocerySheet } from '../components/GrocerySheet';
 import { foodName, searchFoods } from '../core/foods';
 import { newId } from '../core/id';
 import { KCAL_FLOOR } from '../core/nutrition';
@@ -72,6 +73,7 @@ export default function PlanScreen() {
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<FoodItem | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [grocery, setGrocery] = useState(false);
 
   const day = plan.days[dayIdx];
   const offDays = state.settings.offDays ?? [];
@@ -163,6 +165,19 @@ export default function PlanScreen() {
           );
         })}
       </Row>
+
+      <Pressable
+        onPress={() => setGrocery(true)}
+        accessibilityRole="button"
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, borderRadius: S.radius, backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, opacity: pressed ? 0.8 : 1 })}>
+        <Ionicons name="basket-outline" size={22} color={C.accent} />
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: C.text, fontSize: F.body, fontWeight: '700' }}>{t('grocery_title')}</Text>
+          <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{t('grocery_sub')}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={C.textFaint} />
+      </Pressable>
+      <GrocerySheet open={grocery} onClose={() => setGrocery(false)} plan={plan} />
 
       <Card>
         <Toggle title={t('plan_free_toggle')} desc={t('plan_free_desc')} on={isFree} onToggle={toggleFree} />
