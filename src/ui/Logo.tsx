@@ -4,8 +4,8 @@ import Svg, { Circle, Defs, Line, LinearGradient, Stop } from 'react-native-svg'
 import { C } from './theme';
 
 /**
- * The Fitoo mark: two discs on a tilted bar. It is the "oo" of the name, a
- * dumbbell, and two eyes looking up, all at once. Drawn as vectors so it is
+ * The Sobat mark: two discs on a tilted bar. Two together (सोबत means
+ * company), a dumbbell, and two eyes looking up, all at once. Drawn as vectors so it is
  * sharp at any size; the PNG icons in assets/images are made from the same
  * geometry by scripts/make-logo.py.
  */
@@ -16,7 +16,7 @@ export function Logo({ size = 28, mono }: { size?: number; mono?: boolean }) {
   const b = { cx: 69, cy: 39, r: 17 };
   const fill = mono ? C.white : 'url(#fitoo-grad)';
   return (
-    <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="Fitoo">
+    <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="Sobat">
       <Defs>
         <LinearGradient id="fitoo-grad" x1="0" y1="1" x2="1" y2="0">
           <Stop offset="0" stopColor={C.accent} />
@@ -40,8 +40,7 @@ export function Wordmark({ size = 22, alt }: { size?: number; alt?: string }) {
       <Logo size={size + 8} />
       <View>
         <Text style={{ color: C.text, fontSize: size, fontWeight: '700', letterSpacing: -0.6 }}>
-          fit
-          <Text style={{ color: C.accent }}>oo</Text>
+          Sobat
         </Text>
         {alt ? <Text style={{ color: C.textGhost, fontSize: 10, letterSpacing: 1.1, textTransform: 'uppercase', fontWeight: '500' }}>{alt}</Text> : null}
       </View>

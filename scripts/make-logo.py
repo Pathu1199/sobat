@@ -1,14 +1,14 @@
-"""Draws the Fitoo mark and writes every icon size the app needs.
+"""Draws the Sobat mark and writes every icon size the app needs.
 
-The mark is two discs on a tilted bar: the "oo" of the name, a dumbbell, and
-two eyes looking up. Colours come from src/ui/theme.ts and the geometry
+The mark is two discs on a tilted bar: two together (सोबत means company), a
+dumbbell, and two eyes looking up. Colours come from src/ui/theme.ts and the geometry
 matches src/ui/Logo.tsx. Run with: python3 scripts/make-logo.py
 """
 from PIL import Image, ImageDraw, ImageFilter
 
-BG = (0x0E, 0x10, 0x17)          # C.bgAlt
-ACCENT = (0x5B, 0x86, 0xF5)      # C.accent
-CYAN = (0x3F, 0xD3, 0xE6)        # C.cyan
+BG = (0x0F, 0x16, 0x1B)          # C.bgAlt
+ACCENT = (0x2D, 0xD4, 0xA3)      # C.accent
+CYAN = (0x38, 0xC6, 0xE8)        # C.cyan
 WHITE = (255, 255, 255)
 SS = 4                           # supersample for smooth edges
 

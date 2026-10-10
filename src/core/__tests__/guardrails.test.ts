@@ -25,14 +25,14 @@ describe('guardAdvice', () => {
   it('passes normal advice through untouched', () => {
     const r = guardAdvice('Have a katori of dal and a chapati, then walk for 20 minutes.', 1500);
     expect(r.ok).toBe(true);
-    expect(r.text).not.toContain('Fitoo note');
+    expect(r.text).not.toContain('Sobat note');
   });
 
   it('catches a calorie target under the floor', () => {
     const r = guardAdvice('Eat only 900 calories tomorrow to make up for today.', 1500);
     expect(r.ok).toBe(false);
     expect(r.reasons).toContain('below_floor');
-    expect(r.text).toContain('Fitoo note');
+    expect(r.text).toContain('Sobat note');
   });
 
   it('catches meal skipping', () => {

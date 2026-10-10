@@ -21,7 +21,7 @@ const FEATURES: { icon: keyof typeof Ionicons.glyphMap; titleKey: string; bodyKe
 ];
 
 /** The newest Android build, published as a GitHub Release by the deploy workflow. */
-const APK_URL = 'https://github.com/Pathu1199/sobat/releases/latest/download/fitoo.apk';
+const APK_URL = 'https://github.com/Pathu1199/sobat/releases/latest/download/sobat.apk';
 
 export default function Welcome() {
   const router = useRouter();

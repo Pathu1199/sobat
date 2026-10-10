@@ -62,7 +62,7 @@ export function guardAdvice(text: string, kcalFloor: number): GuardResult {
   }
 
   if (reasons.length > 0) {
-    out = text + '\n\n---\nFitoo note: ignore any advice above that suggests skipping meals, eating under ' + kcalFloor + ' kcal, or that sounds like a diagnosis. Ask a doctor for those.';
+    out = text + '\n\n---\nSobat note: ignore any advice above that suggests skipping meals, eating under ' + kcalFloor + ' kcal, or that sounds like a diagnosis. Ask a doctor for those.';
   }
   return { ok: reasons.length === 0, reasons, text: out };
 }

@@ -77,7 +77,7 @@ export async function setupAndroidChannel(): Promise<void> {
   const n = loadNative();
   if (!n) return;
   await n.setNotificationChannelAsync('sobat', {
-    name: 'Fitoo reminders',
+    name: 'Sobat reminders',
     importance: n.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 200],
     sound: null,

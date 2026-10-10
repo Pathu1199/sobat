@@ -8,7 +8,7 @@ const fail = (status: number) => ({ ok: false, status, json: async () => ({}), t
 describe('multipartBody', () => {
   it('puts the metadata first, the file second, and closes the boundary', () => {
     const body = multipartBody({ name: BACKUP_NAME }, '{"a":1}', 'B');
-    expect(body.startsWith('--B\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{"name":"fitoo-backup.json"}\r\n--B\r\n')).toBe(true);
+    expect(body.startsWith('--B\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{"name":"sobat-backup.json"}\r\n--B\r\n')).toBe(true);
     expect(body).toContain('\r\n\r\n{"a":1}\r\n--B--\r\n');
   });
 });

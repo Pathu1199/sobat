@@ -1,12 +1,12 @@
 /**
  * Google Drive backup: one JSON file, the same one Export writes, kept in the
- * person's own Drive. The drive.file scope lets Fitoo see only files Fitoo
+ * person's own Drive. The drive.file scope lets Sobat see only files Sobat
  * made, nothing else in the Drive. These are plain fetch calls so they can be
  * tested with a fake fetch and used from any platform.
  */
 
 export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-export const BACKUP_NAME = 'fitoo-backup.json';
+export const BACKUP_NAME = 'sobat-backup.json';
 
 const API = 'https://www.googleapis.com/drive/v3/files';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';

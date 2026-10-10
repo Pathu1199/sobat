@@ -79,7 +79,7 @@ export default function SettingsScreen() {
       const blob = new Blob([json], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `fitoo-${app.today}.json`;
+      a.download = `sobat-${app.today}.json`;
       a.click();
     }
   }
@@ -459,7 +459,7 @@ export default function SettingsScreen() {
         <Card>
           <Row style={{ gap: 12 }}>
             <View style={{ flex: 1, gap: 3 }}>
-              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{`Fitoo ${Constants.expoConfig?.version ?? ''}`}</Text>
+              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{`Sobat ${Constants.expoConfig?.version ?? ''}`}</Text>
               <Small>{t('made_by')}</Small>
             </View>
           </Row>
@@ -498,7 +498,7 @@ export default function SettingsScreen() {
         </Card>
       </View>
 
-      <Micro>Fitoo v0.3 · MIT · your data never leaves your devices.</Micro>
+      <Micro>Sobat v0.3 · MIT · your data never leaves your devices.</Micro>
     </Screen>
   );
 }
