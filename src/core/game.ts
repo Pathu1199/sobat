@@ -99,7 +99,7 @@ export function badges(input: GameInput): Badge[] {
 
 export const CHALLENGES = ['log_all_7', 'water_5', 'steps_4', 'no_heavy', 'sleep_5'] as const;
 export type ChallengeKey = (typeof CHALLENGES)[number];
-export type Challenge = { key: ChallengeKey; n: number; target: number; done: boolean; progress: number; daysLeft: number };
+export type Challenge = { key: ChallengeKey; n: number; target: number; done: boolean; progress: number; daysLeft: number; weekStart: ISODate };
 
 /** One challenge a week, the same one all week, a different one next week. Progress counts the current week. */
 export function weeklyChallenge(input: GameInput, weekStartDay = 0): Challenge {
@@ -129,7 +129,7 @@ export function weeklyChallenge(input: GameInput, weekStartDay = 0): Challenge {
     n = inWeek.filter((x) => (x.sleepMinutes ?? 0) >= 420).length;
     target = 5;
   }
-  return { key, n, target, done: n >= target, progress: Math.min(1, n / target), daysLeft: 6 - back };
+  return { key, n, target, done: n >= target, progress: Math.min(1, n / target), daysLeft: 6 - back, weekStart: start.toISOString().slice(0, 10) };
 }
 
 /** Where each weigh-in sits on the climb, 0 at the start weight and 1 at the goal. */
@@ -137,4 +137,42 @@ export function climbTrail(weights: WeightLog[], startKg: number, goalKg: number
   const total = startKg - goalKg;
   if (total <= 0) return [];
   return [...weights].sort((a, b) => a.date.localeCompare(b.date)).map((w) => ({ date: w.date, p: Math.round(Math.min(1, Math.max(0, (startKg - w.kg) / total)) * 1000) / 1000 }));
+}
+
+/** One emoji per badge, shared by the Journey screen and the celebration. */
+export const BADGE_ICON: Record<string, string> = {
+  first_meal: '🍽️',
+  first_weigh: '⚖️',
+  streak_7: '🔥',
+  streak_30: '🌋',
+  meals_100: '💯',
+  water_7: '💧',
+  water_30: '🌊',
+  sleep_10: '🌙',
+  steps_10: '👟',
+  workouts_10: '💪',
+  weigh_4: '📅',
+  kg_1: '🪶',
+  kg_5: '🏔️',
+  halfway: '⛺',
+  summit: '🚩',
+};
+
+export type Win = { id: string; kind: 'badge' | 'level' | 'challenge'; key: string };
+
+/**
+ * Which win to celebrate next. Wins are badges earned, camps reached and the
+ * weekly challenge done; each is shown once. The first time this runs there
+ * is no record yet, so everything already earned is marked seen rather than
+ * celebrated in a flood.
+ */
+export function nextWin(input: { earned: string[]; level: LevelKey; challenge: Challenge; celebrated: string[] | null | undefined }): { seed: string[] | null; next: Win | null } {
+  const all: Win[] = [
+    ...(input.level !== 'base' ? [{ id: `level:${input.level}`, kind: 'level' as const, key: input.level }] : []),
+    ...input.earned.map((k) => ({ id: `badge:${k}`, kind: 'badge' as const, key: k })),
+    ...(input.challenge.done ? [{ id: `challenge:${input.challenge.weekStart}`, kind: 'challenge' as const, key: input.challenge.key }] : []),
+  ];
+  if (!input.celebrated) return { seed: all.map((w) => w.id), next: null };
+  const seen = new Set(input.celebrated);
+  return { seed: null, next: all.find((w) => !seen.has(w.id)) ?? null };
 }

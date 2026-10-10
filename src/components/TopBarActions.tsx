@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, Text } from 'react-native';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useAuth } from '../services/useAuth';
 import { useApp } from '../store/AppProvider';
 import { Row, StatusChip } from '../ui/components';
-import { C } from '../ui/theme';
+import { C, F } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
 
 /** Streak, AI status, and on the phone the coach and settings buttons. */
@@ -22,7 +22,16 @@ export function TopBarActions({ streak }: { streak?: number }) {
 
   return (
     <Row style={{ gap: 4 }}>
-      {wide && streak && streak > 0 ? <StatusChip label={`${streak}d`} color={C.amber} /> : null}
+      {streak && streak > 0 ? (
+        wide ? (
+          <StatusChip label={`${streak}d`} color={C.amber} />
+        ) : (
+          <View accessibilityLabel={`${streak} day streak`} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: C.amberSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
+            <Text style={{ fontSize: F.small }}>🔥</Text>
+            <Text style={{ color: C.amber, fontSize: F.small, fontWeight: '800' }}>{streak}</Text>
+          </View>
+        )
+      ) : null}
       {canUseAI ? (
         <Row style={{ gap: 5, marginHorizontal: 6 }} >
           <View accessibilityLabel={online ? t('ai_on') : t('ai_off')} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: online ? C.green : C.textGhost }} />

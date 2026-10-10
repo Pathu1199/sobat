@@ -70,6 +70,7 @@ type Ctx = {
   toggleAction: (key: string) => void;
   setRoutine: (r: Partial<Routine>) => void;
   setWeekPlan: (plan: WeekPlan | null) => void;
+  markCelebrated: (ids: string[]) => void;
   setSchedule: (s: Partial<WorkSchedule>) => void;
   addSpend: (s: Pick<SpendLog, 'category' | 'rupees' | 'spreadDays'>) => void;
   removeSpend: (id: string) => void;
@@ -229,6 +230,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }),
       setRoutine: (r) => update((s) => ({ ...s, routine: { ...s.routine, ...r } })),
       setWeekPlan: (plan) => update((s) => ({ ...s, weekPlan: plan })),
+      markCelebrated: (ids) => update((s) => ({ ...s, celebrated: Array.from(new Set([...(s.celebrated ?? []), ...ids])) })),
       setSchedule: (x) => update((s) => ({ ...s, schedule: { ...s.schedule, ...x } })),
       addSpend: (x) =>
         update((s) => ({

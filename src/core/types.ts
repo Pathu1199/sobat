@@ -193,6 +193,8 @@ export type AppState = {
   schedule: WorkSchedule;
   /** The week written down in advance, Sunday first. Null until the plan screen is first opened. */
   weekPlan?: import('./weekPlan').WeekPlan | null;
+  /** Wins already celebrated (badge:, level:, challenge: ids). Null until first seeded. */
+  celebrated?: string[] | null;
 };
 
 export type StepLog = { date: ISODate; count: number };

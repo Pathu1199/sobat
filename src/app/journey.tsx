@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useGame } from '../components/MountainCard';
+import { BADGE_ICON } from '../core/game';
 import { WeightSheet } from '../components/WeightSheet';
 import { formatDayLabel } from '../core/date';
 import { fill, makeT } from '../i18n';
@@ -115,23 +116,6 @@ export default function Journey() {
   );
 }
 
-const BADGE_ICON: Record<string, string> = {
-  first_meal: '🍽️',
-  first_weigh: '⚖️',
-  streak_7: '🔥',
-  streak_30: '🌋',
-  meals_100: '💯',
-  water_7: '💧',
-  water_30: '🌊',
-  sleep_10: '🌙',
-  steps_10: '👟',
-  workouts_10: '💪',
-  weigh_4: '📅',
-  kg_1: '🪶',
-  kg_5: '🏔️',
-  halfway: '⛺',
-  summit: '🚩',
-};
 
 function Stat({ label, value, unit, color }: { label: string; value: string; unit: string; color?: string }) {
   return (

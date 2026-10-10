@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { badges, climbTrail, level, weeklyChallenge, xp, type GameInput } from '../game';
+import { badges, climbTrail, level, nextWin, weeklyChallenge, xp, type GameInput } from '../game';
 import type { Meal } from '../types';
 
 const TODAY = '2026-10-07'; // a Wednesday
@@ -78,4 +78,19 @@ describe('game', () => {
     expect(broken.earned).toBe(false);
     expect(held.earned).toBe(true);
   });
+
+  it('celebrates each win once, and does not flood the first time', () => {
+    const challenge = weeklyChallenge(base);
+    const first = nextWin({ earned: ['first_meal', 'streak_7'], level: 'base', challenge, celebrated: undefined });
+    expect(first.next).toBeNull();
+    expect(first.seed).toEqual(['badge:first_meal', 'badge:streak_7']);
+    const later = nextWin({ earned: ['first_meal', 'streak_7', 'kg_1'], level: 'camp1', challenge, celebrated: first.seed });
+    expect(later.next).toEqual({ id: 'level:camp1', kind: 'level', key: 'camp1' });
+    const after = nextWin({ earned: ['first_meal', 'streak_7', 'kg_1'], level: 'camp1', challenge, celebrated: [...first.seed!, 'level:camp1'] });
+    expect(after.next?.id).toBe('badge:kg_1');
+    const done = { ...challenge, done: true };
+    const all = nextWin({ earned: [], level: 'base', challenge: done, celebrated: [] });
+    expect(all.next?.id).toBe(`challenge:${challenge.weekStart}`);
+  });
 });
+

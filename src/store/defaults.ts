@@ -73,4 +73,5 @@ export const EMPTY_STATE: AppState = {
   spend: [],
   schedule: DEFAULT_SCHEDULE,
   weekPlan: null,
+  celebrated: null,
 };

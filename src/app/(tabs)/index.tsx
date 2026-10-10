@@ -13,6 +13,7 @@ import { NutrientCard } from '../../components/NutrientCard';
 import { StartHereCard } from '../../components/StartHereCard';
 import { SuggestSheet } from '../../components/SuggestSheet';
 import { NowStrip } from '../../components/NowStrip';
+import { Celebration } from '../../components/Celebration';
 import { CoachStrip } from '../../components/CoachStrip';
 import { PlanTodayCard } from '../../components/PlanTodayCard';
 import { FitsCard } from '../../components/FitsCard';
@@ -252,8 +253,8 @@ export default function TodayScreen() {
         </Cols>
         <Small color={C.textGhost}>{t('medical_note')}</Small>
         <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
-      <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
         <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
+        {isToday ? <Celebration /> : null}
       </Page>
     );
   }
@@ -294,6 +295,8 @@ export default function TodayScreen() {
       ) : null}
       <Small color={C.textGhost}>{t('medical_note')}</Small>
       <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
+      <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
+      {isToday ? <Celebration /> : null}
     </Page>
   );
 }
