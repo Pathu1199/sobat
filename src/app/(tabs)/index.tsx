@@ -89,6 +89,7 @@ export default function TodayScreen() {
         remaining: targets.kcal - dayTotals.kcal,
         proteinTarget: targets.proteinG,
         proteinConsumed: Math.round(dayTotals.protein),
+        earned: 0,
       };
   const over = dayBudget.remaining < 0;
 
@@ -135,7 +136,7 @@ export default function TodayScreen() {
           <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: F.tiny, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' }}>{over ? t('kcal_over') : t('kcal_left')}</Text>
           <Text style={{ color: '#FFFFFF', fontSize: F.hero, fontWeight: '800', letterSpacing: -2, lineHeight: F.hero + 4 }}>{Math.abs(dayBudget.remaining).toLocaleString()}</Text>
           <BannerBar value={dayBudget.consumed} max={dayBudget.target} />
-          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.small, fontWeight: '600' }}>{`${dayBudget.consumed.toLocaleString()} / ${dayBudget.target.toLocaleString()} kcal · ${dayBudget.proteinConsumed} / ${dayBudget.proteinTarget} g ${t('protein').toLowerCase()}`}</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.small, fontWeight: '600' }}>{`${dayBudget.consumed.toLocaleString()} / ${dayBudget.target.toLocaleString()} kcal${dayBudget.earned > 0 ? ` +${dayBudget.earned} ${t('earned_short')}` : ''} · ${dayBudget.proteinConsumed} / ${dayBudget.proteinTarget} g ${t('protein').toLowerCase()}`}</Text>
         </GradientBanner>
         <View style={{ gap: 13 }}>
           <MeterRow label={t('protein')} alt={lang === 'en' ? undefined : t('protein')} value={dayBudget.proteinConsumed} total={dayBudget.proteinTarget} unit="g" color={C.violet} />

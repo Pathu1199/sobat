@@ -1,8 +1,39 @@
-/* Sobat service worker: exists so the pinned web app can show notifications.
-   iOS only displays web notifications through a service worker registration;
-   the app calls registration.showNotification(). No caching, no push server. */
+/* Sobat service worker: shows notifications for the pinned web app (iOS only
+   displays them through a registration) and keeps the app's own files cached,
+   so the pinned app opens at once and works on a weak connection.
+   Bundles, fonts and images are served from the cache and refreshed behind;
+   the page itself and anything not ours (Firebase, Ollama) always go to the
+   network. */
+const CACHE = 'sobat-shell-v1';
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener('activate', (event) =>
+  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())),
+);
+
+function cacheable(url) {
+  if (url.origin !== self.location.origin) return false;
+  return /\/_expo\/static\/|\/assets\/|\/fonts\/|\.(?:js|css|woff2?|png|webp|svg|ico)$/.test(url.pathname);
+}
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (!cacheable(url)) return;
+  event.respondWith(
+    caches.open(CACHE).then((cache) =>
+      cache.match(req).then((hit) => {
+        const fresh = fetch(req)
+          .then((res) => {
+            if (res && res.ok) cache.put(req, res.clone());
+            return res;
+          })
+          .catch(() => hit);
+        return hit || fresh;
+      }),
+    ),
+  );
+});
 
 // Tapping a notification brings the app forward (or opens it).
 self.addEventListener('notificationclick', (event) => {

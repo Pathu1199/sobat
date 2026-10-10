@@ -46,6 +46,8 @@ export const DEFAULT_SETTINGS: Settings = {
   pushRelay: false,
   weighDay: 0,
   offDays: [0],
+  myActivities: [],
+  lowImpactOnly: false,
 };
 
 export const EMPTY_STATE: AppState = {
@@ -74,4 +76,5 @@ export const EMPTY_STATE: AppState = {
   schedule: DEFAULT_SCHEDULE,
   weekPlan: null,
   celebrated: null,
+  activities: [],
 };

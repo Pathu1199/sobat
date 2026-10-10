@@ -7,6 +7,7 @@ import { foodsForDiet } from '../core/foods';
 import { newId } from '../core/id';
 import { useClock } from '../services/useClock';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
+import { burnedOn, eatBack } from '../core/activity';
 import { streak } from '../core/insights';
 import { isOffDay } from '../core/week';
 import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryType } from '../core/memory';
@@ -16,7 +17,7 @@ import { pruneSpend, spentOn, type Routine, type SpendLog } from '../core/routin
 import type { WorkSchedule } from '../core/schedule';
 import type { WeekPlan } from '../core/weekPlan';
 import type { BreakKind, BreakSettings } from '../core/breaks';
-import type { AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
+import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
 import { migrateState } from './migrate';
 
@@ -70,6 +71,9 @@ type Ctx = {
   toggleAction: (key: string) => void;
   setRoutine: (r: Partial<Routine>) => void;
   setWeekPlan: (plan: WeekPlan | null) => void;
+  addActivity: (a: ActivityLog) => void;
+  removeActivity: (id: string) => void;
+  burnedToday: number;
   markCelebrated: (ids: string[]) => void;
   setSchedule: (s: Partial<WorkSchedule>) => void;
   addSpend: (s: Pick<SpendLog, 'category' | 'rupees' | 'spreadDays'>) => void;
@@ -129,7 +133,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const targets = dailyTargets(state.profile);
     const todayMeals = state.meals.filter((m) => m.date === today);
     const totals = sumTotals(todayMeals.flatMap((m) => m.items));
-    const budget = calcBudget(targets, totals, hour);
+    const burnedToday = burnedOn(state.activities ?? [], today);
+    const budget = calcBudget(targets, totals, hour, eatBack(burnedToday));
     const waterToday = state.water.filter((w) => w.date === today).reduce((a, w) => a + w.ml, 0);
     const dates = lastNDates(60, today);
     const mealDates = new Set(state.meals.map((m) => m.date));
@@ -230,6 +235,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }),
       setRoutine: (r) => update((s) => ({ ...s, routine: { ...s.routine, ...r } })),
       setWeekPlan: (plan) => update((s) => ({ ...s, weekPlan: plan })),
+      addActivity: (a) => update((s) => ({ ...s, activities: [...(s.activities ?? []), a] })),
+      removeActivity: (id) => update((s) => ({ ...s, activities: (s.activities ?? []).filter((x) => x.id !== id) })),
+      burnedToday,
       markCelebrated: (ids) => update((s) => ({ ...s, celebrated: Array.from(new Set([...(s.celebrated ?? []), ...ids])) })),
       setSchedule: (x) => update((s) => ({ ...s, schedule: { ...s.schedule, ...x } })),
       addSpend: (x) =>

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { ActivityPanel } from '../../components/ActivityPanel';
 import { TopBarActions } from '../../components/TopBarActions';
 import { formatDayLabel } from '../../core/date';
 import { buildSession, phaseForWeek, phaseProgress, readiness, shouldEasePlan, weeksSince } from '../../core/fitness';
@@ -203,6 +204,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
       <Page title={t('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />} header={!embedded} wide>
         <Cols weights={[1.3, 1]}>
           <>
+            <ActivityPanel />
             {hero}
             {moves}
           </>
@@ -218,6 +220,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
 
   return (
     <Page title={t('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />} header={!embedded}>
+      <ActivityPanel />
       {hero}
       {moves}
       {weekCard}

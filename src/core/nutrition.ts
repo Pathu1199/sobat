@@ -145,6 +145,8 @@ export type Budget = {
   target: number;
   consumed: number;
   remaining: number;
+  /** Calories added to the day by activity (the eat-back share of the burn). */
+  earned: number;
   perMeal: number;
   mealsLeft: number;
   proteinTarget: number;
@@ -153,13 +155,15 @@ export type Budget = {
   pct: number;
 };
 
-export function budget(targets: Targets, consumed: Totals, hour: number): Budget {
+export function budget(targets: Targets, consumed: Totals, hour: number, earned = 0): Budget {
   const left = mealsRemaining(hour);
-  const remaining = targets.kcal - consumed.kcal;
+  // Movement earns room, but only part of it: the rest of the burn stays a deficit.
+  const remaining = targets.kcal + earned - consumed.kcal;
   return {
     target: targets.kcal,
     consumed: Math.round(consumed.kcal),
     remaining: Math.round(remaining),
+    earned: Math.round(earned),
     mealsLeft: left.length,
     perMeal: left.length > 0 ? Math.round(Math.max(remaining, 0) / left.length) : 0,
     proteinTarget: targets.proteinG,

@@ -23,7 +23,7 @@ describe('parseQuestion', () => {
 
 const t = (k: string) => `[${k}]`;
 const ctx: OfflineCtx = {
-  budget: { target: 1700, consumed: 420, remaining: 1280, perMeal: 500, mealsLeft: 2, proteinTarget: 110, proteinConsumed: 12, proteinLeft: 98, pct: 0.25 },
+  budget: { target: 1700, consumed: 420, remaining: 1280, earned: 0, perMeal: 500, mealsLeft: 2, proteinTarget: 110, proteinConsumed: 12, proteinLeft: 98, pct: 0.25 },
   hour: 13,
   plan: { startKg: 98, currentKg: 95.8, goalKg: 85, lostKg: 2.2, toGoKg: 10.8, targetRate: 0.5, actualRate: 0.45, weeksAtTarget: 22, etaAtTarget: '2027-03-08', weeksAtActual: 24, etaAtActual: '2027-03-22', dailyKcal: 1700, proteinG: 110, stage: 'early', daysLogging: 30 },
   journey: { days: 14, loggedDays: 12, avgKcal: 1650, overDays: 3, heavyDays: 1, avgProtein: 70, avgWaterMl: 2100, avgSleepMin: 410, workoutDays: 2, weighIns: 2, avoidSlips: 1, lateDinners: 2 },

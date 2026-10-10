@@ -5,7 +5,7 @@ import type { Meal } from '../types';
 
 const TODAY = '2026-10-08';
 const meal = (type: Meal['type'], hour: number, kcal: number): Meal => ({ id: type + hour, at: `${TODAY}T${String(hour).padStart(2, '0')}:00:00`, date: TODAY, type, items: [], kcal, protein: 15 });
-const budget = (consumed: number, target = 1700): Budget => ({ target, consumed, remaining: target - consumed, perMeal: 500, mealsLeft: 2, proteinTarget: 110, proteinConsumed: 20, proteinLeft: 90, pct: consumed / target });
+const budget = (consumed: number, target = 1700): Budget => ({ target, consumed, remaining: target - consumed, earned: 0, perMeal: 500, mealsLeft: 2, proteinTarget: 110, proteinConsumed: 20, proteinLeft: 90, pct: consumed / target });
 
 const base: CoachInput = {
   today: TODAY,

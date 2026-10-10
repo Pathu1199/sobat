@@ -54,6 +54,10 @@ export type Settings = {
   weighDay: number;
   /** Weekdays (Date.getDay(), 0 = Sunday) the person takes off: nothing is tracked or judged. */
   offDays: number[];
+  /** The activities the person picked to track; empty until chosen. */
+  myActivities: string[];
+  /** Hide high-impact activities (knee, back, heart). */
+  lowImpactOnly: boolean;
 };
 
 export type Diet = 'veg' | 'egg' | 'nonveg';
@@ -95,6 +99,18 @@ export type SleepLog = {
   energy: number;
   minutes: number;
   score: number;
+};
+
+/** One bout of an activity the person chose: what, how long, how hard, and the calories it cost at their weight then. */
+export type ActivityLog = {
+  id: string;
+  date: ISODate;
+  at: string;
+  activityId: string;
+  minutes: number;
+  /** 0 easy, 1 normal, 2 hard. */
+  intensity: 0 | 1 | 2;
+  kcal: number;
 };
 
 export type WorkoutLog = {
@@ -195,6 +211,8 @@ export type AppState = {
   weekPlan?: import('./weekPlan').WeekPlan | null;
   /** Wins already celebrated (badge:, level:, challenge: ids). Null until first seeded. */
   celebrated?: string[] | null;
+  /** Activities done, by the person's own choice. */
+  activities: ActivityLog[];
 };
 
 export type StepLog = { date: ISODate; count: number };

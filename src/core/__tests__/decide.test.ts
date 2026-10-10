@@ -6,6 +6,7 @@ function makeBudget(over: Partial<Budget> = {}): Budget {
   return {
     target: 1800,
     consumed: 900,
+    earned: 0,
     remaining: 900,
     perMeal: 450,
     mealsLeft: 2,
