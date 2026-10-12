@@ -509,6 +509,7 @@ export default function SettingsScreen() {
 
         <Micro>{t('export_data')}</Micro>
         <Card>
+          {app.storageError ? <Small color={C.red}>{t(app.storageError === 'load' ? 'storage_load_failed' : 'storage_save_failed')}</Small> : null}
           <Row style={{ flexWrap: 'wrap', rowGap: 14 }}>
             <Count label={t('logged_intake')} value={app.state.meals.length} />
             <Count label={t('unit_kg')} value={app.state.weights.length} />

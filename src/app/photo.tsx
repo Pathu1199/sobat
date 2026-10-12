@@ -11,6 +11,7 @@ import { mealTypeForHour } from '../core/nutrition';
 import { pendingCount } from '../core/queue';
 import type { FoodItem, MealItem, MealType } from '../core/types';
 import { makeT } from '../i18n';
+import { savePhoto, shrink } from '../services/photoStore';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
 import { BiText, Btn, Card, Divider, Field, Micro, Pill, Row, Screen, SectionHeader, Segmented, Small } from '../ui/components';
@@ -86,22 +87,35 @@ export default function PhotoScreen() {
       return;
     }
     const res = fromCamera
-      ? await ImagePicker.launchCameraAsync({ quality: 0.6, base64: true, allowsEditing: true })
-      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.6, base64: true, allowsEditing: true });
+      ? await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, allowsEditing: true });
     if (res.canceled || !res.assets?.[0]) return;
     const asset = res.assets[0];
-    setUri(asset.uri);
     setDrafts([]);
-    if (asset.base64) analyse(asset.base64, asset.uri);
-    else setError(t('photo_unreadable'));
+    // Shrunk before anything else sees it: the model needs no more than this,
+    // and a full camera frame must never reach the store.
+    try {
+      const small = await shrink(asset.uri, asset.width, asset.height);
+      setUri(small.uri);
+      await analyse(small.base64, small.uri);
+    } catch {
+      setUri(asset.uri);
+      setError(t('photo_unreadable'));
+    }
   }
 
-  function queue(base64: string, sourceUri?: string) {
+  async function queue(base64: string, sourceUri?: string) {
     const now = new Date();
+    const id = newId();
+    try {
+      await savePhoto(id, base64);
+    } catch {
+      setError(t('photo_unreadable'));
+      return;
+    }
     app.queuePhoto({
-      id: newId(),
+      id,
       uri: sourceUri ?? uri ?? '',
-      base64,
       at: now.toISOString(),
       date: toISODate(now),
       attempts: 0,
@@ -111,7 +125,7 @@ export default function PhotoScreen() {
 
   async function analyse(base64: string, sourceUri?: string) {
     if (!online) {
-      queue(base64, sourceUri);
+      await queue(base64, sourceUri);
       return;
     }
     setBusy(true);
@@ -139,7 +153,7 @@ export default function PhotoScreen() {
       if (next.length === 0) setError(t('no_results'));
     } catch {
       if (online) setError(t('model_unreadable'));
-      else queue(base64, sourceUri);
+      else await queue(base64, sourceUri);
     } finally {
       setBusy(false);
     }

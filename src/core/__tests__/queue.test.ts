@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { dequeue, enqueue, markFailed, MAX_ATTEMPTS, MAX_QUEUED, nextToProcess, pendingCount, type QueuedPhoto } from '../queue';
 
 function photo(id: string, attempts = 0): QueuedPhoto {
-  return { id, uri: `file://${id}`, base64: 'aaa', at: '', date: '2026-09-26', attempts };
+  return { id, uri: `file://${id}`, at: '', date: '2026-09-26', attempts };
 }
 
 describe('enqueue', () => {

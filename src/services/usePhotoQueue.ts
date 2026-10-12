@@ -3,8 +3,9 @@ import { FOOD_PHOTO_SCHEMA, foodPhotoPrompt } from '../ai/prompts';
 import { toISODate } from '../core/date';
 import { defaultPortion, resolveByName, toMealItem } from '../core/foods';
 import { mealTypeForHour } from '../core/nutrition';
-import { nextToProcess } from '../core/queue';
+import { MAX_ATTEMPTS, nextToProcess } from '../core/queue';
 import type { MealItem } from '../core/types';
+import { loadPhoto, removePhoto } from './photoStore';
 import { useAI } from './useAI';
 import { useApp } from '../store/AppProvider';
 
@@ -43,8 +44,15 @@ export function usePhotoQueue() {
     working.current = true;
     (async () => {
       try {
+        // Older queue entries carried the bytes themselves; newer ones keep them aside.
+        const base64 = photo.base64 ?? (await loadPhoto(photo.id));
+        if (!base64) {
+          // Nothing to analyse: the bytes were lost, so the entry is just noise.
+          store.unqueuePhoto(photo.id);
+          return;
+        }
         const result = await askRef.current<{ items?: VisionItem[] }>(
-          [{ role: 'user', content: foodPhotoPrompt([]) }, { role: 'user', content: '', images: [photo.base64] }],
+          [{ role: 'user', content: foodPhotoPrompt([]) }, { role: 'user', content: '', images: [base64] }],
           FOOD_PHOTO_SCHEMA,
           true,
         );
@@ -66,6 +74,7 @@ export function usePhotoQueue() {
 
         if (items.length === 0) {
           store.failPhoto(photo.id, 'nothing recognised');
+          if (photo.attempts + 1 >= MAX_ATTEMPTS) await removePhoto(photo.id);
           return;
         }
 
@@ -82,8 +91,10 @@ export function usePhotoQueue() {
           note: 'needs_review',
         });
         store.unqueuePhoto(photo.id);
+        await removePhoto(photo.id);
       } catch (e) {
         store.failPhoto(photo.id, String(e));
+        if (photo.attempts + 1 >= MAX_ATTEMPTS) await removePhoto(photo.id);
       } finally {
         working.current = false;
       }

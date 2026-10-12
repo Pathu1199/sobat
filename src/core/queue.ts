@@ -8,15 +8,20 @@ import type { ISODate } from './types';
 export type QueuedPhoto = {
   id: string;
   uri: string;
-  base64: string;
+  /**
+   * Photos queued before 0.3 carried their bytes here, inside the state.
+   * Newer ones keep them in the photo store under their id; see
+   * services/photoStore.ts for why.
+   */
+  base64?: string;
   at: string;
   date: ISODate;
   attempts: number;
   lastError?: string;
 };
 
-/** Base64 images are heavy, so the queue is deliberately short. */
-export const MAX_QUEUED = 5;
+/** Each photo is a couple of hundred kilobytes on its own key; ten is a week of forgotten meals. */
+export const MAX_QUEUED = 10;
 export const MAX_ATTEMPTS = 3;
 
 export function enqueue(queue: QueuedPhoto[], photo: QueuedPhoto): QueuedPhoto[] {

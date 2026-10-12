@@ -5,6 +5,7 @@ import exercisesJson from '../data/exercises.json';
 import { lastNDates, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
 import { newId } from '../core/id';
+import { prunePhotos } from '../services/photoStore';
 import { useClock } from '../services/useClock';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
 import { burnedOn, eatBack } from '../core/activity';
@@ -86,6 +87,8 @@ type Ctx = {
   screenMinutesToday: number;
   resetAll: () => void;
   exportJSON: () => string;
+  /** 'load': the stored state could not be read and nothing will be written over it. 'save': the last write failed. */
+  storageError: 'load' | 'save' | null;
 };
 
 const AppCtx = createContext<Ctx | null>(null);
@@ -99,6 +102,7 @@ export function useApp(): Ctx {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(EMPTY_STATE);
   const [ready, setReady] = useState(false);
+  const [storageError, setStorageError] = useState<'load' | 'save' | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -106,10 +110,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         const raw = await AsyncStorage.getItem(KEY);
         if (raw) {
-          setState(migrateState(JSON.parse(raw)));
+          const loaded = migrateState(JSON.parse(raw));
+          setState(loaded);
+          void prunePhotos(loaded.photoQueue.map((p) => p.id));
         }
       } catch {
-        // A corrupt store should not brick the app; start fresh instead.
+        // The store is there but could not be read or parsed. Running on in
+        // memory is fine; writing a fresh state over it would not be — that
+        // is how a bad read becomes a lost year. The save effect holds off,
+        // and Settings says so.
+        setStorageError('load');
       } finally {
         setReady(true);
       }
@@ -118,12 +128,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Debounced so rapid edits do not thrash storage.
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || storageError === 'load') return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      AsyncStorage.setItem(KEY, JSON.stringify(state)).catch(() => {});
+      AsyncStorage.setItem(KEY, JSON.stringify(state))
+        .then(() => setStorageError((e) => (e === 'save' ? null : e)))
+        .catch(() => setStorageError('save'));
     }, 250);
-  }, [state, ready]);
+  }, [state, ready, storageError]);
 
   // Not `toISODate()` at render time: nothing would re-render at midnight and
   // the whole app would keep working against yesterday.
@@ -270,11 +282,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         update((s) => ({ ...s, tips: [...s.tips.filter((t) => t.date !== today).slice(-30), { date: today, text, lang: s.profile.lang }] })),
       resetAll: () => {
         setState(EMPTY_STATE);
+        // A deliberate reset is the one time an unreadable store may be replaced.
+        setStorageError(null);
         AsyncStorage.removeItem(KEY).catch(() => {});
       },
+      storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update]);
+  }, [state, ready, today, hour, update, storageError]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }
