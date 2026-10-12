@@ -4,7 +4,6 @@ import { ActivityIndicator } from 'react-native';
 import { factsFrom, systemPrompt, weeklyReportPrompt } from '../ai/prompts';
 import {} from '../core/date';
 import { changePct, type GrowthSummary } from '../core/growth';
-import { guardAdvice } from '../core/guardrails';
 import { KCAL_FLOOR } from '../core/nutrition';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
@@ -54,11 +53,12 @@ export function WeeklyReport({ summary }: { summary: GrowthSummary }) {
         waterGoalMl: app.state.settings.waterGoalMl,
         streak: app.streakDays,
       });
-      const raw = await ask([
-        { role: 'system', content: systemPrompt(lang, facts) },
-        { role: 'user', content: weeklyReportPrompt(lang, lines) },
-      ]);
-      setText(guardAdvice(raw, KCAL_FLOOR[app.state.profile.sex]).text.trim());
+      setText(
+        await ask([
+          { role: 'system', content: systemPrompt(lang, facts) },
+          { role: 'user', content: weeklyReportPrompt(lang, lines) },
+        ]),
+      );
     } catch {
       setText(null);
     } finally {

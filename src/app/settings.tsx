@@ -30,7 +30,7 @@ export default function SettingsScreen() {
   const auth = useAuth();
   const sync = useCloudSync();
   const [confirmSignOut, setConfirmSignOut] = useState(false);
-  const { ai } = useAI();
+  const { ai, blocked } = useAI();
   const aiOnline = ai.route === 'primary' || ai.route === 'fallback';
 
   const [testing, setTesting] = useState(false);
@@ -356,6 +356,7 @@ export default function SettingsScreen() {
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', flex: 1 }}>{aiOnline ? fill(t('local_ai_up'), { url: ai.url }) : t('local_ai_down')}</Text>
               </Row>
               <Small color={C.textDim}>{t('local_ai_body')}</Small>
+              {blocked === 'mixed_content' ? <Small color={C.amber}>{t('local_ai_mixed')}</Small> : null}
               <Divider />
               <OllamaSetup onTest={test} testing={testing} />
               <Divider />

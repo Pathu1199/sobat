@@ -8,6 +8,7 @@ import { FeedbackProvider } from '../services/feedback';
 import { firebaseEnabled } from '../services/firebase';
 import { configureNotifyGate } from '../services/notify';
 import { enableAutostart } from '../services/platform';
+import { AIProvider } from '../services/useAI';
 import { useAuth } from '../services/useAuth';
 import { CloudSyncProvider } from '../services/useCloudSync';
 import { useCoachMonitor } from '../services/useCoachMonitor';
@@ -27,9 +28,11 @@ export default function RootLayout() {
       <Themed>
         <FeedbackProvider>
           <BreakMonitorProvider>
-            <CloudSyncProvider>
-              <AppShell />
-            </CloudSyncProvider>
+            <AIProvider>
+              <CloudSyncProvider>
+                <AppShell />
+              </CloudSyncProvider>
+            </AIProvider>
           </BreakMonitorProvider>
         </FeedbackProvider>
       </Themed>

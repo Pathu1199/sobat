@@ -4,7 +4,6 @@ import { ActivityIndicator } from 'react-native';
 import { dailyTipPrompt, factsFrom, systemPrompt } from '../ai/prompts';
 import { planFrom } from '../core/plan';
 import { routineFacts } from '../core/routine';
-import { guardAdvice } from '../core/guardrails';
 import { contextFor, toPromptLines } from '../core/memory';
 import { KCAL_FLOOR } from '../core/nutrition';
 import { longestStretchMinutes } from '../core/usage';
@@ -65,9 +64,7 @@ export function TipCard() {
       { role: 'system', content: systemPrompt(lang, facts) },
       { role: 'user', content: dailyTipPrompt(lang, focus) },
     ])
-      .then((raw) => {
-        const guarded = guardAdvice(raw, KCAL_FLOOR[app.state.profile.sex]);
-        const text = guarded.text.trim();
+      .then((text) => {
         if (text) app.setTip(text);
       })
       .catch(() => {

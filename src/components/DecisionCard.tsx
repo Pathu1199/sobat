@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { decisionPrompt, factsFrom, systemPrompt } from '../ai/prompts';
 import type { Decision } from '../core/decide';
-import { guardAdvice } from '../core/guardrails';
 import { contextFor, toPromptLines } from '../core/memory';
 import { KCAL_FLOOR, type Budget, type Targets } from '../core/nutrition';
 import type { Lang } from '../core/types';
@@ -56,9 +55,9 @@ export function DecisionCard({ decision, lang, targets, budget }: { decision: De
       { role: 'system', content: systemPrompt(lang, facts) },
       { role: 'user', content: decisionPrompt(decision, lang, actionText) },
     ])
-      .then((raw) => {
+      .then((words) => {
         if (cancelled) return;
-        setResult({ key: requestKey, words: guardAdvice(raw, floor).text.trim() });
+        setResult({ key: requestKey, words });
       })
       .catch(() => {
         // A failed call still answers the request: fall back to the plain

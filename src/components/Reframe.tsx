@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { factsFrom, systemPrompt } from '../ai/prompts';
-import { guardAdvice, isCrisisText } from '../core/guardrails';
+import { isCrisisText } from '../core/guardrails';
 import { KCAL_FLOOR } from '../core/nutrition';
 import type { Lang } from '../core/types';
 import { makeT } from '../i18n';
@@ -55,11 +55,12 @@ export function Reframe({ onCrisis }: { onCrisis: () => void }) {
         waterGoalMl: app.state.settings.waterGoalMl,
         streak: app.streakDays,
       });
-      const raw = await ask([
-        { role: 'system', content: systemPrompt(lang, facts) },
-        { role: 'user', content: reframePrompt(lang, clean) },
-      ]);
-      setAnswer(guardAdvice(raw, KCAL_FLOOR[app.state.profile.sex]).text.trim());
+      setAnswer(
+        await ask([
+          { role: 'system', content: systemPrompt(lang, facts) },
+          { role: 'user', content: reframePrompt(lang, clean) },
+        ]),
+      );
     } catch {
       setAnswer(null);
     } finally {

@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { dayReviewPrompt, factsFrom, systemPrompt } from '../ai/prompts';
 import { formatMinutes } from '../core/date';
-import { guardAdvice } from '../core/guardrails';
 import { KCAL_FLOOR } from '../core/nutrition';
 import { longestStretchMinutes, minutesOn } from '../core/usage';
 import { makeT } from '../i18n';
@@ -60,12 +59,12 @@ export function DayReview() {
         waterGoalMl: app.state.settings.waterGoalMl,
         streak: app.streakDays,
       });
-      const raw = await ask([
-        { role: 'system', content: systemPrompt(lang, facts) },
-        { role: 'user', content: dayReviewPrompt(lang, lines) },
-      ]);
-      const guarded = guardAdvice(raw, KCAL_FLOOR[app.state.profile.sex]).text.trim();
-      setText(guarded);
+      setText(
+        await ask([
+          { role: 'system', content: systemPrompt(lang, facts) },
+          { role: 'user', content: dayReviewPrompt(lang, lines) },
+        ]),
+      );
       // Kept as a day note so tomorrow has context, not just today's screen.
       app.rememberText(summaryLine(), 'episode', 'auto');
     } catch {

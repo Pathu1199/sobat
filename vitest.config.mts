@@ -28,7 +28,7 @@ function stubReactNative(): Plugin {
 export default defineConfig({
   plugins: [stubReactNative()],
   test: {
-    include: ['src/core/**/*.test.ts'],
+    include: ['src/core/**/*.test.ts', 'src/ai/**/*.test.ts'],
     environment: 'node',
     // The app is used in India. A UTC laptop must see the same clock bugs.
     env: { TZ: 'Asia/Kolkata' },

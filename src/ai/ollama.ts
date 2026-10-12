@@ -22,6 +22,18 @@ export function normalizeUrl(url: string): string {
   return u;
 }
 
+/**
+ * An https page may not fetch an http address: the browser blocks it as
+ * mixed content before a request is made. The hosted site is https and
+ * Ollama is http on a LAN, so this is the normal case for everyone but the
+ * admin at home, and it is better said than tried.
+ */
+export function isMixedContent(url: string, pageProtocol: string): boolean {
+  if (pageProtocol !== 'https:') return false;
+  const u = normalizeUrl(url);
+  return !!u && /^http:\/\//i.test(u);
+}
+
 export async function listModels(url: string): Promise<string[]> {
   const base = normalizeUrl(url);
   if (!base) return [];

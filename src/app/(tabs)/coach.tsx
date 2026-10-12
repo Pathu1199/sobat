@@ -12,7 +12,7 @@ import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { formatMinutes, toISODate } from '../../core/date';
 import { newId } from '../../core/id';
 import { foodName, suggestMeals, toMealItem } from '../../core/foods';
-import { guardAdvice, HELPLINES, isCrisisText } from '../../core/guardrails';
+import { HELPLINES, isCrisisText } from '../../core/guardrails';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
 import { KCAL_FLOOR, mealTypeForHour } from '../../core/nutrition';
 import { planFrom } from '../../core/plan';
@@ -223,8 +223,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
       facts.push(...toPromptLines(contextFor(app.state.memory, clean, app.today, 10)));
 
       const history = app.state.chat.slice(-8).map((m) => ({ role: m.role, content: m.text }));
-      const raw = await ask([{ role: 'system', content: systemPrompt(lang, facts) }, ...history, { role: 'user', content: clean }]);
-      const reply = guardAdvice(raw, floor).text.trim();
+      const reply = await ask([{ role: 'system', content: systemPrompt(lang, facts) }, ...history, { role: 'user', content: clean }]);
       const foodish = /eat|food|dinner|lunch|meal|breakfast|snack|खा|जेव|नाश्ता|भूक/i.test(clean);
       app.addChat({
         id: newId(),
