@@ -76,6 +76,6 @@ See `ARCHITECTURE.md` for how each piece is built.
 - Weekly AI report (Markdown/PDF). Correlations like "sleep < 6 h → +400 kcal next day".
 
 ## 11. Privacy and open source
-- Local SQLite + PocketBase on your PC. No account, no cloud.
+- *(Original plan — superseded.)* Built: a Firebase account, with each account's logs kept as one file in the app maker's Google Drive through the relay. See ARCHITECTURE.md, "As built".
 - JSON export/import, optional encrypted backup.
 - MIT licence, public repo, curated open dataset of Maharashtrian foods with mr/en/hi names.

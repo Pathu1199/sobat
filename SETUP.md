@@ -22,6 +22,7 @@ Rust compiling. Nothing after that takes more than a minute or two.
 | [5](#part-5--install-and-run-it) | Install and run it | 2 min |
 | [6](#part-6--connect-the-app-to-ollama) | Point the app at Ollama | 2 min |
 | [7](#part-7--the-phone) | Put it on the phone | 5 min |
+| [8](#part-8--the-relay-and-your-google-drive) | Deploy the relay and connect your Drive | 20 min |
 
 Parts 1, 2, 4 and 5 are only for the Windows app. If you only want the phone
 app, skip straight to [Part 3](#part-3--install-and-open-up-ollama) then
@@ -349,6 +350,110 @@ http://varad-pc:11434
 Sobat tries **Ollama address** first and falls back to this. At home it uses
 the fast local network; away from home it goes over Tailscale automatically.
 The badge reads **AI: PC remote** when the fallback is in use.
+
+---
+
+## Part 8 — The relay and your Google Drive
+
+Accounts, syncing between devices, and reminders while the app is closed all
+go through one small server: a Cloudflare Worker in the `relay` folder. Until
+it is deployed, the app says **Sync is off** in Settings and keeps everything
+on the device only.
+
+**Where the data goes:** every account's logs become one file,
+`<uid>.json`, in a folder called `Sobat` in **your** Google Drive. Only the
+relay can write there; each person can reach only their own file; you can open
+all of them. Say this plainly to anyone who signs up — the app does, on the
+welcome page and under Settings.
+
+### 8.1 Install the tools
+
+```powershell
+cd C:\dev\sobat\relay
+```
+
+```powershell
+npm install
+```
+
+```powershell
+npx wrangler login
+```
+
+That opens the browser to sign in to Cloudflare (free plan is enough).
+
+### 8.2 Make the two storage namespaces
+
+```powershell
+npx wrangler kv namespace create SUBS
+```
+
+```powershell
+npx wrangler kv namespace create USERS
+```
+
+Each prints an `id`. Paste them into `relay\wrangler.toml` in place of
+`REPLACE_WITH_KV_ID` and `REPLACE_WITH_USERS_KV_ID`.
+
+### 8.3 Make a Google OAuth client
+
+In [Google Cloud Console](https://console.cloud.google.com): pick the Firebase
+project (or make one), enable the **Google Drive API**, then under
+**APIs & Services → Credentials → Create credentials → OAuth client ID** choose
+**Desktop app**. Keep the client id and secret handy.
+
+### 8.4 Connect your Drive
+
+Signed in to Google as the account whose Drive will hold the files:
+
+```powershell
+$env:GOOGLE_CLIENT_ID="paste-id"; $env:GOOGLE_CLIENT_SECRET="paste-secret"; node scripts/connect-drive.mjs
+```
+
+It prints a link. Open it, approve the single permission (the relay can only
+see files it made itself), and it prints a refresh token.
+
+### 8.5 Store the secrets
+
+Each command asks for the value:
+
+```powershell
+npx wrangler secret put GOOGLE_CLIENT_ID
+```
+
+```powershell
+npx wrangler secret put GOOGLE_CLIENT_SECRET
+```
+
+```powershell
+npx wrangler secret put GOOGLE_REFRESH_TOKEN
+```
+
+```powershell
+npx wrangler secret put VAPID_PRIVATE_KEY
+```
+
+(`VAPID_PRIVATE_KEY` is for reminders; it is in `~/.sobat/vapid.json` on the
+Mac mini.)
+
+### 8.6 Deploy
+
+```powershell
+npm run deploy
+```
+
+It prints the worker URL, like `https://sobat-relay.<you>.workers.dev`. Open
+that URL in a browser: `"drive": true, "auth": true` means it is connected.
+
+Put the URL into `app.json` → `expo.extra.push.relayUrl`, then push to `main`
+(or rebuild). Settings in the app will show **Everything is saved to your
+account** once a sync has run.
+
+### 8.7 Where to look
+
+- Your Drive → folder **Sobat** → one `.json` per account.
+- The app → Settings → **Admin** (your account only) → every account, when last
+  seen, how much is stored, block, delete.
 
 ---
 

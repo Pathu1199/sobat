@@ -1,20 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect } from 'expo-router';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, Text, View } from 'react-native';
 import { fill, makeT } from '../i18n';
-import { db } from '../services/firebase';
-import { useAuth } from '../services/useAuth';
-import { adminApi, type CloudUser } from '../services/useCloudSync';
+import { adminApi, cloudConfigured, type CloudUser } from '../services/cloud';
+import { authApi, useAuth } from '../services/useAuth';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Micro, Pill, Row, Screen, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
 
-function when(ts?: { seconds: number } | string): string {
-  if (!ts) return '—';
-  const d = typeof ts === 'string' ? new Date(ts) : new Date(ts.seconds * 1000);
-  return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+function when(iso?: string): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function size(bytes?: number): string {
+  if (!bytes) return '—';
+  return bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function confirm(message: string, onYes: () => void) {
@@ -25,23 +27,36 @@ function confirm(message: string, onYes: () => void) {
   }
 }
 
-/** Every account, for the admin only: who signed in, when, from where, and the switches to block or wipe. */
+/**
+ * Every account, for the admin only: who signed in, when, from where, how
+ * much they have stored, and the switches to block or wipe. The list comes
+ * from the relay's directory; the files themselves sit in the admin's own
+ * Google Drive, in the Sobat folder.
+ */
 export default function Admin() {
   const { state } = useApp();
   const { user, isAdmin, ready } = useAuth();
   const t = makeT(state.profile.lang);
   const [users, setUsers] = useState<CloudUser[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!db) return;
-    const snap = await getDocs(query(collection(db, 'users'), orderBy('lastSeen', 'desc'))).catch(() => null);
-    setUsers(snap ? snap.docs.map((d) => ({ ...(d.data() as CloudUser), uid: d.id })) : []);
+  const withToken = useCallback(async (fn: (token: string) => Promise<void>) => {
+    const token = await authApi.idToken();
+    if (!token) return;
+    try {
+      await fn(token);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   }, []);
+
+  const load = useCallback(() => withToken(async (token) => setUsers(await adminApi.list(token))), [withToken]);
 
   useEffect(() => {
     // The list is fetched, not derived; the state lands when the network answers.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (isAdmin) load();
+    if (isAdmin && cloudConfigured()) void load();
   }, [isAdmin, load]);
 
   if (ready && !isAdmin) return <Redirect href="/" />;
@@ -52,6 +67,8 @@ export default function Admin() {
         <Text style={{ color: C.text, fontSize: F.h1, fontWeight: '600' }}>{t('admin_title')}</Text>
         <Small color={C.textDim}>{t('admin_sub')}</Small>
       </View>
+      {!cloudConfigured() ? <Small color={C.amber}>{t('sync_unconfigured')}</Small> : null}
+      {error ? <Small color={C.amber}>{error}</Small> : null}
       <Row style={{ justifyContent: 'space-between' }}>
         <Micro>{fill(t('admin_users'), { n: users?.length ?? 0 })}</Micro>
         <Btn small tone="ghost" label={t('admin_refresh')} onPress={load} icon={<Ionicons name="refresh" size={14} color={C.text} />} />
@@ -77,24 +94,15 @@ export default function Admin() {
             <Row style={{ gap: 16, flexWrap: 'wrap' }}>
               <Stat label={t('admin_last_seen')} value={when(u.lastSeen)} />
               <Stat label={t('admin_joined')} value={when(u.createdAt)} />
-              <Stat label={t('admin_logins')} value={String(u.logins?.length ?? 0)} />
-              <Stat label={t('admin_meals')} value={String(u.meals ?? 0)} />
-              {u.weightKg ? <Stat label={t('add_weight')} value={`${u.weightKg} ${t('unit_kg')}`} /> : null}
+              <Stat label={t('admin_size')} value={size(u.bytes)} />
             </Row>
-            {u.logins?.length ? (
-              <View style={{ gap: 2 }}>
-                {u.logins.slice(0, 3).map((l, i) => (
-                  <Micro key={i} color={C.textFaint}>{`${when(l.at)} · ${l.platform}`}</Micro>
-                ))}
-              </View>
-            ) : null}
             {!me ? (
               <Row style={{ gap: 8 }}>
                 <Btn
                   small
                   tone="soft"
                   label={u.disabled ? t('admin_unblock') : t('admin_block')}
-                  onPress={() => adminApi.setBlocked(u.uid, !u.disabled).then(load)}
+                  onPress={() => withToken((token) => adminApi.setBlocked(token, u.uid, !u.disabled)).then(load)}
                   icon={<Ionicons name={u.disabled ? 'lock-open-outline' : 'lock-closed-outline'} size={14} color={C.text} />}
                   style={{ flex: 1 }}
                 />
@@ -102,7 +110,7 @@ export default function Admin() {
                   small
                   tone="danger"
                   label={t('admin_delete')}
-                  onPress={() => confirm(fill(t('admin_delete_confirm'), { email: u.email }), () => adminApi.deleteData(u.uid).then(load))}
+                  onPress={() => confirm(fill(t('admin_delete_confirm'), { email: u.email }), () => withToken((token) => adminApi.remove(token, u.uid)).then(load))}
                   icon={<Ionicons name="trash-outline" size={14} color={C.red} />}
                   style={{ flex: 1 }}
                 />

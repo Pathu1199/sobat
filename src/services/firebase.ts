@@ -2,12 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import * as firebaseAuth from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
 /**
- * One Firebase app for sign-in and the per-account copy of the data. The
- * web keys are public by design; what protects the data is firestore.rules.
+ * One Firebase app, for sign-in only. The account's data is not here: it is
+ * a file in the app maker's Google Drive, reached through the relay, which
+ * checks the Firebase token on every request. The web keys are public by
+ * design; what protects the data is the relay's token check.
  */
 export const ADMIN_EMAIL = 'shindeprathmesh999@gmail.com';
 
@@ -30,4 +31,3 @@ export const auth = app
     : firebaseAuth.initializeAuth(app, { persistence: rnPersistence(AsyncStorage) })
   : null;
 
-export const db = app ? getFirestore(app) : null;

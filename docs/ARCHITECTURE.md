@@ -1,7 +1,51 @@
-# Smart Health Assistant — End-to-End Architecture
+# Sobat — Architecture
 
-**Status:** design v1, 2026-09-25
-**What it is:** a personal, local-first, open-source health companion. Android phone + Windows PC. AI runs on the PC through Ollama. No account, no cloud.
+## As built (October 2026)
+
+This section is the truth. Everything below the rule is the September design
+it grew out of; where the two disagree, this section wins.
+
+**One Expo app**, React Native + Expo Router in `src/`, built for Android (APK),
+the browser (PWA on Firebase Hosting) and Windows (a Tauri shell loading the
+same web build from `desktop/`). There is no monorepo and no PocketBase.
+
+| Layer | Where | What |
+| --- | --- | --- |
+| Domain | `src/core` | Pure TypeScript: nutrition, decide, coach, offline coach, sleep, fitness, breaks, plan, routine, game, sync merge… 34 modules, every one unit-tested |
+| State | `src/store` | One `AppState` in AsyncStorage, versioned migrations |
+| Services | `src/services` | Timers and platform glue: clock, breaks, nudges, notifications, push, auth, cloud sync |
+| AI | `src/ai` | Ollama client and prompts. The admin's own PC only; everyone else gets the rule-based offline coach |
+| Screens | `src/app` | Today · Food · + · Body · Progress, plus settings, plan, routine, admin… |
+
+**Identity:** Firebase Auth (email/password, Google). Sign-in is required.
+
+**Where the data lives:** on the device, and as **one file per account in the
+app maker's personal Google Drive**, in a folder called `Sobat`. The app never
+holds a Drive credential; the Cloudflare Worker in `relay/` does, and it is the
+only thing that can reach that Drive. On every request it asks Firebase whom
+the token belongs to and serves that person their own file. The admin (one
+email, set in the relay) can list, block and delete accounts, and can open any
+file in their Drive. Firestore is not used.
+
+**Sync:** three-way merge per record (`src/core/sync.ts`), never whole-file
+last-write-wins. A write names the file version it was built on; the relay
+refuses a stale write and returns the current file, and the device merges and
+retries. Machine settings (Ollama address, theme, text size) never sync.
+A failed save is shown as failed, and sign-out refuses to wipe the device until
+everything has reached the account.
+
+**Reminders while closed:** the same relay holds, per phone, a push address
+and reminder times — never food, weight, sleep or mood (`src/core/pushSchedule.ts`).
+
+**Deploy:** every push to `main` runs tests, lint and typecheck, deploys the
+site to Firebase Hosting and publishes a signed APK as a GitHub Release.
+
+---
+
+# The September design (kept for the reasoning)
+
+**Status:** design v1, 2026-09-25 — superseded above where they differ.
+**What it was:** a personal, local-first companion with no account and no cloud.
 
 ---
 

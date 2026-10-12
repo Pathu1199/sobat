@@ -1,19 +1,36 @@
 import { buildPushPayload, type PushSubscription, type VapidKeys } from '@block65/webcrypto-web-push';
+import { makeVerifier, type Verify } from './auth';
+import { handleData, type DataEnv } from './data';
 import { dueBetween, type PushSchedule } from './schedule';
 
 /**
- * Sobat's reminder relay. One Worker, one KV namespace. It stores, per phone,
- * the push address Apple or Google issued and the reminder times the app
- * uploaded, and every five minutes it sends what is due. It never sees food,
- * weight, sleep or mood; the app does not send them.
+ * Sobat's relay: one Worker, two jobs.
+ *
+ * Reminders — it stores, per phone, the push address Apple or Google issued
+ * and the reminder times the app uploaded, and every five minutes it sends
+ * what is due. Only times and labels travel; see `schedule.ts`.
+ *
+ * Account data — it keeps each signed-in person's logs as one file in the
+ * app maker's Google Drive, and is the only thing that can reach that
+ * Drive. A person reaches their own file, the admin reaches all of them.
+ * See `data.ts`.
  */
 
 export interface Env {
   SUBS: KVNamespace;
+  USERS: KVNamespace;
   VAPID_SUBJECT: string;
   VAPID_PUBLIC_KEY: string;
   VAPID_PRIVATE_KEY: string;
   ALLOWED_ORIGINS: string;
+  ADMIN_EMAIL: string;
+  FIREBASE_API_KEY: string;
+  DRIVE_FOLDER?: string;
+  MAX_STATE_BYTES?: string;
+  // Secrets: set with `wrangler secret put`.
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_REFRESH_TOKEN?: string;
 }
 
 type Record_ = { sub: PushSubscription; schedule: PushSchedule; updatedAt: number; lastRunMs: number };
@@ -25,8 +42,8 @@ function cors(env: Env, req: Request): HeadersInit {
   const allowed = env.ALLOWED_ORIGINS.split(',').map((s) => s.trim());
   return {
     'Access-Control-Allow-Origin': allowed.includes(origin) ? origin : allowed[0],
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -38,6 +55,12 @@ async function keyFor(endpoint: string): Promise<string> {
 
 function json(body: unknown, status: number, headers: HeadersInit): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } });
+}
+
+function withHeaders(res: Response, headers: HeadersInit): Response {
+  const out = new Response(res.body, res);
+  for (const [k, v] of Object.entries(headers)) out.headers.set(k, v);
+  return out;
 }
 
 function validSubscription(s: unknown): s is PushSubscription {
@@ -64,12 +87,44 @@ async function send(env: Env, sub: PushSubscription, title: string, body: string
   }
 }
 
+// One verifier per isolate, so its cache outlives a single request.
+let verifier: Verify | undefined;
+let verifierKey = '';
+
+function driveConnected(env: Env): boolean {
+  return !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_REFRESH_TOKEN);
+}
+
+function dataEnv(env: Env): DataEnv {
+  if (!verifier || verifierKey !== env.FIREBASE_API_KEY) {
+    verifier = makeVerifier(env.FIREBASE_API_KEY);
+    verifierKey = env.FIREBASE_API_KEY;
+  }
+  return {
+    users: env.USERS,
+    fetchFn: fetch,
+    verify: verifier,
+    oauth: driveConnected(env) ? { clientId: env.GOOGLE_CLIENT_ID!, clientSecret: env.GOOGLE_CLIENT_SECRET!, refreshToken: env.GOOGLE_REFRESH_TOKEN! } : null,
+    adminEmail: env.ADMIN_EMAIL ?? '',
+    folderName: env.DRIVE_FOLDER || 'Sobat',
+    maxBytes: Number(env.MAX_STATE_BYTES) || 8 * 1024 * 1024,
+    now: Date.now,
+  };
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const h = cors(env, req);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
     const url = new URL(req.url);
-    if (req.method === 'GET' && url.pathname === '/') return json({ ok: true, service: 'sobat-relay' }, 200, h);
+    if (req.method === 'GET' && url.pathname === '/') {
+      return json({ ok: true, service: 'sobat-relay', drive: driveConnected(env), auth: !!env.FIREBASE_API_KEY }, 200, h);
+    }
+
+    // Account data lives behind a sign-in; see data.ts.
+    const data = await handleData(req, dataEnv(env), url.pathname);
+    if (data) return withHeaders(data, h);
+
     if (req.method !== 'POST') return json({ error: 'method' }, 405, h);
     if (Number(req.headers.get('Content-Length') ?? 0) > MAX_BODY) return json({ error: 'too large' }, 413, h);
 

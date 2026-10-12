@@ -12,7 +12,8 @@ import { OllamaSetup } from '../components/OllamaSetup';
 import { ScheduleEditor } from '../components/ScheduleEditor';
 import { useDriveBackup } from '../services/useDriveBackup';
 import { firebaseEnabled } from '../services/firebase';
-import { authApi, useAuth } from '../services/useAuth';
+import { useAuth } from '../services/useAuth';
+import { useCloudSync } from '../services/useCloudSync';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
 import { DEFAULT_OLLAMA_URL } from '../store/defaults';
@@ -27,6 +28,8 @@ export default function SettingsScreen() {
   const t = makeT(lang);
   const router = useRouter();
   const auth = useAuth();
+  const sync = useCloudSync();
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
   const { ai } = useAI();
   const aiOnline = ai.route === 'primary' || ai.route === 'fallback';
 
@@ -98,10 +101,42 @@ export default function SettingsScreen() {
                 </View>
                 {auth.isAdmin ? <Pill label={t('admin')} color={C.accent} textColor={C.white} /> : null}
               </Row>
+              <Row style={{ gap: 8, alignItems: 'center' }}>
+                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: sync.status === 'synced' ? C.green : sync.status === 'error' || sync.status === 'blocked' ? C.red : sync.status === 'unconfigured' || sync.status === 'off' ? C.textGhost : C.amber }} />
+                <View style={{ flex: 1 }}>
+                  <Small color={C.textDim}>
+                    {t(`sync_${sync.status}`)}
+                    {sync.lastSyncAt ? ` · ${fill(t('sync_last'), { when: new Date(sync.lastSyncAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) })}` : ''}
+                  </Small>
+                </View>
+                {sync.status !== 'unconfigured' && sync.status !== 'off' ? (
+                  <Btn small tone="ghost" label={sync.status === 'syncing' ? '…' : t('sync_now')} onPress={() => void sync.syncNow()} icon={<Ionicons name="cloud-upload-outline" size={14} color={C.text} />} />
+                ) : null}
+              </Row>
+              {sync.error ? <Micro color={C.amber}>{sync.error}</Micro> : null}
+              <Micro>{t('data_where')}</Micro>
               <Row style={{ gap: 8 }}>
                 {auth.isAdmin ? <Btn small tone="soft" label={t('admin_title')} onPress={() => router.push('/admin')} icon={<Ionicons name="shield-checkmark-outline" size={14} color={C.text} />} style={{ flex: 1 }} /> : null}
-                <Btn small tone="danger" label={t('sign_out')} onPress={() => authApi.signOut().then(() => router.replace('/welcome'))} icon={<Ionicons name="log-out-outline" size={14} color={C.red} />} style={{ flex: 1 }} />
+                <Btn
+                  small
+                  tone="danger"
+                  label={t('sign_out')}
+                  onPress={() => sync.signOut().then((r) => (r === 'unsynced' ? setConfirmSignOut(true) : router.replace('/welcome')))}
+                  icon={<Ionicons name="log-out-outline" size={14} color={C.red} />}
+                  style={{ flex: 1 }}
+                />
               </Row>
+              {confirmSignOut ? (
+                <Card tone={C.amber}>
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t('signout_unsynced_title')}</Text>
+                  <Small color={C.textDim}>{t('signout_unsynced_body')}</Small>
+                  <Row style={{ gap: 8 }}>
+                    <Btn small tone="soft" label={t('sync_now')} onPress={() => sync.syncNow().then(() => setConfirmSignOut(false))} style={{ flex: 1 }} />
+                    <Btn small tone="danger" label={t('signout_anyway')} onPress={() => sync.signOut(true).then(() => router.replace('/welcome'))} style={{ flex: 1 }} />
+                    <Btn small tone="ghost" label={t('cancel')} onPress={() => setConfirmSignOut(false)} style={{ flex: 1 }} />
+                  </Row>
+                </Card>
+              ) : null}
               <Micro>{t('sign_out_note')}</Micro>
             </Card>
           </>
@@ -489,7 +524,13 @@ export default function SettingsScreen() {
           <Divider />
           {confirmReset ? (
             <Row style={{ gap: 8 }}>
-              <Btn small tone="danger" label={t('reset_data')} onPress={app.resetAll} style={{ flex: 1 }} />
+              <Btn
+                small
+                tone="danger"
+                label={firebaseEnabled && auth.user ? t('erase_everywhere') : t('reset_data')}
+                onPress={firebaseEnabled && auth.user ? () => void sync.eraseEverywhere() : app.resetAll}
+                style={{ flex: 1 }}
+              />
               <Btn small tone="ghost" label={t('cancel')} onPress={() => setConfirmReset(false)} style={{ flex: 1 }} />
             </Row>
           ) : (

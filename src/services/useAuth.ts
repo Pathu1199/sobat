@@ -67,6 +67,16 @@ export const authApi = {
   googleAvailable: Platform.OS === 'web',
   reset: (email: string) => sendPasswordResetEmail(need(), email.trim()),
   signOut: () => fbSignOut(need()),
+  /** The Firebase ID token for the relay; null when nobody is signed in. Refreshed by Firebase as needed. */
+  idToken: async (): Promise<string | null> => {
+    const u = auth?.currentUser;
+    if (!u) return null;
+    try {
+      return await u.getIdToken();
+    } catch {
+      return null;
+    }
+  },
 };
 
 /** Firebase error codes to our i18n keys; anything unknown gets the generic one. */

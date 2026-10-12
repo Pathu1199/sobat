@@ -9,7 +9,7 @@ import { firebaseEnabled } from '../services/firebase';
 import { configureNotifyGate } from '../services/notify';
 import { enableAutostart } from '../services/platform';
 import { useAuth } from '../services/useAuth';
-import { useCloudSync } from '../services/useCloudSync';
+import { CloudSyncProvider } from '../services/useCloudSync';
 import { useCoachMonitor } from '../services/useCoachMonitor';
 import { BreakMonitorProvider } from '../services/useBreakMonitor';
 import { usePhotoQueue } from '../services/usePhotoQueue';
@@ -27,7 +27,9 @@ export default function RootLayout() {
       <Themed>
         <FeedbackProvider>
           <BreakMonitorProvider>
-            <AppShell />
+            <CloudSyncProvider>
+              <AppShell />
+            </CloudSyncProvider>
           </BreakMonitorProvider>
         </FeedbackProvider>
       </Themed>
@@ -66,7 +68,6 @@ function AppShell() {
   usePhotoQueue();
   useWorkSchedule();
   usePushSync();
-  useCloudSync();
   useCoachMonitor();
   const { user, ready: authReady } = useAuth();
   const { notifyGapMinutes, quietStartHour, quietEndHour } = useApp().state.settings;
