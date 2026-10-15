@@ -4,10 +4,12 @@ import { Pressable, Text, View } from 'react-native';
 import { dayPlan, fullDayPlan } from '../core/dayPlan';
 import { foodName, toMealItem } from '../core/foods';
 import { newId } from '../core/id';
-import { avoidedFoodIds, bhajiFor } from '../core/routine';
+import { pattern, slotStates } from '../core/pattern';
+import { avoidedFoodIds, bhajiFor, slotLabel } from '../core/routine';
 import type { MealType } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
+import { useMinute } from '../services/useWorkSchedule';
 import { isOffDay } from '../core/week';
 import { useApp } from '../store/AppProvider';
 import { Card, Divider, Micro, Pill, Row, Small } from '../ui/components';
@@ -31,22 +33,37 @@ export function FitsCard({ compact }: { compact?: boolean }) {
   const [mode, setMode] = useState<'rest' | 'day'>('rest');
   const [allMeals, setAllMeals] = useState(false);
   const [swapsFor, setSwapsFor] = useState<string | null>(null);
+  const minute = useMinute();
+  const patternOn = state.routine.enabled;
+  const slots = useMemo(() => (patternOn ? pattern(state.routine) : undefined), [patternOn, state.routine]);
+  const loggedSlotIds = useMemo(() => {
+    if (!patternOn) return [];
+    const todayMeals = state.meals.filter((m) => m.date === today);
+    return slotStates({ routine: state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skipped: app.actionsDoneToday })
+      .filter((s) => s.status === 'done' || s.status === 'skipped')
+      .map((s) => s.slot.id);
+  }, [patternOn, state.routine, state.meals, today, app.targets.kcal, minute, app.actionsDoneToday]);
 
   const loggedTypes = useMemo(() => Array.from(new Set(state.meals.filter((m) => m.date === today).map((m) => m.type))), [state.meals, today]);
   const plan = useMemo(() => {
-    const base = { foods, avoided: avoidedFoodIds({ ...state.routine, enabled: true }), preferred: state.routine.enabled ? bhajiFor(state.routine, today) : [], seed };
-    return mode === 'day' ? fullDayPlan({ ...base, remaining: app.targets.kcal }) : dayPlan({ ...base, remaining: budget.remaining, hour, loggedTypes });
-  }, [mode, app.targets.kcal, budget.remaining, hour, loggedTypes, foods, state.routine, today, seed]);
+    const base = { foods, avoided: avoidedFoodIds({ ...state.routine, enabled: true }), preferred: state.routine.enabled ? bhajiFor(state.routine, today) : [], seed, slots };
+    return mode === 'day' ? fullDayPlan({ ...base, remaining: app.targets.kcal }) : dayPlan({ ...base, remaining: budget.remaining, hour, loggedTypes, loggedSlotIds, nowMinutes: minute });
+  }, [mode, app.targets.kcal, budget.remaining, hour, loggedTypes, loggedSlotIds, minute, foods, state.routine, today, seed, slots]);
 
-  function log(type: MealType, foodId: string, grams: number) {
+  function log(type: MealType, foodId: string, grams: number, slotId?: string) {
     const food = foods.find((f) => f.id === foodId);
     if (!food) return;
     const item = toMealItem(food, grams);
-    app.addMeal({ id: newId(), at: new Date().toISOString(), date: today, type, items: [item], kcal: item.kcal, protein: Math.round(item.protein) });
+    app.addMeal({ id: newId(), at: new Date().toISOString(), date: today, type, items: [item], kcal: item.kcal, protein: Math.round(item.protein), slotId });
     fb.haptic('success');
     fb.notify(fill(t('toast_meal_saved'), { kcal: item.kcal }));
   }
 
+  const isNow = (s: { id?: string; type: MealType }) => (plan.nowId ? s.id === plan.nowId : s.type === plan.now);
+  const labelOf = (s: { id?: string; type: MealType }) => {
+    const slot = s.id ? state.routine.slots.find((x) => x.id === s.id) : undefined;
+    return (slot && slotLabel(slot, lang)) || t(s.type);
+  };
   if (isOffDay(state.settings.offDays, today)) return null;
   if (plan.stop && mode === 'rest') {
     return (
@@ -89,17 +106,17 @@ export function FitsCard({ compact }: { compact?: boolean }) {
         </Row>
       ) : null}
       {open
-        ? plan.slots.filter((s) => !compact || allMeals || mode === 'day' || s.type === plan.now || plan.slots[0] === s).map((s, i) => (
-            <View key={s.type} style={{ gap: 6 }}>
+        ? plan.slots.filter((s) => !compact || allMeals || mode === 'day' || isNow(s) || plan.slots[0] === s).map((s, i) => (
+            <View key={s.id ?? s.type} style={{ gap: 6 }}>
               {i > 0 ? <Divider /> : null}
               <Row style={{ justifyContent: 'space-between' }}>
-                <Micro color={mode === 'rest' && s.type === plan.now ? C.accent : C.textFaint}>{`${t(s.type)}${mode === 'rest' && s.type === plan.now ? ` · ${t('fits_now')}` : ''}`}</Micro>
+                <Micro color={mode === 'rest' && isNow(s) ? C.accent : C.textFaint}>{`${labelOf(s)}${mode === 'rest' && isNow(s) ? ` · ${t('fits_now')}` : ''}`}</Micro>
                 <Micro>{`${s.kcal} / ${s.budget} kcal · ${s.protein} g`}</Micro>
               </Row>
               {s.picks.map((p) => (
                 <Pressable
                   key={p.food.id}
-                  onPress={() => log(s.type, p.food.id, p.grams)}
+                  onPress={() => log(s.type, p.food.id, p.grams, s.id)}
                   accessibilityRole="button"
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4, opacity: pressed ? 0.7 : 1 })}>
                   <FoodThumb food={p.food} size={30} />
@@ -111,12 +128,12 @@ export function FitsCard({ compact }: { compact?: boolean }) {
                   <Ionicons name="add-circle-outline" size={16} color={C.accent} />
                 </Pressable>
               ))}
-              {s.picks.some((p) => p.alts?.length) && compact && swapsFor !== s.type ? (
-                <Pressable onPress={() => setSwapsFor(s.type)} style={{ paddingLeft: 40, paddingVertical: 2 }}>
+              {s.picks.some((p) => p.alts?.length) && compact && swapsFor !== (s.id ?? s.type) ? (
+                <Pressable onPress={() => setSwapsFor(s.id ?? s.type)} style={{ paddingLeft: 40, paddingVertical: 2 }}>
                   <Micro color={C.accent}>{`${t('fits_show_swaps')} ›`}</Micro>
                 </Pressable>
               ) : null}
-              {s.picks.some((p) => p.alts?.length) && (!compact || swapsFor === s.type) ? (
+              {s.picks.some((p) => p.alts?.length) && (!compact || swapsFor === (s.id ?? s.type)) ? (
                 <View style={{ gap: 2, paddingLeft: 40 }}>
                   {s.picks
                     .filter((p) => p.alts?.length)
@@ -124,7 +141,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
                       <Row key={`alt-${p.food.id}`} style={{ gap: 6, flexWrap: 'wrap' }}>
                         <Micro color={C.textGhost}>{fill(t('fits_swap'), { food: foodName(p.food, lang) })}</Micro>
                         {p.alts!.map((a) => (
-                          <Pressable key={a.food.id} onPress={() => log(s.type, a.food.id, a.grams)} accessibilityRole="button">
+                          <Pressable key={a.food.id} onPress={() => log(s.type, a.food.id, a.grams, s.id)} accessibilityRole="button">
                             <Micro color={C.accent}>{`${foodName(a.food, lang)} (${a.kcal}${p.kcal - a.kcal > 0 ? `, −${p.kcal - a.kcal}` : ''})`}</Micro>
                           </Pressable>
                         ))}

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
 import { dayPlan, fullDayPlan } from '../dayPlan';
+import { pattern } from '../pattern';
+import { DEFAULT_ROUTINE, type RoutineSlot } from '../routine';
 import type { FoodItem } from '../types';
 
 const foods = foodsJson as FoodItem[];
@@ -41,5 +43,19 @@ describe('dayPlan', () => {
     const withAlts = full.slots.flatMap((s) => s.picks).filter((p) => (p.alts?.length ?? 0) > 0);
     expect(withAlts.length).toBeGreaterThan(0);
     for (const p of withAlts) for (const a of p.alts!) expect(a.kcal).toBeLessThanOrEqual(p.kcal);
+  });
+
+  it('with the pattern on, the meals ahead are its slots, each with its share of what is left', () => {
+    const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
+    const slots = pattern({ ...DEFAULT_ROUTINE, slots: [slot('morning', 'breakfast', '08:30', 25), slot('lunch', 'lunch', '13:00', 40), slot('dinner', 'dinner', '19:30', 35)] });
+    const base = { remaining: 1000, hour: 14, loggedTypes: [], foods, avoided: new Set<string>(), slots, loggedSlotIds: ['morning'] };
+    const p = dayPlan({ ...base, nowMinutes: 14 * 60 });
+    expect(p.slots.map((s) => s.id)).toEqual(['lunch', 'dinner']);
+    expect(p.nowId).toBe('lunch');
+    expect(p.now).toBe('lunch');
+    expect(p.slots[0].budget).toBe(Math.round((1000 * 0.4) / 0.75));
+    // Once dinner's window is near, a lunch never eaten drops off.
+    const late = dayPlan({ ...base, nowMinutes: 19 * 60 + 10 });
+    expect(late.slots.map((s) => s.id)).toEqual(['dinner']);
   });
 });
