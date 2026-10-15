@@ -149,12 +149,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const totals = sumTotals(todayMeals.flatMap((m) => m.items));
     const burnedToday = burnedOn(state.activities ?? [], today);
     const actionsDoneToday = state.actionsDone.filter((a) => a.date === today).map((a) => a.key);
-    // With the pattern on, the meals left are its slots still to eat, not the fixed windows.
-    const mealsLeftOverride = state.routine.enabled
-      ? slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skipped: actionsDoneToday }).filter(
-          (x) => x.status === 'now' || x.status === 'missed' || x.status === 'later',
-        ).length
-      : undefined;
+    // With the pattern on, the meals left are its slots still to eat, not the fixed windows; a pattern with no slots falls back to the windows.
+    const patternStates = state.routine.enabled ? slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skipped: actionsDoneToday }) : [];
+    const mealsLeftOverride =
+      patternStates.length > 0 ? patternStates.filter((x) => x.status === 'now' || x.status === 'missed' || x.status === 'later').length : undefined;
     const budget = calcBudget(targets, totals, hour, eatBack(burnedToday), mealsLeftOverride);
     const waterToday = state.water.filter((w) => w.date === today).reduce((a, w) => a + w.ml, 0);
     const dates = lastNDates(60, today);

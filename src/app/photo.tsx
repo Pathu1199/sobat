@@ -8,6 +8,7 @@ import { toISODate } from '../core/date';
 import { newId } from '../core/id';
 import { defaultPortion, resolveByName, searchFoods, toMealItem } from '../core/foods';
 import { mealTypeForHour } from '../core/nutrition';
+import { pattern, slotOf } from '../core/pattern';
 import { pendingCount } from '../core/queue';
 import type { FoodItem, MealItem, MealType } from '../core/types';
 import { makeT } from '../i18n';
@@ -168,12 +169,15 @@ export default function PhotoScreen() {
   function save() {
     if (items.length === 0) return;
     const now = new Date();
+    const at = now.toISOString();
     const changed = drafts.filter((d) => d.food && d.food.name_en.toLowerCase() !== d.rawName.toLowerCase());
     app.addMeal({
       id: newId(),
-      at: now.toISOString(),
+      at,
       date: toISODate(now),
       type: mealType,
+      // The type was picked here, so the meal goes to the nearest slot of that type rather than whichever slot is on now.
+      slotId: app.state.routine.enabled ? slotOf({ type: mealType, at }, pattern(app.state.routine))?.id : undefined,
       items,
       kcal: totalKcal,
       protein: totalProtein,

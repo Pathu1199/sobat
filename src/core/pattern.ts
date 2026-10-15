@@ -120,20 +120,28 @@ export function slotStates(input: {
 }
 
 /**
- * The slot a meal eaten right now belongs to: the latest slot whose window
- * has opened (its time minus the early margin) and that is not yet done or
+ * The slot a meal eaten right now belongs to. The latest slot whose window
+ * has opened (its time minus the early margin), when it is not yet done or
  * skipped, so a late lunch at 14:00 is still lunch even when breakfast was
- * never logged; before any window has opened, the first open slot of the
- * day; once every opened slot is done, the next one; when the day is done,
- * the nearest by time. Null only with no slots.
+ * never logged. Once that slot is done or skipped, the next one after it,
+ * so a snack after lunch is not taken for a missed breakfast; with nothing
+ * after it left, the latest earlier slot still open. Before any window has
+ * opened, the first open slot of the day; when the day is done, the
+ * nearest by time. Null only with no slots.
  */
 export function currentSlot(states: SlotState[], nowMinutes: number): SlotState | null {
   if (states.length === 0) return null;
   const open = (s: SlotState) => s.status !== 'done' && s.status !== 'skipped';
-  const opened = states.filter((s) => open(s) && nowMinutes >= s.slot.minutes - SLOT_EARLY_MIN);
-  if (opened.length > 0) return opened[opened.length - 1];
-  const later = states.find(open);
-  if (later) return later;
+  // States are in time order, so the opened ones are a prefix; -1 when none has opened yet.
+  let last = -1;
+  states.forEach((s, i) => {
+    if (nowMinutes >= s.slot.minutes - SLOT_EARLY_MIN) last = i;
+  });
+  if (last >= 0 && open(states[last])) return states[last];
+  const next = states.slice(last + 1).find(open);
+  if (next) return next;
+  const missed = states.slice(0, Math.max(0, last)).filter(open).pop();
+  if (missed) return missed;
   return states.reduce((best, s) => (gap(s.slot.minutes, nowMinutes) < gap(best.slot.minutes, nowMinutes) ? s : best));
 }
 

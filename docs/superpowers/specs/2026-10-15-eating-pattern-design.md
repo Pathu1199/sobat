@@ -109,11 +109,14 @@ the existing grace of 45 minutes and early window of 30. `planned` is the
 week plan's total for that slot today, when a plan exists. `left` is
 `allowance - eaten`. `currentSlot` is the slot a meal eaten now belongs
 to: the latest slot whose window has opened (its time minus the early
-margin) and that is not done or skipped, so a late lunch is still lunch
-when breakfast was never logged; before any window opens, the first open
-slot; once every opened slot is done, the next one; when the day is done,
-the nearest by time. Null only with no slots. A meal that names no slot
-(a photo, a recipe, the coach) is stamped with it when it is added.
+margin) when it is not done or skipped, so a late lunch is still lunch
+when breakfast was never logged; once that slot is done or skipped, the
+next one after it (a snack after lunch is not a missed breakfast), else
+the latest earlier slot still open; before any window opens, the first
+open slot; when the day is done, the nearest by time. Null only with no
+slots. A meal that names no slot (a recipe, the coach) is stamped with it
+when it is added; the photo screen, which picks a type, takes the nearest
+slot of that type.
 
 `slotLogged` (food-id matching) is replaced by assignment everywhere it was
 used: the routine card, the slot prompt in `useWorkSchedule`.
