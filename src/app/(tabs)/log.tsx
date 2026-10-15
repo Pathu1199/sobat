@@ -12,10 +12,12 @@ import { addDays, formatDayLabel, lastNDates, localHHMM } from '../../core/date'
 import { newId } from '../../core/id';
 import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, toMealItem, type DishStyle } from '../../core/foods';
 import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../../core/nutrition';
-import { avoidHits } from '../../core/routine';
+import { slotForNow, slotStates } from '../../core/pattern';
+import { avoidHits, slotLabel, slotTime } from '../../core/routine';
 import type { FoodItem, MealItem, MealType } from '../../core/types';
-import { makeT } from '../../i18n';
+import { fill, makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
+import { useMinute } from '../../services/useWorkSchedule';
 import { useApp } from '../../store/AppProvider';
 import { Bar, BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, SectionHeader, Segmented } from '../../ui/components';
 import { DateStrip } from '../../ui/DateStrip';
@@ -56,22 +58,35 @@ export default function LogScreen() {
   const isToday = viewDate === app.today;
   // Today each time the + opens it, unless a screen handed over a day (Today's
   // "add food for yesterday"), which is read as ?date=YYYY-MM-DD.
-  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+  const { date: dateParam, slot: slotParam } = useLocalSearchParams<{ date?: string; slot?: string }>();
   const wanted = typeof dateParam === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : app.today;
+  const wantedSlot = typeof slotParam === 'string' ? slotParam : null;
+  const [slotId, setSlotId] = useState<string | null>(null);
   useFocusEffect(
     useCallback(() => {
-      // The day shown follows the way in, so a stale pick from last time never sticks.
+      // The day and slot shown follow the way in, so a stale pick from last time never sticks.
       setViewDate(wanted);
-    }, [wanted]),
+      setSlotId(wantedSlot);
+    }, [wanted, wantedSlot]),
   );
   const stripDates = useMemo(() => [...lastNDates(11, app.today), ...[1, 2, 3].map((n) => addDays(app.today, n))], [app.today]);
   const loggedDates = useMemo(() => new Set(app.state.meals.map((m) => m.date)), [app.state.meals]);
-  const dayMeals = app.state.meals.filter((m) => m.date === viewDate);
+  const dayMeals = useMemo(() => app.state.meals.filter((m) => m.date === viewDate), [app.state.meals, viewDate]);
   const dayKcal = sumTotals(dayMeals.flatMap((m) => m.items)).kcal;
+  // With the pattern on, a meal is logged against one of its slots, and the slot's budget shrinks as the basket fills.
+  const patternOn = app.state.routine.enabled;
+  const minute = useMinute();
+  const states = useMemo(
+    () => (patternOn ? slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: dayMeals, nowMinutes: isToday ? minute : 1440, skipped: isToday ? app.actionsDoneToday : [] }) : []),
+    [patternOn, app.state.routine, app.targets.kcal, dayMeals, isToday, minute, app.actionsDoneToday],
+  );
+  const chosen = patternOn ? (states.find((s) => s.slot.id === slotId) ?? slotForNow(states, minute)) : null;
+  const effectiveType: MealType = chosen ? chosen.slot.type : mealType;
 
-  /** When a meal "happened": now for today, the usual hour of that meal for an earlier day. */
+  /** When a meal "happened": now for today; the slot's time, or the usual hour of that meal, for an earlier day. */
   function atFor(type: MealType): string {
     if (isToday) return new Date().toISOString();
+    if (chosen) return new Date(`${viewDate}T${slotTime(chosen.slot.slot)}:00`).toISOString();
     const h = (MEAL_WINDOWS.find((w) => w.type === type)?.startHour ?? 12) + 1;
     return new Date(`${viewDate}T${String(h).padStart(2, '0')}:00:00`).toISOString();
   }
@@ -79,7 +94,7 @@ export default function LogScreen() {
     const ids = recentFoodIds(app.state.meals, addDays(app.today, -30), 8);
     return ids.map((id) => app.foods.find((f) => f.id === id)).filter((f): f is FoodItem => !!f);
   }, [app.state.meals, app.foods, app.today]);
-  const yesterdaySame = app.state.meals.find((m) => m.date === addDays(viewDate, -1) && m.type === mealType);
+  const yesterdaySame = app.state.meals.find((m) => m.date === addDays(viewDate, -1) && m.type === effectiveType);
 
   const basketItems: MealItem[] = basket.map((b) => toMealItem(b.food, b.gramsPerUnit * b.count));
   const basketKcal = basketItems.reduce((a, i) => a + i.kcal, 0);
@@ -122,7 +137,7 @@ export default function LogScreen() {
 
   function saveMeal() {
     if (basketItems.length === 0) return;
-    app.addMeal({ id: newId(), at: atFor(mealType), date: viewDate, type: mealType, items: basketItems, kcal: basketKcal, protein: basketProtein });
+    app.addMeal({ id: newId(), at: atFor(effectiveType), date: viewDate, type: effectiveType, items: basketItems, kcal: basketKcal, protein: basketProtein, slotId: chosen?.slot.id });
     setBasket([]);
     setQuery('');
     fb.haptic('success');
@@ -221,8 +236,24 @@ export default function LogScreen() {
 
   const searchBlock = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={t('add_food')} meta={t(mealType)} />
-      <Segmented value={mealType} onChange={setMealType} options={MEAL_TYPES.map((m) => ({ key: m, label: en(m) }))} />
+      <SectionHeader title={t('add_food')} meta={chosen ? slotLabel(chosen.slot.slot, lang) : t(mealType)} />
+      {patternOn && states.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+          {states.map((s) => (
+            <Pill
+              key={s.slot.id}
+              label={`${slotLabel(s.slot.slot, lang)} ${slotTime(s.slot.slot)} · ${s.status === 'done' ? t('routine_logged') : fill(t('log_slot_left'), { kcal: Math.max(0, s.left) })}`}
+              active={chosen?.slot.id === s.slot.id}
+              onPress={() => {
+                setSlotId(s.slot.id);
+                setMealType(s.slot.type);
+              }}
+            />
+          ))}
+        </ScrollView>
+      ) : (
+        <Segmented value={mealType} onChange={setMealType} options={MEAL_TYPES.map((m) => ({ key: m, label: en(m) }))} />
+      )}
       <Field value={query} onChangeText={(v) => { setQuery(v); setStyleFilter(null); }} placeholder={t('search_food')} autoFocus={!wide} />
       {query.trim() !== '' && stylesPresent.length > 1 ? (
         <Row style={{ gap: 6, flexWrap: 'wrap' }}>
@@ -244,6 +275,19 @@ export default function LogScreen() {
       ) : null}
     </View>
   );
+
+  const slotLeft = chosen ? chosen.left - basketKcal : 0;
+  const dayLeft = (isToday ? app.budget.remaining : app.targets.kcal - dayKcal) - basketKcal;
+  const budgetLine =
+    chosen ? (
+      <Text style={{ color: dayLeft < 0 ? C.red : slotLeft < 0 ? C.amber : C.textDim, fontSize: F.small, lineHeight: 18 }}>
+        {[
+          `${slotLabel(chosen.slot.slot, lang)}: ${basketKcal} / ${chosen.allowance}`,
+          slotLeft >= 0 ? fill(t('log_left_for'), { kcal: slotLeft, slot: slotLabel(chosen.slot.slot, lang) }) : fill(t('log_over_for'), { kcal: -slotLeft, slot: slotLabel(chosen.slot.slot, lang) }),
+          dayLeft >= 0 ? fill(t('log_left_today'), { kcal: dayLeft }) : fill(t('log_over_today'), { kcal: -dayLeft }),
+        ].join(' · ')}
+      </Text>
+    ) : null;
 
   const basketCard =
     basket.length > 0 ? (
@@ -284,6 +328,7 @@ export default function LogScreen() {
         {wide ? (
           <>
             <Divider />
+            {budgetLine}
             <Row style={{ justifyContent: 'space-between' }}>
               <View>
                 <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{basketKcal}</Text>
@@ -441,7 +486,7 @@ export default function LogScreen() {
           }}>
           <View style={{ flex: 1 }}>
             <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{basketKcal}</Text>
-            <Micro>{`${basket.length} ${t('items').toLowerCase()} · ${basketProtein} g ${t('protein')}`}</Micro>
+            {budgetLine ?? <Micro>{`${basket.length} ${t('items').toLowerCase()} · ${basketProtein} g ${t('protein')}`}</Micro>}
           </View>
           <Btn label={t('save')} onPress={saveMeal} style={{ minWidth: 120 }} />
         </View>

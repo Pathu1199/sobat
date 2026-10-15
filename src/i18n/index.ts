@@ -954,6 +954,11 @@ const en: Dict = {
   pattern_share: 'Share of the day',
   pattern_share_kcal: '= {kcal} kcal today',
   pattern_share_hint: 'Weights, not percentages: the meals always add up to your target.',
+  log_slot_left: '{kcal} left',
+  log_left_for: '{kcal} left for {slot}',
+  log_over_for: '{kcal} over for {slot}',
+  log_left_today: '{kcal} left today',
+  log_over_today: '{kcal} over today',
 };
 
 const mr: Dict = {
@@ -1912,6 +1917,11 @@ const mr: Dict = {
   pattern_share: 'दिवसाचा वाटा',
   pattern_share_kcal: '= आज {kcal} kcal',
   pattern_share_hint: 'हे वजन आहेत, टक्के नाहीत: सगळी जेवणं मिळून नेहमी तुमचं लक्ष्य होतं.',
+  log_slot_left: '{kcal} बाकी',
+  log_left_for: '{slot}साठी {kcal} बाकी',
+  log_over_for: '{slot}साठी {kcal} जास्त',
+  log_left_today: 'आज {kcal} बाकी',
+  log_over_today: 'आज {kcal} जास्त',
 };
 
 const hi: Dict = {
@@ -2868,6 +2878,11 @@ const hi: Dict = {
   pattern_share: 'दिन का हिस्सा',
   pattern_share_kcal: '= आज {kcal} kcal',
   pattern_share_hint: 'ये वज़न हैं, प्रतिशत नहीं: सारे खाने मिलकर हमेशा आपका लक्ष्य बनते हैं.',
+  log_slot_left: '{kcal} बाकी',
+  log_left_for: '{slot} के लिए {kcal} बाकी',
+  log_over_for: '{slot} के लिए {kcal} ज़्यादा',
+  log_left_today: 'आज {kcal} बाकी',
+  log_over_today: 'आज {kcal} ज़्यादा',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
