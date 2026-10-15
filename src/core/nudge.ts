@@ -53,7 +53,8 @@ export function pickNudge(ctx: NudgeContext): NudgeChoice {
     { type: 'stand', seconds: 120, want: ctx.sittingMinutes >= 90 },
     { type: 'eyes', seconds: 20, want: ctx.sittingMinutes >= 45 },
     { type: 'posture', seconds: 60, want: ctx.sittingMinutes >= 60 },
-    { type: 'log', seconds: 60, want: ctx.lastMealHoursAgo !== null && ctx.lastMealHoursAgo > 5 },
+    // Nothing logged by late morning, or the last meal long ago: either way, ask for a log.
+    { type: 'log', seconds: 60, want: ctx.lastMealHoursAgo === null ? ctx.hour >= 11 : ctx.lastMealHoursAgo > 5 },
     { type: 'breathe', seconds: 60, want: true },
     { type: 'progress', seconds: 30, want: true },
   ];

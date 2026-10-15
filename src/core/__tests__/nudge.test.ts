@@ -35,6 +35,12 @@ describe('inQuietHours', () => {
 });
 
 describe('pickNudge', () => {
+  it('asks for a log when nothing was logged by late morning, not before', () => {
+    const quietDesk = { ...base, sittingMinutes: 10, lastMealHoursAgo: null };
+    expect(pickNudge({ ...quietDesk, hour: 14 })?.type).toBe('log');
+    expect(pickNudge({ ...quietDesk, hour: 9 })?.type).not.toBe('log');
+  });
+
   it('stays silent when disabled', () => {
     expect(pickNudge({ ...base, enabled: false })).toBeNull();
   });

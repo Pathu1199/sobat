@@ -963,6 +963,12 @@ const en: Dict = {
   pattern_log_other: 'Different',
   pattern_planned: '{kcal} planned',
   pattern_vs_plan: 'vs plan',
+  away_2_title: 'Nothing logged yesterday',
+  away_2_body: 'One meal is enough. Everything is still here.',
+  away_3_title: 'Two days quiet',
+  away_3_body: 'Your plan is still here. Log whatever you eat next.',
+  away_4_title: 'Three days',
+  away_4_body: 'Come back when you can. The streak restarts the moment you log.',
 };
 
 const mr: Dict = {
@@ -1930,6 +1936,12 @@ const mr: Dict = {
   pattern_log_other: 'वेगळं',
   pattern_planned: '{kcal} नियोजित',
   pattern_vs_plan: 'नियोजनापेक्षा',
+  away_2_title: 'काल काहीच नोंदवलं नाही',
+  away_2_body: 'एक जेवण पुरे. सगळं अजून इथेच आहे.',
+  away_3_title: 'दोन दिवस शांतता',
+  away_3_body: 'तुमचं नियोजन इथेच आहे. पुढचं जे खाल ते नोंदवा.',
+  away_4_title: 'तीन दिवस',
+  away_4_body: 'जमेल तेव्हा परत या. नोंदवताच मालिका पुन्हा सुरू होते.',
 };
 
 const hi: Dict = {
@@ -2895,6 +2907,12 @@ const hi: Dict = {
   pattern_log_other: 'अलग',
   pattern_planned: '{kcal} प्लान में',
   pattern_vs_plan: 'प्लान से',
+  away_2_title: 'कल कुछ दर्ज नहीं हुआ',
+  away_2_body: 'एक खाना काफ़ी है. सब कुछ अभी भी यहीं है.',
+  away_3_title: 'दो दिन चुप्पी',
+  away_3_body: 'आपका प्लान यहीं है. अगला जो खाएँ, दर्ज करें.',
+  away_4_title: 'तीन दिन',
+  away_4_body: 'जब हो सके लौट आएँ. दर्ज करते ही सिलसिला फिर शुरू हो जाता है.',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
