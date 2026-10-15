@@ -66,6 +66,15 @@ describe('plannedReminders: absence', () => {
     expect(r.some((x) => x.date === '2026-10-12')).toBe(false);
   });
 
+  it('planned on a Saturday with a log and Sunday off, says nothing on Monday', () => {
+    const r = away(plannedReminders({ ...base, today: '2026-10-10', routine: { ...routine, enabled: false }, lastLogDate: '2026-10-10', offDays: [0] }));
+    expect(r.map((x) => [x.date, x.title])).toEqual([
+      ['2026-10-13', 'away_2_title'],
+      ['2026-10-14', 'away_3_title'],
+      ['2026-10-15', 'away_4_title'],
+    ]);
+  });
+
   it('waits for quiet hours to end before the morning line', () => {
     const r = away(plannedReminders({ ...base, routine: { ...routine, enabled: false }, quietEndHour: 10 }));
     expect(r[0].time).toBe('10:00');

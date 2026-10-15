@@ -140,6 +140,13 @@ describe('withSlot', () => {
     expect(withSlot(meal('breakfast', '08:40', 250), input)).toMatchObject({ slotId: 'morning', type: 'breakfast' });
   });
 
+  it('gives a meal from another day the slot its time and type put it in, whatever the clock says', () => {
+    const yesterday = { ...meal('lunch', '13:20', 450), date: '2026-10-11', at: new Date('2026-10-11T13:20:00').toISOString() };
+    expect(withSlot(yesterday, input)).toMatchObject({ slotId: 'lunch', type: 'lunch' });
+    const lateLastNight = { ...meal('snack', '23:55', 100), date: '2026-10-11', at: new Date('2026-10-11T23:55:00').toISOString() };
+    expect(withSlot(lateLastNight, { ...input, now: new Date('2026-10-12T00:02:00') })).toMatchObject({ slotId: 'dinner' });
+  });
+
   it('leaves a meal that names a slot, or a pattern with no slots, alone', () => {
     const named = meal('snack', '14:00', 100, 'dinner');
     expect(withSlot(named, input)).toBe(named);

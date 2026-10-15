@@ -183,10 +183,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addMeal: (m) =>
         update((s) => {
           // A meal logged from a photo, a recipe or the coach names no slot; it belongs to the slot it is eaten in.
-          const meal =
-            s.routine.enabled && m.date === today
-              ? withSlot(m, { routine: s.routine, target: targets.kcal, meals: s.meals.filter((x) => x.date === today), skipped: s.actionsDone.filter((a) => a.date === today).map((a) => a.key), now: new Date() })
-              : m;
+          const meal = s.routine.enabled
+            ? withSlot(m, { routine: s.routine, target: targets.kcal, meals: s.meals.filter((x) => x.date === today), skipped: s.actionsDone.filter((a) => a.date === today).map((a) => a.key), now: new Date() })
+            : m;
           return { ...s, meals: [...s.meals, meal] };
         }),
       removeMeal: (id) => update((s) => ({ ...s, meals: s.meals.filter((m) => m.id !== id) })),
