@@ -89,6 +89,15 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   return s;
 }
 
+/** A plan that cannot be reshaped is dropped, not fatal: the routine rebuilds it on next open. */
+function alignOrDrop(plan: WeekPlan, routine: AppState['routine']): WeekPlan | null {
+  try {
+    return alignWeekPlan(plan, routine);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Brings a stored blob up to the current shape. Never throws: a corrupt or
  * foreign file yields a fresh state rather than bricking the app.
@@ -124,6 +133,6 @@ export function migrateState(raw: unknown): AppState {
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
     schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}) },
     // Version 6: plan meals are named after the pattern's slots; older names land on the slot of their type nearest their time.
-    weekPlan: rawPlan ? alignWeekPlan(rawPlan, routine) : null,
+    weekPlan: rawPlan ? alignOrDrop(rawPlan, routine) : null,
   };
 }

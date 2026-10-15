@@ -57,7 +57,7 @@ describe('migrateState', () => {
     expect(s.settings.waterGoalMl).toBe(3000);
   });
 
-  it('marks the result as version 2 and is idempotent', () => {
+  it('marks the result as the current version and is idempotent', () => {
     const once = migrateState(v1);
     expect(once.version).toBe(6);
     const twice = migrateState(once);
@@ -138,5 +138,19 @@ describe('migrateState', () => {
   it('does not put back a dinner slot that a version-6 store removed on purpose', () => {
     const v6 = { version: 6, profile: { ...EMPTY_STATE.profile, onboarded: true }, meals: [], routine: { ...DEFAULT_ROUTINE, slots: DEFAULT_ROUTINE.slots.filter((s) => s.type !== 'dinner') } };
     expect(migrateState(v6).routine.slots.some((s) => s.type === 'dinner')).toBe(false);
+  });
+
+  it('drops a week plan it cannot reshape instead of failing the whole load', () => {
+    const junk = { version: 5, profile: { ...EMPTY_STATE.profile }, meals: [], weekPlan: { days: Array(7).fill({}) } };
+    expect(migrateState(junk).weekPlan).toBeNull();
+    const noTime = { ...junk, weekPlan: { days: Array.from({ length: 7 }, () => ({ meals: [{ id: 'x', type: 'snack', lines: [] }] })) } };
+    expect(() => migrateState(noTime)).not.toThrow();
+  });
+
+  it('gives the new dinner a free id when a non-dinner slot is already called dinner', () => {
+    const odd = { version: 5, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...DEFAULT_ROUTINE, slots: DEFAULT_ROUTINE.slots.filter((s) => s.type !== 'dinner').map((s) => (s.id === 'tea' ? { ...s, id: 'dinner' } : s)) } };
+    const slots = migrateState(odd).routine.slots;
+    expect(slots.find((s) => s.type === 'dinner')!.id).toBe('dinner-2');
+    expect(slots.filter((s) => s.id === 'dinner')).toHaveLength(1);
   });
 });
