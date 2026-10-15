@@ -14,6 +14,7 @@ import { isOffDay } from '../core/week';
 import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryType } from '../core/memory';
 import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
+import { slotStates, withSlot } from '../core/pattern';
 import { pruneSpend, spentOn, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
@@ -147,7 +148,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const todayMeals = state.meals.filter((m) => m.date === today);
     const totals = sumTotals(todayMeals.flatMap((m) => m.items));
     const burnedToday = burnedOn(state.activities ?? [], today);
-    const budget = calcBudget(targets, totals, hour, eatBack(burnedToday));
+    const actionsDoneToday = state.actionsDone.filter((a) => a.date === today).map((a) => a.key);
+    // With the pattern on, the meals left are its slots still to eat, not the fixed windows.
+    const mealsLeftOverride = state.routine.enabled
+      ? slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skipped: actionsDoneToday }).filter(
+          (x) => x.status === 'now' || x.status === 'missed' || x.status === 'later',
+        ).length
+      : undefined;
+    const budget = calcBudget(targets, totals, hour, eatBack(burnedToday), mealsLeftOverride);
     const waterToday = state.water.filter((w) => w.date === today).reduce((a, w) => a + w.ml, 0);
     const dates = lastNDates(60, today);
     const mealDates = new Set(state.meals.map((m) => m.date));
@@ -172,7 +180,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       stepsToday: state.steps.find((x) => x.date === today)?.count ?? 0,
       setProfile: (p) => update((s) => ({ ...s, profile: { ...s.profile, ...p } })),
       setSettings: (x) => update((s) => ({ ...s, settings: { ...s.settings, ...x } })),
-      addMeal: (m) => update((s) => ({ ...s, meals: [...s.meals, m] })),
+      addMeal: (m) =>
+        update((s) => {
+          // A meal logged from a photo, a recipe or the coach names no slot; it belongs to the slot it is eaten in.
+          const meal =
+            s.routine.enabled && m.date === today
+              ? withSlot(m, { routine: s.routine, target: targets.kcal, meals: s.meals.filter((x) => x.date === today), skipped: s.actionsDone.filter((a) => a.date === today).map((a) => a.key), now: new Date() })
+              : m;
+          return { ...s, meals: [...s.meals, meal] };
+        }),
       removeMeal: (id) => update((s) => ({ ...s, meals: s.meals.filter((m) => m.id !== id) })),
       updateMeal: (m) => update((s) => ({ ...s, meals: s.meals.map((x) => (x.id === m.id ? m : x)) })),
       addWater: (ml) =>
@@ -239,7 +255,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       failPhoto: (id, error) => update((s) => ({ ...s, photoQueue: markFailed(s.photoQueue, id, error) })),
       setSteps: (count) =>
         update((s) => ({ ...s, steps: [...s.steps.filter((x) => x.date !== today), { date: today, count }] })),
-      actionsDoneToday: state.actionsDone.filter((a) => a.date === today).map((a) => a.key),
+      actionsDoneToday,
       toggleAction: (key) =>
         update((s) => {
           const kept = s.actionsDone.filter((a) => a.date === today);

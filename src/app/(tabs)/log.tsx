@@ -12,7 +12,7 @@ import { addDays, formatDayLabel, lastNDates, localHHMM } from '../../core/date'
 import { newId } from '../../core/id';
 import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, toMealItem, type DishStyle } from '../../core/foods';
 import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../../core/nutrition';
-import { slotForNow, slotStates } from '../../core/pattern';
+import { currentSlot, slotStates } from '../../core/pattern';
 import { avoidHits, slotLabel, slotTime } from '../../core/routine';
 import type { FoodItem, MealItem, MealType } from '../../core/types';
 import { fill, makeT } from '../../i18n';
@@ -80,7 +80,7 @@ export default function LogScreen() {
     () => (patternOn ? slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: dayMeals, nowMinutes: isToday ? minute : 1440, skipped: isToday ? app.actionsDoneToday : [] }) : []),
     [patternOn, app.state.routine, app.targets.kcal, dayMeals, isToday, minute, app.actionsDoneToday],
   );
-  const chosen = patternOn ? (states.find((s) => s.slot.id === slotId) ?? slotForNow(states, minute)) : null;
+  const chosen = patternOn ? (states.find((s) => s.slot.id === slotId) ?? currentSlot(states, minute)) : null;
   const effectiveType: MealType = chosen ? chosen.slot.type : mealType;
   const chosenLabel = chosen ? slotLabel(chosen.slot.slot, lang) : '';
 

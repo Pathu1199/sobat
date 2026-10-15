@@ -1,4 +1,4 @@
-import { skipKey, slotMinutes, slotStatus, type Routine, type RoutineSlot, type SlotStatus } from './routine';
+import { skipKey, SLOT_EARLY_MIN, slotMinutes, slotStatus, type Routine, type RoutineSlot, type SlotStatus } from './routine';
 import type { Meal, MealType } from './types';
 
 /**
@@ -118,15 +118,40 @@ export function slotStates(input: {
   });
 }
 
-/** The slot to eat next: the one on now, else the one missed, else the next one. Null once the day is done. */
-export function nextSlot(states: SlotState[]): SlotState | null {
-  return states.find((s) => s.status === 'now') ?? states.find((s) => s.status === 'missed') ?? states.find((s) => s.status === 'later') ?? null;
+/**
+ * The slot a meal eaten right now belongs to: the latest slot whose window
+ * has opened (its time minus the early margin) and that is not yet done or
+ * skipped, so a late lunch at 14:00 is still lunch even when breakfast was
+ * never logged; before any window has opened, the first open slot of the
+ * day; once every opened slot is done, the next one; when the day is done,
+ * the nearest by time. Null only with no slots.
+ */
+export function currentSlot(states: SlotState[], nowMinutes: number): SlotState | null {
+  if (states.length === 0) return null;
+  const open = (s: SlotState) => s.status !== 'done' && s.status !== 'skipped';
+  const opened = states.filter((s) => open(s) && nowMinutes >= s.slot.minutes - SLOT_EARLY_MIN);
+  if (opened.length > 0) return opened[opened.length - 1];
+  const later = states.find(open);
+  if (later) return later;
+  return states.reduce((best, s) => (gap(s.slot.minutes, nowMinutes) < gap(best.slot.minutes, nowMinutes) ? s : best));
 }
 
-/** The slot a meal logged right now belongs to: the next one to eat, else the nearest by time. */
-export function slotForNow(states: SlotState[], nowMinutes: number): SlotState | null {
-  if (states.length === 0) return null;
-  const next = nextSlot(states);
-  if (next) return next;
-  return states.reduce((best, s) => (gap(s.slot.minutes, nowMinutes) < gap(best.slot.minutes, nowMinutes) ? s : best));
+/** How far a meal's own time may be from the clock and still count as eaten now. */
+export const EATEN_NOW_MS = 10 * 60000;
+
+/**
+ * A meal that names no slot (one from a photo, a recipe or the coach) gets
+ * the slot it is eaten in: eaten now, the current slot and its type; eaten
+ * earlier, as a queued photo or an undone delete, the slot its own time and
+ * type put it in. Unchanged when it already names a slot or there are none.
+ */
+export function withSlot(meal: Meal, input: { routine: Routine; target: number; meals: Meal[]; skipped: string[]; now: Date }): Meal {
+  if (meal.slotId) return meal;
+  const nowMinutes = input.now.getHours() * 60 + input.now.getMinutes();
+  if (Math.abs(Date.parse(meal.at) - input.now.getTime()) <= EATEN_NOW_MS) {
+    const cur = currentSlot(slotStates({ routine: input.routine, target: input.target, meals: input.meals, nowMinutes, skipped: input.skipped }), nowMinutes);
+    return cur ? { ...meal, slotId: cur.slot.id, type: cur.slot.type } : meal;
+  }
+  const p = slotOf(meal, pattern(input.routine));
+  return p ? { ...meal, slotId: p.id, type: p.type } : meal;
 }

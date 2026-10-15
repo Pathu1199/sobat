@@ -99,7 +99,7 @@ Meals logged before this version therefore land in sensible slots.
 ```ts
 export type SlotState = { slot: PatternSlot; allowance: number; planned: number; eaten: number; left: number; status: SlotStatus; meals: Meal[] };
 export function slotStates(input: { routine: Routine; target: number; meals: Meal[]; nowMinutes: number; skipped: string[]; planned?: Record<string, number> }): SlotState[];
-export function nextSlot(states: SlotState[]): SlotState | null;
+export function currentSlot(states: SlotState[], nowMinutes: number): SlotState | null;
 ```
 
 `status` is `done` when any meal is assigned to the slot (a different food
@@ -107,8 +107,13 @@ still counts as the meal having happened), `skipped` when its skip key is
 in today's done actions, otherwise `now`, `missed` or `later` by time, with
 the existing grace of 45 minutes and early window of 30. `planned` is the
 week plan's total for that slot today, when a plan exists. `left` is
-`allowance - eaten`. `nextSlot` is the first `now`, else the first
-`missed`, else the first `later`; null when the day is done.
+`allowance - eaten`. `currentSlot` is the slot a meal eaten now belongs
+to: the latest slot whose window has opened (its time minus the early
+margin) and that is not done or skipped, so a late lunch is still lunch
+when breakfast was never logged; before any window opens, the first open
+slot; once every opened slot is done, the next one; when the day is done,
+the nearest by time. Null only with no slots. A meal that names no slot
+(a photo, a recipe, the coach) is stamped with it when it is added.
 
 `slotLogged` (food-id matching) is replaced by assignment everywhere it was
 used: the routine card, the slot prompt in `useWorkSchedule`.
@@ -178,7 +183,7 @@ follow these meals".
 
 When the pattern is on, the four-type segmented control is replaced by one
 chip per slot in time order ("Lunch 13:00 · 560 left"), preselected to the
-slot a new meal belongs to now (`nextSlot`, else the nearest by time). A
+slot a new meal belongs to now (`currentSlot`). A
 `?slot=` parameter preselects one. Choosing a chip sets the meal type and
 the slot id. Under the basket, a line reads
 
@@ -313,7 +318,7 @@ for a meal prompt, and the daily reminders already live with it.
 ## Testing
 
 Core, with vitest: `pattern` (normalisation, zero shares, assignment order,
-statuses, nextSlot), `weekPlan` (one meal per slot, staples added only when
+statuses, currentSlot), `weekPlan` (one meal per slot, staples added only when
 missing, align keeps lines and maps the old names by type and time, drops
 orphans, balance by type), `dayPlan` with slots, `reminders` (seven days,
 off days, quiet hours, done slots today, absence gaps 2 to 4 and the stop

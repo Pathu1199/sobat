@@ -17,6 +17,7 @@ import { intakeFact, lowIntake } from '../../core/intake';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
 import { KCAL_FLOOR, mealTypeForHour } from '../../core/nutrition';
 import { planFrom } from '../../core/plan';
+import { pattern, slotStates } from '../../core/pattern';
 import { journey, journeyFacts } from '../../core/review';
 import { avoidedFoodIds, bhajiFor, routineFacts } from '../../core/routine';
 import type { ChatOption } from '../../core/types';
@@ -140,8 +141,28 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
         avoid: app.state.routine.avoid,
         plan,
       });
-      const loggedTypes = Array.from(new Set(app.state.meals.filter((m) => m.date === app.today).map((m) => m.type)));
-      const dp = dayPlan({ remaining: app.budget.remaining, hour: app.hour, loggedTypes, foods: app.foods, avoided, preferred: app.state.routine.enabled ? bhajiFor(app.state.routine, app.today) : [] });
+      const todayMeals = app.state.meals.filter((m) => m.date === app.today);
+      const loggedTypes = Array.from(new Set(todayMeals.map((m) => m.type)));
+      // With the pattern on, the plates are its slots still to eat, the way the fits card shows them.
+      const patternOn = app.state.routine.enabled;
+      const clock = new Date();
+      const nowMinutes = clock.getHours() * 60 + clock.getMinutes();
+      const loggedSlotIds = patternOn
+        ? slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes, skipped: app.actionsDoneToday })
+            .filter((s) => s.status === 'done' || s.status === 'skipped')
+            .map((s) => s.slot.id)
+        : [];
+      const dp = dayPlan({
+        remaining: app.budget.remaining,
+        hour: app.hour,
+        loggedTypes,
+        foods: app.foods,
+        avoided,
+        preferred: patternOn ? bhajiFor(app.state.routine, app.today) : [],
+        slots: patternOn ? pattern(app.state.routine) : undefined,
+        loggedSlotIds,
+        nowMinutes,
+      });
       const lastSleep = [...app.state.sleep].sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0];
       const answer = answerOffline(
         clean,

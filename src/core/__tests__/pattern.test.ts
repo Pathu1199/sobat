@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allowance, DEFAULT_SHARE, nextSlot, pattern, slotForNow, slotOf, slotShare, slotStates } from '../pattern';
+import { allowance, currentSlot, DEFAULT_SHARE, pattern, slotOf, slotShare, slotStates, withSlot } from '../pattern';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { Meal } from '../types';
 
@@ -87,12 +87,28 @@ describe('slotStates', () => {
     const s = slotStates({ routine, target: 1600, meals: [], nowMinutes: 14 * 60, skipped: ['skip_morning'] });
     expect(s.map((x) => x.status)).toEqual(['skipped', 'missed', 'later']);
   });
+});
 
-  it('nextSlot is the one on now, else the missed one, else the next; slotForNow falls back to the nearest', () => {
-    const midday = slotStates({ routine, target: 1600, meals: [], nowMinutes: 12 * 60 + 45, skipped: [] });
-    expect(nextSlot(midday)?.slot.id).toBe('lunch');
-    const morningOnly = slotStates({ routine, target: 1600, meals: [], nowMinutes: 10 * 60, skipped: [] });
-    expect(nextSlot(morningOnly)?.slot.id).toBe('morning');
+describe('currentSlot', () => {
+  const at14 = (meals: Meal[], skipped: string[] = []) => slotStates({ routine, target: 1600, meals, nowMinutes: 14 * 60, skipped });
+
+  it('is the latest slot whose window has opened and is still open, so a late lunch is lunch even with breakfast never logged', () => {
+    expect(currentSlot(at14([]), 14 * 60)?.slot.id).toBe('lunch');
+  });
+
+  it('before any window has opened, is the first open slot of the day', () => {
+    const early = slotStates({ routine, target: 1600, meals: [], nowMinutes: 7 * 60, skipped: [] });
+    expect(currentSlot(early, 7 * 60)?.slot.id).toBe('morning');
+  });
+
+  it('once every opened slot is done or skipped, is the next one', () => {
+    expect(currentSlot(at14([meal('breakfast', '08:40', 300), meal('lunch', '13:10', 400)]), 14 * 60)?.slot.id).toBe('dinner');
+    expect(currentSlot(at14([meal('lunch', '13:10', 400)], ['skip_morning']), 14 * 60)?.slot.id).toBe('dinner');
+    // An opened slot still open comes first: with lunch eaten and breakfast never logged, it is breakfast.
+    expect(currentSlot(at14([meal('lunch', '13:10', 400)]), 14 * 60)?.slot.id).toBe('morning');
+  });
+
+  it('when the day is done, is the nearest by time; null with no slots', () => {
     const done = slotStates({
       routine,
       target: 1600,
@@ -100,8 +116,34 @@ describe('slotStates', () => {
       nowMinutes: 21 * 60,
       skipped: [],
     });
-    expect(nextSlot(done)).toBeNull();
-    expect(slotForNow(done, 21 * 60)?.slot.id).toBe('dinner');
-    expect(slotForNow([], 21 * 60)).toBeNull();
+    expect(currentSlot(done, 21 * 60)?.slot.id).toBe('dinner');
+    expect(currentSlot([], 21 * 60)).toBeNull();
+  });
+
+  it('on the default routine: lunch at 14:00 with nothing logged, the dry fruit at 11:05', () => {
+    const states = (m: number) => slotStates({ routine: DEFAULT_ROUTINE, target: 1600, meals: [], nowMinutes: m, skipped: [] });
+    expect(currentSlot(states(14 * 60), 14 * 60)?.slot.id).toBe('lunch');
+    expect(currentSlot(states(11 * 60 + 5), 11 * 60 + 5)?.slot.id).toBe('dry-fruit');
+  });
+});
+
+describe('withSlot', () => {
+  const now = new Date('2026-10-12T14:00:00');
+  const input = { routine, target: 1600, meals: [] as Meal[], skipped: [] as string[], now };
+
+  it('gives a meal eaten now the slot that is on now, and that slot\'s type', () => {
+    const m = withSlot(meal('snack', '14:00', 300), input);
+    expect(m).toMatchObject({ slotId: 'lunch', type: 'lunch' });
+  });
+
+  it('gives a meal from earlier (a queued photo, an undo) the slot its own time and type put it in', () => {
+    expect(withSlot(meal('breakfast', '08:40', 250), input)).toMatchObject({ slotId: 'morning', type: 'breakfast' });
+  });
+
+  it('leaves a meal that names a slot, or a pattern with no slots, alone', () => {
+    const named = meal('snack', '14:00', 100, 'dinner');
+    expect(withSlot(named, input)).toBe(named);
+    const bare = meal('snack', '14:00', 100);
+    expect(withSlot(bare, { ...input, routine: { ...routine, slots: [] } })).toBe(bare);
   });
 });

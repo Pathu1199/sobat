@@ -155,8 +155,9 @@ export type Budget = {
   pct: number;
 };
 
-export function budget(targets: Targets, consumed: Totals, hour: number, earned = 0): Budget {
-  const left = mealsRemaining(hour);
+/** `mealsLeftOverride`: how many meals the eating pattern says are left, when it is on; otherwise the fixed windows decide. */
+export function budget(targets: Targets, consumed: Totals, hour: number, earned = 0, mealsLeftOverride?: number): Budget {
+  const mealsLeft = mealsLeftOverride ?? mealsRemaining(hour).length;
   // Movement earns room, but only part of it: the rest of the burn stays a deficit.
   const remaining = targets.kcal + earned - consumed.kcal;
   return {
@@ -164,8 +165,8 @@ export function budget(targets: Targets, consumed: Totals, hour: number, earned 
     consumed: Math.round(consumed.kcal),
     remaining: Math.round(remaining),
     earned: Math.round(earned),
-    mealsLeft: left.length,
-    perMeal: left.length > 0 ? Math.round(Math.max(remaining, 0) / left.length) : 0,
+    mealsLeft,
+    perMeal: mealsLeft > 0 ? Math.round(Math.max(remaining, 0) / mealsLeft) : 0,
     proteinTarget: targets.proteinG,
     proteinConsumed: Math.round(consumed.protein),
     proteinLeft: Math.round(Math.max(targets.proteinG - consumed.protein, 0)),

@@ -108,6 +108,15 @@ describe('budget', () => {
     expect(b.remaining).toBeLessThan(0);
     expect(b.perMeal).toBe(0);
   });
+
+  it('with the eating pattern on, splits across the slots it says are left instead of the fixed windows', () => {
+    const consumed = { kcal: 500, protein: 20, carbs: 60, fat: 15 };
+    expect(budget(targets, consumed, 14).mealsLeft).toBe(3);
+    const b = budget(targets, consumed, 14, 0, 2);
+    expect(b.mealsLeft).toBe(2);
+    expect(b.perMeal).toBe(Math.round(b.remaining / 2));
+    expect(budget(targets, consumed, 14, 0, 0)).toMatchObject({ mealsLeft: 0, perMeal: 0 });
+  });
 });
 
 describe('kcalForGrams', () => {
