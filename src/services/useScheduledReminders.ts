@@ -46,7 +46,7 @@ export function useScheduledReminders() {
   const mantra = useMantra();
   const mantraText = mantra?.text ?? '';
   const routine = app.state.routine;
-  const { today, hour, ready } = app;
+  const { today, hour, ready, storageError } = app;
 
   useEffect(() => {
     if (Platform.OS === 'web' || !onboarded) return;
@@ -115,8 +115,10 @@ export function useScheduledReminders() {
     });
   }, [ready, onboarded, nudgesEnabled, today, hour, routine, doneKey, lastLog, offDays, quietStartHour, quietEndHour, lang]);
 
+  // Runs once the store is loaded, onboarded or not: after a sign-out or a reset `wanted` is empty and the
+  // planned week is cancelled. Never on a store that failed to load, whose empty state is not the person's.
   useEffect(() => {
-    if (Platform.OS === 'web' || !ready || !onboarded) return;
+    if (Platform.OS === 'web' || !ready || storageError === 'load') return;
     let stale = false;
     chain = chain
       .then(async () => {
@@ -147,5 +149,5 @@ export function useScheduledReminders() {
     return () => {
       stale = true;
     };
-  }, [wanted, ready, onboarded]);
+  }, [wanted, ready, storageError]);
 }

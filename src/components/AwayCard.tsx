@@ -15,7 +15,7 @@ export function AwayCard() {
   const app = useApp();
   const router = useRouter();
   const t = makeT(app.state.profile.lang);
-  const days = daysAway(app.state.meals, app.today);
+  const days = daysAway(app.state.meals, app.today, app.state.settings.offDays ?? []);
   if (days < 2 || app.actionsDoneToday.includes(SEEN)) return null;
   return (
     <Card rail={C.amber}>

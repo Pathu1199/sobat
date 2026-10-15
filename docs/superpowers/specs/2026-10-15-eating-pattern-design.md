@@ -240,7 +240,7 @@ export function plannedReminders(input: {
 }): Reminder[];
 ```
 
-Pure. For each of the next seven days, skipping off days and any time in
+Pure. For each of the next seven days (slot prompts only for today and the next two, so a week away is not fifty prompts), skipping off days and any time in
 quiet hours:
 
 - **Slot prompts**, only when the pattern is on: one per slot at its time
@@ -249,7 +249,8 @@ quiet hours:
   for slots already done or skipped, and for times already past.
 - **Absence lines**: with `lastLogDate` null (never logged) there are none.
   Otherwise, for each future date, the gap is the days since the last log
-  (today counts as logged when it has a meal). A gap of 2, 3 or 4 schedules
+  that are not off days (`missedDays`; today counts as logged when it has a
+  meal, and an off day is neither logged nor missed). A gap of 2, 3 or 4 schedules
   one line at 09:00, id `away:<date>`, with copy that escalates gently
   (`away_2`, `away_3`, `away_4`: "Nothing logged yesterday. One meal is
   enough.", "Two days quiet. Your plan is still here.", "Three days. Come
@@ -272,7 +273,7 @@ dropped while the pattern is on; the slot prompt covers it. The daily slot
 registrations in `useWorkSchedule` go; the office-day blocks stay.
 
 Because every open reschedules a week ahead, a phone that stays closed
-for days still gets its slot prompts and absence lines.
+for days still gets three days of slot prompts and its absence lines.
 
 ### Web and in-app
 
@@ -283,8 +284,8 @@ last meal was more than five hours ago.
 
 ### The away card
 
-`daysAway(meals, today)` is the days since the last log, 0 when today has
-one or nothing was ever logged. From two days on, Today shows a card at
+`daysAway(meals, today, offDays)` is the days since the last log, off days
+left out, 0 when today has one or nothing was ever logged. From two days on, Today shows a card at
 the top: "3 days without a log", "Everything is still here. Log one meal
 and today counts.", with "Add food" and "OK". OK records `away_seen` in
 today's done actions and the card stays away for the day.

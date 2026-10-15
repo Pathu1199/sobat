@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysAway, daysBetween, lastLogDate, plannedReminders } from '../reminders';
+import { daysAway, daysBetween, lastLogDate, missedDays, plannedReminders } from '../reminders';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { Meal } from '../types';
 
@@ -11,13 +11,15 @@ const t = (k: string) => k;
 const base = { today: '2026-10-12', nowMinutes: 10 * 60, routine, doneSlotIds: [] as string[], lastLogDate: '2026-10-12', offDays: [] as number[], quietStartHour: 22, quietEndHour: 7, lang: 'en' as const, t };
 
 describe('plannedReminders: slots', () => {
-  it('prompts every slot at its time plus the grace, today and six days on, in order', () => {
+  it('prompts every slot at its time plus the grace, today and the next two days only, in order', () => {
     const r = plannedReminders(base).filter((x) => x.id.startsWith('slot:'));
-    expect(r).toHaveLength(20);
+    // Monday at 10:00: lunch and dinner today, then all three on Tuesday and Wednesday; a week away is not fifty prompts.
+    expect(r).toHaveLength(2 + 3 + 3);
     expect(r[0]).toMatchObject({ id: 'slot:lunch:2026-10-12', date: '2026-10-12', time: '13:45', title: 'lunch?', body: 'slot_prompt' });
     expect(r[1]).toMatchObject({ id: 'slot:dinner:2026-10-12', time: '20:15' });
     expect(r[2]).toMatchObject({ id: 'slot:morning:2026-10-13', time: '09:15' });
-    expect(r[r.length - 1].date).toBe('2026-10-18');
+    expect(r[r.length - 1]).toMatchObject({ id: 'slot:dinner:2026-10-14', date: '2026-10-14' });
+    expect(r.some((x) => x.date > '2026-10-14')).toBe(false);
   });
 
   it('leaves out today\'s slots already done and those whose moment has passed', () => {
@@ -53,6 +55,17 @@ describe('plannedReminders: absence', () => {
     expect(away(plannedReminders({ ...base, lastLogDate: '2026-10-01' }))).toEqual([]);
   });
 
+  it('does not count an off day as a day away: last log Saturday, Sunday off, the lines start Tuesday', () => {
+    // 2026-10-10 is a Saturday; counted days after it are Monday (1), Tuesday (2), Wednesday (3), Thursday (4).
+    const r = away(plannedReminders({ ...base, routine: { ...routine, enabled: false }, lastLogDate: '2026-10-10', offDays: [0] }));
+    expect(r.map((x) => [x.date, x.title])).toEqual([
+      ['2026-10-13', 'away_2_title'],
+      ['2026-10-14', 'away_3_title'],
+      ['2026-10-15', 'away_4_title'],
+    ]);
+    expect(r.some((x) => x.date === '2026-10-12')).toBe(false);
+  });
+
   it('waits for quiet hours to end before the morning line', () => {
     const r = away(plannedReminders({ ...base, routine: { ...routine, enabled: false }, quietEndHour: 10 }));
     expect(r[0].time).toBe('10:00');
@@ -67,5 +80,13 @@ describe('days away', () => {
     expect(daysAway([meal('2026-10-09')], '2026-10-12')).toBe(3);
     expect(daysAway([meal('2026-10-12')], '2026-10-12')).toBe(0);
     expect(daysAway([], '2026-10-12')).toBe(0);
+  });
+
+  it('leaves off days out of the count, so an off Sunday is not a day away on Monday', () => {
+    expect(missedDays('2026-10-10', '2026-10-12', [0])).toBe(1);
+    expect(missedDays('2026-10-10', '2026-10-12', [])).toBe(2);
+    expect(missedDays('2026-10-12', '2026-10-12', [])).toBe(0);
+    expect(daysAway([meal('2026-10-10')], '2026-10-12', [0])).toBe(1);
+    expect(daysAway([meal('2026-10-10')], '2026-10-12', [])).toBe(2);
   });
 });

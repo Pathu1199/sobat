@@ -15,6 +15,7 @@ const base: NudgeContext = {
   quietStartHour: 22,
   quietEndHour: 7,
   enabled: true,
+  offDay: false,
 };
 
 function log(type: string, action: NudgeLog['action']): NudgeLog {
@@ -39,6 +40,12 @@ describe('pickNudge', () => {
     const quietDesk = { ...base, sittingMinutes: 10, lastMealHoursAgo: null };
     expect(pickNudge({ ...quietDesk, hour: 14 })?.type).toBe('log');
     expect(pickNudge({ ...quietDesk, hour: 9 })?.type).not.toBe('log');
+  });
+
+  it('never asks for a log on an off day', () => {
+    const quietDesk = { ...base, sittingMinutes: 10, lastMealHoursAgo: null };
+    expect(pickNudge({ ...quietDesk, hour: 14, offDay: true })?.type).not.toBe('log');
+    expect(pickNudge({ ...quietDesk, hour: 14, offDay: true })).not.toBeNull();
   });
 
   it('stays silent when disabled', () => {

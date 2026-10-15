@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
 import { newId } from '../core/id';
 import { pickNudge, type NudgeChoice } from '../core/nudge';
+import { isOffDay } from '../core/week';
 import { pickMessage } from '../data/nudges';
 import { storyLine, storySeed, type StoryKind } from '../core/storyLines';
 import { useApp } from '../store/AppProvider';
@@ -51,7 +52,7 @@ export function useNudges() {
     return () => sub.remove();
   }, []);
 
-  const { nudgeMinutes, nudgesEnabled, quietStartHour, quietEndHour, waterGoalMl } = app.state.settings;
+  const { nudgeMinutes, nudgesEnabled, quietStartHour, quietEndHour, waterGoalMl, offDays } = app.state.settings;
 
   useEffect(() => {
     if (!nudgesEnabled) return;
@@ -72,6 +73,7 @@ export function useNudges() {
         quietStartHour,
         quietEndHour,
         enabled: nudgesEnabled,
+        offDay: isOffDay(offDays, app.today),
       });
       if (!choice) return;
       const base = pickMessage(app.state.profile.lang, choice.type);
@@ -86,7 +88,7 @@ export function useNudges() {
         .catch(() => {});
     }, every);
     return () => clearInterval(timer);
-  }, [nudgeMinutes, nudgesEnabled, quietStartHour, quietEndHour, waterGoalMl, app.state.nudges, app.state.meals, app.waterToday, app.today, app.state.profile.lang, app.budget.consumed, app.budget.target]);
+  }, [nudgeMinutes, nudgesEnabled, quietStartHour, quietEndHour, waterGoalMl, offDays, app.state.nudges, app.state.meals, app.waterToday, app.today, app.state.profile.lang, app.budget.consumed, app.budget.target]);
 
   function respond(action: 'done' | 'snooze' | 'skip') {
     if (!current?.choice) return;

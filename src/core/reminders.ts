@@ -8,9 +8,10 @@ import { isOffDay } from './week';
 /**
  * Everything the app will say on its own over the next week, worked out in
  * advance so the phone can hand it to the OS and be closed. Two kinds: a
- * "log or skip?" prompt for each slot of the pattern, and a morning line
- * when days go by without a log. The absence lines escalate gently for
- * three days and then stop; an app that keeps nagging gets uninstalled.
+ * "log or skip?" prompt for each slot of the pattern, for today and the
+ * next two days only (a week away is not fifty prompts), and a morning
+ * line when days go by without a log. The absence lines escalate gently
+ * for three days and then stop; an app that keeps nagging gets uninstalled.
  */
 export type Reminder = { id: string; date: ISODate; time: string; title: string; body: string };
 
@@ -31,12 +32,21 @@ export type ReminderInput = {
   t: (key: string) => string;
 };
 
+/** Days of slot prompts, today included; the absence lines cover the whole window. */
+const SLOT_DAYS = 3;
 const AWAY_HOUR = 9;
 const AWAY_FIRST = 2;
 const AWAY_LAST = 4;
 
 export function daysBetween(a: ISODate, b: ISODate): number {
   return Math.round((Date.parse(`${b}T12:00:00`) - Date.parse(`${a}T12:00:00`)) / 86400000);
+}
+
+/** Days since the last log that count: off days are neither logged nor missed. */
+export function missedDays(lastLogDate: ISODate, date: ISODate, offDays: number[]): number {
+  let n = 0;
+  for (let d = addDays(lastLogDate, 1); d <= date; d = addDays(d, 1)) if (!isOffDay(offDays, d)) n++;
+  return n;
 }
 
 function hhmm(minutes: number): string {
@@ -55,7 +65,7 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
     const date = addDays(input.today, k);
     if (isOffDay(input.offDays, date)) continue;
 
-    for (const p of slots) {
+    for (const p of k < SLOT_DAYS ? slots : []) {
       const at = p.minutes + SLOT_GRACE_MIN;
       if (at >= 1440 || quiet(at)) continue;
       if (k === 0 && (input.doneSlotIds.includes(p.id) || at <= input.nowMinutes)) continue;
@@ -63,7 +73,7 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
     }
 
     if (k > 0 && input.lastLogDate) {
-      const gap = daysBetween(input.lastLogDate, date);
+      const gap = missedDays(input.lastLogDate, date, input.offDays);
       if (gap >= AWAY_FIRST && gap <= AWAY_LAST && !quiet(awayAt)) {
         out.push({ id: `away:${date}`, date, time: hhmm(awayAt), title: input.t(`away_${gap}_title`), body: input.t(`away_${gap}_body`) });
       }
@@ -79,8 +89,8 @@ export function lastLogDate(meals: Pick<Meal, 'date'>[], today: ISODate): ISODat
   return best;
 }
 
-/** Days since the last log: 0 when today has one, and 0 when nothing was ever logged. */
-export function daysAway(meals: Pick<Meal, 'date'>[], today: ISODate): number {
+/** Days since the last log, off days left out: 0 when today has one, and 0 when nothing was ever logged. */
+export function daysAway(meals: Pick<Meal, 'date'>[], today: ISODate, offDays: number[] = []): number {
   const last = lastLogDate(meals, today);
-  return last ? daysBetween(last, today) : 0;
+  return last ? missedDays(last, today, offDays) : 0;
 }
