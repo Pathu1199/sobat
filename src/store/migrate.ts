@@ -74,9 +74,9 @@ function upgradeRoutine(old: unknown, fromVersion: number): AppState['routine'] 
   r.slots = (Array.isArray(r.slots) ? r.slots : []).map((s) =>
     s.time ? s : { ...s, time: DEFAULT_ROUTINE.slots.find((d) => d.id === s.id)?.time ?? byType[s.type] ?? '13:00' },
   );
-  // Version 6: every slot carries a share of the day's calories, and there is a dinner to plan.
+  // Version 6: every slot carries a share of the day's calories, and a store from before it gets a dinner to plan; one removed on purpose later stays removed.
   r.slots = r.slots.map((s) => (typeof s.share === 'number' ? s : { ...s, share: slotShare(s) }));
-  if (!r.slots.some((s) => s.type === 'dinner')) {
+  if (fromVersion < 6 && !r.slots.some((s) => s.type === 'dinner')) {
     r.slots = [...r.slots, { ...DINNER_SLOT, id: r.slots.some((s) => s.id === 'dinner') ? 'dinner-2' : 'dinner' }];
   }
   return r;

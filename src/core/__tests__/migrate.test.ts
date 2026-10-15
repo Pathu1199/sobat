@@ -134,4 +134,9 @@ describe('migrateState', () => {
     expect(day.meals.map((m) => m.id)).toContain('fruit');
     expect(migrateState(out)).toEqual(out);
   });
+
+  it('does not put back a dinner slot that a version-6 store removed on purpose', () => {
+    const v6 = { version: 6, profile: { ...EMPTY_STATE.profile, onboarded: true }, meals: [], routine: { ...DEFAULT_ROUTINE, slots: DEFAULT_ROUTINE.slots.filter((s) => s.type !== 'dinner') } };
+    expect(migrateState(v6).routine.slots.some((s) => s.type === 'dinner')).toBe(false);
+  });
 });
