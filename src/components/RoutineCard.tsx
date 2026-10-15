@@ -174,13 +174,13 @@ export function RoutineCard() {
               {i > 0 ? <Divider /> : null}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10 }}>
                 <Ionicons name={done ? 'checkmark-circle' : skipped ? 'remove-circle-outline' : s.status === 'now' ? 'time' : 'ellipse-outline'} size={20} color={tone} />
-                <Pressable onPress={() => (quiet ? undefined : setOpenSlot(s))} disabled={quiet} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, gap: 2, opacity: pressed && !quiet ? 0.7 : 1 })}>
+                <Pressable onPress={() => (quiet ? undefined : lines.length === 0 ? router.push({ pathname: '/log', params: { slot: slot.id } }) : setOpenSlot(s))} disabled={quiet} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, gap: 2, opacity: pressed && !quiet ? 0.7 : 1 })}>
                   <Row style={{ gap: 8 }}>
                     <Text style={{ color: quiet ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500', textDecorationLine: skipped ? 'line-through' : 'none' }}>{slotLabel(slot, lang)}</Text>
                     <Micro color={s.status === 'now' ? C.amber : s.status === 'missed' ? C.red : C.textGhost}>{s.status === 'missed' ? t('slot_missed') : s.status === 'now' ? t('slot_now') : slotTime(slot)}</Micro>
                   </Row>
                   <Text style={{ color: C.textFaint, fontSize: F.tiny }} numberOfLines={1}>
-                    {done ? s.meals.flatMap((m) => m.items.map((it) => (lang === 'en' ? it.name_en : it.name_mr || it.name_en))).join(', ') : lines.map((l) => lineLabel(l, foods, lang)).join(' + ')}
+                    {done ? s.meals.flatMap((m) => m.items.map((it) => (lang === 'en' ? it.name_en : it.name_mr || it.name_en))).join(', ') : lines.length === 0 ? t('pattern_log_other') : lines.map((l) => lineLabel(l, foods, lang)).join(' + ')}
                   </Text>
                 </Pressable>
                 <View style={{ alignItems: 'flex-end', gap: 2 }}>
@@ -197,7 +197,7 @@ export function RoutineCard() {
                   )}
                 </View>
                 {done ? (
-                  <Pressable onPress={() => unlog(s)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('undo')}>
+                  <Pressable onPress={() => unlog(s)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('meal_removed')}>
                     <Micro color={C.accent}>{`${t('routine_logged')} ×`}</Micro>
                   </Pressable>
                 ) : skipped ? (
@@ -205,14 +205,14 @@ export function RoutineCard() {
                     <Micro color={C.textFaint}>{`${t('slot_skipped')} ×`}</Micro>
                   </Pressable>
                 ) : (
-                  <Pressable onPress={() => setOpenSlot(s)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('pattern_log_planned')}>
+                  <Pressable onPress={() => (lines.length === 0 ? router.push({ pathname: '/log', params: { slot: slot.id } }) : setOpenSlot(s))} hitSlop={8} accessibilityRole="button" accessibilityLabel={`${t('pattern_log_planned')} · ${slotLabel(slot, lang)}`}>
                     <Ionicons name="add-circle" size={28} color={C.accent} />
                   </Pressable>
                 )}
               </View>
               {!quiet ? (
                 <Row style={{ gap: 14, paddingLeft: 31, paddingBottom: 6 }}>
-                  <Pressable onPress={() => router.push({ pathname: '/log', params: { slot: slot.id } })} accessibilityRole="button" hitSlop={6}>
+                  <Pressable onPress={() => router.push({ pathname: '/log', params: { slot: slot.id } })} accessibilityRole="button" accessibilityLabel={`${t('pattern_log_other')} · ${slotLabel(slot, lang)}`} hitSlop={10} style={{ paddingVertical: 6 }}>
                     <Micro color={C.accent}>{`${t('pattern_log_other')} ›`}</Micro>
                   </Pressable>
                   {s.status === 'missed' ? (
