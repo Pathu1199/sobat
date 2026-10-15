@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { lineLabel } from '../components/RoutineCard';
 import { SlotEditor } from '../components/SlotEditor';
 import { foodName, searchFoods } from '../core/foods';
+import { allowance, pattern } from '../core/pattern';
 import { newSlot, ruleForFood, slotLabel, toggleBhaji, updateSlot, type RoutineSlot } from '../core/routine';
 import type { FoodItem, Lang } from '../core/types';
 import { makeT } from '../i18n';
@@ -26,6 +27,7 @@ export default function RoutineScreen() {
   const routine = app.state.routine;
   const lang = app.state.profile.lang;
   const t = makeT(lang);
+  const slotKcal = new Map(pattern(routine).map((p) => [p.id, allowance(app.targets.kcal, p)]));
 
   const [openDay, setOpenDay] = useState<number | null>(null);
   const [openSlot, setOpenSlot] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export default function RoutineScreen() {
   return (
     <Screen>
       <Card>
-        <Toggle title={t('routine_enabled')} desc={t('routine_title')} on={routine.enabled} onToggle={() => app.setRoutine({ enabled: !routine.enabled })} />
+        <Toggle title={t('pattern_follow')} desc={t('pattern_follow_desc')} on={routine.enabled} onToggle={() => app.setRoutine({ enabled: !routine.enabled })} />
         <Divider />
         <Toggle title={t('routine_walk_toggle')} desc={t('routine_walk')} on={routine.walk} onToggle={() => app.setRoutine({ walk: !routine.walk })} />
       </Card>
@@ -101,7 +103,7 @@ export default function RoutineScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={t('routine_slots')} meta={`${routine.slots.length}`} />
+        <SectionHeader title={t('pattern_title')} meta={`${routine.slots.length}`} />
         <Card>
           {routine.slots.map((s, i) => {
             const open = openSlot === s.id;
@@ -111,7 +113,7 @@ export default function RoutineScreen() {
                 {i > 0 ? <Divider /> : null}
                 <ListRow
                   title={slotLabel(s, lang) || t('routine_new_meal')}
-                  sub={`${t(s.type)} · ${s.options.map((o) => o.map((l) => lineLabel(l, foods, lang)).join(' + ') || '…').join(' / ')}${s.withBhaji ? ` + ${t('routine_bhaji').toLowerCase()}` : ''}`}
+                  sub={`${slotKcal.get(s.id) ?? 0} kcal · ${t(s.type)} · ${s.options.map((o) => o.map((l) => lineLabel(l, foods, lang)).join(' + ') || '…').join(' / ')}${s.withBhaji ? ` + ${t('routine_bhaji').toLowerCase()}` : ''}`}
                   onPress={() => setOpenSlot(open ? null : s.id)}
                   trailing={<Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />}
                 />

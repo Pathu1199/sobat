@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { defaultPortion, foodName, portionLabel, searchFoods } from '../core/foods';
-import { addLine, removeLine, renameSlot, setLineQty, slotLabel, slotTime, type RoutineSlot } from '../core/routine';
+import { allowance, pattern, slotShare } from '../core/pattern';
+import { addLine, removeLine, renameSlot, setLineQty, slotLabel, slotTime, updateSlot, type RoutineSlot } from '../core/routine';
 import type { FoodItem, Lang, MealType } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -24,6 +25,14 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
   const [addingTo, setAddingTo] = useState<number | null>(null);
   const [query, setQuery] = useState('');
   const [time, setTime] = useState(slotTime(slot));
+
+  // What this share means in calories today, with this edit already in the pattern.
+  const share = slotShare(slot);
+  const kcalToday = (() => {
+    const p = pattern({ ...app.state.routine, slots: updateSlot(app.state.routine.slots, slot.id, slot) }).find((x) => x.id === slot.id);
+    return p ? allowance(app.targets.kcal, p) : 0;
+  })();
+  const setShare = (next: number) => onChange({ ...slot, share: Math.max(0, Math.min(60, next)) });
 
   const results = addingTo !== null && query.trim() ? searchFoods(foods, query, 6) : [];
 
@@ -50,6 +59,21 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
           />
         </View>
       </Row>
+
+      <View style={{ gap: 6 }}>
+        <Micro>{t('pattern_share')}</Micro>
+        <Row style={{ gap: 10 }}>
+          <Pressable onPress={() => setShare(share - 5)} hitSlop={6} accessibilityLabel="−" style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="remove" size={16} color={C.text} />
+          </Pressable>
+          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700', minWidth: 32, textAlign: 'center' }}>{String(share)}</Text>
+          <Pressable onPress={() => setShare(share + 5)} hitSlop={6} accessibilityLabel="+" style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="add" size={16} color={C.text} />
+          </Pressable>
+          <Small color={C.textDim}>{fill(t('pattern_share_kcal'), { kcal: kcalToday })}</Small>
+        </Row>
+        <Micro color={C.textFaint}>{t('pattern_share_hint')}</Micro>
+      </View>
 
       <Micro>{t('routine_meal_type')}</Micro>
       <Row style={{ flexWrap: 'wrap', gap: 6 }}>

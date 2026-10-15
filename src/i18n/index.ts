@@ -948,6 +948,12 @@ const en: Dict = {
   wd_5: 'Fri',
   wd_6: 'Sat',
   plan_follows_pattern: 'Meals follow your eating pattern · edit',
+  pattern_title: 'My eating pattern',
+  pattern_follow: 'Follow my eating pattern',
+  pattern_follow_desc: 'Budget, plan and reminders follow these meals',
+  pattern_share: 'Share of the day',
+  pattern_share_kcal: '= {kcal} kcal today',
+  pattern_share_hint: 'Weights, not percentages: the meals always add up to your target.',
 };
 
 const mr: Dict = {
@@ -1900,6 +1906,12 @@ const mr: Dict = {
   wd_5: 'शुक्र',
   wd_6: 'शनि',
   plan_follows_pattern: 'जेवणं तुमच्या खाण्याच्या पद्धतीनुसार · बदला',
+  pattern_title: 'माझी खाण्याची पद्धत',
+  pattern_follow: 'माझ्या खाण्याच्या पद्धतीनुसार चला',
+  pattern_follow_desc: 'बजेट, नियोजन आणि आठवणी याच जेवणांनुसार',
+  pattern_share: 'दिवसाचा वाटा',
+  pattern_share_kcal: '= आज {kcal} kcal',
+  pattern_share_hint: 'हे वजन आहेत, टक्के नाहीत: सगळी जेवणं मिळून नेहमी तुमचं लक्ष्य होतं.',
 };
 
 const hi: Dict = {
@@ -2850,6 +2862,12 @@ const hi: Dict = {
 
 
   plan_follows_pattern: 'खाने आपके खाने के पैटर्न के अनुसार · बदलें',
+  pattern_title: 'मेरा खाने का पैटर्न',
+  pattern_follow: 'मेरे खाने के पैटर्न के हिसाब से चलो',
+  pattern_follow_desc: 'बजट, प्लान और रिमाइंडर इन्हीं खानों के हिसाब से',
+  pattern_share: 'दिन का हिस्सा',
+  pattern_share_kcal: '= आज {kcal} kcal',
+  pattern_share_hint: 'ये वज़न हैं, प्रतिशत नहीं: सारे खाने मिलकर हमेशा आपका लक्ष्य बनते हैं.',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

@@ -58,4 +58,11 @@ describe('dayPlan', () => {
     const late = dayPlan({ ...base, nowMinutes: 19 * 60 + 10 });
     expect(late.slots.map((s) => s.id)).toEqual(['dinner']);
   });
+
+  it('splits evenly when every slot still ahead has a share of zero', () => {
+    const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
+    const slots = pattern({ ...DEFAULT_ROUTINE, slots: [slot('morning', 'breakfast', '08:30', 100), slot('lunch', 'lunch', '13:00', 0), slot('dinner', 'dinner', '19:30', 0)] });
+    const p = dayPlan({ remaining: 800, hour: 14, loggedTypes: [], foods, avoided: new Set<string>(), slots, loggedSlotIds: ['morning'], nowMinutes: 14 * 60 });
+    expect(p.slots.map((s) => s.budget)).toEqual([400, 400]);
+  });
 });

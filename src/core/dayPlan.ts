@@ -143,9 +143,10 @@ export function dayPlan(input: DayPlanInput): DayPlan {
   const { ahead, now, nowId } = mealsAhead(input);
   const stop = remaining < STOP_BELOW;
   if (stop || ahead.length === 0) return { remaining, stop, slots: [], now, nowId };
+  // Every slot ahead at share 0 would divide by zero; split what is left evenly instead.
   const shareSum = ahead.reduce((a, w) => a + w.share, 0);
   const slots: SlotPlan[] = ahead.map((w, i) => {
-    const budget = Math.round((remaining * w.share) / shareSum);
+    const budget = Math.round(shareSum > 0 ? (remaining * w.share) / shareSum : remaining / ahead.length);
     const picks = plate(w.type, budget, input, i);
     return { id: w.id, type: w.type, budget, picks, kcal: picks.reduce((a, p) => a + p.kcal, 0), protein: Math.round(picks.reduce((a, p) => a + p.protein, 0)) };
   });
