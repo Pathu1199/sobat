@@ -187,8 +187,9 @@ export function buildWeekPlan(routine: Routine, foods: FoodItem[]): WeekPlan {
   return { days };
 }
 
-function toMin(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
+function toMin(hhmm: string | undefined): number {
+  // An older plan meal may have no time; it counts as midnight rather than throwing.
+  const [h, m] = (hhmm ?? '').split(':').map(Number);
   return (h || 0) * 60 + (m || 0);
 }
 

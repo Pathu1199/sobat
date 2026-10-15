@@ -243,7 +243,7 @@ export default function LogScreen() {
           {states.map((s) => (
             <Pill
               key={s.slot.id}
-              label={`${slotLabel(s.slot.slot, lang)} ${slotTime(s.slot.slot)} · ${s.status === 'done' ? t('routine_logged') : fill(t('log_slot_left'), { kcal: Math.max(0, s.left) })}`}
+              label={`${slotLabel(s.slot.slot, lang)} ${slotTime(s.slot.slot)} · ${s.status === 'done' ? t('routine_logged') : s.status === 'skipped' ? t('slot_skipped') : fill(t('log_slot_left'), { kcal: Math.max(0, s.left) })}`}
               active={chosen?.slot.id === s.slot.id}
               onPress={() => {
                 setSlotId(s.slot.id);

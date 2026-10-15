@@ -973,7 +973,7 @@ const en: Dict = {
   away_body: 'Everything is still here. Log one meal and today counts.',
   away_ok: 'OK',
   intake_title: 'Eating too little',
-  intake_body: '{avg} kcal a day over your last {days} logged days. Below the {limit} line. Cravings come from this, not from weak will. Today\'s plan is {target}.',
+  intake_body: '{avg} kcal a day over your last {days} logged days. Below the {limit} line. Cravings come from this, not from weak will. Today\'s plan is {target} kcal.',
   intake_open_plan: 'Open the plan',
 };
 
@@ -1934,8 +1934,8 @@ const mr: Dict = {
   pattern_share_kcal: '= आज {kcal} kcal',
   pattern_share_hint: 'हे वजन आहेत, टक्के नाहीत: सगळी जेवणं मिळून नेहमी तुमचं लक्ष्य होतं.',
   log_slot_left: '{kcal} बाकी',
-  log_left_for: '{slot}साठी {kcal} बाकी',
-  log_over_for: '{slot}साठी {kcal} जास्त',
+  log_left_for: '{slot}: {kcal} बाकी',
+  log_over_for: '{slot}: {kcal} जास्त',
   log_left_today: 'आज {kcal} बाकी',
   log_over_today: 'आज {kcal} जास्त',
   pattern_log_planned: 'नियोजनाप्रमाणे नोंदवा',
@@ -1952,7 +1952,7 @@ const mr: Dict = {
   away_body: 'सगळं अजून इथेच आहे. एक जेवण नोंदवा, आजचा दिवस मोजला जातो.',
   away_ok: 'ठीक',
   intake_title: 'खूप कमी खाणं',
-  intake_body: 'शेवटच्या {days} नोंदवलेल्या दिवसांत दिवसाला {avg} kcal. {limit} च्या रेषेखाली. तल्लफ यामुळे येते, कमकुवत मनामुळे नाही. आजचं नियोजन {target}.',
+  intake_body: 'शेवटच्या {days} नोंदवलेल्या दिवसांत दिवसाला {avg} kcal. {limit} च्या रेषेखाली. तल्लफ यामुळे येते, कमकुवत मनामुळे नाही. आजचं नियोजन {target} kcal.',
   intake_open_plan: 'नियोजन उघडा',
 };
 
@@ -2929,7 +2929,7 @@ const hi: Dict = {
   away_body: 'सब कुछ अभी भी यहीं है. एक खाना दर्ज करें, आज का दिन गिना जाएगा.',
   away_ok: 'ठीक',
   intake_title: 'बहुत कम खाना',
-  intake_body: 'पिछले {days} दर्ज दिनों में दिन के {avg} kcal. {limit} की रेखा से नीचे. क्रेविंग इसी से आती है, कमज़ोर इरादे से नहीं. आज का प्लान {target}.',
+  intake_body: 'पिछले {days} दर्ज दिनों में दिन के {avg} kcal. {limit} की रेखा से नीचे. क्रेविंग इसी से आती है, कमज़ोर इरादे से नहीं. आज का प्लान {target} kcal.',
   intake_open_plan: 'प्लान खोलें',
 };
 

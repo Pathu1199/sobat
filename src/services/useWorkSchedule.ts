@@ -8,7 +8,7 @@ import { storyLine, storySeed, type StoryKind } from '../core/storyLines';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useFeedback } from './feedback';
-import { cancel, notifyNow, scheduleDaily } from './notify';
+import { cancel, notifyNow, scheduleDaily, scheduledIds } from './notify';
 
 export function nowMinutes(d: Date = new Date()): number {
   return d.getHours() * 60 + d.getMinutes();
@@ -95,9 +95,9 @@ export function useWorkSchedule() {
       const wanted = blocks.map((b) => `${PREFIX}${b.id}`);
       // Blocks removed in Settings must stop firing too, and so must the per-slot dailies older builds registered.
       for (const id of lastRegistered.current) if (!wanted.includes(id)) await cancel(id);
-      for (const s of routine.slots) await cancel(`${PREFIX}slot-${s.id}`);
+      for (const id of await scheduledIds()) if (id.startsWith(`${PREFIX}slot-`)) await cancel(id);
       lastRegistered.current = wanted;
     })().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schedule, routine, profile.onboarded, profile.lang]);
+  }, [schedule, profile.onboarded, profile.lang]);
 }

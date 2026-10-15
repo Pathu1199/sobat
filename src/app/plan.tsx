@@ -169,7 +169,7 @@ export default function PlanScreen() {
           );
         })}
       </Row>
-      <Pressable onPress={() => router.push('/food?s=routine')} accessibilityRole="button" style={{ paddingVertical: 2 }}>
+      <Pressable onPress={() => router.push('/food?s=routine')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('plan_follows_pattern')} style={{ paddingVertical: 2 }}>
         <Micro color={C.accent}>{`${t('plan_follows_pattern')} ›`}</Micro>
       </Pressable>
 

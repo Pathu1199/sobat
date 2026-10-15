@@ -32,7 +32,7 @@ export default function FoodTab() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <TopBar title={t('tab_food')} alt={lang === 'en' ? undefined : t('tab_food')} right={<TopBarActions />} />
-      <SectionTabs options={[{ key: 'plan', label: t('diet_title') }, { key: 'foods', label: t('foods_title') }, { key: 'recipes', label: t('recipes') }, { key: 'history', label: t('history') }, { key: 'routine', label: t('routine_title') }]} value={section} onChange={setSection} />
+      <SectionTabs options={[{ key: 'plan', label: t('diet_title') }, { key: 'foods', label: t('foods_title') }, { key: 'recipes', label: t('recipes') }, { key: 'history', label: t('history') }, { key: 'routine', label: t('pattern_title') }]} value={section} onChange={setSection} />
       {section === 'plan' ? <PlanScreen /> : null}
       {section === 'foods' ? <FoodsScreen /> : null}
       {section === 'recipes' ? <RecipesScreen /> : null}

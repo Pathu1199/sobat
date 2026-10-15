@@ -4,6 +4,7 @@ import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Platform, useColorScheme, View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
 import { BreakToast } from '../components/BreakToast';
+import { makeT } from '../i18n';
 import { FeedbackProvider } from '../services/feedback';
 import { firebaseEnabled } from '../services/firebase';
 import { configureNotifyGate } from '../services/notify';
@@ -78,7 +79,8 @@ function AppShell() {
     configureNotifyGate({ gapMinutes: notifyGapMinutes || 60, quietStartHour, quietEndHour });
   }, [notifyGapMinutes, quietStartHour, quietEndHour]);
   const segments = useSegments() as string[];
-  const { ready: stateReady } = useApp();
+  const { ready: stateReady, state: appState } = useApp();
+  const t = makeT(appState.profile.lang);
 
   // The break monitor is only useful if it is running, so the Windows shell
   // registers itself to start with the machine. Idempotent, and a no-op in a
@@ -116,7 +118,7 @@ function AppShell() {
         <Stack.Screen name="photo" options={{ title: 'Photo' }} />
         <Stack.Screen name="sleep" options={{ title: 'Sleep' }} />
         <Stack.Screen name="memory" options={{ title: 'Memory' }} />
-        <Stack.Screen name="routine" options={{ title: 'My routine' }} />
+        <Stack.Screen name="routine" options={{ title: t('pattern_title') }} />
         <Stack.Screen name="guide" options={{ title: 'Guide' }} />
         <Stack.Screen name="tour" options={{ headerShown: false }} />
         <Stack.Screen name="foods" options={{ title: 'Foods' }} />

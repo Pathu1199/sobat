@@ -23,7 +23,7 @@ import {
   type RoutineSlot,
   type SpendCategory,
 } from '../core/routine';
-import type { FoodItem, Lang } from '../core/types';
+import type { FoodItem, Lang, MealItem } from '../core/types';
 import { dayStatus, dayTotals, mealTotals } from '../core/weekPlan';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
@@ -41,6 +41,12 @@ export function lineLabel(line: PlanLine, foods: FoodItem[], lang: Lang): string
   const food = foods.find((f) => f.id === line.foodId);
   const name = food ? foodName(food, lang) : line.foodId;
   return line.qty === 1 ? name : `${name} × ${line.qty}`;
+}
+
+/** A logged line's name in the chosen language: the database name where there is one, else its own. */
+function itemName(it: Pick<MealItem, 'foodId' | 'name_en' | 'name_mr'>, foods: FoodItem[], lang: Lang): string {
+  const f = it.foodId ? foods.find((x) => x.id === it.foodId) : undefined;
+  return f ? foodName(f, lang) : lang === 'en' ? it.name_en : it.name_mr || it.name_en;
 }
 
 function foodLabel(id: string, foods: FoodItem[], lang: Lang): string {
@@ -117,14 +123,9 @@ export function RoutineCard() {
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
         <Micro color={C.textDim}>{`${t('pattern_title')} · ${t(`wd_${weekdayOf(today)}`)}`}</Micro>
-        <Row style={{ gap: 14 }}>
-          <Pressable onPress={() => router.push('/food?s=routine')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('edit')}>
-            <Ionicons name="create-outline" size={18} color={C.textFaint} />
-          </Pressable>
-          <Pressable onPress={() => app.setRoutine({ enabled: false })} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('routine_hide')}>
-            <Ionicons name="eye-off-outline" size={18} color={C.textFaint} />
-          </Pressable>
-        </Row>
+        <Pressable onPress={() => router.push('/food?s=routine')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('edit')}>
+          <Ionicons name="create-outline" size={18} color={C.textFaint} />
+        </Pressable>
       </Row>
 
       {planTotal ? (
@@ -180,7 +181,7 @@ export function RoutineCard() {
                     <Micro color={s.status === 'now' ? C.amber : s.status === 'missed' ? C.red : C.textGhost}>{s.status === 'missed' ? t('slot_missed') : s.status === 'now' ? t('slot_now') : slotTime(slot)}</Micro>
                   </Row>
                   <Text style={{ color: C.textFaint, fontSize: F.tiny }} numberOfLines={1}>
-                    {done ? s.meals.flatMap((m) => m.items.map((it) => (lang === 'en' ? it.name_en : it.name_mr || it.name_en))).join(', ') : lines.length === 0 ? t('pattern_log_other') : lines.map((l) => lineLabel(l, foods, lang)).join(' + ')}
+                    {done ? s.meals.flatMap((m) => m.items.map((it) => itemName(it, foods, lang))).join(', ') : lines.length === 0 ? t('pattern_log_other') : lines.map((l) => lineLabel(l, foods, lang)).join(' + ')}
                   </Text>
                 </Pressable>
                 <View style={{ alignItems: 'flex-end', gap: 2 }}>

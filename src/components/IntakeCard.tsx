@@ -29,7 +29,7 @@ export function IntakeCard() {
           <Small color={C.textDim}>{fill(t('intake_body'), { avg: intake.avg, days: intake.days, limit: intake.limit, target: targets.kcal })}</Small>
         </View>
       </Row>
-      <Pressable onPress={() => router.push('/food?s=plan')} accessibilityRole="button">
+      <Pressable onPress={() => router.push('/food?s=plan')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('intake_open_plan')}>
         <Micro color={C.accent}>{`${t('intake_open_plan')} ›`}</Micro>
       </Pressable>
     </Card>

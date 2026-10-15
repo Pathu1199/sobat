@@ -150,5 +150,12 @@ describe('weekPlan', () => {
       expect(withFoods.days[0].meals.find((m) => m.id === 'late')!.lines[0].foodId).toBe('apple');
       expect(withFoods.days[0].meals.find((m) => m.id === 'lunch')!.lines).toEqual(built.days[0].meals.find((m) => m.id === 'lunch')!.lines);
     });
+
+    it('places an old plan meal that has no time instead of throwing', () => {
+      // Read as midnight, a timeless snack lands on the earliest snack slot.
+      const noTime = { days: Array.from({ length: 7 }, () => ({ meals: [{ id: 'mid', type: 'snack', lines: [{ foodId: 'almonds', unit: 'handful', qty: 1 }] }] })) } as unknown as WeekPlan;
+      const day = alignWeekPlan(noTime, DEFAULT_ROUTINE).days[0];
+      expect(day.meals.find((m) => m.id === 'dry-fruit')!.lines).toEqual([{ foodId: 'almonds', unit: 'handful', qty: 1 }]);
+    });
   });
 });

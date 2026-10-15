@@ -63,11 +63,11 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
       <View style={{ gap: 6 }}>
         <Micro>{t('pattern_share')}</Micro>
         <Row style={{ gap: 10 }}>
-          <Pressable onPress={() => setShare(share - 5)} hitSlop={6} accessibilityLabel="−" style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+          <Pressable onPress={() => setShare(share - 5)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${t('pattern_share')} −`} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="remove" size={16} color={C.text} />
           </Pressable>
           <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700', minWidth: 32, textAlign: 'center' }}>{String(share)}</Text>
-          <Pressable onPress={() => setShare(share + 5)} hitSlop={6} accessibilityLabel="+" style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+          <Pressable onPress={() => setShare(share + 5)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${t('pattern_share')} +`} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="add" size={16} color={C.text} />
           </Pressable>
           <Small color={C.textDim}>{fill(t('pattern_share_kcal'), { kcal: kcalToday })}</Small>
