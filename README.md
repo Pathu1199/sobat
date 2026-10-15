@@ -225,7 +225,10 @@ days; any activity in minutes counted in calories; a yoga library; the
 mountain with camps, badges and a weekly challenge; four kinds of screen
 break; reminders that keep their distance, and through the relay while the
 app is closed; English, Marathi, Hindi; light and dark; the signed APK and the
-website built and published on every push.
+website built and published on every push; an eating pattern of meal slots
+with a share of the day each, which the budget, the week plan, the log screen
+and the reminders follow; slot prompts and absence lines scheduled a week
+ahead on the phone.
 
 Not built yet: Health Connect, the Windows installer itself (it has to be
 produced on a PC), and a native Mac app.

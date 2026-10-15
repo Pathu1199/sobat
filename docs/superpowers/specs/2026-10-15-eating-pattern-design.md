@@ -149,7 +149,8 @@ which the screens already know how to name.
 
 `DayPlanInput` gains `slots?: PatternSlot[]`, `loggedSlotIds?: string[]`
 and `nowMinutes?: number`. With slots, the meals still ahead are the slots
-not logged whose time plus grace is still ahead; each gets what is left in
+not logged whose turn has not passed: a slot stays ahead until the next
+slot's window opens, so a late lunch is still lunch; each gets what is left in
 proportion to its share; plates are built by the slot's type; `SlotPlan`
 carries the slot `id` so a tap logs against it. Without slots the four
 windows behave as today.
