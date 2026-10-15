@@ -193,6 +193,29 @@ export async function scheduleRepeating(id: string, seconds: number, title: stri
   });
 }
 
+/** A one-off reminder at a clock time on a date. Fires with the app closed. */
+export async function scheduleAt(id: string, at: Date, title: string, body: string): Promise<void> {
+  const n = loadNative();
+  if (!n) return;
+  await n.scheduleNotificationAsync({
+    identifier: id,
+    content: { title, body },
+    trigger: { type: n.SchedulableTriggerInputTypes.DATE, date: at, channelId: 'sobat' },
+  });
+}
+
+/** Identifiers of everything the OS still holds for this app. Empty on web and on any error. */
+export async function scheduledIds(): Promise<string[]> {
+  const n = loadNative();
+  if (!n) return [];
+  try {
+    const all = await n.getAllScheduledNotificationsAsync();
+    return all.map((r) => r.identifier);
+  } catch {
+    return [];
+  }
+}
+
 export async function cancel(id: string): Promise<void> {
   const n = loadNative();
   if (!n) return;
