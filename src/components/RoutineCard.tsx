@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { foodName, searchFoods } from '../core/foods';
 import { newId } from '../core/id';
+import { KCAL_FLOOR } from '../core/nutrition';
+import { slotStates, type SlotState } from '../core/pattern';
 import {
   avoidHits,
   bhajiFor,
@@ -12,9 +14,6 @@ import {
   skipKey,
   slotLabel,
   slotLines,
-  slotLogged,
-  slotMinutes,
-  slotStatus,
   slotTime,
   SPEND_CATEGORIES,
   spendStatus,
@@ -25,6 +24,7 @@ import {
   type SpendCategory,
 } from '../core/routine';
 import type { FoodItem, Lang } from '../core/types';
+import { dayStatus, dayTotals, mealTotals } from '../core/weekPlan';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useMinute } from '../services/useWorkSchedule';
@@ -58,23 +58,35 @@ export function swapText(hit: AvoidHit, foods: FoodItem[], lang: Lang): string {
   return `${head} ${fill(t('routine_try'), { swap: hit.rule.swapIds.map((id) => foodLabel(id, foods, lang)).join(or) })}`;
 }
 
-/** Today's routine on the Today screen: the bhaji, the fixed meals, the avoid list and the money. */
+/**
+ * Today's eating pattern: one row per slot with what is planned, what was
+ * eaten against what it may have, and the difference. A slot not yet eaten
+ * logs as planned in one tap or opens the log screen for something else.
+ * The bhaji, the walk, the avoid list and the money stay where they were.
+ */
 export function RoutineCard() {
   const app = useApp();
   const router = useRouter();
   const fb = useFeedback();
-  const { state, foods, today } = app;
+  const { state, foods, today, targets } = app;
   const routine = state.routine;
   const lang = state.profile.lang;
   const t = makeT(lang);
-  const [openSlot, setOpenSlot] = useState<RoutineSlot | null>(null);
+  const [openSlot, setOpenSlot] = useState<SlotState | null>(null);
   const [spendOpen, setSpendOpen] = useState(false);
   const minute = useMinute();
 
+  const bhaji = bhajiFor(routine, today);
+  const todayMeals = useMemo(() => state.meals.filter((m) => m.date === today), [state.meals, today]);
+  const planDay = state.weekPlan?.days[weekdayOf(today)];
+  const planned = useMemo(() => (planDay ? Object.fromEntries(planDay.meals.map((m) => [m.id, mealTotals(m, foods).kcal])) : undefined), [planDay, foods]);
+  const states = useMemo(
+    () => slotStates({ routine, target: targets.kcal, meals: todayMeals, nowMinutes: minute, skipped: app.actionsDoneToday, planned }),
+    [routine, targets.kcal, todayMeals, minute, app.actionsDoneToday, planned],
+  );
+
   if (!routine.enabled) return null;
 
-  const bhaji = bhajiFor(routine, today);
-  const todayMeals = state.meals.filter((m) => m.date === today);
   const hits = avoidHits(todayMeals.flatMap((m) => m.items), routine.avoid);
   const status = spendStatus(app.spentToday, routine.budgetMin, routine.budgetMax);
   const spendColor = status === 'over' ? C.red : status === 'in' ? C.green : C.cyan;
@@ -84,20 +96,27 @@ export function RoutineCard() {
       : status === 'in'
         ? t('routine_budget_in')
         : fill(t('routine_budget_under'), { n: routine.budgetMin - app.spentToday });
+  const planTotal = planDay ? dayTotals(planDay, foods) : null;
+  const planStatus = planTotal ? dayStatus(planTotal.kcal, targets.kcal, KCAL_FLOOR[state.profile.sex]) : null;
 
-  /** Take back a routine meal logged by mistake: the newest meal of that type holding one of its foods. */
-  function unlog(slot: RoutineSlot) {
-    const ids = new Set([...slot.options.flat().map((l) => l.foodId), ...(slot.withBhaji ? bhaji : [])]);
-    const meal = [...todayMeals].reverse().find((m) => m.type === slot.type && m.items.some((it) => !!it.foodId && ids.has(it.foodId)));
+  /** The lines a slot is planned to hold today: the week plan's when it has them, else the slot's own default with the day's bhaji. */
+  function plannedLines(s: SlotState): PlanLine[] {
+    const fromPlan = planDay?.meals.find((m) => m.id === s.slot.id)?.lines ?? [];
+    return fromPlan.length > 0 ? fromPlan : slotLines(routine, s.slot.slot, 0, bhaji[0] ?? null);
+  }
+
+  /** Take back the newest meal logged against a slot. */
+  function unlog(s: SlotState) {
+    const meal = s.meals[s.meals.length - 1];
     if (!meal) return;
     app.removeMeal(meal.id);
-    fb.notify(t('meal_removed'));
+    fb.notify(t('meal_removed'), { label: t('undo'), onPress: () => app.addMeal(meal) });
   }
 
   return (
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
-        <Micro color={C.textDim}>{`${t('routine_title')} · ${t(`wd_${weekdayOf(today)}`)}`}</Micro>
+        <Micro color={C.textDim}>{`${t('pattern_title')} · ${t(`wd_${weekdayOf(today)}`)}`}</Micro>
         <Row style={{ gap: 14 }}>
           <Pressable onPress={() => router.push('/food?s=routine')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('edit')}>
             <Ionicons name="create-outline" size={18} color={C.textFaint} />
@@ -107,6 +126,19 @@ export function RoutineCard() {
           </Pressable>
         </Row>
       </Row>
+
+      {planTotal ? (
+        <Pressable onPress={() => router.push('/food?s=plan')} accessibilityRole="button" style={{ gap: 2 }}>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <Micro color={C.textDim}>{t('plan_today')}</Micro>
+            <Text style={{ color: C.text, fontSize: F.body, fontWeight: '700' }}>
+              {planTotal.kcal}
+              <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '500' }}>{` / ${targets.kcal} kcal`}</Text>
+            </Text>
+          </Row>
+          {planStatus === 'low' ? <Small color={C.red}>{fill(t('plan_status_low_short'), { gap: targets.kcal - planTotal.kcal })}</Small> : null}
+        </Pressable>
+      ) : null}
 
       <View style={{ gap: 4 }}>
         <Micro>{t('routine_bhaji')}</Micro>
@@ -128,41 +160,44 @@ export function RoutineCard() {
       ) : null}
 
       <View>
-        {[...routine.slots].sort((a, b) => slotMinutes(a) - slotMinutes(b)).map((slot, i) => {
-          const done = slotLogged(slot, bhaji, todayMeals);
-          const skipped = app.actionsDoneToday.includes(skipKey(slot));
-          const status = slotStatus(slot, minute, done, skipped);
-          const lines = slotLines(routine, slot, 0, bhaji[0] ?? null);
-          const kcal = planItems(lines, foods).reduce((a, x) => a + x.kcal, 0);
-          const tone = status === 'done' ? C.accent : status === 'now' ? C.amber : status === 'missed' ? C.red : C.borderStrong;
-          const quiet = status === 'done' || status === 'skipped';
+        {states.map((s, i) => {
+          const slot = s.slot.slot;
+          const lines = plannedLines(s);
+          const plannedKcal = s.planned > 0 ? s.planned : planItems(lines, foods).reduce((a, x) => a + x.kcal, 0);
+          const done = s.status === 'done';
+          const skipped = s.status === 'skipped';
+          const quiet = done || skipped;
+          const diff = done && plannedKcal > 0 ? s.eaten - plannedKcal : null;
+          const tone = done ? C.accent : s.status === 'now' ? C.amber : s.status === 'missed' ? C.red : C.borderStrong;
           return (
             <View key={slot.id}>
               {i > 0 ? <Divider /> : null}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10 }}>
-                <Ionicons name={done ? 'checkmark-circle' : skipped ? 'remove-circle-outline' : status === 'now' ? 'time' : 'ellipse-outline'} size={20} color={tone} />
-                <Pressable
-                  onPress={() => (quiet ? undefined : setOpenSlot(slot))}
-                  disabled={quiet}
-                  accessibilityRole="button"
-                  style={({ pressed }) => ({ flex: 1, gap: 2, opacity: pressed && !quiet ? 0.7 : 1 })}>
+                <Ionicons name={done ? 'checkmark-circle' : skipped ? 'remove-circle-outline' : s.status === 'now' ? 'time' : 'ellipse-outline'} size={20} color={tone} />
+                <Pressable onPress={() => (quiet ? undefined : setOpenSlot(s))} disabled={quiet} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, gap: 2, opacity: pressed && !quiet ? 0.7 : 1 })}>
                   <Row style={{ gap: 8 }}>
                     <Text style={{ color: quiet ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500', textDecorationLine: skipped ? 'line-through' : 'none' }}>{slotLabel(slot, lang)}</Text>
-                    <Micro color={status === 'now' ? C.amber : status === 'missed' ? C.red : C.textGhost}>{status === 'missed' ? t('slot_missed') : status === 'now' ? t('slot_now') : slotTime(slot)}</Micro>
+                    <Micro color={s.status === 'now' ? C.amber : s.status === 'missed' ? C.red : C.textGhost}>{s.status === 'missed' ? t('slot_missed') : s.status === 'now' ? t('slot_now') : slotTime(slot)}</Micro>
                   </Row>
                   <Text style={{ color: C.textFaint, fontSize: F.tiny }} numberOfLines={1}>
-                    {lines.map((l) => lineLabel(l, foods, lang)).join(' + ')}
+                    {done ? s.meals.flatMap((m) => m.items.map((it) => (lang === 'en' ? it.name_en : it.name_mr || it.name_en))).join(', ') : lines.map((l) => lineLabel(l, foods, lang)).join(' + ')}
                   </Text>
                 </Pressable>
-                {status === 'missed' ? (
-                  <Pressable onPress={() => app.toggleAction(skipKey(slot))} hitSlop={8} accessibilityRole="button">
-                    <Micro color={C.textFaint}>{t('slot_skip')}</Micro>
-                  </Pressable>
-                ) : (
-                  <Text style={{ color: C.textDim, fontSize: F.small }}>{`${kcal} kcal`}</Text>
-                )}
+                <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                  {done ? (
+                    <>
+                      <Text style={{ color: s.left < 0 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>
+                        {s.eaten}
+                        <Text style={{ color: C.textFaint, fontWeight: '500' }}>{` / ${s.allowance}`}</Text>
+                      </Text>
+                      {diff !== null ? <Micro color={diff > 0 ? C.amber : C.textFaint}>{`${diff > 0 ? '+' : ''}${diff} ${t('pattern_vs_plan')}`}</Micro> : null}
+                    </>
+                  ) : (
+                    <Text style={{ color: C.textDim, fontSize: F.small }}>{fill(t('pattern_planned'), { kcal: plannedKcal })}</Text>
+                  )}
+                </View>
                 {done ? (
-                  <Pressable onPress={() => unlog(slot)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('undo')}>
+                  <Pressable onPress={() => unlog(s)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('undo')}>
                     <Micro color={C.accent}>{`${t('routine_logged')} ×`}</Micro>
                   </Pressable>
                 ) : skipped ? (
@@ -170,11 +205,23 @@ export function RoutineCard() {
                     <Micro color={C.textFaint}>{`${t('slot_skipped')} ×`}</Micro>
                   </Pressable>
                 ) : (
-                  <Pressable onPress={() => setOpenSlot(slot)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('routine_log')}>
+                  <Pressable onPress={() => setOpenSlot(s)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('pattern_log_planned')}>
                     <Ionicons name="add-circle" size={28} color={C.accent} />
                   </Pressable>
                 )}
               </View>
+              {!quiet ? (
+                <Row style={{ gap: 14, paddingLeft: 31, paddingBottom: 6 }}>
+                  <Pressable onPress={() => router.push({ pathname: '/log', params: { slot: slot.id } })} accessibilityRole="button" hitSlop={6}>
+                    <Micro color={C.accent}>{`${t('pattern_log_other')} ›`}</Micro>
+                  </Pressable>
+                  {s.status === 'missed' ? (
+                    <Pressable onPress={() => app.toggleAction(skipKey(slot))} hitSlop={6} accessibilityRole="button">
+                      <Micro color={C.textFaint}>{t('slot_skip')}</Micro>
+                    </Pressable>
+                  ) : null}
+                </Row>
+              ) : null}
             </View>
           );
         })}
@@ -207,14 +254,17 @@ export function RoutineCard() {
         </Row>
       </Pressable>
 
-      <SlotSheet slot={openSlot} bhaji={bhaji} onClose={() => setOpenSlot(null)} />
+      <SlotSheet state={openSlot} planLines={openSlot ? (planDay?.meals.find((m) => m.id === openSlot.slot.id)?.lines ?? []) : []} bhaji={bhaji} onClose={() => setOpenSlot(null)} />
       <SpendSheet open={spendOpen} onClose={() => setSpendOpen(false)} />
     </Card>
   );
 }
 
-/** Pick an option (and a bhaji, on a two-bhaji day), see the numbers, log it. */
-function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: string[]; onClose: () => void }) {
+/**
+ * Log a slot as planned. With a week plan the lines are the plan's for today
+ * and there is nothing to pick; without one, pick the option and the bhaji.
+ */
+function SlotSheet({ state: s, planLines, bhaji, onClose }: { state: SlotState | null; planLines: PlanLine[]; bhaji: string[]; onClose: () => void }) {
   const app = useApp();
   const fb = useFeedback();
   const { foods, state } = app;
@@ -229,7 +279,7 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
   const [otherId, setOtherId] = useState<string | null>(null);
 
   // A different slot starts from its defaults again.
-  const slotId = slot?.id ?? null;
+  const slotId = s?.slot.id ?? null;
   if (slotId !== openId) {
     setOpenId(slotId);
     setOption(0);
@@ -239,10 +289,11 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
     setOtherId(null);
   }
 
-  if (!slot) return null;
-  const current = slot;
+  if (!s) return null;
+  const current: RoutineSlot = s.slot.slot;
+  const fromPlan = planLines.length > 0;
   const chosenBhaji = otherId ?? bhaji[bhajiIdx] ?? null;
-  const lines = slotLines(state.routine, current, option, chosenBhaji);
+  const lines = fromPlan ? planLines : slotLines(state.routine, current, option, chosenBhaji);
   const otherResults = otherOpen && otherQuery.trim() ? searchFoods(foods, otherQuery, 6).filter((f) => f.category === 'veg' || f.category === 'dal') : [];
   const items = planItems(lines, foods);
   const kcal = items.reduce((a, i) => a + i.kcal, 0);
@@ -251,7 +302,7 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
   function log() {
     if (items.length === 0) return;
     const now = new Date();
-    app.addMeal({ id: newId(), at: now.toISOString(), date: app.today, type: current.type, items, kcal, protein });
+    app.addMeal({ id: newId(), at: now.toISOString(), date: app.today, type: current.type, items, kcal, protein, slotId: current.id });
     fb.haptic('success');
     fb.notify(fill(t('toast_meal_saved'), { kcal }));
     onClose();
@@ -259,7 +310,7 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
 
   return (
     <Sheet open title={slotLabel(current, lang)} onClose={onClose}>
-      {current.withBhaji ? (
+      {!fromPlan && current.withBhaji ? (
         <View style={{ gap: 8 }}>
           <Micro>{t('routine_bhaji')}</Micro>
           <Row style={{ flexWrap: 'wrap', gap: 6 }}>
@@ -281,7 +332,7 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
           ) : null}
         </View>
       ) : null}
-      {current.options.length > 1 ? (
+      {!fromPlan && current.options.length > 1 ? (
         <View style={{ gap: 8 }}>
           <Micro>{t('routine_pick')}</Micro>
           <Row style={{ flexWrap: 'wrap', gap: 6 }}>
@@ -314,7 +365,7 @@ function SlotSheet({ slot, bhaji, onClose }: { slot: RoutineSlot | null; bhaji: 
           <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{kcal}</Text>
           <Micro>{`kcal · ${protein} g ${t('protein').toLowerCase()} · ${t(current.type)}`}</Micro>
         </View>
-        <Btn label={t('routine_log')} onPress={log} disabled={items.length === 0} style={{ minWidth: 120 }} />
+        <Btn label={t('pattern_log_planned')} onPress={log} disabled={items.length === 0} style={{ minWidth: 120 }} />
       </Row>
     </Sheet>
   );

@@ -959,6 +959,10 @@ const en: Dict = {
   log_over_for: '{kcal} over for {slot}',
   log_left_today: '{kcal} left today',
   log_over_today: '{kcal} over today',
+  pattern_log_planned: 'Log as planned',
+  pattern_log_other: 'Different',
+  pattern_planned: '{kcal} planned',
+  pattern_vs_plan: 'vs plan',
 };
 
 const mr: Dict = {
@@ -1922,6 +1926,10 @@ const mr: Dict = {
   log_over_for: '{slot}साठी {kcal} जास्त',
   log_left_today: 'आज {kcal} बाकी',
   log_over_today: 'आज {kcal} जास्त',
+  pattern_log_planned: 'नियोजनाप्रमाणे नोंदवा',
+  pattern_log_other: 'वेगळं',
+  pattern_planned: '{kcal} नियोजित',
+  pattern_vs_plan: 'नियोजनापेक्षा',
 };
 
 const hi: Dict = {
@@ -2883,6 +2891,10 @@ const hi: Dict = {
   log_over_for: '{slot} के लिए {kcal} ज़्यादा',
   log_left_today: 'आज {kcal} बाकी',
   log_over_today: 'आज {kcal} ज़्यादा',
+  pattern_log_planned: 'प्लान के हिसाब से दर्ज करें',
+  pattern_log_other: 'अलग',
+  pattern_planned: '{kcal} प्लान में',
+  pattern_vs_plan: 'प्लान से',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

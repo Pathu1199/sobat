@@ -233,7 +233,7 @@ export default function TodayScreen() {
           <>
             {heroCard}
             {isToday ? <CoachStrip onSuggest={() => setSuggestOpen(true)} /> : null}
-      {isToday ? <PlanTodayCard /> : null}
+      {isToday && !state.routine.enabled ? <PlanTodayCard /> : null}
             {isToday ? <FitsCard /> : null}
             {isToday ? <TrackerGrid /> : null}
             {isToday ? <StartHereCard /> : null}
@@ -267,7 +267,7 @@ export default function TodayScreen() {
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
       {heroCard}
       {isToday ? <CoachStrip onSuggest={() => setSuggestOpen(true)} /> : null}
-      {isToday ? <PlanTodayCard /> : null}
+      {isToday && !state.routine.enabled ? <PlanTodayCard /> : null}
       {isToday && !state.weekPlan ? <FitsCard compact /> : null}
       {isToday ? <TrackerGrid /> : null}
       {isToday ? <StartHereCard /> : null}
