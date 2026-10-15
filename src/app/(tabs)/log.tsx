@@ -82,6 +82,7 @@ export default function LogScreen() {
   );
   const chosen = patternOn ? (states.find((s) => s.slot.id === slotId) ?? slotForNow(states, minute)) : null;
   const effectiveType: MealType = chosen ? chosen.slot.type : mealType;
+  const chosenLabel = chosen ? slotLabel(chosen.slot.slot, lang) : '';
 
   /** When a meal "happened": now for today; the slot's time, or the usual hour of that meal, for an earlier day. */
   function atFor(type: MealType): string {
@@ -94,7 +95,7 @@ export default function LogScreen() {
     const ids = recentFoodIds(app.state.meals, addDays(app.today, -30), 8);
     return ids.map((id) => app.foods.find((f) => f.id === id)).filter((f): f is FoodItem => !!f);
   }, [app.state.meals, app.foods, app.today]);
-  const yesterdaySame = app.state.meals.find((m) => m.date === addDays(viewDate, -1) && m.type === effectiveType);
+  const yesterdaySame = app.state.meals.find((m) => m.date === addDays(viewDate, -1) && (chosen ? m.slotId === chosen.slot.id || (!m.slotId && m.type === effectiveType) : m.type === effectiveType));
 
   const basketItems: MealItem[] = basket.map((b) => toMealItem(b.food, b.gramsPerUnit * b.count));
   const basketKcal = basketItems.reduce((a, i) => a + i.kcal, 0);
@@ -146,7 +147,7 @@ export default function LogScreen() {
 
   function repeatYesterday() {
     if (!yesterdaySame) return;
-    app.addMeal({ ...yesterdaySame, id: newId(), at: atFor(yesterdaySame.type), date: viewDate, note: undefined });
+    app.addMeal({ ...yesterdaySame, id: newId(), at: atFor(yesterdaySame.type), date: viewDate, note: undefined, slotId: chosen?.slot.id });
     fb.haptic('success');
     fb.notify(t('toast_meal_saved').replace('{kcal}', String(yesterdaySame.kcal)));
   }
@@ -236,7 +237,7 @@ export default function LogScreen() {
 
   const searchBlock = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={t('add_food')} meta={chosen ? slotLabel(chosen.slot.slot, lang) : t(mealType)} />
+      <SectionHeader title={t('add_food')} meta={chosen ? chosenLabel : t(mealType)} />
       {patternOn && states.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
           {states.map((s) => (
@@ -282,8 +283,8 @@ export default function LogScreen() {
     chosen ? (
       <Text style={{ color: dayLeft < 0 ? C.red : slotLeft < 0 ? C.amber : C.textDim, fontSize: F.small, lineHeight: 18 }}>
         {[
-          `${slotLabel(chosen.slot.slot, lang)}: ${basketKcal} / ${chosen.allowance}`,
-          slotLeft >= 0 ? fill(t('log_left_for'), { kcal: slotLeft, slot: slotLabel(chosen.slot.slot, lang) }) : fill(t('log_over_for'), { kcal: -slotLeft, slot: slotLabel(chosen.slot.slot, lang) }),
+          `${chosenLabel}: ${chosen.eaten + basketKcal} / ${chosen.allowance}`,
+          slotLeft >= 0 ? fill(t('log_left_for'), { kcal: slotLeft, slot: chosenLabel }) : fill(t('log_over_for'), { kcal: -slotLeft, slot: chosenLabel }),
           dayLeft >= 0 ? fill(t('log_left_today'), { kcal: dayLeft }) : fill(t('log_over_today'), { kcal: -dayLeft }),
         ].join(' · ')}
       </Text>
