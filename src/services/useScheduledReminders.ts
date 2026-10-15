@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
 import { slotStates } from '../core/pattern';
-import { lastLogDate, plannedReminders } from '../core/reminders';
+import { lastLogDate, plannedReminders, type Reminder } from '../core/reminders';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { cancel, scheduleAt, scheduleDaily, scheduledIds, scheduleRepeating, setupAndroidChannel } from './notify';
@@ -19,6 +19,18 @@ const IDS = {
 /** Everything planned a week ahead carries this, so it can be told apart from the daily ones. */
 const PLANNED = 'sobat-r-';
 
+/** A short signature of when and what a reminder says, so a changed slot time, name or language replaces the pending notification instead of leaving the old one. */
+function signature(r: Reminder): string {
+  const s = `${r.time}\n${r.title}\n${r.body}`;
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+const osId = (r: Reminder) => `${PLANNED}${r.id}@${signature(r)}`;
+
+// Runs are chained so two never interleave their cancels and adds.
+let chain: Promise<void> = Promise.resolve();
+
 /**
  * Registers the reminders that must fire while the app is closed. The in-app
  * nudge timer only runs when the app is open, so on a phone these are what
@@ -34,7 +46,7 @@ export function useScheduledReminders() {
   const mantra = useMantra();
   const mantraText = mantra?.text ?? '';
   const routine = app.state.routine;
-  const { today, hour } = app;
+  const { today, hour, ready } = app;
 
   useEffect(() => {
     if (Platform.OS === 'web' || !onboarded) return;
@@ -88,7 +100,7 @@ export function useScheduledReminders() {
   const lastLog = useMemo(() => lastLogDate(app.state.meals, today), [app.state.meals, today]);
 
   const wanted = useMemo(() => {
-    if (Platform.OS === 'web' || !onboarded || !nudgesEnabled) return [];
+    if (Platform.OS === 'web' || !ready || !onboarded || !nudgesEnabled) return [];
     return plannedReminders({
       today,
       nowMinutes: hour * 60,
@@ -101,24 +113,39 @@ export function useScheduledReminders() {
       lang,
       t: makeT(lang),
     });
-  }, [onboarded, nudgesEnabled, today, hour, routine, doneKey, lastLog, offDays, quietStartHour, quietEndHour, lang]);
+  }, [ready, onboarded, nudgesEnabled, today, hour, routine, doneKey, lastLog, offDays, quietStartHour, quietEndHour, lang]);
 
   useEffect(() => {
-    if (Platform.OS === 'web') return;
-    (async () => {
-      const have = (await scheduledIds()).filter((id) => id.startsWith(PLANNED));
-      const want = new Map(wanted.map((r) => [`${PLANNED}${r.id}`, r]));
-      for (const id of have) if (!want.has(id)) await cancel(id);
-      const now = Date.now();
-      for (const [id, r] of want) {
-        if (have.includes(id)) continue;
-        const at = new Date(`${r.date}T${r.time}:00`);
-        // A moment already past would fire at once; the next tick plans the rest.
-        if (at.getTime() <= now) continue;
-        await scheduleAt(id, at, r.title, r.body);
-      }
-    })().catch(() => {
-      // Permission refused or the OS declined. The app still works.
-    });
-  }, [wanted]);
+    if (Platform.OS === 'web' || !ready || !onboarded) return;
+    let stale = false;
+    chain = chain
+      .then(async () => {
+        if (stale) return;
+        const have = (await scheduledIds()).filter((id) => id.startsWith(PLANNED));
+        const want = new Map(wanted.map((r) => [osId(r), r]));
+        for (const id of have) {
+          if (stale) return;
+          if (!want.has(id)) await cancel(id);
+        }
+        const now = Date.now();
+        for (const [id, r] of want) {
+          if (stale) return;
+          if (have.includes(id)) continue;
+          const at = new Date(`${r.date}T${r.time}:00`);
+          // A moment already past would fire at once; the next tick plans the rest.
+          if (at.getTime() <= now) continue;
+          try {
+            await scheduleAt(id, at, r.title, r.body);
+          } catch {
+            // One refused reminder must not stop the rest.
+          }
+        }
+      })
+      .catch(() => {
+        // Permission refused or the OS declined. The app still works.
+      });
+    return () => {
+      stale = true;
+    };
+  }, [wanted, ready, onboarded]);
 }
