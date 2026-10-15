@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { foodName } from '../core/foods';
 import { newId } from '../core/id';
 import { KCAL_FLOOR } from '../core/nutrition';
-import { planItems, weekdayOf } from '../core/routine';
+import { planItems, slotLabel, weekdayOf } from '../core/routine';
 import { dayStatus, dayTotals, lineInfo, mealTotals, type PlanMeal } from '../core/weekPlan';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
@@ -14,8 +14,6 @@ import { isOffDay } from '../core/week';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Micro, Row, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
-
-const MEAL_KEY: Record<string, string> = { breakfast: 'breakfast', mid: 'plan_meal_mid', lunch: 'lunch', tea: 'plan_meal_tea', evening: 'plan_meal_evening', dinner: 'dinner', night: 'plan_meal_night' };
 
 /**
  * Today's page of the week plan on the home screen: the day's planned total
@@ -29,6 +27,10 @@ export function PlanTodayCard() {
   const { state, foods, targets, today } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
+  const mealName = (meal: PlanMeal) => {
+    const s = state.routine.slots.find((x) => x.id === meal.id);
+    return (s && slotLabel(s, lang)) || t(meal.type);
+  };
   const minute = useMinute();
   const plan = state.weekPlan;
   const day = plan?.days[weekdayOf(today)];
@@ -77,7 +79,7 @@ export function PlanTodayCard() {
     const items = planItems(meal.lines, foods);
     if (!items.length) return;
     const kcal = items.reduce((a, i) => a + i.kcal, 0);
-    app.addMeal({ id: newId(), at: new Date().toISOString(), date: today, type: meal.type, items, kcal, protein: Math.round(items.reduce((a, i) => a + i.protein, 0)) });
+    app.addMeal({ id: newId(), at: new Date().toISOString(), date: today, type: meal.type, slotId: meal.id, items, kcal, protein: Math.round(items.reduce((a, i) => a + i.protein, 0)) });
     fb.haptic('success');
     fb.notify(fill(t('toast_meal_saved'), { kcal }));
   }
@@ -114,7 +116,7 @@ export function PlanTodayCard() {
         return (
           <View key={meal.id} style={{ gap: 4 }}>
             <Row style={{ justifyContent: 'space-between' }}>
-              <Micro color={C.accent}>{`${t(MEAL_KEY[meal.id] ?? meal.type)} · ${meal.time}`}</Micro>
+              <Micro color={C.accent}>{`${mealName(meal)} · ${meal.time}`}</Micro>
               <Micro>{`${mt.kcal} kcal`}</Micro>
             </Row>
             <Row style={{ gap: 10 }}>

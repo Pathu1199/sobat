@@ -947,6 +947,7 @@ const en: Dict = {
   wd_4: 'Thu',
   wd_5: 'Fri',
   wd_6: 'Sat',
+  plan_follows_pattern: 'Meals follow your eating pattern · edit',
 };
 
 const mr: Dict = {
@@ -1898,6 +1899,7 @@ const mr: Dict = {
   wd_4: 'गुरु',
   wd_5: 'शुक्र',
   wd_6: 'शनि',
+  plan_follows_pattern: 'जेवणं तुमच्या खाण्याच्या पद्धतीनुसार · बदला',
 };
 
 const hi: Dict = {
@@ -2847,6 +2849,7 @@ const hi: Dict = {
 
 
 
+  plan_follows_pattern: 'खाने आपके खाने के पैटर्न के अनुसार · बदलें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

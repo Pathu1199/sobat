@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { DEFAULT_ROUTINE } from '../routine';
+import { DEFAULT_ROUTINE, type Routine } from '../routine';
 import type { FoodItem } from '../types';
-import { balanceDay, buildWeekPlan, copyToWeekdays, dayStatus, dayTotals, lineInfo, roleOf, setLine, swapsFor } from '../weekPlan';
+import { alignWeekPlan, balanceDay, buildWeekPlan, copyToWeekdays, dayStatus, dayTotals, lineInfo, roleOf, setLine, swapsFor, type WeekPlan } from '../weekPlan';
 
 const foods = foodsJson as FoodItem[];
 const byId = (id: string) => foods.find((f) => f.id === id)!;
@@ -87,5 +87,68 @@ describe('weekPlan', () => {
     const copied = copyToWeekdays(plan, 1);
     expect(copied.days[3]).toEqual(plan.days[1]);
     expect(copied.days[0]).toEqual(plan.days[0]);
+  });
+
+  it('makes one meal per slot of the pattern, in time order, under the slot ids', () => {
+    const plan = buildWeekPlan(DEFAULT_ROUTINE, foods);
+    expect(plan.days[1].meals.map((m) => m.id)).toEqual(['fruit', 'dry-fruit', 'lunch', 'tea', 'bhel', 'dinner', 'milk']);
+    expect(plan.days[1].meals.map((m) => m.time)).toEqual(['08:30', '11:00', '13:00', '15:45', '18:30', '20:00', '21:00']);
+  });
+
+  it('adds a staple only when the plate has none of its kind', () => {
+    const bhakriLunch: Routine = {
+      ...DEFAULT_ROUTINE,
+      slots: DEFAULT_ROUTINE.slots.map((s) => (s.id === 'lunch' ? { ...s, options: [[{ foodId: 'jowar-bhakri', unit: 'piece', qty: 1 }]] } : s)),
+    };
+    const lunch = buildWeekPlan(bhakriLunch, foods).days[1].meals.find((m) => m.id === 'lunch')!;
+    expect(lunch.lines.some((l) => l.foodId === 'chapati')).toBe(false);
+    expect(lunch.lines.some((l) => l.foodId === 'jowar-bhakri')).toBe(true);
+    expect(lunch.lines.filter((l) => roleOf(byId(l.foodId)) === 'dal')).toHaveLength(1);
+  });
+
+  it('names the meal it changed by its type', () => {
+    const plan = buildWeekPlan(DEFAULT_ROUTINE, foods);
+    const before = dayTotals(plan.days[1], foods).kcal;
+    const { changes } = balanceDay(plan.days[1], foods, before + 400, new Set());
+    expect(changes.length).toBeGreaterThan(0);
+    for (const c of changes) expect(['breakfast', 'lunch', 'snack', 'dinner']).toContain(c.params.meal);
+  });
+
+  describe('alignWeekPlan', () => {
+    const legacy: WeekPlan = {
+      days: Array.from({ length: 7 }, () => ({
+        meals: [
+          { id: 'breakfast', type: 'breakfast', time: '08:30', lines: [{ foodId: 'poha', unit: 'plate', qty: 1 }] },
+          { id: 'mid', type: 'snack', time: '11:00', lines: [{ foodId: 'almonds', unit: 'handful', qty: 1 }] },
+          { id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 3 }] },
+          { id: 'tea', type: 'snack', time: '15:45', lines: [{ foodId: 'black-tea', unit: 'cup', qty: 1 }] },
+          { id: 'evening', type: 'snack', time: '18:30', lines: [{ foodId: 'murmura-bhel', unit: 'katori', qty: 1 }] },
+          { id: 'dinner', type: 'dinner', time: '20:00', lines: [{ foodId: 'jowar-bhakri', unit: 'piece', qty: 1 }] },
+          { id: 'night', type: 'snack', time: '21:30', lines: [{ foodId: 'taak', unit: 'glass', qty: 1 }] },
+          { id: 'ghost', type: 'snack', time: '23:00', lines: [{ foodId: 'banana', unit: 'medium', qty: 1 }] },
+        ],
+      })),
+    };
+
+    it('lands the old seven names on the slots by type and time, keeps their lines, drops the rest', () => {
+      const day = alignWeekPlan(legacy, DEFAULT_ROUTINE).days[2];
+      expect(day.meals.map((m) => m.id)).toEqual(['fruit', 'dry-fruit', 'lunch', 'tea', 'bhel', 'dinner', 'milk']);
+      expect(day.meals.find((m) => m.id === 'fruit')!.lines[0].foodId).toBe('poha');
+      expect(day.meals.find((m) => m.id === 'lunch')!.lines[0].qty).toBe(3);
+      expect(day.meals.find((m) => m.id === 'milk')!.lines[0].foodId).toBe('taak');
+      expect(day.meals.some((m) => m.lines.some((l) => l.foodId === 'banana'))).toBe(false);
+    });
+
+    it('gives a new slot an empty meal without foods and a built one with them, and keeps edited lines', () => {
+      const withLate: Routine = {
+        ...DEFAULT_ROUTINE,
+        slots: [...DEFAULT_ROUTINE.slots, { id: 'late', type: 'snack', time: '22:30', label_en: 'Late', label_mr: '', label_hi: '', options: [[{ foodId: 'apple', unit: 'medium', qty: 1 }]], withBhaji: false, share: 5 }],
+      };
+      const built = buildWeekPlan(DEFAULT_ROUTINE, foods);
+      expect(alignWeekPlan(built, withLate).days[0].meals.find((m) => m.id === 'late')!.lines).toEqual([]);
+      const withFoods = alignWeekPlan(built, withLate, foods);
+      expect(withFoods.days[0].meals.find((m) => m.id === 'late')!.lines[0].foodId).toBe('apple');
+      expect(withFoods.days[0].meals.find((m) => m.id === 'lunch')!.lines).toEqual(built.days[0].meals.find((m) => m.id === 'lunch')!.lines);
+    });
   });
 });

@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { FoodDetailSheet, FoodThumb } from '../components/FoodDetailSheet';
@@ -6,7 +7,7 @@ import { GrocerySheet } from '../components/GrocerySheet';
 import { foodName, searchFoods } from '../core/foods';
 import { newId } from '../core/id';
 import { KCAL_FLOOR } from '../core/nutrition';
-import { avoidedFoodIds, planItems, type PlanLine, weekdayOf } from '../core/routine';
+import { avoidedFoodIds, planItems, type PlanLine, slotLabel, weekdayOf } from '../core/routine';
 import type { FoodItem } from '../core/types';
 import {
   addLine,
@@ -36,8 +37,6 @@ const ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 const ADD_CATS = ['all', 'veg', 'vegetable', 'fruit', 'dryfruit', 'dal', 'grain', 'dairy', 'snack', 'beverage', 'sweet'];
 
-const MEAL_KEY: Record<string, string> = { breakfast: 'breakfast', mid: 'plan_meal_mid', lunch: 'lunch', tea: 'plan_meal_tea', evening: 'plan_meal_evening', dinner: 'dinner', night: 'plan_meal_night' };
-
 function qtyText(q: number): string {
   const whole = Math.floor(q);
   const half = q - whole >= 0.5;
@@ -56,6 +55,11 @@ export default function PlanScreen() {
   const { state, foods, targets, today } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
+  const router = useRouter();
+  const mealName = (meal: PlanMeal) => {
+    const s = state.routine.slots.find((x) => x.id === meal.id);
+    return (s && slotLabel(s, lang)) || t(meal.type);
+  };
   const avoided = useMemo(() => avoidedFoodIds({ ...state.routine, enabled: true }), [state.routine]);
   const floor = KCAL_FLOOR[state.profile.sex];
 
@@ -101,7 +105,7 @@ export default function PlanScreen() {
   function balance() {
     const r = balanceDay(day, foods, targets.kcal, avoided, floor);
     save(setDay(plan, dayIdx, r.day));
-    setNote(r.changes.length ? r.changes.map((c) => fill(t(c.key), { meal: t(MEAL_KEY[String(c.params.meal)] ?? String(c.params.meal)).toLowerCase() })).join(' · ') : t('plan_nothing_to_change'));
+    setNote(r.changes.length ? r.changes.map((c) => fill(t(c.key), { meal: t(String(c.params.meal)).toLowerCase() })).join(' · ') : t('plan_nothing_to_change'));
     fb.haptic('success');
   }
   function rebuild() {
@@ -120,7 +124,7 @@ export default function PlanScreen() {
     const at = new Date();
     if (Number.isFinite(h)) at.setHours(h, Number.isFinite(m) ? m : 0, 0, 0);
     const kcal = items.reduce((a, i) => a + i.kcal, 0);
-    app.addMeal({ id: newId(), at: at.toISOString(), date: today, type: meal.type, items, kcal, protein: Math.round(items.reduce((a, i) => a + i.protein, 0)) });
+    app.addMeal({ id: newId(), at: at.toISOString(), date: today, type: meal.type, slotId: meal.id, items, kcal, protein: Math.round(items.reduce((a, i) => a + i.protein, 0)) });
     fb.haptic('success');
     fb.notify(fill(t('toast_meal_saved'), { kcal }));
   }
@@ -165,6 +169,9 @@ export default function PlanScreen() {
           );
         })}
       </Row>
+      <Pressable onPress={() => router.push('/food?s=routine')} accessibilityRole="button" style={{ paddingVertical: 2 }}>
+        <Micro color={C.accent}>{`${t('plan_follows_pattern')} ›`}</Micro>
+      </Pressable>
 
       <Pressable
         onPress={() => setGrocery(true)}
@@ -219,7 +226,7 @@ export default function PlanScreen() {
         return (
           <Card key={meal.id} rail={done ? C.green : undefined}>
             <Row style={{ justifyContent: 'space-between' }}>
-              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700' }}>{`${t(MEAL_KEY[meal.id] ?? meal.type)} · ${meal.time}`}</Text>
+              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700' }}>{`${mealName(meal)} · ${meal.time}`}</Text>
               <Micro>{`${mt.kcal} kcal · ${mt.protein} g`}</Micro>
             </Row>
             {meal.lines.map((line, i) => {

@@ -16,7 +16,7 @@ import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
 import { pruneSpend, spentOn, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
-import type { WeekPlan } from '../core/weekPlan';
+import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
 import type { BreakKind, BreakSettings } from '../core/breaks';
 import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
@@ -246,7 +246,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const has = kept.some((a) => a.key === key);
           return { ...s, actionsDone: has ? kept.filter((a) => a.key !== key) : [...kept, { date: today, key }] };
         }),
-      setRoutine: (r) => update((s) => ({ ...s, routine: { ...s.routine, ...r } })),
+      setRoutine: (r) =>
+        update((s) => {
+          const routine = { ...s.routine, ...r };
+          // The plan is written against the slots; when they change, it follows.
+          const slotsChanged = r.slots !== undefined && r.slots !== s.routine.slots;
+          const weekPlan = slotsChanged && s.weekPlan ? alignWeekPlan(s.weekPlan, routine, [...FOODS, ...s.customFoods]) : s.weekPlan;
+          return { ...s, routine, weekPlan };
+        }),
       setWeekPlan: (plan) => update((s) => ({ ...s, weekPlan: plan })),
       addActivity: (a) => update((s) => ({ ...s, activities: [...(s.activities ?? []), a] })),
       removeActivity: (id) => update((s) => ({ ...s, activities: (s.activities ?? []).filter((x) => x.id !== id) })),
