@@ -84,6 +84,8 @@ export type Meal = {
   protein: number;
   photoUri?: string;
   note?: string;
+  /** The pattern slot this meal was logged against. Older meals have none and are matched by type and time. */
+  slotId?: string;
 };
 
 export type WaterLog = { id: string; at: string; date: ISODate; ml: number };

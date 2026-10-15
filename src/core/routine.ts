@@ -25,6 +25,8 @@ export type RoutineSlot = {
   withBhaji: boolean;
   /** When it usually happens, "HH:MM". Drives the row's state and the "log or skip?" prompt. */
   time?: string;
+  /** Weight of the day's calories this meal gets. Missing means the usual share for its kind of meal. */
+  share?: number;
 };
 
 /**
@@ -78,6 +80,19 @@ export const DEFAULT_SPREAD: Record<SpendCategory, number> = { fruit: 7, veg: 1,
 
 export const MAX_BHAJI_CHOICES = 2;
 
+/** A dinner for routines saved before there was one: the week plan needs a slot to put dinner in. */
+export const DINNER_SLOT: RoutineSlot = {
+  id: 'dinner',
+  time: '20:00',
+  type: 'dinner',
+  label_en: 'Dinner',
+  label_mr: 'रात्रीचे जेवण',
+  label_hi: 'रात का खाना',
+  options: [[]],
+  withBhaji: true,
+  share: 20,
+};
+
 export const DEFAULT_ROUTINE: Routine = {
   // Off until the person turns it on: Today should show what they ate, not a plan they did not ask for.
   enabled: false,
@@ -96,6 +111,7 @@ export const DEFAULT_ROUTINE: Routine = {
     {
       id: 'fruit',
       time: '08:30',
+      share: 15,
       type: 'breakfast',
       label_en: 'Fruit',
       label_mr: 'फळ',
@@ -106,6 +122,7 @@ export const DEFAULT_ROUTINE: Routine = {
     {
       id: 'dry-fruit',
       time: '11:00',
+      share: 10,
       type: 'snack',
       label_en: 'Badam and akrod at the office',
       label_mr: 'ऑफिसमध्ये बदाम-अक्रोड',
@@ -121,6 +138,7 @@ export const DEFAULT_ROUTINE: Routine = {
     {
       id: 'lunch',
       time: '13:00',
+      share: 35,
       type: 'lunch',
       label_en: 'Lunch',
       label_mr: 'दुपारचे जेवण',
@@ -135,6 +153,7 @@ export const DEFAULT_ROUTINE: Routine = {
     {
       id: 'tea',
       time: '15:45',
+      share: 5,
       type: 'snack',
       label_en: 'Afternoon black tea',
       label_mr: 'दुपारचा कोरा चहा',
@@ -145,6 +164,7 @@ export const DEFAULT_ROUTINE: Routine = {
     {
       id: 'bhel',
       time: '18:30',
+      share: 10,
       type: 'snack',
       label_en: 'Evening murmura bhel',
       label_mr: 'संध्याकाळची मुरमुरे भेळ',
@@ -152,9 +172,11 @@ export const DEFAULT_ROUTINE: Routine = {
       options: [[{ foodId: 'murmura-bhel', unit: 'katori', qty: 1 }]],
       withBhaji: false,
     },
+    DINNER_SLOT,
     {
       id: 'milk',
       time: '21:00',
+      share: 5,
       type: 'snack',
       label_en: 'Milk or taak',
       label_mr: 'दूध किंवा ताक',
