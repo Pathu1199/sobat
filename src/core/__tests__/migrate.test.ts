@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { migrateState } from '../../store/migrate';
 import { EMPTY_STATE } from '../../store/defaults';
+import { allowance, pattern } from '../pattern';
 import { DEFAULT_ROUTINE } from '../routine';
 
 // A realistic v1 blob: the shape the app has been writing until now.
@@ -133,6 +134,19 @@ describe('migrateState', () => {
     expect(day.meals.find((m) => m.id === 'dinner')!.lines[0].foodId).toBe('chapati');
     expect(day.meals.map((m) => m.id)).toContain('fruit');
     expect(migrateState(out)).toEqual(out);
+  });
+
+  it('version 6: a default routine without shares gets the same allowances as a fresh one, not the per-type defaults', () => {
+    const v5 = {
+      version: 5,
+      profile: { ...EMPTY_STATE.profile, onboarded: true },
+      meals: [],
+      routine: { ...DEFAULT_ROUTINE, slots: DEFAULT_ROUTINE.slots.filter((s) => s.type !== 'dinner').map((s) => ({ ...s, share: undefined })) },
+    };
+    const kcal = (r: typeof DEFAULT_ROUTINE) => Object.fromEntries(pattern(r).map((p) => [p.id, allowance(1600, p)]));
+    const migrated = kcal(migrateState(v5).routine);
+    expect(migrated).toEqual(kcal(DEFAULT_ROUTINE));
+    expect(migrated).toMatchObject({ fruit: 240, 'dry-fruit': 160, lunch: 560, tea: 80, bhel: 160, dinner: 320, milk: 80 });
   });
 
   it('does not put back a dinner slot that a version-6 store removed on purpose', () => {
