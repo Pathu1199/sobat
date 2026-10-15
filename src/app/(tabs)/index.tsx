@@ -2,11 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { AwayCard } from '../../components/AwayCard';
 import { BreakCheckin } from '../../components/BreakCheckin';
 import { BreakPanel } from '../../components/BreakPanel';
 import { DayReview } from '../../components/DayReview';
 import { DayScoreCard } from '../../components/DayScore';
 import { DecisionCard } from '../../components/DecisionCard';
+import { IntakeCard } from '../../components/IntakeCard';
 import { MealSheet } from '../../components/MealSheet';
 import { NotificationNudge } from '../../components/NotificationNudge';
 import { NutrientCard } from '../../components/NutrientCard';
@@ -229,10 +231,12 @@ export default function TodayScreen() {
     return (
       <Page title={titleName} alt={greetingAlt} subtitle={subtitle} right={<TopBarActions streak={streakDays} />} wide>
         {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
+        {isToday ? <AwayCard /> : null}
         <Cols weights={[1.15, 1, 0.95]}>
           <>
             {heroCard}
             {isToday ? <CoachStrip onSuggest={() => setSuggestOpen(true)} /> : null}
+            {isToday ? <IntakeCard /> : null}
       {isToday && !state.routine.enabled ? <PlanTodayCard /> : null}
             {isToday ? <FitsCard /> : null}
             {isToday ? <TrackerGrid /> : null}
@@ -265,8 +269,10 @@ export default function TodayScreen() {
   return (
     <Page title={state.profile.name || greeting} alt={undefined} subtitle={`${greeting} · ${subtitle}`} left={<Logo size={26} />} right={<TopBarActions streak={streakDays} />}>
       {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
+      {isToday ? <AwayCard /> : null}
       {heroCard}
       {isToday ? <CoachStrip onSuggest={() => setSuggestOpen(true)} /> : null}
+      {isToday ? <IntakeCard /> : null}
       {isToday && !state.routine.enabled ? <PlanTodayCard /> : null}
       {isToday && !state.weekPlan ? <FitsCard compact /> : null}
       {isToday ? <TrackerGrid /> : null}

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { dailyTipPrompt, factsFrom, systemPrompt } from '../ai/prompts';
+import { intakeFact, lowIntake } from '../core/intake';
 import { planFrom } from '../core/plan';
 import { routineFacts } from '../core/routine';
 import { contextFor, toPromptLines } from '../core/memory';
@@ -58,6 +59,8 @@ export function TipCard() {
     const plan = planFrom(app.state.profile, app.state.weights, app.targets, app.today);
     facts.push(`Weight journey: lost ${plan.lostKg} kg since the first weigh-in, ${plan.toGoKg} kg to go, stage "${plan.stage}".`);
     facts.push(...routineFacts(app.state.routine, app.foods, app.today, app.state.meals.filter((m) => m.date === app.today), app.spentToday));
+    const intake = intakeFact(lowIntake({ meals: app.state.meals, today: app.today, target: app.targets.kcal, floor: KCAL_FLOOR[app.state.profile.sex], offDays: app.state.settings.offDays ?? [] }));
+    if (intake) facts.push(intake);
     facts.push(...toPromptLines(contextFor(app.state.memory, focus.join(' '), app.today, 6)));
 
     ask([

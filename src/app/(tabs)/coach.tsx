@@ -13,6 +13,7 @@ import { formatMinutes, toISODate } from '../../core/date';
 import { newId } from '../../core/id';
 import { foodName, suggestMeals, toMealItem } from '../../core/foods';
 import { HELPLINES, isCrisisText } from '../../core/guardrails';
+import { intakeFact, lowIntake } from '../../core/intake';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
 import { KCAL_FLOOR, mealTypeForHour } from '../../core/nutrition';
 import { planFrom } from '../../core/plan';
@@ -220,6 +221,8 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
           app.spentToday,
         ),
       );
+      const intake = intakeFact(lowIntake({ meals: app.state.meals, today: app.today, target: app.targets.kcal, floor: KCAL_FLOOR[app.state.profile.sex], offDays: app.state.settings.offDays ?? [] }));
+      if (intake) facts.push(intake);
       facts.push(...toPromptLines(contextFor(app.state.memory, clean, app.today, 10)));
 
       const history = app.state.chat.slice(-8).map((m) => ({ role: m.role, content: m.text }));

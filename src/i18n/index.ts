@@ -969,6 +969,12 @@ const en: Dict = {
   away_3_body: 'Your plan is still here. Log whatever you eat next.',
   away_4_title: 'Three days',
   away_4_body: 'Come back when you can. The streak restarts the moment you log.',
+  away_title: '{n} days without a log',
+  away_body: 'Everything is still here. Log one meal and today counts.',
+  away_ok: 'OK',
+  intake_title: 'Eating too little',
+  intake_body: '{avg} kcal a day over your last {days} logged days. Below the {limit} line. Cravings come from this, not from weak will. Today\'s plan is {target}.',
+  intake_open_plan: 'Open the plan',
 };
 
 const mr: Dict = {
@@ -1942,6 +1948,12 @@ const mr: Dict = {
   away_3_body: 'तुमचं नियोजन इथेच आहे. पुढचं जे खाल ते नोंदवा.',
   away_4_title: 'तीन दिवस',
   away_4_body: 'जमेल तेव्हा परत या. नोंदवताच मालिका पुन्हा सुरू होते.',
+  away_title: '{n} दिवस नोंद नाही',
+  away_body: 'सगळं अजून इथेच आहे. एक जेवण नोंदवा, आजचा दिवस मोजला जातो.',
+  away_ok: 'ठीक',
+  intake_title: 'खूप कमी खाणं',
+  intake_body: 'शेवटच्या {days} नोंदवलेल्या दिवसांत दिवसाला {avg} kcal. {limit} च्या रेषेखाली. तल्लफ यामुळे येते, कमकुवत मनामुळे नाही. आजचं नियोजन {target}.',
+  intake_open_plan: 'नियोजन उघडा',
 };
 
 const hi: Dict = {
@@ -2913,6 +2925,12 @@ const hi: Dict = {
   away_3_body: 'आपका प्लान यहीं है. अगला जो खाएँ, दर्ज करें.',
   away_4_title: 'तीन दिन',
   away_4_body: 'जब हो सके लौट आएँ. दर्ज करते ही सिलसिला फिर शुरू हो जाता है.',
+  away_title: '{n} दिन से कुछ दर्ज नहीं',
+  away_body: 'सब कुछ अभी भी यहीं है. एक खाना दर्ज करें, आज का दिन गिना जाएगा.',
+  away_ok: 'ठीक',
+  intake_title: 'बहुत कम खाना',
+  intake_body: 'पिछले {days} दर्ज दिनों में दिन के {avg} kcal. {limit} की रेखा से नीचे. क्रेविंग इसी से आती है, कमज़ोर इरादे से नहीं. आज का प्लान {target}.',
+  intake_open_plan: 'प्लान खोलें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
