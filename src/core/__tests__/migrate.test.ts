@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { migrateState } from '../../store/migrate';
 import { EMPTY_STATE } from '../../store/defaults';
+import { DEFAULT_ROUTINE } from '../routine';
 
 // A realistic v1 blob: the shape the app has been writing until now.
 const v1 = {
@@ -58,7 +59,7 @@ describe('migrateState', () => {
 
   it('marks the result as version 2 and is idempotent', () => {
     const once = migrateState(v1);
-    expect(once.version).toBe(5);
+    expect(once.version).toBe(6);
     const twice = migrateState(once);
     expect(twice).toEqual(once);
   });
@@ -105,5 +106,32 @@ describe('migrateState', () => {
   it('returns a fresh state for junk input rather than throwing', () => {
     expect(migrateState(null).version).toBe(EMPTY_STATE.version);
     expect(migrateState('nonsense').profile.onboarded).toBe(false);
+  });
+
+  it('version 6: slots get shares, a dinner appears, and plan meals take the slot names', () => {
+    const v5 = {
+      version: 5,
+      profile: { ...EMPTY_STATE.profile, onboarded: true },
+      meals: [],
+      routine: { ...DEFAULT_ROUTINE, slots: DEFAULT_ROUTINE.slots.filter((s) => s.type !== 'dinner').map((s) => ({ ...s, share: undefined })) },
+      weekPlan: {
+        days: Array.from({ length: 7 }, () => ({
+          meals: [
+            { id: 'evening', type: 'snack', time: '18:30', lines: [{ foodId: 'murmura-bhel', unit: 'katori', qty: 2 }] },
+            { id: 'dinner', type: 'dinner', time: '20:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] },
+          ],
+        })),
+      },
+    };
+    const out = migrateState(v5);
+    expect(out.version).toBe(6);
+    expect(out.routine.slots.every((s) => typeof s.share === 'number')).toBe(true);
+    expect(out.routine.slots.find((s) => s.id === 'lunch')!.share).toBe(35);
+    expect(out.routine.slots.some((s) => s.type === 'dinner')).toBe(true);
+    const day = out.weekPlan!.days[3];
+    expect(day.meals.find((m) => m.id === 'bhel')!.lines[0].qty).toBe(2);
+    expect(day.meals.find((m) => m.id === 'dinner')!.lines[0].foodId).toBe('chapati');
+    expect(day.meals.map((m) => m.id)).toContain('fruit');
+    expect(migrateState(out)).toEqual(out);
   });
 });

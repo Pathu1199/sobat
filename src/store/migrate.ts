@@ -1,7 +1,9 @@
 import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../core/breaks';
 import type { AppState } from '../core/types';
-import { DEFAULT_ROUTINE } from '../core/routine';
+import { DEFAULT_ROUTINE, DINNER_SLOT } from '../core/routine';
+import { slotShare } from '../core/pattern';
+import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
 import { DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER } from './defaults';
 
 /** The shape break settings had in version 1. */
@@ -72,6 +74,11 @@ function upgradeRoutine(old: unknown, fromVersion: number): AppState['routine'] 
   r.slots = (Array.isArray(r.slots) ? r.slots : []).map((s) =>
     s.time ? s : { ...s, time: DEFAULT_ROUTINE.slots.find((d) => d.id === s.id)?.time ?? byType[s.type] ?? '13:00' },
   );
+  // Version 6: every slot carries a share of the day's calories, and there is a dinner to plan.
+  r.slots = r.slots.map((s) => (typeof s.share === 'number' ? s : { ...s, share: slotShare(s) }));
+  if (!r.slots.some((s) => s.type === 'dinner')) {
+    r.slots = [...r.slots, { ...DINNER_SLOT, id: r.slots.some((s) => s.id === 'dinner') ? 'dinner-2' : 'dinner' }];
+  }
   return r;
 }
 
@@ -101,19 +108,22 @@ export function migrateState(raw: unknown): AppState {
     const weights = Array.isArray(raw.weights) ? ([...(raw.weights as AppState['weights'])].sort((a, b) => a.date.localeCompare(b.date))) : [];
     profile.startWeightKg = weights[0]?.kg ?? profile.weightKg;
   }
+  const routine = upgradeRoutine(raw.routine, fromVersion);
+  // A plan that is not seven days of meals is not a plan; rebuild it from the routine on next open.
+  const rawPlan = isRecord(raw.weekPlan) && Array.isArray((raw.weekPlan as { days?: unknown }).days) && (raw.weekPlan as { days: unknown[] }).days.length === 7 ? (raw.weekPlan as WeekPlan) : null;
   return {
     ...EMPTY_STATE,
     ...(raw as Partial<AppState>),
-    version: 5,
+    version: 6,
     profile,
     settings,
     breakSettings,
     breaks: upgradeLogs(raw.breaks, breakSettings.micro.seconds),
     // Older stores have no routine; one saved before a field existed gets the default for it.
-    routine: upgradeRoutine(raw.routine, fromVersion),
+    routine,
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
     schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}) },
-    // A plan that is not seven days of meals is not a plan; rebuild it from the routine on next open.
-    weekPlan: isRecord(raw.weekPlan) && Array.isArray((raw.weekPlan as { days?: unknown }).days) && (raw.weekPlan as { days: unknown[] }).days.length === 7 ? (raw.weekPlan as AppState['weekPlan']) : null,
+    // Version 6: plan meals are named after the pattern's slots; older names land on the slot of their type nearest their time.
+    weekPlan: rawPlan ? alignWeekPlan(rawPlan, routine) : null,
   };
 }

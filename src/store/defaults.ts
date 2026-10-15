@@ -51,7 +51,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const EMPTY_STATE: AppState = {
-  version: 5,
+  version: 6,
   profile: DEFAULT_PROFILE,
   settings: DEFAULT_SETTINGS,
   meals: [],
