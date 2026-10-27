@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { applyCloud, bindStart, encodeSavedBase, forCloud, fromNewerApp, inAccount, isPristine, landMerge, merge3, RoundStop, syncRound, type AccountFile, type RoundIO, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
 import type { AppState, Meal } from '../types';
+import type { DayMenu } from '../menu';
 
 const meal = (id: string, at: string, kcal = 300): Meal => ({
   id,
@@ -452,5 +453,45 @@ describe('a sync round', () => {
     const r = relay(base, { 0: cloudOf(used([v('a', 2)])), 1: cloudOf(used([v('a', 3)])), 2: cloudOf(used([v('a', 4)])), 3: cloudOf(used([v('a', 5)])) });
     const d = device(used([v('a', 1), n]), r);
     await expect(syncRound({ pull: false, base, modifiedTime: 't0', supported: STATE_VERSION, io: d.io })).rejects.toEqual(new RoundStop('kept_changing'));
+  });
+});
+
+describe('menus, skips and saved meals', () => {
+  const menu = (date: string, qty: number, editedAt: string): DayMenu => ({ date, editedAt, meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty }] }] });
+  const qtyOn = (s: CloudState, date: string) => s.menus.find((m) => m.date === date)?.meals[0].lines[0].qty;
+  const base = cloudOf(used([], { menus: [menu('2026-10-28', 2, ''), menu('2026-10-29', 2, '')] }));
+
+  it('two devices editing different dates both keep their edit', () => {
+    const local = cloudOf(used([], { menus: [menu('2026-10-28', 3, '2026-10-27T09:00:00.000Z'), menu('2026-10-29', 2, '')] }));
+    const remote = cloudOf(used([], { menus: [menu('2026-10-28', 2, ''), menu('2026-10-29', 4, '2026-10-27T10:00:00.000Z')] }));
+    const out = merge3(base, local, remote);
+    expect(qtyOn(out, '2026-10-28')).toBe(3);
+    expect(qtyOn(out, '2026-10-29')).toBe(4);
+  });
+
+  it('the same date edited on both: the newer edit wins, whichever device made it', () => {
+    const early = cloudOf(used([], { menus: [menu('2026-10-28', 3, '2026-10-27T09:00:00.000Z'), menu('2026-10-29', 2, '')] }));
+    const late = cloudOf(used([], { menus: [menu('2026-10-28', 5, '2026-10-27T10:00:00.000Z'), menu('2026-10-29', 2, '')] }));
+    expect(qtyOn(merge3(base, early, late), '2026-10-28')).toBe(5);
+    expect(qtyOn(merge3(base, late, early), '2026-10-28')).toBe(5);
+  });
+
+  it('with no base, an edit beats a menu the app wrote', () => {
+    const written = cloudOf(used([meal('a', '2026-10-27T08:00:00.000Z')], { menus: [menu('2026-10-28', 2, '')] }));
+    const edited = cloudOf(used([meal('a', '2026-10-27T08:00:00.000Z')], { menus: [menu('2026-10-28', 4, '2026-10-27T09:00:00.000Z')] }));
+    expect(qtyOn(merge3(null, written, edited), '2026-10-28')).toBe(4);
+    expect(qtyOn(merge3(null, edited, written), '2026-10-28')).toBe(4);
+  });
+
+  it('skips and saved meals merge record by record', () => {
+    const skip = (date: string, slotId: string) => ({ id: `${date}:${slotId}`, date, slotId });
+    const thali = { id: 's1', name: 'Thali', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] };
+    const b = cloudOf(used([], { slotSkips: [skip('2026-10-26', 'lunch')] }));
+    const local = cloudOf(used([], { slotSkips: [skip('2026-10-26', 'lunch'), skip('2026-10-27', 'dinner')], savedMeals: [thali] }));
+    const remote = cloudOf(used([], { slotSkips: [skip('2026-10-27', 'morning')] }));
+    const out = merge3(b, local, remote);
+    // Lunch on the 26th was un-skipped on the other device; each side added one skip.
+    expect(out.slotSkips.map((s) => s.id).sort()).toEqual(['2026-10-27:dinner', '2026-10-27:morning']);
+    expect(out.savedMeals).toEqual([thali]);
   });
 });

@@ -25,8 +25,8 @@ export type CloudState = Omit<AppState, LocalKey | 'settings'> & { settings: Clo
 
 type AnyRecord = Record<string, unknown>;
 
-/** The record arrays, each with the field that identifies one record. */
-export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => string }[] = [
+/** The record arrays, each with the field that identifies one record, and for some the field that says when it was last edited. */
+export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => string; stampOf?: (r: AnyRecord) => string }[] = [
   { key: 'meals', idOf: (r) => String(r.id) },
   { key: 'water', idOf: (r) => String(r.id) },
   { key: 'weights', idOf: (r) => String(r.date) },
@@ -41,6 +41,10 @@ export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => strin
   { key: 'actionsDone', idOf: (r) => `${r.date}:${r.key}` },
   { key: 'activities', idOf: (r) => String(r.id) },
   { key: 'spend', idOf: (r) => String(r.id) },
+  // One menu per date. A menu the app wrote has an empty stamp, so any real edit beats it.
+  { key: 'menus', idOf: (r) => String(r.date), stampOf: (r) => String(r.editedAt ?? '') },
+  { key: 'slotSkips', idOf: (r) => String(r.id) },
+  { key: 'savedMeals', idOf: (r) => String(r.id) },
 ];
 
 /** Everything else in the file: one value each, merged whole. */
@@ -107,7 +111,7 @@ function timeOf(r: AnyRecord): string {
   return String(r.at ?? r.date ?? '');
 }
 
-function mergeCollection(idOf: (r: AnyRecord) => string, base: unknown, local: unknown, remote: unknown): AnyRecord[] {
+function mergeCollection(idOf: (r: AnyRecord) => string, base: unknown, local: unknown, remote: unknown, stampOf?: (r: AnyRecord) => string): AnyRecord[] {
   const b = toMap(base, idOf);
   const l = toMap(local, idOf);
   const r = toMap(remote, idOf);
@@ -115,8 +119,12 @@ function mergeCollection(idOf: (r: AnyRecord) => string, base: unknown, local: u
     const bs = stable(b.get(k));
     const lv = l.get(k);
     const rv = r.get(k);
-    if (stable(lv) !== bs) return lv;
-    if (stable(rv) !== bs) return rv;
+    const mine = stable(lv) !== bs;
+    const theirs = stable(rv) !== bs;
+    // Changed on both sides, and the records say when: the newer edit wins, wherever it was made.
+    if (mine && theirs && stampOf && lv && rv) return stampOf(rv) > stampOf(lv) ? rv : lv;
+    if (mine) return lv;
+    if (theirs) return rv;
     return lv;
   };
   const out: AnyRecord[] = [];
@@ -150,8 +158,8 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
   const b = (base ?? {}) as Partial<CloudState>;
   const out = {} as AnyRecord;
 
-  for (const { key, idOf } of COLLECTIONS) {
-    out[key] = mergeCollection(idOf, b[key], local[key], remote[key]);
+  for (const { key, idOf, stampOf } of COLLECTIONS) {
+    out[key] = mergeCollection(idOf, b[key], local[key], remote[key], stampOf);
   }
 
   for (const key of SINGLETONS) {
