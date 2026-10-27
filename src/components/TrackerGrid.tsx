@@ -56,7 +56,7 @@ export function TrackerGrid() {
       tint={C.accent}
       value={monitor.enabled ? String(monitor.takenToday) : '—'}
       sub={monitor.enabled && Number.isFinite(monitor.secondsLeft) ? `${t('next_break')} ${Math.max(0, Math.ceil(monitor.secondsLeft / 60))}m` : t('break_off')}
-      color={monitor.enabled ? C.accent : C.textDim}
+      color={monitor.enabled ? C.accentText : C.textDim}
       onPress={() => router.push('/settings')}
     />,
     <Tile key="meals" icon="restaurant" tint={C.amber} label={t('tile_meals')} value={String(meals)} sub={meals === 0 ? mealHint : t('tap_to_log')} color={meals > 0 ? C.text : C.textDim} onPress={() => router.push('/log')} />,
