@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { addRows, sheetMode, slotLine, startLines, startSlot } from '../addSheet';
+import foodsJson from '../../data/foods.json';
+import { addRows, filledIn, offersPlanned, repeatItems, sheetMode, slotLine, startLines, startSlot, yesterdayIn } from '../addSheet';
 import { slotPreview, type BasketLine } from '../basket';
+import { kcalForGrams } from '../nutrition';
 import { slotStates } from '../pattern';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
-import type { Meal } from '../types';
+import type { FoodItem, Meal, MealItem } from '../types';
 
 const line = (foodId: string): BasketLine => ({ foodId, unit: 'katori', gramsPerUnit: 150, count: 1 });
 const base = { mode: 'log' as const, query: '', results: [] as string[], basket: [] as BasketLine[], planned: true, yesterday: true, saved: ['s1'], recents: ['poha', 'chapati'] };
@@ -131,5 +133,90 @@ describe('startLines: the foods the sheet starts with', () => {
 
   it('logging with none handed over starts empty', () => {
     expect(startLines({ mode: 'log', planned })).toEqual([]);
+  });
+});
+
+const foods = foodsJson as unknown as FoodItem[];
+const food = (id: string) => foods.find((f) => f.id === id)!;
+const meal = (id: string, date: string, slotId: string | undefined, source: Meal['source'], items: MealItem[] = [], type: Meal['type'] = 'lunch'): Meal => ({
+  id,
+  at: new Date(`${date}T13:00:00`).toISOString(),
+  date,
+  type,
+  slotId,
+  items,
+  kcal: items.reduce((a, i) => a + i.kcal, 0),
+  protein: 0,
+  source,
+});
+
+describe('offersPlanned: eat as planned is offered', () => {
+  const lines = [{ foodId: 'poha', unit: 'katori', qty: 1 }];
+  const base = { mode: 'log' as const, date: '2026-10-28', today: '2026-10-28', lines, foods, slotMeals: [] as Meal[] };
+
+  it('when logging on today or an earlier day, with planned foods and nothing in the slot but the meal filled in from the plan', () => {
+    expect(offersPlanned(base)).toBe(true);
+    expect(offersPlanned({ ...base, date: '2026-10-25' })).toBe(true);
+    expect(offersPlanned({ ...base, slotMeals: [meal('auto-2026-10-28-lunch', '2026-10-28', 'lunch', 'auto')] })).toBe(true);
+  });
+
+  it('never on a date after today, nor while changing a menu, as the store logs nothing into the future', () => {
+    expect(offersPlanned({ ...base, date: '2026-10-29' })).toBe(false);
+    expect(offersPlanned({ ...base, mode: 'plan' })).toBe(false);
+  });
+
+  it('not once something was eaten in the slot: typed in, eaten as planned, confirmed, or logged before there were sources', () => {
+    for (const source of ['manual', 'plan', undefined] as const) {
+      expect(offersPlanned({ ...base, slotMeals: [meal('m1', '2026-10-28', 'lunch', source)] })).toBe(false);
+    }
+  });
+
+  it('not when nothing planned would weigh anything: no lines, a food that is gone, an amount of nothing', () => {
+    expect(offersPlanned({ ...base, lines: [] })).toBe(false);
+    expect(offersPlanned({ ...base, lines: [{ foodId: 'no-such-food', unit: 'katori', qty: 1 }] })).toBe(false);
+    expect(offersPlanned({ ...base, lines: [{ foodId: 'poha', unit: 'katori', qty: 0 }] })).toBe(false);
+  });
+});
+
+describe('yesterdayIn: the same slot the day before', () => {
+  const lunch = { id: 'lunch', type: 'lunch' as const };
+
+  it("holds the day before's meals in that slot, and a meal that names no slot by its kind", () => {
+    const named = meal('a', '2026-10-27', 'lunch', 'manual');
+    const old = meal('b', '2026-10-27', undefined, 'manual');
+    const meals = [named, old, meal('c', '2026-10-27', 'dinner', 'manual', [], 'dinner'), meal('d', '2026-10-28', 'lunch', 'manual'), meal('e', '2026-10-26', 'lunch', 'manual'), meal('f', '2026-10-27', undefined, 'manual', [], 'dinner')];
+    expect(yesterdayIn(meals, '2026-10-28', lunch)).toEqual([named, old]);
+  });
+
+  it('is the day before the date shown, not before today', () => {
+    const before = meal('a', '2026-10-24', 'lunch', 'auto');
+    expect(yesterdayIn([before], '2026-10-25', lunch)).toEqual([before]);
+    expect(yesterdayIn([before], '2026-10-28', lunch)).toEqual([]);
+  });
+});
+
+describe('repeatItems: the same as yesterday, logged again', () => {
+  const item = (foodId: string | undefined, grams: number, kcal: number, estimated = false): MealItem => ({ foodId, name_en: foodId ?? 'Home dal', name_mr: '', grams, kcal, protein: 1, carbs: 1, fat: 1, estimated });
+
+  it('each food from the database at the same grams, with its calories from the database as it is now', () => {
+    const [poha] = repeatItems([meal('a', '2026-10-27', 'lunch', 'manual', [item('poha', 150, 999)])], foods);
+    expect(poha).toMatchObject({ foodId: 'poha', grams: 150, kcal: kcalForGrams(food('poha'), 150).kcal, estimated: false });
+  });
+
+  it("every meal of the slot's foods, in order; a food not in the database as it was logged; a food of the person's own stays estimated", () => {
+    const own: FoodItem = { ...food('poha'), id: 'my-poha', tags: ['custom'] };
+    const home = item(undefined, 200, 260, true);
+    const out = repeatItems([meal('a', '2026-10-27', 'lunch', 'manual', [item('poha', 150, 999), home]), meal('b', '2026-10-27', 'lunch', 'auto', [item('my-poha', 100, 1)])], [...foods, own]);
+    expect(out.map((i) => i.foodId ?? i.name_en)).toEqual(['poha', 'Home dal', 'my-poha']);
+    expect(out[1]).toBe(home);
+    expect(out[2]).toMatchObject({ grams: 100, kcal: kcalForGrams(own, 100).kcal, estimated: true });
+  });
+});
+
+describe('filledIn: what a meal logged in a slot replaces', () => {
+  it("the meals the app filled in from the plan in that slot that date, and nothing else", () => {
+    const auto = meal('auto-2026-10-28-lunch', '2026-10-28', 'lunch', 'auto');
+    const meals = [auto, meal('m1', '2026-10-28', 'lunch', 'manual'), meal('p1', '2026-10-28', 'lunch', 'plan'), meal('auto-2026-10-27-lunch', '2026-10-27', 'lunch', 'auto'), meal('auto-2026-10-28-dinner', '2026-10-28', 'dinner', 'auto'), meal('x', '2026-10-28', undefined, 'auto')];
+    expect(filledIn(meals, '2026-10-28', 'lunch')).toEqual([auto]);
   });
 });

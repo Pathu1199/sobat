@@ -6,7 +6,7 @@ import { defaultPortion, foodName, measureName } from '../core/foods';
 import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem, Lang } from '../core/types';
 import { fill, makeT } from '../i18n';
-import { Btn, Row } from '../ui/components';
+import { Btn, Field, Row } from '../ui/components';
 import { QtyStepper } from '../ui/QtyStepper';
 import { C, F, lh, S } from '../ui/theme';
 import { FoodThumb } from './FoodDetailSheet';
@@ -131,6 +131,77 @@ export function ToolsRow({ lang, onPhoto, onBarcode, onCustom }: { lang: Lang; o
         <Btn small tone="soft" icon={<Ionicons name="barcode-outline" size={15} color={C.accentText} />} label={t('scan_barcode')} onPress={onBarcode} style={{ flex: 1 }} />
       </Row>
       <Btn small tone="ghost" label={t('custom_food')} onPress={onCustom} />
+    </View>
+  );
+}
+
+/** The slot as planned, highlighted: its foods and calories, Ate as planned, and Change to put them in the meal to adjust. */
+export function PlannedCard({ title, summary, kcal, lang, onAte, onChange }: { title: string; summary: string; kcal: number; lang: Lang; onAte: () => void; onChange: () => void }) {
+  const t = makeT(lang);
+  return (
+    <View style={{ marginTop: 10, padding: 14, gap: 10, borderRadius: S.radiusSm, borderWidth: 1, borderColor: C.accent, backgroundColor: C.accentDim }}>
+      <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{title}</Text>
+      <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{`${summary} · ${kcal} kcal`}</Text>
+      <Row style={{ gap: 8 }}>
+        <Btn small label={t('menu_ate_planned')} onPress={onAte} style={{ flex: 1 }} />
+        <Btn small tone="ghost" label={t('menu_change')} onPress={onChange} style={{ flex: 1 }} />
+      </Row>
+    </View>
+  );
+}
+
+/** One row that logs in one tap: the same as yesterday, or a saved meal. A screen reader hears what the tap does and the words under it, calories included. */
+export function OneTapRow({ icon, title, sub, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${sub}`}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch, paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}>
+      <View style={{ width: 40, height: 40, borderRadius: 11, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+        <Ionicons name={icon} size={18} color={C.accentText} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Text numberOfLines={1} style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
+          {title}
+        </Text>
+        <Text numberOfLines={1} style={{ color: C.textFaint, fontSize: F.small, lineHeight: lh(F.small) }}>
+          {sub}
+        </Text>
+      </View>
+      <Ionicons name="add-circle-outline" size={22} color={C.accentText} />
+    </Pressable>
+  );
+}
+
+/**
+ * After a logged meal of two or more foods: the line saying it was logged
+ * (the app-wide toast would sit behind the sheet), and an offer to keep it as
+ * one of the person's meals, under a name they choose.
+ */
+export function SaveAsOffer({ lang, logged, onSave, onSkip }: { lang: Lang; logged: string; onSave: (name: string) => void; onSkip: () => void }) {
+  const t = makeT(lang);
+  const [name, setName] = useState('');
+  return (
+    <View style={{ padding: S.padLg, gap: 12 }}>
+      <Row style={{ gap: 8 }}>
+        <Ionicons name="checkmark-circle" size={18} color={C.accentText} />
+        <Text accessibilityLiveRegion="polite" style={{ flex: 1, color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>
+          {logged}
+        </Text>
+      </Row>
+      <Text accessibilityRole="header" style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' }}>
+        {t('add_save_as_title')}
+      </Text>
+      <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>{t('add_save_as_body')}</Text>
+      {/* Field grows to fill its row; in a column it would grow tall instead. */}
+      <View style={{ flexDirection: 'row' }}>
+        <Field label={t('add_meal_name')} value={name} onChangeText={setName} placeholder={t('add_meal_name_hint')} autoFocus />
+      </View>
+      <Row style={{ gap: 8 }}>
+        <Btn label={t('save')} onPress={() => onSave(name.trim())} disabled={!name.trim()} style={{ flex: 1 }} />
+        <Btn tone="ghost" label={t('add_not_now')} onPress={onSkip} style={{ flex: 1 }} />
+      </Row>
     </View>
   );
 }

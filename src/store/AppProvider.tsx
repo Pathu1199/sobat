@@ -140,8 +140,8 @@ type Ctx = {
   addMenuFood: (day: DayMenu, mealId: string, line: PlanLine) => void;
   editMenuMeal: (day: DayMenu, meal: PlanMeal) => void;
   copyMenuDay: (from: DayMenu, to: ISODate) => void;
-  /** "Ate as planned" for a slot on any date up to today: its planned lines logged with database calories. A date after today changes nothing. */
-  addMealFromPlan: (date: ISODate, slotId: string, source?: MealSource) => void;
+  /** "Ate as planned" for a slot on any date up to today: its planned lines logged with database calories. Returns the meal's id, so the tap can be undone. A date after today changes nothing, and the id then names nothing. */
+  addMealFromPlan: (date: ISODate, slotId: string, source?: MealSource) => string;
   /** A meal the app filled in, confirmed as eaten. */
   confirmMeal: (id: string) => void;
   /** "Day looks right": every filled-in meal of the date confirmed. */
@@ -564,14 +564,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addMenuFood: (day, mealId, line) => update((s) => withMenus(s, addMenuLine(s.menus, day, mealId, line, new Date()))),
       editMenuMeal: (day, meal) => update((s) => withMenus(s, setMenuMeal(s.menus, day, meal, new Date()))),
       copyMenuDay: (from, to) => update((s) => withMenus(s, copyDay(from, to, s.menus, new Date()))),
-      addMealFromPlan: (date, slotId, source = 'plan') =>
+      addMealFromPlan: (date, slotId, source = 'plan') => {
+        const id = newId();
         update((s) => {
           const now = new Date();
           const foods = allFoods(s.customFoods);
           const slot = viewMenu(date, s.menus, s.routine, today, foods, fitOn(s.profile, s.routine, today)).meals.find((m) => m.id === slotId);
-          const meal = slot ? mealFromLines({ id: newId(), date, slot, lines: slot.lines, foods, source, now }) : null;
+          const meal = slot ? mealFromLines({ id, date, slot, lines: slot.lines, foods, source, now }) : null;
           return meal ? withMeal(s, meal, targets.kcal, now) : s;
-        }),
+        });
+        return id;
+      },
       confirmMeal: (id) =>
         update((s) => {
           const meals = withMealConfirmed(s.meals, id);

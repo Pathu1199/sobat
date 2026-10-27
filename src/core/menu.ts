@@ -484,9 +484,12 @@ export type MealState = MealsAndSkips & { routine: Routine; menus: DayMenu[] };
  * on an earlier date that names a slot that date's menu does not have (a
  * photo read late, a meal typed for that date, named after today's pattern)
  * goes to the slot its type and time put it in among that date's slots, so
- * it settles the right one.
+ * it settles the right one. A meal already in the state, by its id, is not
+ * added again.
  */
 export function withMealAdded(state: MealState, m: Meal, target: number, now: Date): MealsAndSkips {
+  // A meal already in the state is not added again, so an Undo that puts back a meal still there never counts it twice.
+  if (state.meals.some((x) => x.id === m.id)) return { meals: state.meals, slotSkips: state.slotSkips };
   const today = toISODate(now);
   // The pattern is always on, so every meal finds its slot.
   const slots = m.slotId && m.date >= today ? undefined : slotsOn(m.date, state.menus, state.routine, today);

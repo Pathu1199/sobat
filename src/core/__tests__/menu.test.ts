@@ -541,6 +541,24 @@ describe('adding a meal to the state', () => {
     expect(withMealAdded(state([], other), real('m2', 'lunch', '13:30'), 1600, at('13:30')).slotSkips).toBe(other);
   });
 
+  it('a meal already in the state, by its id, is not added again, so it never counts twice', () => {
+    const s = state([filled('lunch')], addSkip([], d, 'dinner'));
+    const out = withMealAdded(s, filled('lunch'), 1600, at('15:00'));
+    expect(out.meals).toBe(s.meals);
+    expect(out.slotSkips).toBe(s.slotSkips);
+  });
+
+  it('Undo of a meal that replaced the one filled in from the plan: taking it away and putting the filled-in meal back through addMeal leaves the slot as it was, not skipped', () => {
+    const before = state([filled('lunch')]);
+    const now = at('15:00');
+    const logged = { ...before, ...withMealAdded(before, real('m1', 'lunch', '14:50'), 1600, now) };
+    expect(logged.meals.map((m) => m.id)).toEqual(['m1']);
+    const removed = { ...logged, ...withMealRemoved(logged, 'm1', now) };
+    expect(removed.slotSkips.map((x) => x.id)).toEqual(['2026-10-27:lunch']);
+    const back = withMealAdded(removed, filled('lunch'), 1600, now);
+    expect(back).toEqual({ meals: before.meals, slotSkips: [] });
+  });
+
   it('a meal that names no slot gets the one it is eaten in; one that names its slot keeps it', () => {
     const now = at('13:30');
     expect(withMealAdded(state([]), real('m1', undefined, '13:30'), 1600, now).meals[0]).toMatchObject({ slotId: 'lunch', type: 'lunch' });

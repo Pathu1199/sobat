@@ -1034,6 +1034,10 @@ const en: Dict = {
   add_this_meal: 'This meal', add_food_named: 'Add {food}', add_open_food: 'Choose the amount', add_grams_of: 'Grams of {food}',
   add_plan_title: 'Change the menu', add_save_menu: 'Save menu', add_menu_saved: 'Menu saved',
   add_replaces_plan: 'Replaces the planned meal ({kcal} kcal)', add_left_day: '{kcal} left for the day', add_over_day: '{kcal} over for the day',
+  add_eat_planned: 'Eat as planned · {slot}', add_same_yesterday: '{slot} same as yesterday', add_log_saved: 'Log {name}',
+  add_save_as_title: 'Save as my meal?', add_save_as_body: 'Next time it is one tap.', add_meal_name: 'Name', add_meal_name_hint: 'e.g. My usual thali',
+  add_not_now: 'Not now', add_saved_meal: 'Saved to your meals',
+  menu_ate_planned: 'Ate as planned', menu_change: 'Change',
 };
 
 const mr: Dict = {
@@ -2072,6 +2076,10 @@ const mr: Dict = {
   add_this_meal: 'हे जेवण', add_food_named: '{food} जोडा', add_open_food: 'किती ते निवडा', add_grams_of: '{food} किती ग्रॅम',
   add_plan_title: 'मेन्यू बदला', add_save_menu: 'मेन्यू जतन करा', add_menu_saved: 'मेन्यू जतन केला',
   add_replaces_plan: 'ठरवलेल्या जेवणाच्या जागी ({kcal} kcal)', add_left_day: 'दिवसासाठी {kcal} बाकी', add_over_day: 'दिवसासाठी {kcal} जास्त',
+  add_eat_planned: 'नियोजनाप्रमाणे · {slot}', add_same_yesterday: 'कालसारखाच {slot}', add_log_saved: '{name} नोंदवा',
+  add_save_as_title: 'माझं जेवण म्हणून जतन करायचं?', add_save_as_body: 'पुढच्या वेळी एका टॅपमध्ये नोंद होईल.', add_meal_name: 'नाव', add_meal_name_hint: 'उदा. माझं नेहमीचं ताट',
+  add_not_now: 'आत्ता नको', add_saved_meal: 'तुमच्या जेवणांत जतन केलं',
+  menu_ate_planned: 'ठरवल्याप्रमाणे खाल्लं', menu_change: 'बदला',
 };
 
 const hi: Dict = {
@@ -3108,6 +3116,10 @@ const hi: Dict = {
   add_this_meal: 'यह खाना', add_food_named: '{food} जोड़ें', add_open_food: 'मात्रा चुनें', add_grams_of: '{food} कितने ग्राम',
   add_plan_title: 'मेन्यू बदलें', add_save_menu: 'मेन्यू सहेजें', add_menu_saved: 'मेन्यू सहेजा',
   add_replaces_plan: 'प्लान किए खाने की जगह ({kcal} kcal)', add_left_day: 'दिन के लिए {kcal} बाकी', add_over_day: 'दिन के लिए {kcal} ज़्यादा',
+  add_eat_planned: 'प्लान के मुताबिक़ · {slot}', add_same_yesterday: 'कल जैसा {slot}', add_log_saved: '{name} दर्ज करें',
+  add_save_as_title: 'मेरे खाने के रूप में सहेजें?', add_save_as_body: 'अगली बार एक टैप में दर्ज होगा.', add_meal_name: 'नाम', add_meal_name_hint: 'जैसे मेरी रोज़ की थाली',
+  add_not_now: 'अभी नहीं', add_saved_meal: 'आपके खानों में सहेजा',
+  menu_ate_planned: 'प्लान के मुताबिक़ खाया', menu_change: 'बदलें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

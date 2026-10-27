@@ -1,7 +1,10 @@
 import type { BasketLine } from './basket';
+import { addDays } from './date';
+import { toMealItem } from './foods';
 import { currentSlot, type SlotState } from './pattern';
 import type { PlanLine } from './routine';
-import type { ISODate } from './types';
+import type { FoodItem, ISODate, Meal, MealItem } from './types';
+import { lineInfo, type PlanMeal } from './weekPlan';
 
 /**
  * What the add sheet lists, top to bottom, as rows for one FlatList. With a
@@ -112,4 +115,42 @@ export function slotLine(input: { preview: { replaces: boolean; slotLeft: number
   const dayKey = preview.dayLeft >= 0 ? (isToday ? 'log_left_today' : 'add_left_day') : isToday ? 'log_over_today' : 'add_over_day';
   const tone = preview.dayLeft < 0 ? 'over' : !preview.replaces && preview.slotLeft < 0 ? 'warn' : 'calm';
   return { parts: [slotPart, { key: dayKey, params: { kcal: Math.abs(preview.dayLeft) } }], tone };
+}
+
+/**
+ * Whether the sheet offers to log the slot as planned: only when logging, on
+ * today or an earlier date (the store logs nothing into the future), while
+ * something planned weighs anything and the slot holds nothing but the meal
+ * the app filled in from the plan, which eating as planned replaces.
+ */
+export function offersPlanned(input: { mode: 'log' | 'plan'; date: ISODate; today: ISODate; lines: PlanLine[]; foods: FoodItem[]; slotMeals: Pick<Meal, 'source'>[] }): boolean {
+  if (input.mode !== 'log' || input.date > input.today) return false;
+  if (input.slotMeals.some((m) => m.source !== 'auto')) return false;
+  return input.lines.some((l) => (lineInfo(l, input.foods)?.grams ?? 0) > 0);
+}
+
+/** The meals of the same slot the day before a date: by slot id, or by kind for a meal that names no slot. */
+export function yesterdayIn(meals: Meal[], date: ISODate, slot: Pick<PlanMeal, 'id' | 'type'>): Meal[] {
+  const before = addDays(date, -1);
+  return meals.filter((m) => m.date === before && (m.slotId === slot.id || (!m.slotId && m.type === slot.type)));
+}
+
+/**
+ * The same as yesterday, logged again: each food from the database at the
+ * same grams, with its calories from the database as it is now (a food of the
+ * person's own stays estimated); a food not in the database (read from a
+ * photo) as it was logged.
+ */
+export function repeatItems(meals: Meal[], foods: FoodItem[]): MealItem[] {
+  return meals.flatMap((m) =>
+    m.items.map((it) => {
+      const food = it.foodId ? foods.find((f) => f.id === it.foodId) : undefined;
+      return food ? toMealItem(food, it.grams, food.tags.includes('custom')) : it;
+    }),
+  );
+}
+
+/** The meals the app filled in from the plan in a slot on a date: a meal logged there replaces them, and its Undo puts them back. */
+export function filledIn(meals: Meal[], date: ISODate, slotId: string): Meal[] {
+  return meals.filter((m) => m.date === date && m.source === 'auto' && m.slotId === slotId);
 }

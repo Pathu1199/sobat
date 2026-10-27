@@ -2,16 +2,16 @@ import { useRouter } from 'expo-router';
 import React, { createContext, useContext, useDeferredValue, useMemo, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addRows, sheetMode, slotLine, startLines, startSlot, type AddRow } from '../core/addSheet';
-import { addLine, basketFromLines, basketMeal, basketTotals, lineOf, linesFromBasket, putLine, setCount, setGrams, slotPreview, stepCount, type BasketLine } from '../core/basket';
+import { addRows, filledIn, offersPlanned, repeatItems, sheetMode, slotLine, startLines, startSlot, yesterdayIn, type AddRow } from '../core/addSheet';
+import { addLine, basketFromLines, basketMeal, basketTotals, formatQty, itemsMeal, lineOf, linesFromBasket, putLine, setCount, setGrams, slotPreview, stepCount, type BasketLine } from '../core/basket';
 import { addDays } from '../core/date';
-import { findFoods, recentFoodIds } from '../core/foods';
+import { findFoods, foodName, itemName, recentFoodIds } from '../core/foods';
 import { newId } from '../core/id';
-import { skippedOn } from '../core/menu';
+import { mealFromLines, skippedOn } from '../core/menu';
 import { slotStates } from '../core/pattern';
 import { slotLabel, type PlanLine } from '../core/routine';
-import type { FoodItem, ISODate } from '../core/types';
-import type { PlanMeal } from '../core/weekPlan';
+import type { FoodItem, ISODate, Meal, SavedMeal } from '../core/types';
+import { lineInfo, type PlanMeal } from '../core/weekPlan';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useMinute } from '../services/useClock';
@@ -21,7 +21,7 @@ import { sheetBottomPad } from '../ui/sheetPad';
 import { C, F, lh, S } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
 import { useKeyboardUp } from '../ui/useKeyboardUp';
-import { FoodRow, ToolsRow } from './AddSheetRows';
+import { FoodRow, OneTapRow, PlannedCard, SaveAsOffer, ToolsRow } from './AddSheetRows';
 import { CustomFoodForm } from './CustomFoodForm';
 import { FoodDetailSheet } from './FoodDetailSheet';
 import { IconButton } from './TopBarActions';
@@ -82,9 +82,12 @@ function SlotChip({ label, active, onPress }: { label: string; active: boolean; 
  * and slot being looked at. Search sits at the top so its matches stay above
  * the keyboard; under it any food with a − / + and a grams box, and a bar
  * with "N items · X kcal" and Save. Every meal goes through the store's
- * addMeal with calories from the database. Opened in plan mode, or on a date
- * after today (nothing is logged into the future), Save changes that date's
- * menu instead.
+ * addMeal (or addMealFromPlan) with calories from the database. The fast ways
+ * in log in one tap with Undo: the slot as planned, the same slot yesterday, a
+ * saved meal. After a meal of two or more foods, the sheet offers to save it
+ * under a name. Opened in plan mode, or on a date after today (nothing is
+ * logged into the future), Save changes that date's menu instead, and a saved
+ * meal goes into it.
  */
 function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => void }) {
   const app = useApp();
@@ -108,6 +111,8 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   const results = useMemo(() => findFoods(app.foods, deferred), [app.foods, deferred]);
   const [detail, setDetail] = useState<FoodItem | null>(null);
   const [customOpen, setCustomOpen] = useState(false);
+  // After a logged meal of two or more foods: its lines, offered as a saved meal, and the words saying it was logged.
+  const [offer, setOffer] = useState<{ lines: PlanLine[]; logged: string } | null>(null);
 
   // The slot: the one asked for; else, today, the one whose turn it is; else the day's first still open.
   const { menuOn } = app;
@@ -137,7 +142,21 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   const lineColor = line?.tone === 'over' ? C.red : line?.tone === 'warn' ? C.amber : C.textDim;
 
   const recents = useMemo(() => recentFoodIds(state.meals, addDays(today, -30), 8), [state.meals, today]);
-  const rows = addRows({ mode, query: deferred, results: results.map((f) => f.id), basket, planned: false, yesterday: false, saved: [], recents });
+  // The fast ways in. Eat as planned only on today or an earlier date (the store logs nothing into the future), while the slot
+  // holds nothing but the meal filled in from the plan; the same slot yesterday; and saved meals, which go into the meal in plan mode.
+  const slotMeals = st?.meals ?? (slot ? dayMeals.filter((m) => m.slotId === slot.id) : []);
+  const planned = !!slot && offersPlanned({ mode, date, today, lines: slot.lines, foods, slotMeals });
+  const yesterdayItems = slot ? repeatItems(yesterdayIn(state.meals, date, slot), foods) : [];
+  const saved = state.savedMeals;
+  const rows = addRows({ mode, query: deferred, results: results.map((f) => f.id), basket, planned, yesterday: yesterdayItems.length > 0, saved: saved.map((s) => s.id), recents });
+  const linesKcal = (lines: PlanLine[]) => lines.reduce((a, l) => a + (lineInfo(l, foods)?.kcal ?? 0), 0);
+  const summary = (lines: PlanLine[]) =>
+    lines
+      .flatMap((l) => {
+        const info = lineInfo(l, foods, lang);
+        return info ? [`${foodName(info.food, lang)} ${formatQty(l.qty)}`] : [];
+      })
+      .join(' · ');
   const editing = detail ? (basket.find((b) => b.foodId === detail.id) ?? null) : null;
 
   function pickSlot(id: string) {
@@ -159,6 +178,62 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
     });
   }
 
+  /**
+   * After a one-tap log: the toast with Undo, and the sheet closes. Undo takes the meal away through removeMeal and puts
+   * back, through addMeal, the meal filled in from the plan that it replaced, which also lifts the skip removeMeal marks.
+   */
+  function loggedWithUndo(id: string, kcal: number, replaced: Meal[]) {
+    fb.haptic('success');
+    fb.notify(fill(t('toast_meal_saved'), { kcal }), {
+      label: t('undo'),
+      onPress: () => {
+        app.removeMeal(id);
+        for (const m of replaced) app.addMeal(m);
+      },
+    });
+    onClose();
+  }
+
+  function atePlanned() {
+    if (!slot || !planned) return;
+    const replaced = filledIn(state.meals, date, slot.id);
+    const id = app.addMealFromPlan(date, slot.id);
+    loggedWithUndo(id, linesKcal(slot.lines), replaced);
+  }
+
+  // A meal built here, logged in one tap: the same as yesterday or a saved meal.
+  function logMeal(meal: Meal) {
+    const replaced = meal.slotId ? filledIn(state.meals, date, meal.slotId) : [];
+    app.addMeal(meal);
+    loggedWithUndo(meal.id, meal.kcal, replaced);
+  }
+
+  function repeatYesterday() {
+    if (!slot) return;
+    // A copy typed by hand, each food's calories from the database at yesterday's grams.
+    const meal = itemsMeal({ id: newId(), date, slot, items: yesterdayItems, now: new Date() });
+    if (meal) logMeal(meal);
+  }
+
+  function logSaved(s: SavedMeal) {
+    if (!slot) return;
+    if (mode === 'plan') {
+      fb.haptic('light');
+      setBasket((b) => basketFromLines(s.lines, foods).reduce((acc, l) => addLine(acc, l), b));
+      return;
+    }
+    // Logged from its lines the way eating as planned is, with calories from the database.
+    const meal = mealFromLines({ id: newId(), date, slot, lines: s.lines, foods, source: 'manual', now: new Date() });
+    if (meal) logMeal(meal);
+  }
+
+  function changePlanned() {
+    if (!slot) return;
+    fb.haptic('light');
+    // The planned foods go into the meal to adjust, each in place of the same food's line; foods already added stay.
+    setBasket((b) => basketFromLines(slot.lines, foods).reduce((acc, l) => putLine(acc, l), b));
+  }
+
   function save() {
     if (!slot) return;
     if (mode === 'plan') {
@@ -173,7 +248,15 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
     if (!meal) return;
     app.addMeal(meal);
     fb.haptic('success');
-    fb.notify(fill(t('toast_meal_saved'), { kcal: meal.kcal }));
+    const words = fill(t('toast_meal_saved'), { kcal: meal.kcal });
+    // A meal of two or more foods may be one the person eats often: offer to keep it for one-tap logging.
+    // The sheet itself says it was logged, as the toast would sit behind it.
+    const lines = linesFromBasket(basket, foods);
+    if (lines.length >= 2) {
+      setOffer({ lines, logged: words });
+      return;
+    }
+    fb.notify(words);
     onClose();
   }
 
@@ -224,6 +307,43 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
             <Btn small tone="soft" label={fill(t('add_as_custom'), { q: query.trim() })} onPress={() => setCustomOpen(true)} />
           </View>
         );
+      case 'planned':
+        return slot ? (
+          <PlannedCard
+            title={fill(t('add_eat_planned'), { slot: slotName(slot) })}
+            summary={summary(slot.lines)}
+            kcal={linesKcal(slot.lines)}
+            lang={lang}
+            onAte={atePlanned}
+            onChange={changePlanned}
+          />
+        ) : null;
+      case 'yesterday': {
+        if (!slot) return null;
+        const title = fill(t('add_same_yesterday'), { slot: slotName(slot) });
+        return (
+          <OneTapRow
+            icon="refresh"
+            title={title}
+            sub={`${yesterdayItems.map((it) => itemName(it, foods, lang)).join(', ')} · ${yesterdayItems.reduce((a, it) => a + it.kcal, 0)} kcal`}
+            label={title}
+            onPress={repeatYesterday}
+          />
+        );
+      }
+      case 'saved': {
+        const s = saved.find((x) => x.id === item.savedId);
+        if (!s) return null;
+        return (
+          <OneTapRow
+            icon="bookmark-outline"
+            title={s.name}
+            sub={fill(t(s.lines.length === 1 ? 'add_bar_one' : 'add_bar'), { n: s.lines.length, kcal: linesKcal(s.lines) })}
+            label={fill(mode === 'plan' ? t('add_food_named') : t('add_log_saved'), { food: s.name, name: s.name })}
+            onPress={() => logSaved(s)}
+          />
+        );
+      }
       default:
         return null;
     }
@@ -260,47 +380,65 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
             </Text>
             <IconButton name="close" label={t('close')} onPress={onClose} />
           </View>
-          <View style={{ gap: 4, paddingBottom: 8 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: S.padLg }}>
-              {menu.meals.map((m) => (
-                <SlotChip key={m.id} label={`${slotName(m)} ${m.time}`} active={slot?.id === m.id} onPress={() => pickSlot(m.id)} />
-              ))}
+          {offer ? (
+            <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }}>
+              <SaveAsOffer
+                lang={lang}
+                logged={offer.logged}
+                onSave={(name) => {
+                  app.addSavedMeal(name, offer.lines);
+                  fb.haptic('success');
+                  fb.notify(t('add_saved_meal'));
+                  onClose();
+                }}
+                onSkip={onClose}
+              />
             </ScrollView>
-            {lineText ? <Text style={{ color: lineColor, fontSize: F.small, lineHeight: lh(F.small), paddingHorizontal: S.padLg }}>{lineText}</Text> : null}
-            <View style={{ flexDirection: 'row', paddingHorizontal: S.padLg, paddingTop: 4 }}>
-              <Field value={query} onChangeText={setQuery} placeholder={t('search_food')} accessibilityLabel={t('search_food')} />
-            </View>
-          </View>
-          <FlatList
-            data={rows}
-            keyExtractor={(r) => r.key}
-            renderItem={renderRow}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: S.padLg, paddingBottom: S.padLg }}
-            ListFooterComponent={
-              customOpen ? (
-                <CustomFoodForm
-                  initialName={query}
-                  onSaved={(f) => {
-                    setCustomOpen(false);
-                    addFood(f);
-                    setQuery('');
-                  }}
-                  onCancel={() => setCustomOpen(false)}
-                />
-              ) : null
-            }
-          />
-          {basket.length > 0 || mode === 'plan' ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: S.padLg, paddingVertical: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
-              <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
-                {fill(t(totals.items === 1 ? 'add_bar_one' : 'add_bar'), { n: totals.items, kcal: totals.kcal })}
-              </Text>
-              <Btn label={mode === 'plan' ? t('add_save_menu') : t('save')} onPress={save} style={{ minWidth: 120 }} />
-            </View>
-          ) : null}
+          ) : (
+            <>
+              <View style={{ gap: 4, paddingBottom: 8 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: S.padLg }}>
+                  {menu.meals.map((m) => (
+                    <SlotChip key={m.id} label={`${slotName(m)} ${m.time}`} active={slot?.id === m.id} onPress={() => pickSlot(m.id)} />
+                  ))}
+                </ScrollView>
+                {lineText ? <Text style={{ color: lineColor, fontSize: F.small, lineHeight: lh(F.small), paddingHorizontal: S.padLg }}>{lineText}</Text> : null}
+                <View style={{ flexDirection: 'row', paddingHorizontal: S.padLg, paddingTop: 4 }}>
+                  <Field value={query} onChangeText={setQuery} placeholder={t('search_food')} accessibilityLabel={t('search_food')} />
+                </View>
+              </View>
+              <FlatList
+                data={rows}
+                keyExtractor={(r) => r.key}
+                renderItem={renderRow}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingHorizontal: S.padLg, paddingBottom: S.padLg }}
+                ListFooterComponent={
+                  customOpen ? (
+                    <CustomFoodForm
+                      initialName={query}
+                      onSaved={(f) => {
+                        setCustomOpen(false);
+                        addFood(f);
+                        setQuery('');
+                      }}
+                      onCancel={() => setCustomOpen(false)}
+                    />
+                  ) : null
+                }
+              />
+              {basket.length > 0 || mode === 'plan' ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: S.padLg, paddingVertical: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
+                  <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
+                    {fill(t(totals.items === 1 ? 'add_bar_one' : 'add_bar'), { n: totals.items, kcal: totals.kcal })}
+                  </Text>
+                  <Btn label={mode === 'plan' ? t('add_save_menu') : t('save')} onPress={save} style={{ minWidth: 120 }} />
+                </View>
+              ) : null}
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
       <FoodDetailSheet
