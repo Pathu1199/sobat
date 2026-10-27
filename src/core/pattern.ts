@@ -1,5 +1,5 @@
 import { toISODate } from './date';
-import { SLOT_EARLY_MIN, slotMinutes, slotStatus, type Routine, type RoutineSlot, type SlotStatus } from './routine';
+import { SLOT_EARLY_MIN, SLOT_GRACE_MIN, slotMinutes, slotStatus, type Routine, type RoutineSlot, type SlotStatus } from './routine';
 import type { Meal, MealType } from './types';
 
 /**
@@ -184,4 +184,33 @@ export function withSlot(meal: Meal, input: { routine: Routine; target: number; 
   }
   const p = slotOf(meal, pattern(input.routine));
   return p ? { ...meal, slotId: p.id, type: p.type } : meal;
+}
+
+/**
+ * The slot whose turn it is at this minute: the latest one whose window (its
+ * time minus the early margin) has opened; before the day's first window
+ * opens, the first slot. Every meal-shaped decision (the coach, the plates, a
+ * photo's meal) reads this rather than a fixed list of meal hours. Null only
+ * with no slots.
+ */
+export function slotAt(routine: Routine, minutes: number): PatternSlot | null {
+  const slots = pattern(routine);
+  if (slots.length === 0) return null;
+  let at = slots[0];
+  for (const s of slots) if (minutes >= s.minutes - SLOT_EARLY_MIN) at = s;
+  return at;
+}
+
+/**
+ * How much of the day's target someone following their own pattern would
+ * have eaten by this hour: each slot's share counts in as its window runs,
+ * from its time minus the early margin to its time plus the grace. A day
+ * still running is judged against this, not against the whole target.
+ */
+export function expectedKcalByHour(target: number, hour: number, slots: PatternSlot[]): number {
+  const now = hour * 60;
+  const span = SLOT_EARLY_MIN + SLOT_GRACE_MIN;
+  let share = 0;
+  for (const s of slots) share += s.share * Math.min(1, Math.max(0, (now - (s.minutes - SLOT_EARLY_MIN)) / span));
+  return Math.round(target * Math.min(1, share));
 }

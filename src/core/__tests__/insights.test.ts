@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { biggestLever, breakStreak, findPatterns, scoreDay, streak, weightTrend } from '../insights';
 import { lastNDates } from '../date';
-import { expectedKcalByHour } from '../nutrition';
+import { pattern } from '../pattern';
+import { DEFAULT_ROUTINE, DEFAULT_SLOTS } from '../routine';
 import type { BreakLog } from '../breaks';
 import type { Meal, MoodLog, SleepLog, WorkoutLog } from '../types';
 
@@ -28,6 +29,13 @@ describe('scoreDay', () => {
     // 11am, breakfast only: that is on pace, not a failure.
     const s = scoreDay({ ...b, kcal: 450, waterMl: 750, hour: 11 });
     expect(s.eating).toBeGreaterThan(70);
+  });
+
+  it('judges a running day by the person\'s own slots: breakfast alone is on pace at 14:00 when lunch is at 15:00', () => {
+    const lateLunch = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS.map((s) => (s.id === 'lunch' ? { ...s, time: '15:00' } : s)) });
+    expect(scoreDay({ ...b, kcal: 450, waterMl: 0, hour: 14, slots: lateLunch }).eating).toBe(100);
+    // Without them, the four meals of the day expect lunch by 14:00.
+    expect(scoreDay({ ...b, kcal: 450, waterMl: 0, hour: 14 }).eating!).toBeLessThan(50);
   });
 
   it('shows nothing rather than zero before the first meal', () => {
@@ -83,25 +91,6 @@ describe('scoreDay', () => {
   it('judges movement from 18:00 exactly', () => {
     const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, hour: 18 });
     expect(s.movement).toBe(0);
-  });
-});
-
-describe('expectedKcalByHour', () => {
-  it('rises through the day and reaches the full target by night', () => {
-    expect(expectedKcalByHour(1800, 4)).toBe(0);
-    expect(expectedKcalByHour(1800, 6)).toBeLessThan(150);
-    expect(expectedKcalByHour(1800, 11)).toBe(450);
-    expect(expectedKcalByHour(1800, 16)).toBe(1080);
-    expect(expectedKcalByHour(1800, 23)).toBe(1800);
-  });
-
-  it('never goes backwards', () => {
-    let prev = -1;
-    for (let h = 0; h <= 23; h++) {
-      const v = expectedKcalByHour(1800, h);
-      expect(v).toBeGreaterThanOrEqual(prev);
-      prev = v;
-    }
   });
 });
 

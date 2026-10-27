@@ -31,6 +31,7 @@ import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { addDays, formatDayLabel, localHHMM, localHour } from '../../core/date';
 import { decide } from '../../core/decide';
 import { scoreDay } from '../../core/insights';
+import { pattern } from '../../core/pattern';
 import { expectedWaterByHour } from '../../core/nudge';
 import { sumTotals } from '../../core/nutrition';
 import { pendingCount } from '../../core/queue';
@@ -122,6 +123,7 @@ export default function TodayScreen() {
     sleepScore: sleepDay?.score,
     moodScore: moodDay?.score,
     hour: isToday ? hour : undefined,
+    slots: pattern(state.routine),
     expectedWaterMl: isToday ? expectedWaterByHour(hour, state.settings.waterGoalMl) : undefined,
   });
 

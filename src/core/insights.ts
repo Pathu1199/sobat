@@ -1,6 +1,7 @@
 import { breakStats, type BreakLog } from './breaks';
 import { addDays, lastNDates, localHour } from './date';
-import { expectedKcalByHour } from './nutrition';
+import { expectedKcalByHour, pattern, type PatternSlot } from './pattern';
+import { DEFAULT_ROUTINE, DEFAULT_SLOTS } from './routine';
 import type { ISODate, Meal, MoodLog, SleepLog, WaterLog, WeightLog, WorkoutLog } from './types';
 
 /** null means 'not known yet today', which is different from a score of zero. */
@@ -18,6 +19,9 @@ export type LeverKey = 'eating' | 'movement' | 'water' | 'sleep' | 'mood';
 
 /** Movement is only judged once the evening window opens, unless it already happened. */
 const MOVEMENT_JUDGED_FROM_HOUR = 18;
+
+/** The four meals of the day, for a running day judged without the person's own pattern. */
+const DEFAULT_PATTERN = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS });
 
 function clamp100(n: number) {
   return Math.max(0, Math.min(100, Math.round(n)));
@@ -37,11 +41,13 @@ export function scoreDay(input: {
   hour?: number;
   /** How much water a person on pace would have drunk by `hour`. Only used while running. */
   expectedWaterMl?: number;
+  /** The eating pattern a running day is judged by; the four meals of the day when not given. */
+  slots?: PatternSlot[];
 }): DayScore {
-  // Mid-day, judge against what a normal eater would have had by now. Judging a
+  // Mid-day, judge against what the person's own pattern has due by now. Judging a
   // half-eaten day against the full target reads as failure at breakfast.
   const running = input.hour !== undefined && input.hour < 21;
-  const denominator = running ? Math.max(expectedKcalByHour(input.kcalTarget, input.hour!), 1) : input.kcalTarget;
+  const denominator = running ? Math.max(expectedKcalByHour(input.kcalTarget, input.hour!, input.slots ?? DEFAULT_PATTERN), 1) : input.kcalTarget;
 
   let eating: number | null;
   if (input.kcal === 0) {
