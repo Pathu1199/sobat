@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { foodName } from '../core/foods';
 import { newId } from '../core/id';
+import { hasPlan } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
 import { planItems, slotLabel, weekdayOf } from '../core/routine';
 import { dayStatus, dayTotals, lineInfo, mealTotals, type PlanMeal } from '../core/weekPlan';
@@ -33,7 +34,9 @@ export function PlanTodayCard() {
   };
   const minute = useMinute();
   const plan = app.weekPlan;
-  const day = plan?.days[weekdayOf(today)];
+  // A day whose meals hold nothing is not a plan, so it asks for one instead of calling 0 kcal too low.
+  const shown = plan?.days[weekdayOf(today)];
+  const day = shown && hasPlan(shown) ? shown : undefined;
 
   const todayMeals = useMemo(() => state.meals.filter((m) => m.date === today), [state.meals, today]);
   if (isOffDay(state.settings.offDays, today)) {

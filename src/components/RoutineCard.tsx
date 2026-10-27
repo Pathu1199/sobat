@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { foodName, searchFoods } from '../core/foods';
 import { newId } from '../core/id';
+import { hasPlan } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
 import { slotStates, type SlotState } from '../core/pattern';
 import {
@@ -85,7 +86,9 @@ export function RoutineCard() {
 
   const bhaji = bhajiFor(routine, today);
   const todayMeals = useMemo(() => state.meals.filter((m) => m.date === today), [state.meals, today]);
-  const planDay = app.menuOn(today);
+  // A day whose meals hold nothing is not a plan: no planned total, and nothing to call too low.
+  const day = app.menuOn(today);
+  const planDay = hasPlan(day) ? day : undefined;
   const planned = useMemo(() => (planDay ? Object.fromEntries(planDay.meals.map((m) => [m.id, mealTotals(m, foods).kcal])) : undefined), [planDay, foods]);
   const states = useMemo(
     () => slotStates({ routine, target: targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday, planned }),

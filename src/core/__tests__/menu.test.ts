@@ -12,10 +12,12 @@ import {
   editedMeal,
   ensureWeek,
   fillFromPlan,
+  hasPlan,
   mealFromLines,
   menuFor,
   NOT_EDITED,
   removeSkip,
+  setMenuDay,
   setMenuLine,
   setMenuMeal,
   settleAuto,
@@ -125,6 +127,29 @@ describe('editing one date', () => {
     expect(setMenuMeal(menus, wed, { ...wed.meals[1], lines: [chapati(2)] }, NOW)).toBe(menus);
     // A date that is only shown is not stored by an edit that names nothing on it.
     expect(setMenuLine(menus, menu('2026-10-30', 2, NOT_EDITED), 'supper', 0, chapati(4), NOW)).toBe(menus);
+  });
+
+  it('writing a date the meals it already has, or a deep copy of them, leaves the menus as they were and stamps nothing', () => {
+    expect(setMenuDay(menus, wed, wed.meals, NOW)).toBe(menus);
+    expect(setMenuDay(menus, wed, JSON.parse(JSON.stringify(wed.meals)), NOW)).toBe(menus);
+    // A date that is only shown is not stored for being shown as it is.
+    const shown = menu('2026-10-30', 2, NOT_EDITED);
+    expect(setMenuDay(menus, shown, shown.meals, NOW)).toBe(menus);
+    // Different meals are written and stamped.
+    const out = setMenuDay(menus, wed, menu('2026-10-28', 4).meals, NOW);
+    expect(lunchQty(menuFor('2026-10-28', out))).toBe(4);
+    expect(menuFor('2026-10-28', out)!.editedAt).toBe(NOW.toISOString());
+  });
+
+  it('a copy is a deliberate act: it is stamped even when the date already had the same meals', () => {
+    // Thursday already holds what Wednesday holds.
+    const out = copyDay(wed, '2026-10-29', menus, NOW);
+    expect(out).not.toBe(menus);
+    expect(menuFor('2026-10-29', out)!.editedAt).toBe(NOW.toISOString());
+    // An empty day copied onto a date nobody wrote is stored, stamped.
+    const empty: DayMenu = { date: '2026-10-27', meals: [], editedAt: NOT_EDITED };
+    const copied = copyDay(empty, '2026-10-31', menus, NOW);
+    expect(menuFor('2026-10-31', copied)).toEqual({ date: '2026-10-31', meals: [], editedAt: NOW.toISOString() });
   });
 
   it('copies a day onto another date as its own copy', () => {
@@ -426,5 +451,26 @@ describe('the plan screen\'s view of this week', () => {
     expect(menuFor('2026-10-26', out)).toBe(stored[0]);
     expect(out).toHaveLength(2);
     expect(applyWeekPlan(plan, week, stored, NOW)).toBe(stored);
+  });
+
+  it('a deep copy of the same plan, the way a screen hands it back, changes nothing', () => {
+    const stored = [menu('2026-10-26', 1), menu('2026-10-28', 3)];
+    const week = ensureWeek(MON, stored, routine, foods);
+    const copy = JSON.parse(JSON.stringify(weekPlanView(week)));
+    expect(applyWeekPlan(copy, week, stored, NOW)).toBe(stored);
+  });
+});
+
+describe('a day with a plan', () => {
+  it('is a day where some meal holds a line; meals with nothing planned are not a plan', () => {
+    expect(hasPlan(menu('2026-10-28', 2))).toBe(true);
+    expect(hasPlan({ meals: menu('2026-10-28', 2).meals.map((m) => ({ ...m, lines: [] })) })).toBe(false);
+    expect(hasPlan({ meals: [] })).toBe(false);
+    // A pattern whose slots the app has nothing to fill in with starts each day with empty meals: that is not a plan.
+    const snacks: Routine = { ...routine, slots: [slot('mid', 'snack', '11:00', 50), slot('tea', 'snack', '17:00', 50)] };
+    const fresh = viewMenu('2026-10-28', [], snacks, '2026-10-27', foods);
+    expect(fresh.meals).toHaveLength(2);
+    expect(hasPlan(fresh)).toBe(false);
+    expect(hasPlan(viewMenu('2026-10-28', [], routine, '2026-10-27', foods))).toBe(true);
   });
 });

@@ -51,6 +51,11 @@ export const OWNER_KEY = 'sobat.cloud.owner';
 const FOODS = foodsJson as unknown as FoodItem[];
 const EXERCISES = exercisesJson as unknown as Exercise[];
 
+/** Every food there is: the database and the person's own. Planned lines can name any of them, whatever the diet filter shows. */
+function allFoods(customFoods: FoodItem[]): FoodItem[] {
+  return [...FOODS, ...customFoods];
+}
+
 type Ctx = {
   ready: boolean;
   state: AppState;
@@ -272,8 +277,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // the whole app would keep working against yesterday.
   const { date: today, hour } = useClock();
   const update = useCallback((fn: (s: AppState) => AppState) => setState((s) => fn(s)), []);
-  // Planned lines can name the person's own foods, whatever the diet filter shows.
-  const planFoods = useMemo(() => [...FOODS, ...state.customFoods], [state.customFoods]);
+  const planFoods = useMemo(() => allFoods(state.customFoods), [state.customFoods]);
 
   const value = useMemo<Ctx>(() => {
     const targets = dailyTargets(state.profile);
@@ -299,7 +303,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return {
       ready,
       state,
-      foods: foodsForDiet([...FOODS, ...state.customFoods], state.settings.diet),
+      foods: foodsForDiet(planFoods, state.settings.diet),
       exercises: EXERCISES,
       today,
       hour,
@@ -403,13 +407,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const routine = { ...s.routine, ...r, enabled: true };
           // Menus are written against the slots; when they change, today's and later ones follow. Past ones are history.
           const slotsChanged = r.slots !== undefined && r.slots !== s.routine.slots;
-          const menus = slotsChanged ? alignMenus(s.menus, routine, today, [...FOODS, ...s.customFoods]) : s.menus;
+          const menus = slotsChanged ? alignMenus(s.menus, routine, today, allFoods(s.customFoods)) : s.menus;
           return { ...s, routine, menus };
         }),
       weekPlan: weekPlanView(thisWeek),
       setWeekPlan: (plan) =>
         update((s) => {
-          const week = viewWeek(mondayOf(today), s.menus, s.routine, today, [...FOODS, ...s.customFoods]);
+          const week = viewWeek(mondayOf(today), s.menus, s.routine, today, allFoods(s.customFoods));
           return withMenus(s, applyWeekPlan(plan, week, s.menus, new Date()));
         }),
       menuOn: (date) => viewMenu(date, state.menus, state.routine, today, planFoods),

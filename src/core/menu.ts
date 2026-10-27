@@ -88,10 +88,30 @@ export function viewWeek(monday: ISODate, menus: DayMenu[], routine: Routine, to
   return ensureWeek(monday, menus, routine, foods).map((m) => alignMenu(m, routine, today, foods));
 }
 
-/** Write one date's meals, stamped now. `day` is that date's menu as it was shown, stored or not; every other date is left as it is. */
+/**
+ * A day whose meals hold at least one planned line. Meals with nothing in
+ * them (every line taken out, or slots the app had nothing to fill in with)
+ * are not a plan, so there is no planned total to call too low.
+ */
+export function hasPlan(day: { meals: PlanMeal[] }): boolean {
+  return day.meals.some((m) => m.lines.length > 0);
+}
+
+/** Store one date's meals, stamped now, whatever they were before. */
+function writeDay(menus: DayMenu[], date: ISODate, meals: PlanMeal[], now: Date): DayMenu[] {
+  const next: DayMenu = { date, meals, editedAt: now.toISOString() };
+  return menus.some((m) => m.date === date) ? menus.map((m) => (m.date === date ? next : m)) : [...menus, next];
+}
+
+/**
+ * Write one date's meals, stamped now. `day` is that date's menu as it was
+ * shown, stored or not; every other date is left as it is. Meals the same as
+ * the ones shown leave the menus as they were and stamp nothing, so saving an
+ * unchanged day never beats a real edit from another device.
+ */
 export function setMenuDay(menus: DayMenu[], day: DayMenu, meals: PlanMeal[], now: Date): DayMenu[] {
-  const next: DayMenu = { date: day.date, meals, editedAt: now.toISOString() };
-  return menus.some((m) => m.date === day.date) ? menus.map((m) => (m.date === day.date ? next : m)) : [...menus, next];
+  if (stable(meals) === stable(day.meals)) return menus;
+  return writeDay(menus, day.date, meals, now);
 }
 
 /**
@@ -131,10 +151,13 @@ export function setMenuMeal(menus: DayMenu[], day: DayMenu, meal: PlanMeal, now:
   return editMeal(menus, day, meal.id, () => meal, now);
 }
 
-/** Copy one date's meals onto another date. The copy is its own, so editing one never edits the other. */
+/**
+ * Copy one date's meals onto another date. The copy is its own, so editing
+ * one never edits the other. A copy is a deliberate act, so it is stamped
+ * even when the date already held the same meals.
+ */
 export function copyDay(from: DayMenu, to: ISODate, menus: DayMenu[], now: Date): DayMenu[] {
-  const target = menuFor(to, menus) ?? { date: to, meals: [], editedAt: NOT_EDITED };
-  return setMenuDay(menus, target, copyMeals(from.meals), now);
+  return writeDay(menus, to, copyMeals(from.meals), now);
 }
 
 /** One skip per date and slot, with an id every device gives it, so two devices skipping the same meal merge into one record. */
