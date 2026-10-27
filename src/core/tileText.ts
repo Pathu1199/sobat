@@ -1,6 +1,8 @@
 import { WALK_ACTIVITY_ID } from './activity';
 import { addDays } from './date';
+import { weightTrend } from './insights';
 import type { DayMenu } from './menu';
+import { weightIsStale } from './progress';
 import { dayRecord, mealsByDate, STREAK_LOOKBACK_DAYS, streakStep, type StreakStep } from './record';
 import type { Routine } from './routine';
 import { walkTile, waterTile } from './tiles';
@@ -33,9 +35,6 @@ export const SLEEP_TARGET_MIN = 480;
 export const BREATHE_HALF_MS = 4000;
 /** One breathing session: eight whole breaths, 64 seconds, so it ends on a breath out with the circle small. The tile calls it a minute. */
 export const BREATHE_SESSION_MS = 8 * 2 * BREATHE_HALF_MS;
-/** How far back the weight tile looks for its change. */
-export const WEIGHT_CHANGE_DAYS = 21;
-
 /** One place after the point, always shown: 1 → "1.0". */
 export function oneDecimal(n: number): string {
   return (Math.round(n * 10) / 10).toFixed(1);
@@ -85,33 +84,47 @@ export function sleepWords(minutes: number | null, targetMin = SLEEP_TARGET_MIN)
   return { parts, line };
 }
 
-/**
- * The change from the first weigh-in of the last `days` to the latest one,
- * and over how many weeks (at least one). Null when the window holds no
- * earlier weigh-in to compare with.
- */
-export function weightChange(weights: WeightLog[], today: ISODate, days = WEIGHT_CHANGE_DAYS): { kg: number; weeks: number } | null {
-  const sorted = [...weights].sort((a, b) => a.date.localeCompare(b.date));
-  const latest = sorted[sorted.length - 1];
-  if (!latest) return null;
-  const from = addDays(today, -days);
-  const first = sorted.find((w) => w.date >= from && w.date < latest.date);
-  if (!first) return null;
-  const span = Math.round((new Date(`${latest.date}T12:00:00`).getTime() - new Date(`${first.date}T12:00:00`).getTime()) / 86400000);
-  return { kg: Math.round((latest.kg - first.kg) * 10) / 10, weeks: Math.max(1, Math.round(span / 7)) };
+/** A span of days in whole weeks, at least one: up to ten days is a week, eleven are two. */
+export function spanWeeks(days: number): number {
+  return Math.max(1, Math.round(days / 7));
 }
 
-/** The latest weigh-in (the dash before the first), and its change over the last three weeks or, with nothing to compare, the goal. */
+/** A weight change and the weeks its span of days really covers, "−0.7 kg in a week", "+0.4 kg in 2 weeks". */
+export function weightChangeLine(kg: number, days: number): TileLine {
+  return changeInWeeks(kg, spanWeeks(days));
+}
+
+function changeInWeeks(kg: number, weeks: number): TileLine {
+  return weeks === 1 ? { key: 'tile_weight_change_1', params: { kg: signedKg(kg) } } : { key: 'tile_weight_change', params: { kg: signedKg(kg), weeks } };
+}
+
+/**
+ * The one weight Progress and the Weight tile both show: the weight smoothed
+ * over a week (`weightTrend`), its change over three weeks or more with the
+ * weeks it really spans, and whether the latest weigh-in is more than thirty
+ * days old, when it shows no change (it no longer speaks for now). Null with
+ * no weigh-in on or before today.
+ */
+export function shownWeight(weights: WeightLog[], today: ISODate): { kg: number; change: { kg: number; weeks: number } | null; asOf: ISODate; stale: boolean } | null {
+  const trend = weightTrend(weights, today);
+  if (!trend) return null;
+  const stale = weightIsStale(trend.asOf, today);
+  const change = !stale && trend.change21 !== null && trend.span21 !== null ? { kg: trend.change21, weeks: spanWeeks(trend.span21) } : null;
+  return { kg: trend.current, change, asOf: trend.asOf, stale };
+}
+
+/** The weight shown (`shownWeight`, the dash before the first weigh-in), and its change or, with none to show, the goal. */
 export function weightWords(weights: WeightLog[], goalKg: number, today: ISODate): TileWords {
-  const latest = [...weights].sort((a, b) => a.date.localeCompare(b.date)).pop();
-  const change = weightChange(weights, today);
-  const line: TileLine = !change
-    ? { key: 'tile_weight_goal', params: { kg: shortDecimal(goalKg) } }
-    : change.weeks === 1
-      ? { key: 'tile_weight_change_1', params: { kg: signedKg(change.kg) } }
-      : { key: 'tile_weight_change', params: { kg: signedKg(change.kg), weeks: change.weeks } };
-  if (!latest) return { parts: [{ num: NO_VALUE }], line, empty: { key: 'tile_no_weight' } };
-  return { parts: [{ num: oneDecimal(latest.kg), unitKey: 'unit_kg' }], line };
+  const shown = shownWeight(weights, today);
+  const change = shown?.change;
+  const line: TileLine = change ? changeInWeeks(change.kg, change.weeks) : { key: 'tile_weight_goal', params: { kg: shortDecimal(goalKg) } };
+  if (!shown) return { parts: [{ num: NO_VALUE }], line, empty: { key: 'tile_no_weight' } };
+  return { parts: [{ num: oneDecimal(shown.kg), unitKey: 'unit_kg' }], line };
+}
+
+/** The weight lost since the start, or gained, never a negative loss: the label's key and the kilos, "Gained" "1.2". */
+export function lostWords(lostKg: number): { key: 'plan_lost' | 'plan_gained'; kg: string } {
+  return lostKg < 0 ? { key: 'plan_gained', kg: oneDecimal(-lostKg) } : { key: 'plan_lost', kg: oneDecimal(lostKg) };
 }
 
 /** Today's streak in days, and the best run, never shown lower than today's. */

@@ -172,6 +172,7 @@ describe('weightTrend', () => {
     const t = weightTrend(logs, '2026-09-25')!;
     expect(t.current).toBe(98.9);
     expect(t.change7).toBe(-0.7);
+    expect(t.span7).toBe(7);
     expect(t.asOf).toBe('2026-09-25');
   });
 
@@ -216,6 +217,8 @@ describe('weightTrend', () => {
     // A week back the latest weigh-in is the one a fortnight before, three weeks back the one four weeks before, thirty
     // days back the one six weeks before.
     expect([t.change7, t.change21, t.change30]).toEqual([-1, -2, -3]);
+    // Each says how far apart the weigh-ins it compares really are: two, four and six weeks, never the 7, 21 and 30 asked.
+    expect([t.span7, t.span21, t.span30]).toEqual([14, 28, 42]);
     expect(t.asOf).toBe('2026-09-25');
   });
 
@@ -229,6 +232,7 @@ describe('weightTrend', () => {
     const t = weightTrend(logs, '2026-09-25')!;
     // A week back: the weigh-in ten days before; three weeks and thirty days back: the one thirty days before.
     expect([t.change7, t.change21, t.change30]).toEqual([-0.5, -1.5, -1.5]);
+    expect([t.span7, t.span21, t.span30]).toEqual([10, 30, 30]);
   });
 
   it('bridges a missed week, but never calls a change over months one over a week', () => {
@@ -246,6 +250,7 @@ describe('weightTrend', () => {
     ];
     const t = weightTrend(gap, '2026-10-20')!;
     expect([t.change7, t.change21, t.change30]).toEqual([null, null, null]);
+    expect([t.span7, t.span21, t.span30]).toEqual([null, null, null]);
     expect(t.asOf).toBe('2026-09-01');
   });
 });

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { foodName } from '../core/foods';
-import { groceryDates, groceryList, groceryWeekKey } from '../core/grocery';
+import { groceryDates, groceryHalfLabel, groceryList, groceryWeekKey } from '../core/grocery';
 import { weekdayOf } from '../core/routine';
 import type { ISODate } from '../core/types';
 import type { WeekPlan } from '../core/weekPlan';
@@ -33,16 +33,7 @@ export function GrocerySheet({ open, onClose, plan, monday }: { open: boolean; o
   const dayIdxs = useMemo(() => groceryDates(monday, today, scope).map(weekdayOf), [monday, today, scope]);
   const groups = useMemo(() => groceryList(plan, foods, dayIdxs), [plan, foods, dayIdxs]);
   const week = groceryWeekKey(monday);
-  // "Next 4 days" while the half starts today and has four; else the weekdays it covers.
-  const wd = (d: ISODate) => t(`wd_${weekdayOf(d)}`);
-  const halfLabel =
-    half.length === 0
-      ? ''
-      : half.length === 4 && half[0] === today
-        ? t('grocery_half')
-        : half.length === 1
-          ? wd(half[0])
-          : fill(t('grocery_half_range'), { from: wd(half[0]), to: wd(half[half.length - 1]) });
+  const halfLabel = groceryHalfLabel(half, today, t);
   const ticked = state.groceryTicks?.week === week ? state.groceryTicks.ids : [];
   const total = groups.reduce((n, g) => n + g.lines.length, 0);
   const done = groups.reduce((n, g) => n + g.lines.filter((l) => ticked.includes(l.foodId)).length, 0);

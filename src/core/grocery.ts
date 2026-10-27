@@ -1,3 +1,4 @@
+import { fill } from '../i18n';
 import { addDays, weekDates } from './date';
 import { defaultPortion } from './foods';
 import { weekdayOf } from './routine';
@@ -90,4 +91,17 @@ export function groceryDates(monday: ISODate, today: ISODate, scope: 'week' | 'h
   if (scope === 'week') return week;
   const from = today > monday ? today : monday;
   return week.filter((d) => d >= from).slice(0, 4);
+}
+
+/**
+ * The half week's chip (`half` from `groceryDates`): "Next 4 days" while it
+ * starts today and has four dates, else the weekdays it covers ("Mon to
+ * Thu", one day by its name), and nothing for a week with no half.
+ */
+export function groceryHalfLabel(half: ISODate[], today: ISODate, t: (key: string) => string): string {
+  if (half.length === 0) return '';
+  if (half.length === 4 && half[0] === today) return t('grocery_half');
+  const wd = (d: ISODate) => t(`wd_${weekdayOf(d)}`);
+  if (half.length === 1) return wd(half[0]);
+  return fill(t('grocery_half_range'), { from: wd(half[0]), to: wd(half[half.length - 1]) });
 }

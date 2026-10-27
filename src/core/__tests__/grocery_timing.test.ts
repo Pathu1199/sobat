@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { groceryDates, groceryList, groceryWeekKey } from '../grocery';
+import { groceryDates, groceryHalfLabel, groceryList, groceryWeekKey } from '../grocery';
+import { makeT } from '../../i18n';
 import { DEFAULT_ROUTINE } from '../routine';
 import { dayTiming, fmtDuration } from '../timing';
 import type { FoodItem, Meal } from '../types';
@@ -55,6 +56,22 @@ describe('groceryList', () => {
     expect(groceryDates('2026-10-26', '2026-10-31', 'half')).toEqual(['2026-10-31', '2026-11-01']);
     // A week already past has nothing left to buy for.
     expect(groceryDates('2026-10-19', '2026-10-28', 'half')).toEqual([]);
+  });
+
+  it('names the half week "Next 4 days" only when it starts today with four days, else by its weekdays', () => {
+    const en = makeT('en');
+    const half = (monday: string, today: string) => groceryHalfLabel(groceryDates(monday, today, 'half'), today, en);
+    expect(half('2026-10-26', '2026-10-28')).toBe('Next 4 days');
+    // Next week, looked at on a Saturday: its Monday to Thursday.
+    expect(half('2026-11-02', '2026-10-31')).toBe('Mon to Thu');
+    // Two days left in the week.
+    expect(half('2026-10-26', '2026-10-31')).toBe('Sat to Sun');
+    // One day left: that day.
+    expect(half('2026-10-26', '2026-11-01')).toBe('Sun');
+    // A week already past offers no half.
+    expect(half('2026-10-19', '2026-10-28')).toBe('');
+    expect(groceryHalfLabel(groceryDates('2026-11-02', '2026-10-31', 'half'), '2026-10-31', makeT('mr'))).toBe('सोम ते गुरु');
+    expect(groceryHalfLabel(groceryDates('2026-10-26', '2026-10-28', 'half'), '2026-10-28', makeT('hi'))).toBe('अगले 4 दिन');
   });
 });
 

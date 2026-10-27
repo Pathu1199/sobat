@@ -2,10 +2,8 @@ import React, { useMemo } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { formatDayMonthYear } from '../core/date';
-import { weightTrend } from '../core/insights';
 import { planFrom } from '../core/plan';
-import { weightIsStale } from '../core/progress';
-import { oneDecimal, shortDecimal, signedKg } from '../core/tileText';
+import { oneDecimal, shortDecimal, shownWeight, signedKg } from '../core/tileText';
 import { weightPoints } from '../core/tiles';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -21,16 +19,18 @@ const INSET = 3;
 const SPARK_COUNT = 12;
 
 /**
- * The weight trend: the weight smoothed over a week of the calendar, its
- * change over three weeks, the last twelve weigh-ins as a line, and the goal
- * with the date it comes at the target pace, year included. A latest weigh-in
- * more than thirty days old says when it was instead of a change.
+ * The weight trend: the weight smoothed over a week of the calendar and its
+ * change over three weeks or more, in the weeks it really spans (the same
+ * weight and change as the Weight tile, `shownWeight`), the last twelve
+ * weigh-ins as a line, and the goal with the date it comes at the target
+ * pace, year included. A latest weigh-in more than thirty days old says when
+ * it was instead of a change.
  */
 export function WeightTrendCard() {
   const { state, targets, today } = useApp();
   const lang = state.profile.lang;
   const t = makeT(lang);
-  const trend = useMemo(() => weightTrend(state.weights, today), [state.weights, today]);
+  const trend = useMemo(() => shownWeight(state.weights, today), [state.weights, today]);
   const plan = useMemo(() => planFrom(state.profile, state.weights, targets, today), [state.profile, state.weights, targets, today]);
   const line = useMemo(
     () => (state.weights.length >= 2 ? toPath(weightPoints(state.weights, SPARK_W, SPARK_H - 2 * INSET, SPARK_COUNT).map((p) => ({ x: p.x, y: p.y + INSET }))) : ''),
@@ -44,14 +44,13 @@ export function WeightTrendCard() {
       : plan.etaAtTarget
         ? fill(t('progress_goal_by'), { goal, date: formatDayMonthYear(plan.etaAtTarget, lang) })
         : fill(t('progress_goal'), { goal });
-  const stale = trend ? weightIsStale(trend.asOf, today) : false;
-  const change = trend && !stale ? trend.change21 : null;
+  const change = trend?.change ?? null;
   const changeWords = !trend
     ? ''
-    : stale
+    : trend.stale
       ? fill(t('progress_last_weighin'), { date: formatDayMonthYear(trend.asOf, lang) })
-      : change !== null
-        ? fill(t('progress_change_3w'), { kg: signedKg(change) })
+      : change
+        ? fill(t('progress_change'), { kg: signedKg(change.kg), weeks: change.weeks })
         : t('progress_change_none');
 
   return (
@@ -60,10 +59,10 @@ export function WeightTrendCard() {
       {trend ? (
         <>
           <Text style={{ color: C.text, fontSize: F.number, lineHeight: lh(F.number, true), fontWeight: '400', fontVariant: ['tabular-nums'] }}>
-            {oneDecimal(trend.current)}
+            {oneDecimal(trend.kg)}
             <Text style={{ color: C.textDim, fontSize: F.title, fontWeight: '400' }}>{` ${kg}`}</Text>
           </Text>
-          <Small color={change !== null && change < 0 ? C.green : C.textDim}>{changeWords}</Small>
+          <Small color={change && change.kg < 0 ? C.green : C.textDim}>{changeWords}</Small>
           {line ? (
             // The numbers are in the words; the line only shows their shape, so a screen reader passes it by.
             <View style={{ height: 48 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">

@@ -169,12 +169,24 @@ export function timeWeightedKg(logs: WeightLog[], from: ISODate, to: ISODate): n
  * ten days or every fortnight sees them too. That weigh-in may be at most as
  * far again before it (a week's change reaches back two weeks at most): a
  * change over months is never called one over a week. Null where there is
- * none. `asOf` lets a screen say when, or leave out a change gone stale.
+ * none. Each change comes with its span, the days between the two
+ * weigh-ins it compares (a "three weeks" change may span up to six), so a
+ * screen says the weeks it really covers. `asOf` lets a screen say when, or
+ * leave out a change gone stale.
  */
 export function weightTrend(
   logs: WeightLog[],
   today: ISODate,
-): { current: number; change7: number | null; change21: number | null; change30: number | null; asOf: ISODate } | null {
+): {
+  current: number;
+  change7: number | null;
+  change21: number | null;
+  change30: number | null;
+  span7: number | null;
+  span21: number | null;
+  span30: number | null;
+  asOf: ISODate;
+} | null {
   const days = Array.from(dailyKg(logs).keys())
     .filter((d) => d <= today)
     .sort();
@@ -182,15 +194,30 @@ export function weightTrend(
   const last = days[days.length - 1];
   const at = (end: ISODate) => timeWeightedKg(logs, addDays(end, -(TREND_DAYS - 1)), end);
   const now = at(last) ?? 0;
-  const change = (back: number) => {
+  const change = (back: number): { kg: number; days: number } | null => {
     const target = addDays(last, -back);
     let end: ISODate | null = null;
     for (const d of days) if (d <= target) end = d;
     if (end === null || end < addDays(target, -back)) return null;
     const then = at(end);
-    return then === null ? null : r1(now - then);
+    return then === null ? null : { kg: r1(now - then), days: daysBetween(end, last) };
   };
-  return { current: r1(now), change7: change(7), change21: change(21), change30: change(30), asOf: last };
+  const [c7, c21, c30] = [change(7), change(21), change(30)];
+  return {
+    current: r1(now),
+    change7: c7?.kg ?? null,
+    change21: c21?.kg ?? null,
+    change30: c30?.kg ?? null,
+    span7: c7?.days ?? null,
+    span21: c21?.days ?? null,
+    span30: c30?.days ?? null,
+    asOf: last,
+  };
+}
+
+/** Whole days from `from` to `to`. */
+function daysBetween(from: ISODate, to: ISODate): number {
+  return Math.round((Date.parse(`${to}T12:00:00`) - Date.parse(`${from}T12:00:00`)) / 86400000);
 }
 
 export type Correlation = { key: string; strength: number; params: Record<string, string | number> };

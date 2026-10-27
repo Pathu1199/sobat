@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { formatDayLabel } from '../core/date';
 import { planFrom, planVerdict } from '../core/plan';
+import { lostWords } from '../core/tileText';
 import type { WeightLog } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
@@ -77,7 +78,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
       {/* Change */}
       <Divider />
       <Row style={{ gap: 18 }}>
-        <Stat label={t('plan_lost')} value={`${plan.lostKg}`} color={plan.lostKg > 0 ? C.cyan : C.text} />
+        <Stat label={t(lostWords(plan.lostKg).key)} value={lostWords(plan.lostKg).kg} color={plan.lostKg > 0 ? C.cyan : C.text} />
         <Stat label={t('plan_to_go')} value={`${plan.toGoKg}`} />
         <Stat label={t('weight_pace')} value={plan.actualRate === null ? '—' : `${plan.actualRate}`} sub={`/ ${plan.targetRate}`} color={tone} />
       </Row>

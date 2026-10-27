@@ -6,6 +6,7 @@ import { useGame } from '../components/MountainCard';
 import { BADGE_ICON } from '../core/game';
 import { WeightSheet } from '../components/WeightSheet';
 import { formatDayLabel } from '../core/date';
+import { lostWords } from '../core/tileText';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
@@ -35,7 +36,7 @@ export default function Journey() {
         </Row>
         <Mountain tall progress={g.progress} startLabel={`${g.plan.startKg} kg`} nowLabel={`${g.plan.currentKg} kg`} goalLabel={`${g.plan.goalKg} kg`} camps={g.camps} trail={g.trail} />
         <Row style={{ gap: 18 }}>
-          <Stat label={t('plan_lost')} value={`${g.plan.lostKg}`} unit="kg" color={C.cyan} />
+          <Stat label={t(lostWords(g.plan.lostKg).key)} value={lostWords(g.plan.lostKg).kg} unit="kg" color={g.plan.lostKg > 0 ? C.cyan : undefined} />
           <Stat label={t('plan_to_go')} value={`${g.plan.toGoKg}`} unit="kg" />
           <Stat label={t('plan_goal')} value={`${g.plan.goalKg}`} unit="kg" />
         </Row>

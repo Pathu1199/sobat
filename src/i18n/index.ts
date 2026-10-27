@@ -1064,11 +1064,11 @@ const en: Dict = {
   plan_suggested_floor_here: 'This is low, under the safe minimum of {floor} kcal a day. Tap Balance to target below.',
   menu_plan_low_here: 'Too little for one day. Add food, or tap Balance to target below.',
   grocery_sub_week: 'What the plan for {week} needs, grouped for the market', grocery_half_range: '{from} to {to}',
-  progress_trend: 'Weight, smoothed', progress_change_3w: '{kg} kg in 3 weeks', progress_change_none: 'Weigh in over three weeks to see the change.',
+  progress_trend: 'Weight, smoothed', progress_change: '{kg} kg in {weeks} weeks', progress_change_none: 'Weigh in over three weeks to see the change.',
   progress_last_weighin: 'Last weigh-in {date}. Weigh in to see the change.',
   progress_goal_by: 'Goal {goal} kg around {date}', progress_goal: 'Goal {goal} kg', progress_goal_reached: 'Goal reached', progress_no_weight: 'No weigh-in yet. Tap Weight to add one.',
-  progress_logged: 'Full days', progress_logged_value: '{n} of 7', progress_prev_month: 'Previous month', progress_next_month: 'Next month', progress_day_hint: 'Opens this day on Today.',
-  progress_avg: 'Full days of the last 7: {avg} kcal a day on average, goal {goal}', progress_avg_none: 'No full day in the last 7 days yet.',
+  progress_logged: 'Full days', progress_logged_value: '{n} of {m}', progress_prev_month: 'Previous month', progress_next_month: 'Next month', progress_day_hint: 'Opens this day on Today.',
+  progress_avg: 'Complete days of the last 7: {avg} kcal a day on average, goal {goal}', progress_avg_none: 'No complete day in the last 7 days yet.',
   progress_badges: '{n} of {of} badges', progress_climb_a11y: '{climb}: {level}, {points}, {badges}',
   nut_had_a11y: '{name}, a good source eaten today. Shows foods with it.', nut_none_a11y: '{name}, no good source eaten yet today. Shows foods with it.',
   setup_step: 'Step {n} of 4', setup_lang_title: 'Choose your language', setup_about_title: 'About you', setup_weight_title: 'Your weight and goal',
@@ -1077,6 +1077,7 @@ const en: Dict = {
   setup_bad_weight: 'Weight in kilograms, between 30 and 300.', setup_bad_goal: 'Choose a goal from {min} to 300 kg: {min} kg is the lowest healthy weight for your height.',
   setup_target_line: 'Eat about {kcal} kcal a day, with about {protein} g of protein.', setup_goal_line: 'At {rate} kg a week you could reach {goal} kg around {date}.',
   setup_hold_line: 'For now the plan keeps your weight where it is.',
+  plan_gained: 'Gained',
 };
 
 const mr: Dict = {
@@ -2145,11 +2146,11 @@ const mr: Dict = {
   plan_suggested_floor_here: 'हे कमी आहे, दिवसाला किमान {floor} kcal सुरक्षित मर्यादेखाली. खाली "लक्ष्याप्रमाणे जुळवा" दाबा.',
   menu_plan_low_here: 'एका दिवसासाठी खूप कमी. पदार्थ जोडा, किंवा खाली "लक्ष्याप्रमाणे जुळवा" दाबा.',
   grocery_sub_week: '{week} च्या प्लॅनला काय लागेल, बाजाराप्रमाणे गट', grocery_half_range: '{from} ते {to}',
-  progress_trend: 'वजन, सरासरी', progress_change_3w: '3 आठवड्यांत {kg} किलो', progress_change_none: 'बदल दिसण्यासाठी तीन आठवडे वजन नोंदवा.',
+  progress_trend: 'वजन, सरासरी', progress_change: '{weeks} आठवड्यांत {kg} किलो', progress_change_none: 'बदल दिसण्यासाठी तीन आठवडे वजन नोंदवा.',
   progress_last_weighin: 'शेवटचं वजन {date}. बदल दिसण्यासाठी वजन नोंदवा.',
   progress_goal_by: 'लक्ष्य {goal} किलो, साधारण {date}', progress_goal: 'लक्ष्य {goal} किलो', progress_goal_reached: 'लक्ष्य गाठलं', progress_no_weight: 'अजून वजन नोंदलं नाही. नोंदवण्यासाठी वजनावर टॅप करा.',
-  progress_logged: 'पूर्ण दिवस', progress_logged_value: '7 पैकी {n}', progress_prev_month: 'मागचा महिना', progress_next_month: 'पुढचा महिना', progress_day_hint: 'हा दिवस आजच्या पानावर उघडतो.',
-  progress_avg: 'मागच्या 7 दिवसांतले पूर्ण दिवस: रोज सरासरी {avg} kcal, लक्ष्य {goal}', progress_avg_none: 'मागच्या 7 दिवसांत अजून एकही पूर्ण दिवस नाही.',
+  progress_logged: 'पूर्ण दिवस', progress_logged_value: '{m} पैकी {n}', progress_prev_month: 'मागचा महिना', progress_next_month: 'पुढचा महिना', progress_day_hint: 'हा दिवस आजच्या पानावर उघडतो.',
+  progress_avg: 'मागच्या 7 दिवसांतले नोंद पूर्ण झालेले दिवस: रोज सरासरी {avg} kcal, लक्ष्य {goal}', progress_avg_none: 'मागच्या 7 दिवसांत अजून एकाही दिवसाची नोंद पूर्ण नाही.',
   progress_badges: '{of} पैकी {n} बॅज', progress_climb_a11y: '{climb}: {level}, {points}, {badges}',
   nut_had_a11y: '{name}, आज चांगला स्रोत खाल्ला. ते असलेले पदार्थ दाखवतो.', nut_none_a11y: '{name}, आज अजून चांगला स्रोत खाल्ला नाही. ते असलेले पदार्थ दाखवतो.',
   setup_step: '4 पैकी पायरी {n}', setup_lang_title: 'तुमची भाषा निवडा', setup_about_title: 'तुमच्याबद्दल', setup_weight_title: 'तुमचं वजन आणि लक्ष्य',
@@ -2158,6 +2159,7 @@ const mr: Dict = {
   setup_bad_weight: 'वजन किलोमध्ये, 30 ते 300 दरम्यान.', setup_bad_goal: 'लक्ष्य {min} ते 300 किलो दरम्यान निवडा: तुमच्या उंचीसाठी {min} किलो हे सर्वात कमी योग्य वजन आहे.',
   setup_target_line: 'रोज साधारण {kcal} kcal खा, त्यात साधारण {protein} ग्रॅ प्रथिने.', setup_goal_line: 'आठवड्याला {rate} किलो या वेगाने तुम्ही साधारण {date} पर्यंत {goal} किलो गाठू शकता.',
   setup_hold_line: 'सध्या नियोजन तुमचं वजन आहे तसंच ठेवतं.',
+  plan_gained: 'वाढले',
 };
 
 const hi: Dict = {
@@ -3224,11 +3226,11 @@ const hi: Dict = {
   plan_suggested_floor_here: 'यह कम है, रोज़ के {floor} kcal की सुरक्षित न्यूनतम सीमा से नीचे. नीचे "लक्ष्य के हिसाब से मिलाएँ" दबाएँ.',
   menu_plan_low_here: 'एक दिन के लिए बहुत कम. खाना जोड़ें, या नीचे "लक्ष्य के हिसाब से मिलाएँ" दबाएँ.',
   grocery_sub_week: '{week} के प्लान को क्या चाहिए, बाज़ार के हिसाब से', grocery_half_range: '{from} से {to}',
-  progress_trend: 'वज़न, औसत', progress_change_3w: '3 हफ़्तों में {kg} किलो', progress_change_none: 'बदलाव देखने के लिए तीन हफ़्ते वज़न दर्ज करें.',
+  progress_trend: 'वज़न, औसत', progress_change: '{weeks} हफ़्तों में {kg} किलो', progress_change_none: 'बदलाव देखने के लिए तीन हफ़्ते वज़न दर्ज करें.',
   progress_last_weighin: 'आख़िरी वज़न {date}. बदलाव देखने के लिए वज़न दर्ज करें.',
   progress_goal_by: 'लक्ष्य {goal} किलो, लगभग {date}', progress_goal: 'लक्ष्य {goal} किलो', progress_goal_reached: 'लक्ष्य पूरा', progress_no_weight: 'अभी वज़न दर्ज नहीं. दर्ज करने के लिए वज़न पर टैप करें.',
-  progress_logged: 'पूरे दिन', progress_logged_value: '7 में से {n}', progress_prev_month: 'पिछला महीना', progress_next_month: 'अगला महीना', progress_day_hint: 'यह दिन आज वाले पन्ने पर खोलता है.',
-  progress_avg: 'पिछले 7 दिनों के पूरे दिन: रोज़ औसत {avg} kcal, लक्ष्य {goal}', progress_avg_none: 'पिछले 7 दिनों में अभी कोई पूरा दिन नहीं.',
+  progress_logged: 'पूरे दिन', progress_logged_value: '{m} में से {n}', progress_prev_month: 'पिछला महीना', progress_next_month: 'अगला महीना', progress_day_hint: 'यह दिन आज वाले पन्ने पर खोलता है.',
+  progress_avg: 'पिछले 7 दिनों के पूरे दर्ज दिन: रोज़ औसत {avg} kcal, लक्ष्य {goal}', progress_avg_none: 'पिछले 7 दिनों में अभी कोई दिन पूरा दर्ज नहीं.',
   progress_badges: '{of} में से {n} बैज', progress_climb_a11y: '{climb}: {level}, {points}, {badges}',
   nut_had_a11y: '{name}, आज अच्छा स्रोत खाया. जिन खानों में यह है, वे दिखाता है.', nut_none_a11y: '{name}, आज अभी कोई अच्छा स्रोत नहीं खाया. जिन खानों में यह है, वे दिखाता है.',
   setup_step: '4 में से चरण {n}', setup_lang_title: 'अपनी भाषा चुनें', setup_about_title: 'आपके बारे में', setup_weight_title: 'आपका वज़न और लक्ष्य',
@@ -3237,6 +3239,7 @@ const hi: Dict = {
   setup_bad_weight: 'वज़न किलो में, 30 से 300 के बीच.', setup_bad_goal: 'लक्ष्य {min} से 300 किलो के बीच चुनें: आपकी ऊँचाई के लिए {min} किलो सबसे कम सही वज़न है.',
   setup_target_line: 'रोज़ लगभग {kcal} kcal खाएँ, जिसमें लगभग {protein} ग्राम प्रोटीन हो.', setup_goal_line: 'हफ़्ते में {rate} किलो की रफ़्तार से आप लगभग {date} तक {goal} किलो तक पहुँच सकते हैं.',
   setup_hold_line: 'अभी योजना आपका वज़न जैसा है वैसा रखती है.',
+  plan_gained: 'बढ़ा',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

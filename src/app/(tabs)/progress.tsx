@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useGame } from '../../components/MountainCard';
 import { NutrientCard } from '../../components/NutrientCard';
@@ -12,12 +12,11 @@ import { TopBarActions } from '../../components/TopBarActions';
 import { WeightTrendCard } from '../../components/WeightTrendCard';
 import { mondayOf, weekDates } from '../../core/date';
 import { fullDays, oldProgressLink, recentIntake } from '../../core/progress';
-import { dayRecord } from '../../core/record';
-import { oneDecimal } from '../../core/tileText';
-import type { ISODate } from '../../core/types';
+import { lostWords, oneDecimal } from '../../core/tileText';
 import { stripSince } from '../../core/weekStrip';
 import { fill, makeT, numberText } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
+import { useRecordOn } from '../../store/useRecordOn';
 import { Bar, Btn, Card, Divider, Micro, Row, Small, StatQuad } from '../../ui/components';
 import { Sheet } from '../../ui/Sheet';
 import { C, F, lh, S } from '../../ui/theme';
@@ -57,19 +56,17 @@ function Progress() {
   const app = useApp();
   const router = useRouter();
   const g = useGame();
-  const { state, targets, today, menuOn } = app;
+  const { state, targets, today } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
   const [nutrition, setNutrition] = useState(false);
   const since = stripSince(state.profile.onboardedOn, state.meals, today);
-  const recordOn = useCallback(
-    (date: ISODate) => dayRecord({ date, today, menu: menuOn(date), routine: state.routine, meals: state.meals, skips: state.slotSkips, offDays: state.settings.offDays ?? [] }),
-    [today, menuOn, state.routine, state.meals, state.slotSkips, state.settings.offDays],
-  );
+  const recordOn = useRecordOn();
   const full = useMemo(() => fullDays(weekDates(mondayOf(today)), recordOn, today, since), [recordOn, today, since]);
-  // Free days, days with meals missing and days before the start left out, as on the plan screen's average; calories as logged.
+  // Every complete day, meals all skipped too; free days, days with meals missing and days before the start left out; calories as logged.
   const intake = useMemo(() => recentIntake({ today, since, meals: state.meals, recordOn }), [today, since, state.meals, recordOn]);
   const kg = t('unit_kg');
+  const lost = lostWords(g.plan.lostKg);
   const earned = g.badges.filter((b) => b.earned).length;
   const level = t(`level_${g.level.key}`);
   const points = fill(t('points_n'), { n: g.points });
@@ -90,9 +87,9 @@ function Progress() {
       <Card>
         <StatQuad
           items={[
-            { label: t('plan_lost'), value: `${oneDecimal(g.plan.lostKg)} ${kg}`, color: g.plan.lostKg > 0 ? C.green : undefined },
+            { label: t(lost.key), value: `${lost.kg} ${kg}`, color: g.plan.lostKg > 0 ? C.green : undefined },
             { label: t('plan_to_go'), value: `${oneDecimal(g.plan.toGoKg)} ${kg}` },
-            { label: t('progress_logged'), value: fill(t('progress_logged_value'), { n: full }) },
+            { label: t('progress_logged'), value: fill(t('progress_logged_value'), { n: full.n, m: full.of }) },
           ]}
         />
       </Card>

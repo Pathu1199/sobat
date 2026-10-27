@@ -3,10 +3,10 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { formatDayLabel, formatMonthYear } from '../core/date';
 import { monthMarks, monthSteps, shiftMonth } from '../core/progress';
-import { dayRecord } from '../core/record';
 import { stripSince } from '../core/weekStrip';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
+import { useRecordOn } from '../store/useRecordOn';
 import { Card } from '../ui/components';
 import { STRIP_MARGIN } from '../ui/stripGeometry';
 import { C, F, lh, S } from '../ui/theme';
@@ -30,18 +30,14 @@ const DAY_HEIGHT = 48;
 export function RecordCalendar() {
   const app = useApp();
   const router = useRouter();
-  const { state, today, menuOn } = app;
+  const { state, today } = app;
+  const recordOn = useRecordOn();
   const lang = state.profile.lang;
   const t = makeT(lang);
   const [month, setMonth] = useState(today.slice(0, 7));
   const since = stripSince(state.profile.onboardedOn, state.meals, today);
   const steps = monthSteps(month, today, since);
-  const weeks = useMemo(() => {
-    const meals = state.meals.filter((m) => m.date.startsWith(month));
-    const offDays = state.settings.offDays ?? [];
-    const recordOn = (date: string) => dayRecord({ date, today, menu: menuOn(date), routine: state.routine, meals, skips: state.slotSkips, offDays });
-    return monthMarks(month, recordOn, today, since);
-  }, [month, state.meals, state.routine, state.slotSkips, state.settings.offDays, today, menuOn, since]);
+  const weeks = useMemo(() => monthMarks(month, recordOn, today, since), [month, recordOn, today, since]);
 
   return (
     <Card>

@@ -7,6 +7,7 @@ import { breakStats } from '../../core/breaks';
 import { formatDayLabel, formatMinutes } from '../../core/date';
 import { changePct, isImprovement, summarize, type Metric, type Period } from '../../core/growth';
 import { breakStreak, findPatterns, weeklyStats } from '../../core/insights';
+import { weightChangeLine } from '../../core/tileText';
 import { hourlyProfile, longestStretchMinutes, minutesOn } from '../../core/usage';
 import { fill, makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
@@ -241,6 +242,9 @@ export default function GrowthScreen({ embedded }: { embedded?: boolean } = {}) 
     </View>
   );
 
+  // The week's weight change says the weeks it really spans: for someone who skipped a week it compares two weeks.
+  const weekChange = week.trend && week.trend.change7 !== null && week.trend.span7 !== null ? { kg: week.trend.change7, line: weightChangeLine(week.trend.change7, week.trend.span7) } : null;
+
   const weekCard = (
     <View style={{ gap: 10 }}>
       <SectionHeader title={t('week_summary')} meta={`${week.loggedDays}/7`} />
@@ -254,8 +258,8 @@ export default function GrowthScreen({ embedded }: { embedded?: boolean } = {}) 
             <Stat
               label={t('unit_kg')}
               value={`${week.trend.current}`}
-              delta={week.trend.change7 !== null ? `${week.trend.change7 > 0 ? '+' : ''}${week.trend.change7}` : undefined}
-              deltaGood={week.trend.change7 !== null ? week.trend.change7 <= 0 : undefined}
+              delta={weekChange ? fill(t(weekChange.line.key), weekChange.line.params ?? {}) : undefined}
+              deltaGood={weekChange ? weekChange.kg <= 0 : undefined}
             />
           ) : null}
         </Row>
@@ -369,9 +373,9 @@ function Stat({ label, value, delta, deltaGood }: { label: string; value: string
   return (
     <View style={{ minWidth: 76, flexGrow: 1, gap: 5 }}>
       <Micro>{label}</Micro>
-      <Row style={{ gap: 6, alignItems: 'baseline' }}>
+      <Row style={{ gap: 6, alignItems: 'baseline', flexWrap: 'wrap' }}>
         <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{value}</Text>
-        {delta ? <Text style={{ color: deltaGood ? C.cyan : C.amber, fontSize: F.small }}>{delta}</Text> : null}
+        {delta ? <Text style={{ flexShrink: 1, color: deltaGood ? C.cyan : C.amber, fontSize: F.small }}>{delta}</Text> : null}
       </Row>
     </View>
   );

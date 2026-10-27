@@ -71,10 +71,20 @@ describe("this week's full days", () => {
   it('counts the days the strip marks full: not a day of meals all skipped, not a free day, not one before the start', () => {
     const recs: Record<string, DayRecord> = { '2026-10-26': r('full'), '2026-10-27': r('full', true), '2026-10-28': r('full') };
     const recordOn = (d: string) => recs[d] ?? r('planned');
-    expect(fullDays(week, recordOn, TODAY, '2026-10-01')).toBe(2);
+    expect(fullDays(week, recordOn, TODAY, '2026-10-01').n).toBe(2);
     // The person started on Tuesday: Monday was before the start.
-    expect(fullDays(week, recordOn, TODAY, '2026-10-27')).toBe(1);
-    expect(fullDays(week, () => r('off'), TODAY, '2026-10-01')).toBe(0);
+    expect(fullDays(week, recordOn, TODAY, '2026-10-27').n).toBe(1);
+    expect(fullDays(week, () => r('off'), TODAY, '2026-10-01').n).toBe(0);
+  });
+
+  it('says of how many: the days of the week that can be full, free days and days before the start left out', () => {
+    const recs: Record<string, DayRecord> = { '2026-10-26': r('full'), '2026-10-28': r('full'), '2026-11-01': r('off') };
+    const recordOn = (d: string) => recs[d] ?? r('planned');
+    // Sunday is a free day: six days this week can be full, the days still to come too.
+    expect(fullDays(week, recordOn, TODAY, '2026-10-01')).toEqual({ n: 2, of: 6 });
+    // Started on Tuesday: Monday was never a day to fill.
+    expect(fullDays(week, recordOn, TODAY, '2026-10-27')).toEqual({ n: 1, of: 5 });
+    expect(fullDays(week, () => r('off'), TODAY, '2026-10-01')).toEqual({ n: 0, of: 0 });
   });
 });
 
@@ -90,7 +100,7 @@ describe('the last seven days on average', () => {
     expect(recentIntake({ today: TODAY, since: '2026-10-01', meals, recordOn })).toEqual({ avg: 1700, days: 3 });
   });
 
-  it('leaves out free days, days with meals missing, days of meals all skipped and days before the start', () => {
+  it('counts a day of meals all skipped, so skipping shows in the average; leaves out free days, days with meals missing and days before the start', () => {
     const meals = [meal('2026-10-24', 3000), meal('2026-10-25', 900), meal('2026-10-26', 100), meal('2026-10-27', 1800), meal('2026-10-23', 2200)];
     const recs: Record<string, DayRecord> = {
       '2026-10-23': r('full'),
@@ -100,9 +110,15 @@ describe('the last seven days on average', () => {
       '2026-10-27': r('full'),
     };
     const recordOn = (d: string) => recs[d] ?? r('empty');
-    expect(recentIntake({ today: TODAY, since: '2026-10-01', meals, recordOn })).toEqual({ avg: 2000, days: 2 });
+    // The 23rd, the 26th (every meal skipped, a 100 kcal drink) and the 27th: (2200 + 100 + 1800) / 3.
+    expect(recentIntake({ today: TODAY, since: '2026-10-01', meals, recordOn })).toEqual({ avg: 1367, days: 3 });
     // Started on the 24th: the 23rd is before the start.
-    expect(recentIntake({ today: TODAY, since: '2026-10-24', meals, recordOn })).toEqual({ avg: 1800, days: 1 });
+    expect(recentIntake({ today: TODAY, since: '2026-10-24', meals, recordOn })).toEqual({ avg: 950, days: 2 });
+  });
+
+  it('a day of meals all skipped and nothing eaten counts as nothing eaten', () => {
+    const recordOn = (d: string) => (d === TODAY ? r('full', true) : d === '2026-10-27' ? r('full') : r('empty'));
+    expect(recentIntake({ today: TODAY, since: '2026-10-01', meals: [meal('2026-10-27', 1600)], recordOn })).toEqual({ avg: 800, days: 2 });
   });
 
   it('is nothing without a full day', () => {

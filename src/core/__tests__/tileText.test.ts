@@ -13,6 +13,7 @@ import {
   breathePhase,
   breatheWords,
   clockText,
+  lostWords,
   NO_VALUE,
   shortDecimal,
   signedKg,
@@ -23,8 +24,11 @@ import {
   waterLabel,
   waterMlOn,
   waterWords,
+  weightChangeLine,
   weightWords,
+  shownWeight,
 } from '../tileText';
+import { weightTrend } from '../insights';
 import type { ActivityLog, Lang, Meal } from '../types';
 import { shownWords } from '../../ui/tileWords';
 
@@ -115,18 +119,54 @@ describe('no value yet', () => {
 describe('weight', () => {
   const w = (date: string, kg: number) => ({ date, kg });
 
-  it('shows the latest weigh-in and the change over the last three weeks, with a real minus sign', () => {
+  it('shows the weight smoothed over a week and its change over three weeks, with a real minus sign', () => {
     expect(weightWords([w('2026-10-06', 100), w('2026-10-13', 99.2), w('2026-10-27', 98.4)], 80, '2026-10-27')).toEqual({
       parts: [{ num: '98.4', unitKey: 'unit_kg' }],
       line: { key: 'tile_weight_change', params: { kg: '−1.6', weeks: 3 } },
     });
-    expect(weightWords([w('2026-10-20', 99), w('2026-10-27', 98.4)], 80, '2026-10-27').line).toEqual({ key: 'tile_weight_change_1', params: { kg: '−0.6' } });
   });
 
-  it('shows the goal when there is nothing to compare in the last three weeks, and a dash with no weigh-in', () => {
-    expect(weightWords([w('2026-09-20', 101), w('2026-10-27', 98.4)], 80, '2026-10-27').line).toEqual({ key: 'tile_weight_goal', params: { kg: '80' } });
+  it('is the same weight as the trend on Progress, not the last weigh-in alone', () => {
+    // 99 six days before and 98.4 today: the week smoothed, later days counting more, is 98.5.
+    const weights = [w('2026-10-21', 99), w('2026-10-27', 98.4)];
+    expect(weightWords(weights, 80, '2026-10-27').parts).toEqual([{ num: '98.5', unitKey: 'unit_kg' }]);
+    expect(shownWeight(weights, '2026-10-27')!.kg).toBe(weightTrend(weights, '2026-10-27')!.current);
+  });
+
+  it('says the weeks the change really spans, never a fixed three', () => {
+    // The weigh-in it compares with is five weeks and two days before the latest.
+    expect(weightWords([w('2026-09-20', 101), w('2026-10-27', 98.4)], 80, '2026-10-27').line).toEqual({ key: 'tile_weight_change', params: { kg: '−2.6', weeks: 5 } });
+    expect(shownWeight([w('2026-09-15', 101), w('2026-10-27', 98.4)], '2026-10-27')!.change).toEqual({ kg: -2.6, weeks: 6 });
+  });
+
+  it('shows the goal when there is nothing three weeks back to compare, and a dash with no weigh-in', () => {
+    expect(weightWords([w('2026-10-20', 99), w('2026-10-27', 98.4)], 80, '2026-10-27').line).toEqual({ key: 'tile_weight_goal', params: { kg: '80' } });
+    expect(weightWords([w('2026-08-20', 101), w('2026-10-27', 98.4)], 80, '2026-10-27').line).toEqual({ key: 'tile_weight_goal', params: { kg: '80' } });
     expect(weightWords([], 79.5, '2026-10-27')).toEqual({ parts: [{ num: NO_VALUE }], line: { key: 'tile_weight_goal', params: { kg: '79.5' } }, empty: { key: 'tile_no_weight' } });
     expect(weightWords([w('2026-10-27', 98.4)], 80, '2026-10-27').empty).toBeUndefined();
+  });
+
+  it('goes quiet when the latest weigh-in is more than thirty days old: the goal, not a change', () => {
+    const old = [w('2026-07-25', 112), w('2026-08-20', 110)];
+    expect(shownWeight(old, '2026-10-27')).toEqual({ kg: 110, change: null, asOf: '2026-08-20', stale: true });
+    expect(weightWords(old, 80, '2026-10-27')).toEqual({ parts: [{ num: '110.0', unitKey: 'unit_kg' }], line: { key: 'tile_weight_goal', params: { kg: '80' } } });
+    // The same weigh-ins seen nearer the time show the change.
+    expect(shownWeight(old, '2026-08-25')!.change).toEqual({ kg: -2, weeks: 4 });
+    expect(shownWeight([], '2026-10-27')).toBeNull();
+  });
+
+  it('words a change by the weeks it spans: a week up to ten days, then whole weeks', () => {
+    expect(weightChangeLine(-0.7, 7)).toEqual({ key: 'tile_weight_change_1', params: { kg: '−0.7' } });
+    expect(weightChangeLine(-0.5, 10)).toEqual({ key: 'tile_weight_change_1', params: { kg: '−0.5' } });
+    expect(weightChangeLine(0.4, 11)).toEqual({ key: 'tile_weight_change', params: { kg: '+0.4', weeks: 2 } });
+    expect(weightChangeLine(-3, 42)).toEqual({ key: 'tile_weight_change', params: { kg: '−3.0', weeks: 6 } });
+  });
+
+  it('says Gained, never a negative Lost, for someone who weighs more than at the start', () => {
+    expect(lostWords(2)).toEqual({ key: 'plan_lost', kg: '2.0' });
+    expect(lostWords(0)).toEqual({ key: 'plan_lost', kg: '0.0' });
+    expect(lostWords(-1.24)).toEqual({ key: 'plan_gained', kg: '1.2' });
+    for (const lang of LANGS) expect(makeT(lang)('plan_gained')).not.toBe('plan_gained');
   });
 
   it('signs a change: a minus sign, a plus, and no sign at zero', () => {
@@ -150,6 +190,7 @@ describe('the short line in Marathi and Hindi', () => {
     walkWords(0, 120),
     sleepWords(null, 450),
     weightWords([w('2026-10-06', 110), w('2026-10-27', 99.5)], 80, '2026-10-27'),
+    weightWords([w('2026-09-15', 110), w('2026-10-27', 99.5)], 80, '2026-10-27'),
     weightWords([w('2026-10-20', 110), w('2026-10-27', 99.5)], 80, '2026-10-27'),
     weightWords([w('2026-09-01', 110)], 105.5, '2026-10-27'),
     streakWords(90, 90),
@@ -171,7 +212,7 @@ describe('the short line in Marathi and Hindi', () => {
     const three = shownWords(weightWords([w('2026-10-06', 110), w('2026-10-27', 99.5)], 80, '2026-10-27'), makeT('mr')).line;
     expect(three).toContain('−10.5');
     expect(three).toContain('3');
-    expect(shownWords(weightWords([w('2026-10-20', 99), w('2026-10-27', 98.4)], 80, '2026-10-27'), makeT('hi')).line).toContain('−0.6');
+    expect(shownWords(weightWords([w('2026-10-06', 99), w('2026-10-27', 98.4)], 80, '2026-10-27'), makeT('hi')).line).toContain('−0.6');
   });
 });
 
