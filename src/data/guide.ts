@@ -37,7 +37,7 @@ const en: GuideSection[] = [
     title: 'What to avoid, and what to have instead',
     lines: [
       'Your avoid list: milk tea with sugar (black tea instead), cashews (badam and akrod instead), shev, namkeen, biscuits and fried bhaji (roasted chana or plain bhel instead).',
-      'When you log one of these, the app says so and offers the swap. Take it when you can, and log it honestly when you cannot.',
+      'When you log one of these, the app says so and offers something to have instead. Take it when you can, and log it honestly when you cannot.',
       'Edit the list on the routine screen. A rule you set yourself is the only kind that holds.',
       'Nothing is banned. The point is fewer times, not never.',
     ],
