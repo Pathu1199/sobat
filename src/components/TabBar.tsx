@@ -3,99 +3,55 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { barItems, type BarItem } from '../core/bar';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { C, F, lh, lift, S } from '../ui/theme';
 
 /**
- * A hand-rolled tab bar: Today · Growth · [+] · Move · Mind.
- *
- * The stock one clips its labels on the web: it gives the text a 9px box with
- * overflow hidden, which is fine for Latin but cuts the marks above and below
- * Devanagari. Owning the layout also lets the centre button sit proud of the
- * bar. Coach is a hidden route reached from the top bar, so it is skipped here.
+ * The bar: Today, the extra tabs the person chose (Progress unless changed),
+ * ➕ in the middle, and Me. core/bar.ts sets the order, so the sidebar on a
+ * wide screen shows the same list. ➕ is a button, not a tab: it adds food
+ * for the day Today is showing. Hand-rolled because the stock bar gives its
+ * label a box that clips Devanagari marks on the web.
  */
-type TabIconProps = { focused: boolean; color: string; size: number };
+type IconName = keyof typeof Ionicons.glyphMap;
+type Route = { key: string; name: string; params?: object };
 
 type TabBarProps = {
-  state: { index: number; routes: { key: string; name: string; params?: object }[] };
-  descriptors: Record<string, { options: { title?: string; tabBarIcon?: (p: TabIconProps) => React.ReactNode; tabBarAccessibilityLabel?: string } }>;
+  state: { index: number; routes: Route[] };
   navigation: {
     emit: (e: { type: 'tabPress'; target: string; canPreventDefault: true }) => { defaultPrevented: boolean };
     navigate: (name: string, params?: object) => void;
   };
 };
 
-const HIDDEN = new Set(['coach', 'log', 'growth', 'fit', 'mind']);
-const CENTRE_AFTER = 'food';
+/** The date Today is showing, from its ?date= param; undefined while it shows today. */
+export function viewedDate(routes: Route[]): string | undefined {
+  const params = routes.find((r) => r.name === 'index')?.params as { date?: unknown } | undefined;
+  return typeof params?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : undefined;
+}
 
-export function TabBar({ state, descriptors, navigation }: TabBarProps) {
+export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { state: app } = useApp();
-  const t = makeT(app.profile.lang);
+  const app = useApp();
+  const t = makeT(app.state.profile.lang);
+  const focused = state.routes[state.index]?.name;
 
-  const onLog = state.routes[state.index]?.name === 'log';
-  const slots: React.ReactNode[] = [];
-  state.routes.forEach((route, index) => {
-    if (HIDDEN.has(route.name)) return;
-    const { options } = descriptors[route.key];
-    const focused = state.index === index;
-    const color = focused ? C.accentText : C.textFaint;
-    const label = typeof options.title === 'string' ? options.title : route.name;
+  function open(item: BarItem) {
+    const route = state.routes.find((r) => r.name === item.route);
+    if (!route) return;
+    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    if (focused !== route.name && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+  }
 
-    slots.push(
-      <Pressable
-        key={route.key}
-        accessibilityRole="button"
-        aria-selected={focused || undefined}
-        accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
-        onPress={() => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-          if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
-        }}
-        style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'flex-start', gap: 3, paddingHorizontal: 2, opacity: pressed ? 0.6 : 1 })}>
-        {/* The active tab sits on a 48 × 32 tinted pill: seen before it is read. */}
-        <View style={{ width: 48, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: focused ? C.accentDim : 'transparent' }}>
-          {options.tabBarIcon ? options.tabBarIcon({ focused, color, size: 24 }) : null}
-        </View>
-        <Text
-          numberOfLines={1}
-          style={{ color: focused ? C.accentText : C.textFaint, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500', includeFontPadding: false, textAlign: 'center' }}>
-          {label}
-        </Text>
-      </Pressable>,
-    );
+  function add() {
+    const date = viewedDate(state.routes);
+    router.push(date ? { pathname: '/log', params: { date } } : '/log');
+  }
 
-    if (route.name === CENTRE_AFTER) {
-      slots.push(
-        <View key="centre" style={{ flex: 1, alignItems: 'center' }}>
-          <Pressable
-            onPress={() => router.push('/log')}
-            accessibilityRole="button"
-            accessibilityLabel={t('tab_log')}
-            style={({ pressed }) => ({
-              width: 60,
-              height: 60,
-              borderRadius: 30,
-              marginTop: -26,
-              backgroundColor: onLog ? C.cyan : C.accent,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 5,
-              borderColor: C.bgAlt,
-              ...lift(2),
-              shadowColor: C.accent,
-              shadowOpacity: 0.4,
-              transform: [{ scale: pressed ? 0.94 : 1 }],
-            })}>
-            <Ionicons name="add" size={30} color={C.onAccent} />
-          </Pressable>
-        </View>,
-      );
-    }
-  });
-
+  const bottom = Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6);
   return (
     <View
       style={{
@@ -105,11 +61,59 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
         borderTopColor: C.border,
         ...lift(2),
         shadowOffset: { width: 0, height: -4 },
-        minHeight: 64 + Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6),
+        minHeight: 64 + bottom,
         paddingTop: 8,
-        paddingBottom: Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6),
+        paddingBottom: bottom,
       }}>
-      {slots}
+      {barItems(app.state.settings.tabs).map((item) =>
+        item.route === null ? (
+          <View key={item.key} style={{ flex: 1, alignItems: 'center' }}>
+            <Pressable
+              onPress={add}
+              accessibilityRole="button"
+              accessibilityLabel={t(item.labelKey)}
+              style={({ pressed }) => ({
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                marginTop: -26,
+                backgroundColor: C.accent,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 5,
+                borderColor: C.bgAlt,
+                ...lift(2),
+                shadowColor: C.accent,
+                shadowOpacity: 0.4,
+                transform: [{ scale: pressed ? 0.94 : 1 }],
+              })}>
+              <Ionicons name="add" size={30} color={C.onAccent} />
+            </Pressable>
+          </View>
+        ) : (
+          <TabButton key={item.key} item={item} focused={focused === item.route} label={t(item.labelKey)} onPress={() => open(item)} />
+        ),
+      )}
     </View>
+  );
+}
+
+function TabButton({ item, focused, label, onPress }: { item: BarItem; focused: boolean; label: string; onPress: () => void }) {
+  const color = focused ? C.accentText : C.textFaint;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      aria-selected={focused || undefined}
+      accessibilityLabel={label}
+      style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'flex-start', gap: 3, paddingHorizontal: 2, opacity: pressed ? 0.6 : 1 })}>
+      {/* The active tab sits on a 48 × 32 tinted pill: seen before it is read. */}
+      <View style={{ width: 48, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: focused ? C.accentDim : 'transparent' }}>
+        <Ionicons name={item.icon as IconName} size={24} color={color} />
+      </View>
+      <Text numberOfLines={1} style={{ color, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500', includeFontPadding: false, textAlign: 'center' }}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }

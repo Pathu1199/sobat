@@ -1022,6 +1022,10 @@ const en: Dict = {
   tile_bottle_size: 'Bottle size', tile_other_amount: 'Another amount', tile_amount_ml: 'Amount in ml', tile_amount_min: 'Minutes',
   tile_no_sleep: 'No check-in yet', tile_no_weight: 'No weigh-in yet',
   tile_unit_ml: 'ml',
+  tab_me: 'Me', tab_plan: 'Plan',
+  me_coach: 'Coach chat', me_body_sub: 'Move, yoga, sleep, mind', me_plan: 'Diet plan and eating pattern', me_grocery: 'Grocery and recipes',
+  me_saved: 'Saved meals', me_saved_empty: 'Meals you save after logging them show here.', me_saved_delete: 'Delete {name}',
+  add_bar: '{n} items · {kcal} kcal', add_bar_one: '1 item · {kcal} kcal',
 };
 
 const mr: Dict = {
@@ -2048,6 +2052,10 @@ const mr: Dict = {
   tile_bottle_size: 'बाटलीचा आकार', tile_other_amount: 'दुसरं प्रमाण', tile_amount_ml: 'प्रमाण (ml)', tile_amount_min: 'मिनिटं',
   tile_no_sleep: 'अजून झोपेची नोंद नाही', tile_no_weight: 'अजून वजन नोंदवलं नाही',
   tile_unit_ml: 'ml',
+  tab_me: 'मी', tab_plan: 'नियोजन',
+  me_coach: 'कोचशी गप्पा', me_body_sub: 'हालचाल, योग, झोप, मन', me_plan: 'आहार नियोजन आणि खाण्याची पद्धत', me_grocery: 'किराणा आणि रेसिपी',
+  me_saved: 'जतन केलेली जेवणं', me_saved_empty: 'नोंदवल्यावर जतन केलेली जेवणं इथे दिसतात.', me_saved_delete: '{name} काढा',
+  add_bar: '{n} पदार्थ · {kcal} kcal', add_bar_one: '1 पदार्थ · {kcal} kcal',
 };
 
 const hi: Dict = {
@@ -3072,6 +3080,10 @@ const hi: Dict = {
   tile_bottle_size: 'बोतल का आकार', tile_other_amount: 'दूसरी मात्रा', tile_amount_ml: 'मात्रा (ml)', tile_amount_min: 'मिनट',
   tile_no_sleep: 'अभी नींद दर्ज नहीं', tile_no_weight: 'अभी वज़न दर्ज नहीं',
   tile_unit_ml: 'ml',
+  tab_me: 'मैं', tab_plan: 'प्लान',
+  me_coach: 'कोच से बात', me_body_sub: 'हलचल, योग, नींद, मन', me_plan: 'डाइट प्लान और खाने का पैटर्न', me_grocery: 'किराना और विधियाँ',
+  me_saved: 'सहेजे हुए खाने', me_saved_empty: 'दर्ज करने के बाद सहेजे गए खाने यहाँ दिखते हैं.', me_saved_delete: '{name} हटाएँ',
+  add_bar: '{n} चीज़ें · {kcal} kcal', add_bar_one: '1 चीज़ · {kcal} kcal',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
