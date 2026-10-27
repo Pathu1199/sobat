@@ -124,19 +124,26 @@ export function lineGrams(line: BasketLine): number {
 }
 
 /**
- * What a line's grams box shows: what is typed, while it stands for the
- * line, else the line's grams. Typed text that is an amount stands while the
- * line holds those grams; text that is not one yet (half typed, "12abc", too
- * little to count) stands until the line changes some other way, so a − or +
- * pressed with the box still focused shows the new grams. `draft.grams` is
- * the line's grams when it was typed.
+ * What a line's grams box shows: what is typed, while it stands for the line,
+ * else the line's grams. Typed text that is an amount stands while the line
+ * holds those grams; text that is not one yet (half typed, "12abc", too
+ * little to count) stands as typed until the row drops it (gramsDraftAfter).
  */
-export function gramsText(draft: { text: string; grams: number } | null, line: BasketLine): string {
+export function gramsText(draft: string | null, line: BasketLine): string {
   const grams = lineGrams(line);
   if (draft === null) return String(grams);
-  const count = countFromGrams(draft.text, line.gramsPerUnit);
-  const stands = count !== null ? lineGrams({ ...line, count }) === grams : draft.grams === grams;
-  return stands ? draft.text : String(grams);
+  const count = countFromGrams(draft, line.gramsPerUnit);
+  return count === null || lineGrams({ ...line, count }) === grams ? draft : String(grams);
+}
+
+/**
+ * What a line's grams box holds after the person does something in the row:
+ * the text while typing; nothing after a − or +, opening the food, or leaving
+ * the box, so the box shows the line's grams and typing from before never
+ * comes back.
+ */
+export function gramsDraftAfter(event: { typed: string } | 'step' | 'open' | 'leave'): string | null {
+  return typeof event === 'object' ? event.typed : null;
 }
 
 /** The basket as meal items with database calories. A food the person made up stays estimated; a food that is gone is dropped. */

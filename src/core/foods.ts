@@ -1,4 +1,5 @@
 import Fuse from 'fuse.js';
+import { t } from '../i18n';
 import { kcalForGrams } from './nutrition';
 import type { Diet, FoodItem, ISODate, Lang, Meal, MealItem } from './types';
 
@@ -12,6 +13,12 @@ export function portionLabel(p: FoodItem['portions'][number], lang: Lang): strin
   if (lang === 'mr') return p.label_mr || p.label_en;
   if (lang === 'hi') return p.label_hi || p.label_en;
   return p.label_en;
+}
+
+/** A measure's name in the person's language: one of the food's own portions, else the household measure ("1 big spoon ≈ 15 g"). */
+export function measureName(food: FoodItem, unit: string, lang: Lang): string {
+  const own = food.portions.find((p) => p.unit === unit);
+  return own ? portionLabel(own, lang) : t(lang, `measure_${unit}`);
 }
 
 export function defaultPortion(food: FoodItem) {

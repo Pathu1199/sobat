@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { countFromGrams, formatQty, sheetStep } from '../core/basket';
-import { defaultPortion, foodName, measuresFor, portionLabel, styleOf } from '../core/foods';
+import { defaultPortion, foodName, measureName, measuresFor, styleOf } from '../core/foods';
 import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem, Lang } from '../core/types';
 import { FOOD_IMAGES } from '../data/foodImages';
@@ -79,10 +79,7 @@ export function FoodDetailSheet({
   const amount = gramsDraft === null ? count : (countFromGrams(gramsDraft, m.grams) ?? 0);
   const grams = Math.round(m.grams * amount);
   const n = kcalForGrams(f, grams);
-  const options = measuresFor(f).map((x) => ({
-    ...x,
-    label: x.own ? portionLabel(f.portions.find((p) => p.unit === x.unit)!, lang) : t(`measure_${x.unit}`),
-  }));
+  const options = measuresFor(f).map((x) => ({ ...x, label: measureName(f, x.unit, lang) }));
 
   // − is off at one step, or below it for a typed amount, where it would leave the amount as it is.
   const lessDoesNothing = sheetStep(amount, m.unit, -1) >= amount;

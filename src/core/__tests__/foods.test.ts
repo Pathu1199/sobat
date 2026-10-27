@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { findFoods, foodIcon, foodsForDiet, isCountable, itemName, MEASURES, measuresFor, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
+import { findFoods, foodIcon, foodsForDiet, isCountable, itemName, MEASURES, measureName, measuresFor, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
 import type { FoodItem, Meal, MealItem } from '../types';
 import { isSourceOf, nutrientSourcesEaten } from '../nutrients';
 import { RECIPES } from '../../data/recipes';
@@ -215,5 +215,22 @@ describe('itemName', () => {
     expect(itemName({ name_en: 'Home dal', name_mr: 'घरचं वरण' }, ALL, 'hi')).toBe('Home dal');
     expect(itemName({ name_en: 'Home dal', name_mr: 'घरचं वरण' }, ALL, 'mr')).toBe('घरचं वरण');
     expect(itemName({ name_en: 'Home dal', name_mr: 'घरचं वरण' }, ALL, 'en')).toBe('Home dal');
+  });
+});
+
+describe('measureName', () => {
+  const ALL = foodsJson as unknown as FoodItem[];
+  const poha = ALL.find((f) => f.id === 'poha')!;
+
+  it("names one of the food's own portions in the chosen language", () => {
+    expect(measureName(poha, 'katori', 'en')).toBe('1 katori (150 g)');
+    expect(measureName(poha, 'plate', 'mr')).toBe('१ ताट (२०० ग्रॅ)');
+    expect(measureName(poha, 'katori', 'hi')).toBe('1 कटोरी (150 ग्राम)');
+  });
+
+  it('names a household measure the food does not have from the word list, in the chosen language', () => {
+    expect(measureName(poha, 'spoon_big', 'en')).toBe('1 big spoon ≈ 15 g');
+    expect(measureName(poha, 'spoon_big', 'mr')).toBe('१ मोठा चमचा ≈ १५ ग्रॅ');
+    expect(measureName(poha, 'spoon_big', 'hi')).toBe('1 बड़ा चम्मच ≈ 15 ग्राम');
   });
 });

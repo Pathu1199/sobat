@@ -8,6 +8,7 @@ import {
   basketTotals,
   countFromGrams,
   formatQty,
+  gramsDraftAfter,
   gramsText,
   itemsMeal,
   lineGrams,
@@ -172,20 +173,37 @@ describe('the grams box in the add sheet', () => {
 
   it('keeps what is typed while the line holds those grams, exactly as typed', () => {
     const typed = setGrams([poha], 'poha', 100)[0];
-    expect(gramsText({ text: '100', grams: 150 }, typed)).toBe('100');
-    expect(gramsText({ text: '100.0', grams: 150 }, typed)).toBe('100.0');
+    expect(gramsText('100', typed)).toBe('100');
+    expect(gramsText('100.0', typed)).toBe('100.0');
   });
 
-  it('keeps text that is not an amount yet ("", "12abc", too little) until the line changes some other way', () => {
-    expect(gramsText({ text: '', grams: 150 }, poha)).toBe('');
-    expect(gramsText({ text: '12abc', grams: 150 }, poha)).toBe('12abc');
-    expect(gramsText({ text: '0.1', grams: 150 }, poha)).toBe('0.1');
+  it('keeps text that is not an amount yet ("", "12abc", too little) as typed, until the row drops it', () => {
+    expect(gramsText('', poha)).toBe('');
+    expect(gramsText('12abc', poha)).toBe('12abc');
+    expect(gramsText('12abc', { ...poha, count: 1.5 })).toBe('12abc');
+    expect(gramsText('0.1', poha)).toBe('0.1');
   });
 
-  it('shows the new grams after a − or + while the box still has the typing in it', () => {
+  it('shows the grams the line holds when a typed amount no longer stands for it', () => {
     const typed = setGrams([poha], 'poha', 100)[0];
-    expect(gramsText({ text: '100', grams: 150 }, { ...typed, count: 1 })).toBe('150');
-    expect(gramsText({ text: '', grams: 150 }, { ...poha, count: 1.5 })).toBe('225');
+    expect(gramsText('100', { ...typed, count: 1 })).toBe('150');
+  });
+
+  it('+ then −: the row drops the typing on each, so the box shows the new grams and the old typing never comes back', () => {
+    let draft = gramsDraftAfter({ typed: '12abc' });
+    let line = poha;
+    expect(gramsText(draft, line)).toBe('12abc');
+    draft = gramsDraftAfter('step');
+    line = setCount([line], 'poha', stepCount(line.count, line.unit, 1))[0];
+    expect(gramsText(draft, line)).toBe('225');
+    draft = gramsDraftAfter('step');
+    line = setCount([line], 'poha', stepCount(line.count, line.unit, -1))[0];
+    expect(gramsText(draft, line)).toBe('150');
+  });
+
+  it('opening the food or leaving the box drops the typing too', () => {
+    expect(gramsDraftAfter('open')).toBeNull();
+    expect(gramsDraftAfter('leave')).toBeNull();
   });
 });
 

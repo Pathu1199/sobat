@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { formatQty, gramsText, lineGrams, parseGrams, type BasketLine } from '../core/basket';
-import { defaultPortion, foodName, portionLabel } from '../core/foods';
+import { formatQty, gramsDraftAfter, gramsText, lineGrams, parseGrams, type BasketLine } from '../core/basket';
+import { defaultPortion, foodName, measureName } from '../core/foods';
 import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem, Lang } from '../core/types';
 import { fill, makeT } from '../i18n';
@@ -11,17 +11,13 @@ import { QtyStepper } from '../ui/QtyStepper';
 import { C, F, lh, S } from '../ui/theme';
 import { FoodThumb } from './FoodDetailSheet';
 
-/** A measure's name: one of the food's own portions, else the household measure. */
-function measureName(food: FoodItem, unit: string, t: (key: string) => string, lang: Lang): string {
-  const own = food.portions.find((p) => p.unit === unit);
-  return own ? portionLabel(own, lang) : t(`measure_${unit}`);
-}
-
 /**
  * One food in the add sheet. Not in the meal yet: its usual portion and
- * calories, and a + a finger wide. In the meal: a − / + with any count and a
- * grams box under it; − at the last step takes the food out. The name opens
- * the food sheet to pick another measure.
+ * calories, and a + a finger wide. In the meal: how many of which measure and
+ * the line's calories, a − / + with any count and a grams box under it; − at
+ * the last step takes the food out. The name opens the food sheet to pick
+ * another measure; a screen reader hears the words shown, calories included.
+ * What is typed in the grams box lives here, so − and + can drop it.
  */
 export function FoodRow({
   food,
@@ -41,18 +37,28 @@ export function FoodRow({
   onOpen: () => void;
 }) {
   const t = makeT(lang);
+  const [draft, setDraft] = useState<string | null>(null);
   const name = foodName(food, lang);
   const p = defaultPortion(food);
   const grams = line ? lineGrams(line) : p?.grams ?? 100;
-  const measure = line ? measureName(food, line.unit, t, lang) : p ? portionLabel(p, lang) : '';
   const kcal = kcalForGrams(food, grams).kcal;
+  const measure = line ? `${formatQty(line.count)} × ${measureName(food, line.unit, lang)}` : p ? measureName(food, p.unit, lang) : '';
+  const sub = measure ? `${measure} · ${kcal} kcal` : `${kcal} kcal`;
+  const step = (by: 1 | -1) => {
+    setDraft(gramsDraftAfter('step'));
+    onStep(by);
+  };
   return (
     <View style={{ paddingVertical: 6, gap: 6 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <Pressable
-          onPress={onOpen}
+          onPress={() => {
+            setDraft(gramsDraftAfter('open'));
+            onOpen();
+          }}
           accessibilityRole="button"
-          accessibilityLabel={fill(t('add_open_food'), { food: name })}
+          accessibilityLabel={`${name}, ${sub}`}
+          accessibilityHint={t('add_open_food')}
           style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch, opacity: pressed ? 0.7 : 1 })}>
           <FoodThumb food={food} lang={lang} size={40} />
           <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
@@ -60,7 +66,7 @@ export function FoodRow({
               {name}
             </Text>
             <Text numberOfLines={1} style={{ color: C.textFaint, fontSize: F.small, lineHeight: lh(F.small) }}>
-              {measure ? `${measure} · ${kcal} kcal` : `${kcal} kcal`}
+              {sub}
             </Text>
           </View>
         </Pressable>
@@ -76,8 +82,17 @@ export function FoodRow({
       </View>
       {line ? (
         <Row style={{ gap: 12, paddingLeft: 52 }}>
-          <QtyStepper value={formatQty(line.count)} onMinus={() => onStep(-1)} onPlus={() => onStep(1)} minusLabel={fill(t('qty_less'), { food: name })} plusLabel={fill(t('qty_more'), { food: name })} />
-          <GramsBox line={line} onChange={onGrams} label={fill(t('add_grams_of'), { food: name })} />
+          <QtyStepper value={formatQty(line.count)} onMinus={() => step(-1)} onPlus={() => step(1)} minusLabel={fill(t('qty_less'), { food: name })} plusLabel={fill(t('qty_more'), { food: name })} />
+          <GramsBox
+            text={gramsText(draft, line)}
+            onType={(v) => {
+              setDraft(gramsDraftAfter({ typed: v }));
+              const g = parseGrams(v);
+              if (g !== null) onGrams(g);
+            }}
+            onLeave={() => setDraft(gramsDraftAfter('leave'))}
+            label={fill(t('add_grams_of'), { food: name })}
+          />
         </Row>
       ) : null}
     </View>
@@ -86,21 +101,17 @@ export function FoodRow({
 
 /**
  * The grams of one line, typed; the count follows, and the grams stay exactly
- * as typed. While typing, the box keeps what is typed (gramsText), and only a
- * plain amount (parseGrams) changes the line, so "12abc" changes nothing.
+ * as typed. Only a plain amount (parseGrams) changes the line, so "12abc"
+ * changes nothing. A tap selects what is there, so typing replaces it.
  */
-function GramsBox({ line, onChange, label }: { line: BasketLine; onChange: (grams: number) => void; label: string }) {
-  const [draft, setDraft] = useState<{ text: string; grams: number } | null>(null);
+function GramsBox({ text, onType, onLeave, label }: { text: string; onType: (v: string) => void; onLeave: () => void; label: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
       <TextInput
-        value={gramsText(draft, line)}
-        onChangeText={(v) => {
-          setDraft({ text: v, grams: lineGrams(line) });
-          const g = parseGrams(v);
-          if (g !== null) onChange(g);
-        }}
-        onBlur={() => setDraft(null)}
+        value={text}
+        onChangeText={onType}
+        onBlur={onLeave}
+        selectTextOnFocus
         keyboardType="numeric"
         accessibilityLabel={label}
         style={{ width: 76, minHeight: S.touch, paddingHorizontal: 10, borderRadius: 12, borderWidth: S.hairline, borderColor: C.border, backgroundColor: C.cardAlt, color: C.text, fontSize: F.body, textAlign: 'right' }}

@@ -24,6 +24,14 @@ describe('addRows', () => {
     expect(kinds(addRows({ ...base, query: 'zzz' }))).toEqual(['empty']);
   });
 
+  it('logging with nothing planned, nothing yesterday and no saved meals: recent foods, then photo and barcode', () => {
+    expect(kinds(addRows({ ...base, planned: false, yesterday: false, saved: [] }))).toEqual(['head:recent', 'food:poha', 'food:chapati', 'tools']);
+  });
+
+  it('a search of spaces only is no search: the usual list, not the matches', () => {
+    expect(kinds(addRows({ ...base, query: '   ', results: ['poha'] }))).toEqual(kinds(addRows(base)));
+  });
+
   it('changing a menu offers no eating as planned, no yesterday, no photo or barcode', () => {
     expect(kinds(addRows({ ...base, mode: 'plan' }))).toEqual(['head:me_saved', 'saved', 'head:recent', 'food:poha', 'food:chapati']);
   });
