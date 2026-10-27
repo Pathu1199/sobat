@@ -982,6 +982,7 @@ const en: Dict = {
   intake_title: 'Eating too little',
   intake_body: '{avg} kcal a day over your last {days} logged days. Below the {limit} line. Cravings come from this, not from weak will. Today\'s plan is {target} kcal.',
   intake_open_plan: 'Open the plan',
+  points_n: '{n} points',
 };
 
 const mr: Dict = {
@@ -1968,6 +1969,7 @@ const mr: Dict = {
   intake_title: 'खूप कमी खाणं',
   intake_body: 'शेवटच्या {days} नोंदवलेल्या दिवसांत दिवसाला {avg} kcal. {limit} च्या रेषेखाली. तल्लफ यामुळे येते, कमकुवत मनामुळे नाही. आजचं नियोजन {target} kcal.',
   intake_open_plan: 'नियोजन उघडा',
+  points_n: '{n} गुण',
 };
 
 const hi: Dict = {
@@ -2952,6 +2954,7 @@ const hi: Dict = {
   intake_title: 'बहुत कम खाना',
   intake_body: 'पिछले {days} दर्ज दिनों में दिन के {avg} kcal. {limit} की रेखा से नीचे. क्रेविंग इसी से आती है, कमज़ोर इरादे से नहीं. आज का प्लान {target} kcal.',
   intake_open_plan: 'प्लान खोलें',
+  points_n: '{n} अंक',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

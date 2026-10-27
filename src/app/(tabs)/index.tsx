@@ -39,9 +39,9 @@ import { fill, makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
 import { useMantra } from '../../services/useMantra';
 import { useApp } from '../../store/AppProvider';
+import { Banner, BannerBar } from '../../ui/Banner';
 import { Card, Divider, ListRow, MeterRow, Micro, Quote, Row, Small } from '../../ui/components';
 import { Logo } from '../../ui/Logo';
-import { BannerBar, GradientBanner } from '../../ui/GradientBanner';
 import { Page } from '../../ui/TopBar';
 import { Cols } from '../../ui/tiles';
 import { C, F, lh } from '../../ui/theme';
@@ -134,13 +134,13 @@ export default function TodayScreen() {
   const heroCard = (
     <Card>
       <View style={{ gap: 14 }}>
-        {/* The one number the day is about, on the brand gradient: what is left, and how far through the day's food. */}
-        <GradientBanner from={over ? C.red : C.heroFrom} to={over ? C.amber : C.heroTo}>
-          <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: F.small, fontWeight: '500' }}>{over ? t('kcal_over') : t('kcal_left')}</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: F.number, fontWeight: '500', lineHeight: lh(F.number, true) }}>{Math.abs(dayBudget.remaining).toLocaleString()}</Text>
-          <BannerBar value={dayBudget.consumed} max={dayBudget.target} />
-          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.small, fontWeight: '500' }}>{`${dayBudget.consumed.toLocaleString()} / ${dayBudget.target.toLocaleString()} kcal${dayBudget.earned > 0 ? ` +${dayBudget.earned} ${t('earned_short')}` : ''} · ${dayBudget.proteinConsumed} / ${dayBudget.proteinTarget} g ${t('protein').toLowerCase()}`}</Text>
-        </GradientBanner>
+        {/* The one number the day is about, on a flat panel: what is left, and how far through the day's food. */}
+        <Banner over={over}>
+          <Micro color={over ? C.red : C.textDim}>{over ? t('kcal_over') : t('kcal_left')}</Micro>
+          <Text style={{ color: over ? C.red : C.text, fontSize: F.number, fontWeight: '500', lineHeight: lh(F.number, true) }}>{Math.abs(dayBudget.remaining).toLocaleString()}</Text>
+          <BannerBar value={dayBudget.consumed} max={dayBudget.target} over={over} />
+          <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '400' }}>{`${dayBudget.consumed.toLocaleString()} / ${dayBudget.target.toLocaleString()} kcal${dayBudget.earned > 0 ? ` +${dayBudget.earned} ${t('earned_short')}` : ''} · ${dayBudget.proteinConsumed} / ${dayBudget.proteinTarget} g ${t('protein').toLowerCase()}`}</Text>
+        </Banner>
         <View style={{ gap: 13 }}>
           <MeterRow label={t('protein')} alt={lang === 'en' ? undefined : t('protein')} value={dayBudget.proteinConsumed} total={dayBudget.proteinTarget} unit="g" color={C.violet} />
           <MeterRow label={t('water')} alt={lang === 'en' ? undefined : t('water')} value={dayWater} total={state.settings.waterGoalMl} unit="ml" color={C.cyan} marker={waterMarker} />

@@ -46,8 +46,6 @@ const DARK = {
   white: '#FFFFFF',
   scrim: 'rgba(3, 8, 10, 0.72)',
   shadow: '#000000',
-  heroFrom: '#0FA67E',
-  heroTo: '#1386B8',
 };
 
 /** The same roles in daylight: paper-white panels, ink text, the status colours a shade deeper so their words hold 4.5:1 on white. */
@@ -84,8 +82,6 @@ const LIGHT: typeof DARK = {
   white: '#FFFFFF',
   scrim: 'rgba(14, 27, 31, 0.45)',
   shadow: '#0E2A2A',
-  heroFrom: '#12A57F',
-  heroTo: '#0B8FC2',
 };
 
 export const PALETTES: Record<ThemeMode, typeof DARK> = { dark: DARK, light: LIGHT };

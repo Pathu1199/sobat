@@ -6,16 +6,16 @@ import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn } from '../ui/components';
-import { GradientBanner } from '../ui/GradientBanner';
+import { Banner } from '../ui/Banner';
 import { Sheet } from '../ui/Sheet';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 import { useGame } from './MountainCard';
 
 const LEVEL_ICON: Record<string, string> = { camp1: '⛺', camp2: '🏕️', camp3: '🧗', camp4: '🏔️', summit: '🚩' };
 
 /**
  * A win, made to feel like one: a badge earned, a camp reached, the week's
- * challenge done. One at a time, each once, on the brand gradient with the
+ * challenge done. One at a time, each once, on a flat panel with the
  * points so far. Mounted on Today; says nothing when there is nothing new.
  */
 export function Celebration() {
@@ -48,14 +48,14 @@ export function Celebration() {
 
   return (
     <Sheet open title={t('celebrate_title')} onClose={done}>
-      <GradientBanner style={{ alignItems: 'center', paddingVertical: 28 }}>
+      <Banner style={{ alignItems: 'center', paddingVertical: 28 }}>
         <Text style={{ fontSize: 64 }}>{icon}</Text>
-        <Text style={{ color: '#FFFFFF', fontSize: F.title, fontWeight: '500', textAlign: 'center' }}>{title}</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.body, fontWeight: '500', textAlign: 'center' }}>{sub}</Text>
-        <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6, marginTop: 4 }}>
-          <Text style={{ color: '#FFFFFF', fontSize: F.small, fontWeight: '500' }}>{`${g.points} XP · ${t(`level_${g.level.key}`)}`}</Text>
+        <Text style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500', textAlign: 'center' }}>{title}</Text>
+        <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '400', textAlign: 'center' }}>{sub}</Text>
+        <View style={{ backgroundColor: C.accentDim, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6, marginTop: 4 }}>
+          <Text style={{ color: C.accentText, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{`${fill(t('points_n'), { n: g.points })} · ${t(`level_${g.level.key}`)}`}</Text>
         </View>
-      </GradientBanner>
+      </Banner>
       <Btn label={t('celebrate_keep')} onPress={done} />
       <Btn
         tone="ghost"
