@@ -57,8 +57,10 @@ export function usePhotoQueue() {
           FOOD_PHOTO_SCHEMA,
           true,
         );
+        // The model can take a while: meals, skips and foods added meanwhile count, so read the store as it is now.
+        const latest = appRef.current;
         const items: MealItem[] = (result.items ?? []).map((v) => {
-          const match = resolveByName(store.foods, v.name_en);
+          const match = resolveByName(latest.foods, v.name_en);
           const grams = Math.max(20, Math.round(v.grams_est || (match ? (defaultPortion(match)?.grams ?? 100) : 100)));
           if (match) return toMealItem(match, grams, false);
           return {
@@ -74,7 +76,7 @@ export function usePhotoQueue() {
         });
 
         if (items.length === 0) {
-          store.failPhoto(photo.id, 'nothing recognised');
+          latest.failPhoto(photo.id, 'nothing recognised');
           if (photo.attempts + 1 >= MAX_ATTEMPTS) await removePhoto(photo.id);
           return;
         }
@@ -83,9 +85,9 @@ export function usePhotoQueue() {
         const date = photo.date || toISODate(at);
         // The slot a meal eaten when the photo was taken would have found then: by the
         // person's own pattern, with what was already eaten or skipped that day by then.
-        const s = store.state;
-        const slot = slotForMealAt({ routine: s.routine, target: store.targets.kcal, meals: s.meals, skippedSlots: skippedOn(s.slotSkips, date), date, at });
-        store.addMeal({
+        const s = latest.state;
+        const slot = slotForMealAt({ routine: s.routine, target: latest.targets.kcal, meals: s.meals, skippedSlots: skippedOn(s.slotSkips, date), date, at });
+        latest.addMeal({
           id: `q-${photo.id}`,
           at: at.toISOString(),
           date,
@@ -97,7 +99,7 @@ export function usePhotoQueue() {
           photoUri: photo.uri,
           note: 'needs_review',
         });
-        store.unqueuePhoto(photo.id);
+        latest.unqueuePhoto(photo.id);
         await removePhoto(photo.id);
       } catch (e) {
         store.failPhoto(photo.id, String(e));

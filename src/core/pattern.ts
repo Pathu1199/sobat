@@ -174,14 +174,16 @@ export const EATEN_NOW_MS = 10 * 60000;
  * that moment and the slots skipped that date, and `currentSlot` at that
  * minute. A meal eaten now and a photo taken earlier and read later go
  * through the same rule, so a dinner photographed at 19:15 after a 16:00
- * snack is dinner, not the snack whose window it fell in. `meals` may hold
- * any dates; `skippedSlots` are the slot ids skipped on `date`. Null only with
- * no slots.
+ * snack is dinner, not the snack whose window it fell in. A meal stamped up
+ * to EATEN_NOW_MS after the moment counts as eaten by then: another device's
+ * clock may run ahead, and the old plan screen stamps a meal with its slot's
+ * time. `meals` may hold any dates; `skippedSlots` are the slot ids skipped
+ * on `date`. Null only with no slots.
  */
 export function slotForMealAt(input: { routine: Routine; target: number; meals: Meal[]; skippedSlots: string[]; date: ISODate; at: Date }): PatternSlot | null {
   const at = input.at.getTime();
   const minutes = input.at.getHours() * 60 + input.at.getMinutes();
-  const before = input.meals.filter((m) => m.date === input.date && Date.parse(m.at) <= at);
+  const before = input.meals.filter((m) => m.date === input.date && Date.parse(m.at) <= at + EATEN_NOW_MS);
   const cur = currentSlot(slotStates({ routine: input.routine, target: input.target, meals: before, nowMinutes: minutes, skippedSlots: input.skippedSlots }), minutes);
   return cur ? cur.slot : null;
 }

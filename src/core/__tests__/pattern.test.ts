@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allowance, currentSlot, DEFAULT_SHARE, expectedKcalByMinute, openedKcalByMinute, pattern, slotAt, slotForMealAt, slotOf, slotShare, slotStates, withSlot } from '../pattern';
+import { allowance, currentSlot, DEFAULT_SHARE, EATEN_NOW_MS, expectedKcalByMinute, openedKcalByMinute, pattern, slotAt, slotForMealAt, slotOf, slotShare, slotStates, withSlot } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { Meal } from '../types';
 
@@ -255,20 +255,36 @@ describe('slotForMealAt', () => {
     expect(slotForMealAt({ ...base, routine: { ...NEUTRAL_ROUTINE, slots: [] }, meals: [], at: photoAt('14:30') })).toBeNull();
   });
 
-  it('for a photo taken just now, gives the slot withSlot gives a meal eaten now', () => {
+  it('for a photo taken just now, gives the slot a meal eaten now gets', () => {
     const filled: Meal = { ...meal('lunch', '13:00', 600, 'lunch'), source: 'auto' };
-    const cases: { hhmm: string; meals: Meal[]; skippedSlots: string[] }[] = [
-      { hhmm: '14:00', meals: [], skippedSlots: [] },
-      { hhmm: '15:00', meals: [filled], skippedSlots: [] },
-      { hhmm: '15:00', meals: [typed('lunch', '13:10', 'lunch')], skippedSlots: [] },
-      { hhmm: '21:30', meals: [typed('breakfast', '08:40', 'breakfast'), typed('lunch', '13:10', 'lunch')], skippedSlots: ['dinner'] },
-      { hhmm: '07:00', meals: [], skippedSlots: [] },
+    const cases: { hhmm: string; meals: Meal[]; skippedSlots: string[]; slot: string }[] = [
+      // Lunch's window is open and nothing is in it.
+      { hhmm: '14:00', meals: [], skippedSlots: [], slot: 'lunch' },
+      // Lunch holds only the meal the app filled in, so a real one eaten now replaces it.
+      { hhmm: '15:00', meals: [filled], skippedSlots: [], slot: 'lunch' },
+      // Lunch was eaten, so the next slot.
+      { hhmm: '15:00', meals: [typed('lunch', '13:10', 'lunch')], skippedSlots: [], slot: 'snack' },
+      // Dinner was skipped, so the earlier slot still open.
+      { hhmm: '21:30', meals: [typed('breakfast', '08:40', 'breakfast'), typed('lunch', '13:10', 'lunch')], skippedSlots: ['dinner'], slot: 'snack' },
+      // No window has opened yet.
+      { hhmm: '07:00', meals: [], skippedSlots: [], slot: 'breakfast' },
+      // A lunch stamped five minutes after the photo (another device's clock running ahead) was already eaten.
+      { hhmm: '14:00', meals: [typed('lunch', '14:05', 'lunch')], skippedSlots: [], slot: 'snack' },
     ];
     for (const c of cases) {
       const now = photoAt(c.hhmm);
-      const viaWithSlot = withSlot(meal('snack', c.hhmm, 200), { routine: NEUTRAL_ROUTINE, target: 1600, meals: c.meals, skippedSlots: c.skippedSlots, now });
-      expect(slotForMealAt({ ...base, meals: c.meals, skippedSlots: c.skippedSlots, at: now })?.id).toBe(viaWithSlot.slotId);
+      expect(slotForMealAt({ ...base, meals: c.meals, skippedSlots: c.skippedSlots, at: now })?.id, c.hhmm).toBe(c.slot);
+      const eatenNow = withSlot(meal('snack', c.hhmm, 200), { routine: NEUTRAL_ROUTINE, target: 1600, meals: c.meals, skippedSlots: c.skippedSlots, now });
+      expect(eatenNow.slotId, c.hhmm).toBe(c.slot);
     }
+  });
+
+  it('counts a meal stamped up to ten minutes after the moment as already eaten, and not one stamped later than that', () => {
+    // Clock skew between devices, or the old plan screen stamping a meal with its slot's time.
+    const lunchAt = (hhmm: string) => [typed('breakfast', '08:40', 'breakfast'), typed('lunch', hhmm, 'lunch')];
+    expect(slotForMealAt({ ...base, meals: lunchAt('14:30'), at: photoAt('14:20') })?.id).toBe('snack');
+    expect(slotForMealAt({ ...base, meals: lunchAt('14:31'), at: photoAt('14:20') })?.id).toBe('lunch');
+    expect(EATEN_NOW_MS).toBe(10 * 60000);
   });
 });
 
