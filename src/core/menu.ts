@@ -3,7 +3,7 @@ import { toMealItem } from './foods';
 import { slotOf, withSlot, type SlotPoint } from './pattern';
 import { weekdayOf, type PlanLine, type Routine } from './routine';
 import { stable } from './sync';
-import type { FoodItem, ISODate, Meal, MealItem, MealSource, SavedMeal, SlotSkip } from './types';
+import type { AppState, FoodItem, ISODate, Meal, MealItem, MealSource, SavedMeal, SlotSkip } from './types';
 import { isOffDay } from './week';
 import { alignDay, lineInfo, planDayFor, type PlanDay, type PlanMeal, type WeekPlan } from './weekPlan';
 
@@ -285,7 +285,7 @@ export function autoFill(input: {
   menu: DayMenu | null;
   meals: Meal[];
   skips: SlotSkip[];
-  /** Dates the app was open on (the usage buckets). */
+  /** Dates the app was open on (`dueAutoFills` reads them from the opened dates and the usage buckets). */
   openedDates: ISODate[];
   offDays: number[];
   foods: FoodItem[];
@@ -385,6 +385,20 @@ export function withMealAdded(state: MealsAndSkips & { routine: Routine }, m: Me
   return { meals: settleAuto([...state.meals, meal], slotSkips), slotSkips };
 }
 
+/**
+ * A meal taken away. One that came from the plan was not eaten that way, so
+ * its slot is marked skipped that date when nothing else is left in it
+ * (`skipsAfterRemove`), and the meals are settled again like every other
+ * write. The same state when there is no meal with that id.
+ */
+export function withMealRemoved(state: MealsAndSkips, id: string): MealsAndSkips {
+  const gone = state.meals.find((m) => m.id === id);
+  if (!gone) return state;
+  const rest = state.meals.filter((m) => m.id !== id);
+  const slotSkips = skipsAfterRemove(state.slotSkips, gone, rest);
+  return { meals: settleAuto(rest, slotSkips), slotSkips };
+}
+
 /** A slot marked skipped on a date: it was not eaten, so the meal the app filled in there goes. The same lists when it was already skipped. */
 export function withSkipAdded(state: MealsAndSkips, date: ISODate, slotId: string): MealsAndSkips {
   const slotSkips = addSkip(state.slotSkips, date, slotId);
@@ -431,4 +445,54 @@ export function applyWeekPlan(plan: WeekPlan, week: DayMenu[], menus: DayMenu[],
     if (next && stable(next.meals) !== stable(day.meals)) out = setMenuDay(out, day, next.meals, now);
   }
   return out;
+}
+
+/** How many of the dates the app was opened on this device keeps. Only yesterday is ever read. */
+export const OPENED_DAYS = 14;
+
+/** Today added to the dates the app was opened on, once, keeping the newest OPENED_DAYS. The same list when today is already there. */
+export function withOpened(dates: ISODate[], today: ISODate): ISODate[] {
+  return dates.includes(today) ? dates : [...dates, today].slice(-OPENED_DAYS);
+}
+
+/**
+ * The meals the app fills in right now, across yesterday and today, for a
+ * person who has finished setup; a device holding nobody's data stays empty.
+ * Nothing is filled on or before the day setup was finished: the meals before
+ * it were never planned, and no meal prompt comes that day either. The app
+ * counts as open on a date it recorded opening on, or one with usage buckets.
+ * A meal already in the list (same id) is not returned again.
+ */
+export function dueAutoFills(input: {
+  state: Pick<AppState, 'profile' | 'menus' | 'routine' | 'meals' | 'slotSkips' | 'usage' | 'openedDates' | 'settings'>;
+  now: Date;
+  foods: FoodItem[];
+}): Meal[] {
+  const { state, now, foods } = input;
+  if (!state.profile.onboarded) return [];
+  const today = toISODate(now);
+  const openedDates = Array.from(new Set([...state.openedDates, ...state.usage.map((u) => u.date)]));
+  const out: Meal[] = [];
+  const since = state.profile.onboardedOn;
+  for (const date of [addDays(today, -1), today]) {
+    if (since && date <= since) continue;
+    const menu = viewMenu(date, state.menus, state.routine, today, foods);
+    out.push(...autoFill({ date, now, menu, meals: state.meals, skips: state.slotSkips, openedDates, offDays: state.settings.offDays ?? [], foods }));
+  }
+  return out.filter((m) => !state.meals.some((x) => x.id === m.id));
+}
+
+/**
+ * The app's own bookkeeping, run on open, every minute and whenever the app
+ * comes back to the front: today is marked as a day the app was open, then
+ * the planned meals that are due are filled in, all in one change. Only for a
+ * person who finished setup: a device holding nobody's data is left exactly
+ * as it is, so sync still treats it as never used. The same state when there
+ * is nothing to do.
+ */
+export function withAutoFill(state: AppState, now: Date, foods: FoodItem[], target: number): AppState {
+  if (!state.profile.onboarded) return state;
+  const openedDates = withOpened(state.openedDates, toISODate(now));
+  const opened = openedDates === state.openedDates ? state : { ...state, openedDates };
+  return dueAutoFills({ state: opened, now, foods }).reduce((acc, m) => ({ ...acc, ...withMealAdded(acc, m, target, now) }), opened);
 }

@@ -223,6 +223,8 @@ export type AppState = {
   customFoods: FoodItem[];
   memory: MemoryItem[];
   usage: UsageBucket[];
+  /** The dates the app was opened on, on this device only, the newest 14: yesterday is filled in from the plan only if the app was open then. */
+  openedDates: ISODate[];
   breaks: BreakLog[];
   breakSettings: BreakSettings;
   tips: DailyTip[];

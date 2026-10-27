@@ -20,7 +20,7 @@ export const DEVICE_SETTINGS = ['ollamaUrl', 'ollamaFallbackUrl', 'textModel', '
 type DeviceKey = (typeof DEVICE_SETTINGS)[number];
 
 /** Per-device caches that have no business in the account. */
-const LOCAL_KEYS = ['chat', 'photoQueue', 'usage', 'tips'] as const;
+const LOCAL_KEYS = ['chat', 'photoQueue', 'usage', 'tips', 'openedDates'] as const;
 type LocalKey = (typeof LOCAL_KEYS)[number];
 
 export type CloudSettings = Omit<Settings, DeviceKey>;
@@ -79,11 +79,12 @@ export function sameCloud(a: CloudState, b: CloudState): boolean {
 
 /** The part of the state that is the person's record rather than this device's cache. */
 export function forCloud(s: AppState): CloudState {
-  const { chat, photoQueue, usage, tips, settings, ...rest } = s;
+  const { chat, photoQueue, usage, tips, openedDates, settings, ...rest } = s;
   void chat;
   void photoQueue;
   void usage;
   void tips;
+  void openedDates;
   const cloudSettings = { ...settings } as Partial<Settings>;
   for (const k of DEVICE_SETTINGS) delete cloudSettings[k];
   return { ...rest, settings: cloudSettings as CloudSettings };
@@ -101,6 +102,7 @@ export function applyCloud(local: AppState, cloud: CloudState): AppState {
     photoQueue: local.photoQueue,
     usage: local.usage,
     tips: local.tips,
+    openedDates: local.openedDates,
   };
 }
 

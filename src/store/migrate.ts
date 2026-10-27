@@ -212,6 +212,7 @@ export function migrateState(raw: unknown, now: Date = new Date()): AppState {
     actionsDone: actions.filter((a) => !isSkipKey(a)) as AppState['actionsDone'],
     slotSkips,
     savedMeals: Array.isArray(raw.savedMeals) ? (raw.savedMeals as SavedMeal[]) : [],
+    openedDates: Array.isArray(raw.openedDates) ? raw.openedDates.filter((d): d is string => typeof d === 'string') : [],
   };
 }
 

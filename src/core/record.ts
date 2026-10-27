@@ -54,8 +54,10 @@ export function weekRecord(input: RecordBase & { monday: ISODate; menuOn: (date:
 /**
  * Full days in a row, back from today. Today counts once it is full, but a
  * today not settled yet never breaks the run, so in the morning the streak is
- * yesterday's, not 0. An off day neither breaks it nor counts. Looks back at
- * most `limit` days.
+ * yesterday's, not 0. An off day neither breaks it nor counts. A day settled
+ * only by skips, nothing eaten, is a complete record but not a day eaten as
+ * planned: it never counts and it ends the run, so skipping every meal is
+ * never rewarded. Looks back at most `limit` days.
  */
 export function recordStreak(input: RecordBase & { menuOn: (date: ISODate) => DayMenu | null; limit?: number }): number {
   const byDate = new Map<ISODate, Meal[]>();
@@ -67,8 +69,9 @@ export function recordStreak(input: RecordBase & { menuOn: (date: ISODate) => Da
   let n = 0;
   for (let i = 0; i < (input.limit ?? 60); i++) {
     const date = addDays(input.today, -i);
-    const r = dayRecord({ ...input, meals: byDate.get(date) ?? [], date, menu: input.menuOn(date) });
-    if (r.state === 'full') n++;
+    const meals = byDate.get(date) ?? [];
+    const r = dayRecord({ ...input, meals, date, menu: input.menuOn(date) });
+    if (r.state === 'full' && meals.length > 0) n++;
     else if (r.state !== 'off' && i > 0) break;
   }
   return n;

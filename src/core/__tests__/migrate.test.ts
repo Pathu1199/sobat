@@ -64,6 +64,12 @@ describe('migrateState', () => {
     expect(s.settings.waterGoalMl).toBe(3000);
   });
 
+  it('gives an older store an empty list of the days the app was opened on, and keeps a list it has', () => {
+    expect(migrateState(v1).openedDates).toEqual([]);
+    expect(migrateState({ ...v1, openedDates: 'today' }).openedDates).toEqual([]);
+    expect(migrateState({ ...v1, openedDates: ['2026-10-26', 7] }).openedDates).toEqual(['2026-10-26']);
+  });
+
   it('marks the result as the current version and is idempotent', () => {
     const once = migrateState(v1);
     expect(once.version).toBe(7);
@@ -445,7 +451,7 @@ describe('an account file from before version 7 arriving on a device that was ne
     expect(s.written[0].settings.reminders.mealPrompt).toBe(false);
     // The migration fills in this device's caches and machine settings; none of them reach the account.
     expect(s.written[0].settings).not.toHaveProperty('ollamaUrl');
-    for (const key of ['chat', 'usage', 'photoQueue', 'tips']) expect(s.written[0]).not.toHaveProperty(key);
+    for (const key of ['chat', 'usage', 'photoQueue', 'tips', 'openedDates']) expect(s.written[0]).not.toHaveProperty(key);
     // The next round finds the account as it left it: nothing is written again.
     expect(await s.round(s.out!.base, s.out!.modifiedTime)).toBeNull();
     expect(s.written).toHaveLength(1);

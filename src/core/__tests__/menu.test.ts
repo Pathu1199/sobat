@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
+import { EMPTY_STATE } from '../../store/defaults';
+import { addDays } from '../date';
 import {
   addMenuLine,
   addSkip,
@@ -9,6 +11,7 @@ import {
   autoFill,
   autoMealId,
   copyDay,
+  dueAutoFills,
   editedMeal,
   ensureWeek,
   fillFromPlan,
@@ -30,13 +33,17 @@ import {
   weekPlanView,
   withDayConfirmed,
   withMealAdded,
+  withAutoFill,
   withMealConfirmed,
+  withMealRemoved,
+  withOpened,
   withoutSavedMeal,
   withSavedMeal,
   withSkipAdded,
   type DayMenu,
 } from '../menu';
 import { kcalForGrams } from '../nutrition';
+import { forCloud, isPristine } from '../sync';
 import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, type PlanLine, type Routine, type RoutineSlot } from '../routine';
 import type { FoodItem, Meal, MealSource, SlotSkip } from '../types';
 import { buildWeekPlan, lineInfo, planDayFor, type PlanMeal } from '../weekPlan';
@@ -511,5 +518,110 @@ describe('a suggested day', () => {
     expect(isSuggested(viewMenu(WED, migrated, NEUTRAL_ROUTINE, '2026-10-27', foods), NEUTRAL_ROUTINE, foods)).toBe(false);
     // Thursday kept the plan the app had built.
     expect(isSuggested(viewMenu('2026-10-29', migrated, NEUTRAL_ROUTINE, '2026-10-27', foods), NEUTRAL_ROUTINE, foods)).toBe(true);
+  });
+});
+
+describe('dueAutoFills', () => {
+  const state = {
+    profile: { ...EMPTY_STATE.profile, onboarded: true },
+    menus: [menu('2026-10-26', 2), menu('2026-10-27', 3)],
+    routine,
+    meals: [] as Meal[],
+    slotSkips: [] as SlotSkip[],
+    usage: [{ date: '2026-10-26', hour: 20, activeMinutes: 5 }],
+    openedDates: [] as string[],
+    settings: { ...EMPTY_STATE.settings, offDays: [] },
+  };
+  const now = new Date('2026-10-27T15:00:00');
+
+  it('fills today and, when the app was open then, yesterday', () => {
+    expect(dueAutoFills({ state, now, foods }).map((m) => m.id)).toEqual(['auto-2026-10-26-lunch', 'auto-2026-10-27-lunch']);
+    expect(dueAutoFills({ state: { ...state, usage: [] }, now, foods }).map((m) => m.id)).toEqual(['auto-2026-10-27-lunch']);
+  });
+
+  it('never fills for someone who has not finished setup, and never twice', () => {
+    expect(dueAutoFills({ state: { ...state, profile: { ...state.profile, onboarded: false } }, now, foods })).toEqual([]);
+    const once = dueAutoFills({ state, now, foods });
+    expect(dueAutoFills({ state: { ...state, meals: once }, now, foods })).toEqual([]);
+  });
+
+  it('fills nothing on or before the day setup was finished, as no meal prompt comes that day either', () => {
+    const since = (onboardedOn: string) => ({ ...state, profile: { ...state.profile, onboardedOn } });
+    expect(dueAutoFills({ state: since('2026-10-27'), now, foods })).toEqual([]);
+    expect(dueAutoFills({ state: since('2026-10-26'), now, foods }).map((m) => m.id)).toEqual(['auto-2026-10-27-lunch']);
+  });
+
+  it('counts a day the app was opened on even with no usage recorded, as on a phone', () => {
+    const phone = { ...state, usage: [], openedDates: ['2026-10-26'] };
+    expect(dueAutoFills({ state: phone, now, foods }).map((m) => m.id)).toEqual(['auto-2026-10-26-lunch', 'auto-2026-10-27-lunch']);
+  });
+});
+
+describe('the days the app was opened on', () => {
+  it('adds today once and keeps the newest fourteen', () => {
+    const once = withOpened([], '2026-10-27');
+    expect(once).toEqual(['2026-10-27']);
+    expect(withOpened(once, '2026-10-27')).toBe(once);
+    const fortnight = Array.from({ length: 14 }, (_, i) => addDays('2026-10-13', i));
+    expect(withOpened(fortnight, '2026-10-27')).toEqual([...fortnight.slice(1), '2026-10-27']);
+  });
+});
+
+describe('the app\'s own run on open, every minute and on coming back to the front', () => {
+  const now = new Date('2026-10-27T15:00:00');
+  const person = {
+    ...EMPTY_STATE,
+    profile: { ...EMPTY_STATE.profile, onboarded: true },
+    routine,
+    menus: [menu('2026-10-26', 2), menu('2026-10-27', 3)],
+    settings: { ...EMPTY_STATE.settings, offDays: [] },
+  };
+
+  it('leaves a device holding nobody\'s data exactly as it was, so it still reads as never used', () => {
+    const out = withAutoFill(EMPTY_STATE, now, foods, 1600);
+    expect(out).toBe(EMPTY_STATE);
+    expect(isPristine(forCloud(out))).toBe(true);
+  });
+
+  it('marks today as a day the app was open and fills in what is due in one change, then has nothing more to do', () => {
+    const out = withAutoFill(person, now, foods, 1600);
+    expect(out.openedDates).toEqual(['2026-10-27']);
+    expect(out.meals.map((m) => [m.id, m.source])).toEqual([['auto-2026-10-27-lunch', 'auto']]);
+    expect(withAutoFill(out, now, foods, 1600)).toBe(out);
+  });
+
+  it('fills yesterday the next morning when the app was open yesterday', () => {
+    const monday = withAutoFill(person, new Date('2026-10-26T09:00:00'), foods, 1600);
+    expect(monday.meals).toEqual([]);
+    const tuesday = withAutoFill(monday, new Date('2026-10-27T09:00:00'), foods, 1600);
+    expect(tuesday.meals.map((m) => m.id)).toEqual(['auto-2026-10-26-lunch']);
+    expect(tuesday.openedDates).toEqual(['2026-10-26', '2026-10-27']);
+  });
+});
+
+describe('taking a meal away', () => {
+  const d = '2026-10-27';
+  const logged = (id: string, slotId: string, source: MealSource | undefined): Meal => ({ id, at: `${d}T07:30:00.000Z`, date: d, type: 'lunch', slotId, items: [], kcal: 400, protein: 10, source });
+
+  it('a meal from the plan taken away marks its slot skipped, so the app does not fill it straight back', () => {
+    const state = { meals: [logged(autoMealId(d, 'lunch'), 'lunch', 'auto')], slotSkips: [] as SlotSkip[] };
+    const out = withMealRemoved(state, autoMealId(d, 'lunch'));
+    expect(out.meals).toEqual([]);
+    expect(out.slotSkips.map((s) => s.id)).toEqual(['2026-10-27:lunch']);
+    const late = new Date(`${d}T22:00:00`);
+    expect(autoFill({ date: d, now: late, menu: menu(d, 2), meals: out.meals, skips: out.slotSkips, openedDates: [], offDays: [], foods })).toEqual([]);
+  });
+
+  it('a hand-typed meal taken away leaves the skips as they are; an id that is not there changes nothing', () => {
+    const state = { meals: [logged('m1', 'lunch', 'manual')], slotSkips: [] as SlotSkip[] };
+    expect(withMealRemoved(state, 'm1')).toEqual({ meals: [], slotSkips: [] });
+    expect(withMealRemoved(state, 'nope')).toBe(state);
+  });
+
+  it('leaves the meals settled, as every writer does: a filled-in copy in a slot skipped that date goes', () => {
+    const state = { meals: [logged('p1', 'lunch', 'plan'), logged(autoMealId(d, 'dinner'), 'dinner', 'auto')], slotSkips: addSkip([], d, 'dinner') };
+    const out = withMealRemoved(state, 'p1');
+    expect(out.meals).toEqual([]);
+    expect(out.slotSkips.map((s) => s.id)).toEqual(['2026-10-27:dinner', '2026-10-27:lunch']);
   });
 });

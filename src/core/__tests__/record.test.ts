@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { addSkip, type DayMenu } from '../menu';
 import { dayRecord, recordStreak, weekRecord } from '../record';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
-import type { Meal } from '../types';
+import type { Meal, SlotSkip } from '../types';
 
 const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
 const routine: Routine = { ...DEFAULT_ROUTINE, enabled: true, slots: [slot('morning', 'breakfast', '08:30', 25), slot('lunch', 'lunch', '13:00', 40), slot('dinner', 'dinner', '20:00', 35)] };
@@ -86,5 +86,25 @@ describe('recordStreak', () => {
 
   it('an off day neither breaks it nor counts', () => {
     expect(streakOf([...fullDay('2026-10-24'), ...fullDay('2026-10-26')], [0])).toBe(2);
+  });
+
+  // Every planned slot of the date marked skipped, nothing eaten.
+  const allSkipped = (date: string) => ['morning', 'lunch', 'dinner'].reduce<SlotSkip[]>((acc, id) => addSkip(acc, date, id), []);
+
+  it('a day settled only by skips is a complete record, but never counts and ends the run: skipping is never rewarded', () => {
+    expect(rec('2026-10-25', [], { skips: allSkipped('2026-10-25') }).state).toBe('full');
+    const meals = [...fullDay('2026-10-24'), ...fullDay('2026-10-26')];
+    expect(recordStreak({ ...base, skips: allSkipped('2026-10-25'), menuOn: menu, meals })).toBe(1);
+  });
+
+  it('a day with one meal eaten and the rest skipped counts', () => {
+    const skips = addSkip(addSkip([], '2026-10-25', 'morning'), '2026-10-25', 'dinner');
+    const meals = [...fullDay('2026-10-24'), meal('2026-10-25', 'lunch'), ...fullDay('2026-10-26')];
+    expect(recordStreak({ ...base, skips, menuOn: menu, meals })).toBe(3);
+  });
+
+  it('a today of nothing but skips neither counts nor breaks the run while it is going', () => {
+    const meals = [...fullDay('2026-10-24'), ...fullDay('2026-10-25'), ...fullDay('2026-10-26')];
+    expect(recordStreak({ ...base, skips: allSkipped(TODAY), menuOn: menu, meals })).toBe(3);
   });
 });

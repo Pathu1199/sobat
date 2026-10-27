@@ -54,6 +54,19 @@ describe('forCloud / applyCloud', () => {
   });
 });
 
+describe('the days this device was opened on', () => {
+  it('stay on this device: never uploaded, and kept through a landing whatever the file holds', () => {
+    const local = used([], { openedDates: ['2026-10-26', '2026-10-27'] });
+    expect(cloudOf(local)).not.toHaveProperty('openedDates');
+    const remote = cloudOf(used([meal('m9', '2026-10-12T08:00:00.000Z')]));
+    expect(applyCloud(local, remote).openedDates).toEqual(['2026-10-26', '2026-10-27']);
+    expect(applyCloud(local, { ...remote, openedDates: ['2026-01-01'] } as CloudState).openedDates).toEqual(['2026-10-26', '2026-10-27']);
+    const landed = landMerge(local, cloudOf(local), remote);
+    expect(landed.openedDates).toEqual(['2026-10-26', '2026-10-27']);
+    expect(landed.meals.map((m) => m.id)).toEqual(['m9']);
+  });
+});
+
 describe('stable', () => {
   it('reads the same whatever the key order', () => {
     expect(stable({ b: 1, a: { d: 2, c: 3 } })).toBe(stable({ a: { c: 3, d: 2 }, b: 1 }));

@@ -77,6 +77,7 @@ export const EMPTY_STATE: AppState = {
   customFoods: [],
   memory: [],
   usage: [],
+  openedDates: [],
   breaks: [],
   breakSettings: DEFAULT_BREAK_SETTINGS,
   tips: [],
