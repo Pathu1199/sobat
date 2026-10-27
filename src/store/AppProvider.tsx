@@ -16,6 +16,7 @@ import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryT
 import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
 import { slotStates, withSlot } from '../core/pattern';
+import { addSkip, removeSkip, skippedOn } from '../core/menu';
 import { pruneSpend, spentOn, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
@@ -76,6 +77,11 @@ type Ctx = {
   stepsToday: number;
   actionsDoneToday: string[];
   toggleAction: (key: string) => void;
+  /** Slot ids skipped today. */
+  skippedToday: string[];
+  /** Record that a slot was not eaten on a date; a meal later logged in it takes the skip away. */
+  skipSlot: (date: ISODate, slotId: string) => void;
+  unskipSlot: (date: ISODate, slotId: string) => void;
   setRoutine: (r: Partial<Routine>) => void;
   setWeekPlan: (plan: WeekPlan | null) => void;
   addActivity: (a: ActivityLog) => void;
@@ -115,6 +121,20 @@ export function useApp(): Ctx {
   const c = useContext(AppCtx);
   if (!c) throw new Error('useApp must be used inside AppProvider');
   return c;
+}
+
+/**
+ * Every meal goes into the state this way: into the slot it is eaten in when
+ * it names none (a photo, a recipe, the coach), and a slot that gets a meal on
+ * a date is no longer marked skipped that date.
+ */
+function withMeal(s: AppState, m: Meal, target: number, now: Date): AppState {
+  const today = toISODate(now);
+  const meal = s.routine.enabled
+    ? withSlot(m, { routine: s.routine, target, meals: s.meals.filter((x) => x.date === today), skippedSlots: skippedOn(s.slotSkips, today), now })
+    : m;
+  const slotSkips = meal.slotId ? removeSkip(s.slotSkips, meal.date, meal.slotId) : s.slotSkips;
+  return { ...s, meals: [...s.meals, meal], slotSkips };
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -233,8 +253,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const totals = sumTotals(todayMeals.flatMap((m) => m.items));
     const burnedToday = burnedOn(state.activities ?? [], today);
     const actionsDoneToday = state.actionsDone.filter((a) => a.date === today).map((a) => a.key);
+    const skippedToday = skippedOn(state.slotSkips, today);
     // With the pattern on, the meals left are its slots still to eat, not the fixed windows; a pattern with no slots falls back to the windows.
-    const patternStates = state.routine.enabled ? slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skipped: actionsDoneToday }) : [];
+    const patternStates = state.routine.enabled ? slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skippedSlots: skippedToday }) : [];
     const mealsLeftOverride =
       patternStates.length > 0 ? patternStates.filter((x) => x.status === 'now' || x.status === 'missed' || x.status === 'later').length : undefined;
     const budget = calcBudget(targets, totals, hour, eatBack(burnedToday), mealsLeftOverride);
@@ -262,14 +283,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       stepsToday: state.steps.find((x) => x.date === today)?.count ?? 0,
       setProfile: (p) => update((s) => ({ ...s, profile: { ...s.profile, ...p } })),
       setSettings: (x) => update((s) => ({ ...s, settings: { ...s.settings, ...x } })),
-      addMeal: (m) =>
-        update((s) => {
-          // A meal logged from a photo, a recipe or the coach names no slot; it belongs to the slot it is eaten in.
-          const meal = s.routine.enabled
-            ? withSlot(m, { routine: s.routine, target: targets.kcal, meals: s.meals.filter((x) => x.date === today), skipped: s.actionsDone.filter((a) => a.date === today).map((a) => a.key), now: new Date() })
-            : m;
-          return { ...s, meals: [...s.meals, meal] };
-        }),
+      addMeal: (m) => update((s) => withMeal(s, m, targets.kcal, new Date())),
       removeMeal: (id) => update((s) => ({ ...s, meals: s.meals.filter((m) => m.id !== id) })),
       updateMeal: (m) => update((s) => ({ ...s, meals: s.meals.map((x) => (x.id === m.id ? m : x)) })),
       addWater: (ml) =>
@@ -342,6 +356,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const kept = s.actionsDone.filter((a) => a.date === today);
           const has = kept.some((a) => a.key === key);
           return { ...s, actionsDone: has ? kept.filter((a) => a.key !== key) : [...kept, { date: today, key }] };
+        }),
+      skippedToday,
+      skipSlot: (date, slotId) =>
+        update((s) => {
+          const slotSkips = addSkip(s.slotSkips, date, slotId);
+          return slotSkips === s.slotSkips ? s : { ...s, slotSkips };
+        }),
+      unskipSlot: (date, slotId) =>
+        update((s) => {
+          const slotSkips = removeSkip(s.slotSkips, date, slotId);
+          return slotSkips === s.slotSkips ? s : { ...s, slotSkips };
         }),
       setRoutine: (r) =>
         update((s) => {

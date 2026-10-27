@@ -11,6 +11,7 @@ import { IconButton } from '../../components/TopBarActions';
 import { addDays, formatDayLabel, lastNDates, localHHMM } from '../../core/date';
 import { newId } from '../../core/id';
 import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, toMealItem, type DishStyle } from '../../core/foods';
+import { skippedOn } from '../../core/menu';
 import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../../core/nutrition';
 import { currentSlot, slotStates } from '../../core/pattern';
 import { avoidHits, slotLabel, slotTime } from '../../core/routine';
@@ -77,8 +78,8 @@ export default function LogScreen() {
   const patternOn = app.state.routine.enabled;
   const minute = useMinute();
   const states = useMemo(
-    () => (patternOn ? slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: dayMeals, nowMinutes: isToday ? minute : 1440, skipped: isToday ? app.actionsDoneToday : [] }) : []),
-    [patternOn, app.state.routine, app.targets.kcal, dayMeals, isToday, minute, app.actionsDoneToday],
+    () => (patternOn ? slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: dayMeals, nowMinutes: isToday ? minute : 1440, skippedSlots: skippedOn(app.state.slotSkips, viewDate) }) : []),
+    [patternOn, app.state.routine, app.targets.kcal, dayMeals, isToday, minute, app.state.slotSkips, viewDate],
   );
   const chosen = patternOn ? (states.find((s) => s.slot.id === slotId) ?? currentSlot(states, minute)) : null;
   const effectiveType: MealType = chosen ? chosen.slot.type : mealType;

@@ -83,6 +83,7 @@ export const EMPTY_STATE: AppState = {
   photoQueue: [],
   steps: [],
   actionsDone: [],
+  slotSkips: [],
   routine: DEFAULT_ROUTINE,
   spend: [],
   schedule: DEFAULT_SCHEDULE,

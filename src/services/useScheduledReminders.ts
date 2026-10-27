@@ -97,12 +97,12 @@ export function useScheduledReminders() {
   const doneKey = useMemo(() => {
     if (!routine.enabled) return '';
     const todayMeals = app.state.meals.filter((m) => m.date === today);
-    return slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skipped: app.actionsDoneToday })
+    return slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skippedSlots: app.skippedToday })
       .filter((s) => s.status === 'done' || s.status === 'skipped')
       .map((s) => s.slot.id)
       .sort()
       .join(',');
-  }, [routine, app.state.meals, today, app.targets.kcal, hour, app.actionsDoneToday]);
+  }, [routine, app.state.meals, today, app.targets.kcal, hour, app.skippedToday]);
   const lastLog = useMemo(() => lastLogDate(app.state.meals, today), [app.state.meals, today]);
 
   const wanted = useMemo(() => {

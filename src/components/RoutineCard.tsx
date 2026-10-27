@@ -11,7 +11,6 @@ import {
   bhajiFor,
   DEFAULT_SPREAD,
   planItems,
-  skipKey,
   slotLabel,
   slotLines,
   slotTime,
@@ -87,8 +86,8 @@ export function RoutineCard() {
   const planDay = state.weekPlan?.days[weekdayOf(today)];
   const planned = useMemo(() => (planDay ? Object.fromEntries(planDay.meals.map((m) => [m.id, mealTotals(m, foods).kcal])) : undefined), [planDay, foods]);
   const states = useMemo(
-    () => slotStates({ routine, target: targets.kcal, meals: todayMeals, nowMinutes: minute, skipped: app.actionsDoneToday, planned }),
-    [routine, targets.kcal, todayMeals, minute, app.actionsDoneToday, planned],
+    () => slotStates({ routine, target: targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday, planned }),
+    [routine, targets.kcal, todayMeals, minute, app.skippedToday, planned],
   );
 
   if (!routine.enabled) return null;
@@ -202,7 +201,7 @@ export function RoutineCard() {
                     <Micro color={C.accentText}>{`${t('routine_logged')} ×`}</Micro>
                   </Pressable>
                 ) : skipped ? (
-                  <Pressable onPress={() => app.toggleAction(skipKey(slot))} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('undo')}>
+                  <Pressable onPress={() => app.unskipSlot(today, slot.id)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('undo')}>
                     <Micro color={C.textFaint}>{`${t('slot_skipped')} ×`}</Micro>
                   </Pressable>
                 ) : (
@@ -217,7 +216,7 @@ export function RoutineCard() {
                     <Micro color={C.accentText}>{`${t('pattern_log_other')} ›`}</Micro>
                   </Pressable>
                   {s.status === 'missed' ? (
-                    <Pressable onPress={() => app.toggleAction(skipKey(slot))} hitSlop={6} accessibilityRole="button">
+                    <Pressable onPress={() => app.skipSlot(today, slot.id)} hitSlop={6} accessibilityRole="button">
                       <Micro color={C.textFaint}>{t('slot_skip')}</Micro>
                     </Pressable>
                   ) : null}

@@ -75,7 +75,7 @@ describe('slotOf', () => {
 describe('slotStates', () => {
   it('sums what was eaten per slot, keeps what is left, and reads the status off the clock', () => {
     const meals = [meal('breakfast', '08:40', 300), meal('lunch', '13:10', 400), meal('snack', '13:30', 150, 'lunch')];
-    const s = slotStates({ routine, target: 1600, meals, nowMinutes: 19 * 60 + 15, skipped: [], planned: { dinner: 500 } });
+    const s = slotStates({ routine, target: 1600, meals, nowMinutes: 19 * 60 + 15, skippedSlots: [], planned: { dinner: 500 } });
     expect(s.map((x) => x.slot.id)).toEqual(['morning', 'lunch', 'dinner']);
     expect(s[0]).toMatchObject({ allowance: 400, eaten: 300, left: 100, status: 'done' });
     expect(s[1]).toMatchObject({ allowance: 640, eaten: 550, left: 90, status: 'done' });
@@ -84,32 +84,32 @@ describe('slotStates', () => {
   });
 
   it('shows skipped, missed and later', () => {
-    const s = slotStates({ routine, target: 1600, meals: [], nowMinutes: 14 * 60, skipped: ['skip_morning'] });
+    const s = slotStates({ routine, target: 1600, meals: [], nowMinutes: 14 * 60, skippedSlots: ['morning'] });
     expect(s.map((x) => x.status)).toEqual(['skipped', 'missed', 'later']);
   });
 });
 
 describe('currentSlot', () => {
-  const at14 = (meals: Meal[], skipped: string[] = []) => slotStates({ routine, target: 1600, meals, nowMinutes: 14 * 60, skipped });
+  const at14 = (meals: Meal[], skippedSlots: string[] = []) => slotStates({ routine, target: 1600, meals, nowMinutes: 14 * 60, skippedSlots });
 
   it('is the latest slot whose window has opened and is still open, so a late lunch is lunch even with breakfast never logged', () => {
     expect(currentSlot(at14([]), 14 * 60)?.slot.id).toBe('lunch');
   });
 
   it('before any window has opened, is the first open slot of the day', () => {
-    const early = slotStates({ routine, target: 1600, meals: [], nowMinutes: 7 * 60, skipped: [] });
+    const early = slotStates({ routine, target: 1600, meals: [], nowMinutes: 7 * 60, skippedSlots: [] });
     expect(currentSlot(early, 7 * 60)?.slot.id).toBe('morning');
   });
 
   it('once the latest opened slot is done or skipped, is the next one, even with an earlier slot missed', () => {
     expect(currentSlot(at14([meal('breakfast', '08:40', 300), meal('lunch', '13:10', 400)]), 14 * 60)?.slot.id).toBe('dinner');
-    expect(currentSlot(at14([meal('lunch', '13:10', 400)], ['skip_morning']), 14 * 60)?.slot.id).toBe('dinner');
+    expect(currentSlot(at14([meal('lunch', '13:10', 400)], ['morning']), 14 * 60)?.slot.id).toBe('dinner');
     // A snack after lunch is not a late breakfast: with lunch eaten and breakfast never logged, it is dinner.
     expect(currentSlot(at14([meal('lunch', '13:10', 400)]), 14 * 60)?.slot.id).toBe('dinner');
   });
 
   it('with the latest opened slot done and nothing after it, is the latest earlier slot still open', () => {
-    const evening = (meals: Meal[]) => slotStates({ routine, target: 1600, meals, nowMinutes: 20 * 60 + 30, skipped: [] });
+    const evening = (meals: Meal[]) => slotStates({ routine, target: 1600, meals, nowMinutes: 20 * 60 + 30, skippedSlots: [] });
     expect(currentSlot(evening([meal('breakfast', '08:40', 300), meal('dinner', '19:40', 500)]), 20 * 60 + 30)?.slot.id).toBe('lunch');
     expect(currentSlot(evening([meal('dinner', '19:40', 500)]), 20 * 60 + 30)?.slot.id).toBe('lunch');
   });
@@ -120,14 +120,14 @@ describe('currentSlot', () => {
       target: 1600,
       meals: [meal('breakfast', '08:40', 300), meal('lunch', '13:10', 400), meal('dinner', '19:40', 500)],
       nowMinutes: 21 * 60,
-      skipped: [],
+      skippedSlots: [],
     });
     expect(currentSlot(done, 21 * 60)?.slot.id).toBe('dinner');
     expect(currentSlot([], 21 * 60)).toBeNull();
   });
 
   it('on the default routine: lunch at 14:00 with nothing logged, tea once lunch is logged, the dry fruit at 11:05', () => {
-    const states = (m: number, meals: Meal[] = []) => slotStates({ routine: DEFAULT_ROUTINE, target: 1600, meals, nowMinutes: m, skipped: [] });
+    const states = (m: number, meals: Meal[] = []) => slotStates({ routine: DEFAULT_ROUTINE, target: 1600, meals, nowMinutes: m, skippedSlots: [] });
     expect(currentSlot(states(14 * 60), 14 * 60)?.slot.id).toBe('lunch');
     expect(currentSlot(states(14 * 60, [meal('lunch', '13:10', 450)]), 14 * 60)?.slot.id).toBe('tea');
     expect(currentSlot(states(11 * 60 + 5), 11 * 60 + 5)?.slot.id).toBe('dry-fruit');
@@ -136,7 +136,7 @@ describe('currentSlot', () => {
 
 describe('withSlot', () => {
   const now = new Date('2026-10-12T14:00:00');
-  const input = { routine, target: 1600, meals: [] as Meal[], skipped: [] as string[], now };
+  const input = { routine, target: 1600, meals: [] as Meal[], skippedSlots: [] as string[], now };
 
   it('gives a meal eaten now the slot that is on now, and that slot\'s type', () => {
     const m = withSlot(meal('snack', '14:00', 300), input);

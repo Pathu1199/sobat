@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { msToNextMinute } from '../core/date';
 import { slotStates } from '../core/pattern';
-import { skipKey, slotLabel, slotsDueBetween } from '../core/routine';
+import { slotLabel, slotsDueBetween } from '../core/routine';
 import { orderedBlocks, startedBetween, toMinutes } from '../core/schedule';
 import { storyLine, storySeed, type StoryKind } from '../core/storyLines';
 import { makeT } from '../i18n';
@@ -71,10 +71,10 @@ export function useWorkSchedule() {
     // A routine meal whose time passed with nothing logged against it: ask once, log or skip.
     if (routine.enabled) {
       const todayMeals = app.state.meals.filter((m) => m.date === app.today);
-      const states = slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skipped: app.actionsDoneToday });
+      const states = slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday });
       for (const s of slotsDueBetween(routine, from, minute)) {
         const st = states.find((x) => x.slot.id === s.id);
-        if (!st || st.status === 'done' || st.status === 'skipped' || app.actionsDoneToday.includes(skipKey(s))) continue;
+        if (!st || st.status === 'done' || st.status === 'skipped' || app.skippedToday.includes(s.id)) continue;
         const title = `${slotLabel(s, profile.lang)}?`;
         notifyNow(title, t('slot_prompt'), { priority: 'high' })
           .then((sent) => {

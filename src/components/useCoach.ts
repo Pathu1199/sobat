@@ -10,7 +10,7 @@ import { useApp } from '../store/AppProvider';
 /** The coach's advice for this minute, from the store. Shared by the strip, the Coach tab and the monitor. */
 export function useCoach(minute: number): Advice[] {
   const app = useApp();
-  const { state, budget, today, hour, foods, targets, actionsDoneToday } = app;
+  const { state, budget, today, hour, foods, targets, skippedToday } = app;
   const lang = state.profile.lang;
   return useMemo(() => {
     if (isOffDay(state.settings.offDays, today)) return [];
@@ -19,7 +19,7 @@ export function useCoach(minute: number): Advice[] {
     // With the pattern on, the plates are its slots still to eat, the way the fits card shows them.
     const patternOn = state.routine.enabled;
     const loggedSlotIds = patternOn
-      ? slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes: minute, skipped: actionsDoneToday })
+      ? slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: skippedToday })
           .filter((s) => s.status === 'done' || s.status === 'skipped')
           .map((s) => s.slot.id)
       : [];
@@ -52,5 +52,5 @@ export function useCoach(minute: number): Advice[] {
       nextPlate: slot ? { type: slot.type, budget: slot.budget, kcal: slot.kcal, names: slot.picks.map((p) => foodName(p.food, lang)) } : null,
     });
     // The minute is the clock; everything else is read when it ticks or the logs change.
-  }, [minute, today, hour, budget, state.meals, state.water, state.sleep, state.weights, state.routine, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, foods, targets.kcal, actionsDoneToday, app.stepsToday, app.streakDays, lang]);
+  }, [minute, today, hour, budget, state.meals, state.water, state.sleep, state.weights, state.routine, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, foods, targets.kcal, skippedToday, app.stepsToday, app.streakDays, lang]);
 }

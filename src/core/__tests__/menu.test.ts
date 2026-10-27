@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { addMenuLine, alignMenu, alignMenus, copyDay, ensureWeek, menuFor, NOT_EDITED, setMenuLine, setMenuMeal, viewMenu, viewWeek, type DayMenu } from '../menu';
+import { addMenuLine, addSkip, alignMenu, alignMenus, copyDay, ensureWeek, menuFor, NOT_EDITED, removeSkip, setMenuLine, setMenuMeal, skippedOn, viewMenu, viewWeek, type DayMenu } from '../menu';
 import { DEFAULT_ROUTINE, type PlanLine, type Routine, type RoutineSlot } from '../routine';
 import type { FoodItem } from '../types';
 import { planDayFor, type PlanMeal } from '../weekPlan';
@@ -121,5 +121,26 @@ describe('following the slots', () => {
     expect(lunchQty(shown)).toBe(3);
     expect(shown.meals.map((m) => m.id)).toContain('tea');
     expect(viewWeek(MON, [], routine, '2026-10-27', foods)).toHaveLength(7);
+  });
+});
+
+describe('skips', () => {
+  it('records one skip per date and slot, with the same id on every device', () => {
+    const once = addSkip([], '2026-10-27', 'lunch');
+    expect(once).toEqual([{ id: '2026-10-27:lunch', date: '2026-10-27', slotId: 'lunch' }]);
+    expect(addSkip(once, '2026-10-27', 'lunch')).toBe(once);
+  });
+
+  it('a skip on a past date lasts, and only that date reads it', () => {
+    const skips = addSkip(addSkip([], '2026-10-20', 'dinner'), '2026-10-27', 'lunch');
+    expect(skippedOn(skips, '2026-10-20')).toEqual(['dinner']);
+    expect(skippedOn(skips, '2026-10-27')).toEqual(['lunch']);
+    expect(skippedOn(skips, '2026-10-21')).toEqual([]);
+  });
+
+  it('clears a skip, and leaves the list alone when there was none', () => {
+    const skips = addSkip([], '2026-10-27', 'lunch');
+    expect(removeSkip(skips, '2026-10-27', 'lunch')).toEqual([]);
+    expect(removeSkip(skips, '2026-10-27', 'dinner')).toBe(skips);
   });
 });

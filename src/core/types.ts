@@ -142,6 +142,8 @@ export type WorkoutLog = {
 };
 
 export type NudgeLog = { id: string; at: string; date: ISODate; type: string; action: 'done' | 'snooze' | 'skip' };
+/** A slot not eaten on purpose on one date. One per date and slot. */
+export type SlotSkip = { id: string; date: ISODate; slotId: string };
 export type ChatOption = { foodId: string; name_en: string; name_mr: string; grams: number; kcal: number; protein: number };
 
 export type ChatMsg = {
@@ -219,6 +221,8 @@ export type AppState = {
   steps: StepLog[];
   /** Decision-card actions ticked off, kept only for the day they belong to. */
   actionsDone: { date: ISODate; key: string }[];
+  /** Slots skipped on purpose, by date. A meal later logged in the slot takes its skip away. */
+  slotSkips: SlotSkip[];
   /** The fixed daily food routine: weekly bhaji, meal slots, avoid list, budget. */
   routine: Routine;
   /** Rupees spent on food. */

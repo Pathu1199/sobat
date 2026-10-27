@@ -39,10 +39,10 @@ export function FitsCard({ compact }: { compact?: boolean }) {
   const loggedSlotIds = useMemo(() => {
     if (!patternOn) return [];
     const todayMeals = state.meals.filter((m) => m.date === today);
-    return slotStates({ routine: state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skipped: app.actionsDoneToday })
+    return slotStates({ routine: state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday })
       .filter((s) => s.status === 'done' || s.status === 'skipped')
       .map((s) => s.slot.id);
-  }, [patternOn, state.routine, state.meals, today, app.targets.kcal, minute, app.actionsDoneToday]);
+  }, [patternOn, state.routine, state.meals, today, app.targets.kcal, minute, app.skippedToday]);
 
   const loggedTypes = useMemo(() => Array.from(new Set(state.meals.filter((m) => m.date === today).map((m) => m.type))), [state.meals, today]);
   const plan = useMemo(() => {

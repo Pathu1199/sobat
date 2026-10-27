@@ -148,7 +148,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
       const clock = new Date();
       const nowMinutes = clock.getHours() * 60 + clock.getMinutes();
       const loggedSlotIds = patternOn
-        ? slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes, skipped: app.actionsDoneToday })
+        ? slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes, skippedSlots: app.skippedToday })
             .filter((s) => s.status === 'done' || s.status === 'skipped')
             .map((s) => s.slot.id)
         : [];

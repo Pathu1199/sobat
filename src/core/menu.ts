@@ -1,7 +1,7 @@
 import { addDays, weekDates } from './date';
 import { weekdayOf, type PlanLine, type Routine } from './routine';
 import { stable } from './sync';
-import type { FoodItem, ISODate } from './types';
+import type { FoodItem, ISODate, SlotSkip } from './types';
 import { alignDay, planDayFor, type PlanMeal } from './weekPlan';
 
 /**
@@ -121,4 +121,26 @@ export function setMenuMeal(menus: DayMenu[], day: DayMenu, meal: PlanMeal, now:
 export function copyDay(from: DayMenu, to: ISODate, menus: DayMenu[], now: Date): DayMenu[] {
   const target = menuFor(to, menus) ?? { date: to, meals: [], editedAt: NOT_EDITED };
   return setMenuDay(menus, target, copyMeals(from.meals), now);
+}
+
+/** One skip per date and slot, with an id every device gives it, so two devices skipping the same meal merge into one record. */
+export function skipId(date: ISODate, slotId: string): string {
+  return `${date}:${slotId}`;
+}
+
+/** Record that a slot was not eaten on a date. The same list when it is already recorded. */
+export function addSkip(skips: SlotSkip[], date: ISODate, slotId: string): SlotSkip[] {
+  if (skips.some((s) => s.date === date && s.slotId === slotId)) return skips;
+  return [...skips, { id: skipId(date, slotId), date, slotId }];
+}
+
+/** Take a skip away: "Ate this" or "Ate other" on a skipped slot. The same list when there was none. */
+export function removeSkip(skips: SlotSkip[], date: ISODate, slotId: string): SlotSkip[] {
+  const has = skips.some((s) => s.date === date && s.slotId === slotId);
+  return has ? skips.filter((s) => !(s.date === date && s.slotId === slotId)) : skips;
+}
+
+/** The slot ids skipped on one date. */
+export function skippedOn(skips: SlotSkip[], date: ISODate): string[] {
+  return skips.filter((s) => s.date === date).map((s) => s.slotId);
 }

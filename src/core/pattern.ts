@@ -1,5 +1,5 @@
 import { toISODate } from './date';
-import { skipKey, SLOT_EARLY_MIN, slotMinutes, slotStatus, type Routine, type RoutineSlot, type SlotStatus } from './routine';
+import { SLOT_EARLY_MIN, slotMinutes, slotStatus, type Routine, type RoutineSlot, type SlotStatus } from './routine';
 import type { Meal, MealType } from './types';
 
 /**
@@ -93,8 +93,8 @@ export function slotStates(input: {
   target: number;
   meals: Meal[];
   nowMinutes: number;
-  /** Today's done-keys; a slot whose skip key is here was skipped on purpose. */
-  skipped: string[];
+  /** Slot ids skipped on purpose on the day being looked at. */
+  skippedSlots: string[];
   planned?: Record<string, number>;
 }): SlotState[] {
   const slots = pattern(input.routine);
@@ -113,7 +113,7 @@ export function slotStates(input: {
       planned: input.planned?.[p.id] ?? 0,
       eaten,
       left: allow - eaten,
-      status: slotStatus(p.slot, input.nowMinutes, meals.length > 0, input.skipped.includes(skipKey(p.slot))),
+      status: slotStatus(p.slot, input.nowMinutes, meals.length > 0, input.skippedSlots.includes(p.id)),
       meals,
     };
   });
@@ -152,14 +152,14 @@ export const EATEN_NOW_MS = 10 * 60000;
  * A meal that names no slot (one from a photo, a recipe or the coach) gets
  * the slot it is eaten in: eaten now, today, the current slot and its type;
  * eaten earlier or on another day, as a queued photo or an undone delete,
- * the slot its own time and type put it in. `meals` and `skipped` are
+ * the slot its own time and type put it in. `meals` and `skippedSlots` are
  * today's. Unchanged when it already names a slot or there are none.
  */
-export function withSlot(meal: Meal, input: { routine: Routine; target: number; meals: Meal[]; skipped: string[]; now: Date }): Meal {
+export function withSlot(meal: Meal, input: { routine: Routine; target: number; meals: Meal[]; skippedSlots: string[]; now: Date }): Meal {
   if (meal.slotId) return meal;
   const nowMinutes = input.now.getHours() * 60 + input.now.getMinutes();
   if (meal.date === toISODate(input.now) && Math.abs(Date.parse(meal.at) - input.now.getTime()) <= EATEN_NOW_MS) {
-    const cur = currentSlot(slotStates({ routine: input.routine, target: input.target, meals: input.meals, nowMinutes, skipped: input.skipped }), nowMinutes);
+    const cur = currentSlot(slotStates({ routine: input.routine, target: input.target, meals: input.meals, nowMinutes, skippedSlots: input.skippedSlots }), nowMinutes);
     return cur ? { ...meal, slotId: cur.slot.id, type: cur.slot.type } : meal;
   }
   const p = slotOf(meal, pattern(input.routine));
