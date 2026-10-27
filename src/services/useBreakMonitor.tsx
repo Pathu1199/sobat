@@ -17,6 +17,7 @@ import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { notifyNow } from './notify';
 import { foregroundState, systemIdleSeconds } from './platform';
+import { useReminderGate } from './useScheduledReminders';
 
 export type BreakPhase = 'working' | 'warning' | 'breaking';
 
@@ -31,11 +32,18 @@ const UNSTARTED_CLOCKS: BreakClocks = { micro: 0, long: 0, posture: 0, blink: 0 
  * One clock for the whole app, mounted by BreakMonitorProvider. Each second it
  * builds a context from the store and the platform, asks the rules what is due,
  * and reacts. All the judgement lives in src/core/breaks.ts.
+ *
+ * Breaks are for the person using Sobat here: the settings and the log are
+ * theirs. A device that is signed out or reset, or whose store and session are
+ * not known yet, runs no clock, so nothing takes the screen, notifies, or
+ * writes a break into data that is not theirs.
  */
 function useBreakClock() {
   const app = useApp();
   const t = makeT(app.state.profile.lang);
   const settings = app.state.breakSettings;
+  const { known, active } = useReminderGate();
+  const on = known && active;
 
   const [phase, setPhase] = useState<BreakPhase>('working');
   const [kind, setKind] = useState<BreakKind | null>(null);
@@ -57,15 +65,36 @@ function useBreakClock() {
   const nudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // `Date.now()` is not allowed in a render, so the clocks start at zero and
-  // are set here instead. Mount only: the tick effect below re-runs whenever
-  // the break settings change, and seeding there would silently restart every
-  // break timer each time a setting is touched. Effects run in order and the
-  // first tick is a second away, so the clocks are always set before a read.
+  // are set here instead, each time the clock starts: once the person is known
+  // at launch, and again at a sign-in, so time spent signed out never counts as
+  // time at the screen. Not in the tick effect below, which re-runs whenever
+  // the break settings change: seeding there would silently restart every break
+  // timer each time a setting is touched. Effects run in order and the first
+  // tick is a second away, so the clocks are always set before a read.
   useEffect(() => {
+    if (!on) return;
     const now = Date.now();
     clocks.current = { micro: now, long: now, posture: now, blink: now };
     lastActivity.current = now;
-  }, []);
+    // Signed out, reset or unmounted: a break running or a nudge showing just goes, unwritten.
+    return () => {
+      if (nudgeTimer.current) {
+        clearTimeout(nudgeTimer.current);
+        nudgeTimer.current = null;
+      }
+      nudgeUntil.current = null;
+      breakStartedAt.current = null;
+      runningKind.current = null;
+      warnedFor.current = null;
+      setKind(null);
+      setPhase('working');
+      setRemaining(0);
+      setNextKind(null);
+      setSecondsLeft(Infinity);
+      setPaused(false);
+      setPausedByHand(false);
+    };
+  }, [on]);
 
   // Any input counts as being at the desk.
   useEffect(() => {
@@ -189,6 +218,7 @@ function useBreakClock() {
   );
 
   useEffect(() => {
+    if (!on) return;
     const id = setInterval(() => {
       const now = Date.now();
 
@@ -264,20 +294,7 @@ function useBreakClock() {
     return () => clearInterval(id);
     // The tick reads the language and the day when it fires; neither should restart the timer.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buildCtx, start]);
-
-  // Only on unmount: the tick effect must not cancel a nudge that is still
-  // showing, and it no longer re-runs on unrelated state changes anyway.
-  useEffect(
-    () => () => {
-      if (nudgeTimer.current) {
-        clearTimeout(nudgeTimer.current);
-        nudgeTimer.current = null;
-      }
-      nudgeUntil.current = null;
-    },
-    [],
-  );
+  }, [buildCtx, start, on]);
 
   const snooze = useCallback(
     (minutes: number) => {
@@ -296,24 +313,26 @@ function useBreakClock() {
 
   const takeNow = useCallback(
     (k: BreakKind) => {
-      if (!takesScreen(k)) return;
+      if (!on || !takesScreen(k)) return;
       start(k, Date.now());
     },
-    [start],
+    [start, on],
   );
 
   // The desktop shell fires these from global shortcuts and the tray.
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
     const take = () => takeNow('micro');
-    const pause = () => app.pauseBreaks(60);
+    const pause = () => {
+      if (on) app.pauseBreaks(60);
+    };
     window.addEventListener('sobat:take-break', take);
     window.addEventListener('sobat:pause-breaks', pause);
     return () => {
       window.removeEventListener('sobat:take-break', take);
       window.removeEventListener('sobat:pause-breaks', pause);
     };
-  }, [takeNow, app]);
+  }, [takeNow, app, on]);
 
   const suggestionCandidates = useMemo(
     () => KINDS.map((k) => ({ kind: k, minutes: suggestLongerInterval(app.state.breaks, k, settings[k].everyMinutes) })),
