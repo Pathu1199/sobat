@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { FoodDetailSheet, FoodThumb } from '../components/FoodDetailSheet';
 import { GrocerySheet } from '../components/GrocerySheet';
@@ -63,13 +63,8 @@ export default function PlanScreen() {
   const avoided = useMemo(() => avoidedFoodIds({ ...state.routine, enabled: true }), [state.routine]);
   const floor = KCAL_FLOOR[state.profile.sex];
 
-  // First open: write the week from the routine, so edits have something to keep.
-  const plan: WeekPlan = useMemo(() => state.weekPlan ?? buildWeekPlan(state.routine, foods), [state.weekPlan, state.routine, foods]);
-  useEffect(() => {
-    if (!state.weekPlan) app.setWeekPlan(plan);
-    // Only the missing plan triggers this; once saved it is the person's to edit.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.weekPlan]);
+  // This week's menus, Sunday first as this screen has always read them; an edit is written to its own date.
+  const plan: WeekPlan = app.weekPlan;
 
   const [dayIdx, setDayIdx] = useState(() => weekdayOf(today));
   const [swap, setSwap] = useState<{ mealId: string; lineIdx: number } | null>(null);

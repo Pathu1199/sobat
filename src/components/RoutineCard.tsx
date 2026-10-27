@@ -85,7 +85,7 @@ export function RoutineCard() {
 
   const bhaji = bhajiFor(routine, today);
   const todayMeals = useMemo(() => state.meals.filter((m) => m.date === today), [state.meals, today]);
-  const planDay = state.weekPlan?.days[weekdayOf(today)];
+  const planDay = app.menuOn(today);
   const planned = useMemo(() => (planDay ? Object.fromEntries(planDay.meals.map((m) => [m.id, mealTotals(m, foods).kcal])) : undefined), [planDay, foods]);
   const states = useMemo(
     () => slotStates({ routine, target: targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday, planned }),

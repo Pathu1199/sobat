@@ -144,7 +144,8 @@ describe('migrateState', () => {
     expect(out.routine.slots.every((s) => typeof s.share === 'number')).toBe(true);
     expect(out.routine.slots.find((s) => s.id === 'lunch')!.share).toBe(35);
     expect(out.routine.slots.some((s) => s.type === 'dinner')).toBe(true);
-    const day = out.weekPlan!.days[3];
+    expect(out.weekPlan).toBeNull();
+    const day = out.menus.find((m) => m.date === '2026-10-28')!;
     expect(day.meals.find((m) => m.id === 'bhel')!.lines[0].qty).toBe(2);
     expect(day.meals.find((m) => m.id === 'dinner')!.lines[0].foodId).toBe('chapati');
     expect(day.meals.map((m) => m.id)).toContain('fruit');

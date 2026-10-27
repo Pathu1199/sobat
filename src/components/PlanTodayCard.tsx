@@ -32,7 +32,7 @@ export function PlanTodayCard() {
     return (s && slotLabel(s, lang)) || t(meal.type);
   };
   const minute = useMinute();
-  const plan = state.weekPlan;
+  const plan = app.weekPlan;
   const day = plan?.days[weekdayOf(today)];
 
   const todayMeals = useMemo(() => state.meals.filter((m) => m.date === today), [state.meals, today]);

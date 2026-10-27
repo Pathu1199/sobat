@@ -240,7 +240,7 @@ export type AppState = {
   spend: SpendLog[];
   /** The office day: start, breaks, lunch, tea, end. */
   schedule: WorkSchedule;
-  /** The week written down in advance, Sunday first. Null until the plan screen is first opened. */
+  /** Retired in version 7: the one-week template became this week's `menus`. Always null after a load; kept so a merge with an older file clears it. */
   weekPlan?: import('./weekPlan').WeekPlan | null;
   /** Wins already celebrated (badge:, level:, challenge: ids). Null until first seeded. */
   celebrated?: string[] | null;

@@ -5,6 +5,7 @@ import {
   addSkip,
   alignMenu,
   alignMenus,
+  applyWeekPlan,
   autoFill,
   autoMealId,
   copyDay,
@@ -22,6 +23,7 @@ import {
   skipsAfterRemove,
   viewMenu,
   viewWeek,
+  weekPlanView,
   withDayConfirmed,
   withMealAdded,
   withMealConfirmed,
@@ -110,6 +112,19 @@ describe('editing one date', () => {
     const out = setMenuLine(menus, shown, 'lunch', 0, chapati(4), NOW);
     expect(out).toHaveLength(3);
     expect(lunchQty(menuFor('2026-10-30', out))).toBe(4);
+  });
+
+  it('an edit that names no meal or line of that date, or changes nothing, leaves the menus as they were and stamps nothing', () => {
+    const supper: PlanMeal = { id: 'supper', type: 'dinner', time: '21:00', lines: [chapati(1)] };
+    expect(setMenuMeal(menus, wed, supper, NOW)).toBe(menus);
+    expect(setMenuLine(menus, wed, 'supper', 0, chapati(3), NOW)).toBe(menus);
+    expect(addMenuLine(menus, wed, 'supper', chapati(1), NOW)).toBe(menus);
+    expect(setMenuLine(menus, wed, 'lunch', 5, chapati(3), NOW)).toBe(menus);
+    expect(setMenuLine(menus, wed, 'lunch', -1, null, NOW)).toBe(menus);
+    expect(setMenuLine(menus, wed, 'lunch', 0, chapati(2), NOW)).toBe(menus);
+    expect(setMenuMeal(menus, wed, { ...wed.meals[1], lines: [chapati(2)] }, NOW)).toBe(menus);
+    // A date that is only shown is not stored by an edit that names nothing on it.
+    expect(setMenuLine(menus, menu('2026-10-30', 2, NOT_EDITED), 'supper', 0, chapati(4), NOW)).toBe(menus);
   });
 
   it('copies a day onto another date as its own copy', () => {
@@ -390,5 +405,26 @@ describe('saved meals', () => {
     const m = mealFromLines({ id: 'x', date: '2026-10-20', slot: { id: 'lunch', type: 'lunch', time: '13:00' }, lines: thali.lines, foods, source: 'manual', now: NOW })!;
     expect(m.items.map((i) => i.foodId)).toEqual(['chapati', 'moong-dal']);
     expect(m.kcal).toBe(m.items.reduce((a, i) => a + i.kcal, 0));
+  });
+});
+
+describe('the plan screen\'s view of this week', () => {
+  it('shows the week Sunday first, as the old plan was', () => {
+    const plan = weekPlanView(ensureWeek(MON, [menu('2026-10-26', 1), menu('2026-11-01', 7)], routine, foods));
+    expect(lunchQty(plan.days[1])).toBe(1);
+    expect(lunchQty(plan.days[0])).toBe(7);
+  });
+
+  it('writes back only the weekday that changed, to its own date', () => {
+    const stored = [menu('2026-10-26', 1), menu('2026-10-28', 3)];
+    const week = ensureWeek(MON, stored, routine, foods);
+    const plan = weekPlanView(week);
+    const edited = { days: plan.days.map((d, i) => (i === 3 ? { meals: d.meals.map((m) => (m.id === 'lunch' ? { ...m, lines: [chapati(5)] } : m)) } : d)) };
+    const out = applyWeekPlan(edited, week, stored, NOW);
+    expect(lunchQty(menuFor('2026-10-28', out))).toBe(5);
+    expect(menuFor('2026-10-28', out)!.editedAt).toBe(NOW.toISOString());
+    expect(menuFor('2026-10-26', out)).toBe(stored[0]);
+    expect(out).toHaveLength(2);
+    expect(applyWeekPlan(plan, week, stored, NOW)).toBe(stored);
   });
 });

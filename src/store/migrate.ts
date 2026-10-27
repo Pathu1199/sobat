@@ -145,7 +145,7 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   return s;
 }
 
-/** A plan that cannot be reshaped is dropped, not fatal: the routine rebuilds it on next open. */
+/** A plan that cannot be reshaped is dropped, not fatal: the week then starts from the pattern. */
 function alignOrDrop(plan: WeekPlan, routine: AppState['routine']): WeekPlan | null {
   try {
     return alignWeekPlan(plan, routine);
@@ -178,7 +178,7 @@ export function migrateState(raw: unknown, now: Date = new Date()): AppState {
     const weights = Array.isArray(raw.weights) ? ([...(raw.weights as AppState['weights'])].sort((a, b) => a.date.localeCompare(b.date))) : [];
     profile.startWeightKg = weights[0]?.kg ?? profile.weightKg;
   }
-  // A plan that is not seven days of meals is not a plan; rebuild it from the routine on next open.
+  // A plan that is not seven days of meals is not a plan; the week starts from the pattern instead.
   const rawPlan = isRecord(raw.weekPlan) && Array.isArray((raw.weekPlan as { days?: unknown }).days) && (raw.weekPlan as { days: unknown[] }).days.length === 7 ? (raw.weekPlan as WeekPlan) : null;
   const routine = upgradeRoutine(raw.routine, fromVersion, rawPlan !== null);
   // Version 6: plan meals are named after the pattern's slots; older names land on the slot of their type nearest their time.
@@ -206,7 +206,8 @@ export function migrateState(raw: unknown, now: Date = new Date()): AppState {
     routine,
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
     schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}) },
-    weekPlan,
+    // Its week is in `menus` now.
+    weekPlan: null,
     menus,
     actionsDone: actions.filter((a) => !isSkipKey(a)) as AppState['actionsDone'],
     slotSkips,

@@ -274,7 +274,6 @@ export default function TodayScreen() {
       {isToday ? <CoachStrip onSuggest={() => setSuggestOpen(true)} /> : null}
       {isToday ? <IntakeCard /> : null}
       {isToday && !state.routine.enabled ? <PlanTodayCard /> : null}
-      {isToday && !state.weekPlan ? <FitsCard compact /> : null}
       {isToday ? <TrackerGrid /> : null}
       {isToday ? <StartHereCard /> : null}
       {isToday ? <WeighInCard /> : null}
@@ -292,7 +291,7 @@ export default function TodayScreen() {
       </Pressable>
       {more ? (
         <>
-          {isToday && state.weekPlan ? <FitsCard compact /> : null}
+          {isToday ? <FitsCard compact /> : null}
           {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
           {isToday ? <NutrientCard /> : null}
           {isToday ? <TomorrowCard /> : null}

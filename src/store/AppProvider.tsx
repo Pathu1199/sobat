@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import foodsJson from '../data/foods.json';
 import exercisesJson from '../data/exercises.json';
-import { lastNDates, toISODate } from '../core/date';
+import { lastNDates, mondayOf, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
 import { newId } from '../core/id';
 import { prunePhotos } from '../services/photoStore';
@@ -16,10 +16,27 @@ import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryT
 import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
 import { slotStates } from '../core/pattern';
-import { editedMeal, removeSkip, skippedOn, withMealAdded, withSkipAdded } from '../core/menu';
-import { pruneSpend, spentOn, type Routine, type SpendLog } from '../core/routine';
+import {
+  addMenuLine,
+  alignMenus,
+  applyWeekPlan,
+  copyDay,
+  editedMeal,
+  removeSkip,
+  setMenuDay,
+  setMenuLine,
+  setMenuMeal,
+  skippedOn,
+  viewMenu,
+  viewWeek,
+  weekPlanView,
+  withMealAdded,
+  withSkipAdded,
+  type DayMenu,
+} from '../core/menu';
+import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
-import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
+import type { PlanMeal, WeekPlan } from '../core/weekPlan';
 import type { BreakKind, BreakSettings } from '../core/breaks';
 import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
@@ -83,7 +100,20 @@ type Ctx = {
   skipSlot: (date: ISODate, slotId: string) => void;
   unskipSlot: (date: ISODate, slotId: string) => void;
   setRoutine: (r: Partial<Routine>) => void;
-  setWeekPlan: (plan: WeekPlan | null) => void;
+  /** This week's menus in the old one-week shape (index 0 = Sunday), for the plan screen until it is rebuilt. */
+  weekPlan: WeekPlan;
+  /** Write an edit made on `weekPlan` back to this week's dates. */
+  setWeekPlan: (plan: WeekPlan) => void;
+  /** The menu a date shows: stored, or as it starts; from today on, following the slots. */
+  menuOn: (date: ISODate) => DayMenu;
+  /** The seven menus of the week starting on `monday`, Monday first. */
+  weekMenus: (monday: ISODate) => DayMenu[];
+  /** Edits to one date's menu; `day` is the menu as shown. Every other date is left as it is. */
+  editMenuDay: (day: DayMenu, meals: PlanMeal[]) => void;
+  editMenuLine: (day: DayMenu, mealId: string, lineIdx: number, next: PlanLine | null) => void;
+  addMenuFood: (day: DayMenu, mealId: string, line: PlanLine) => void;
+  editMenuMeal: (day: DayMenu, meal: PlanMeal) => void;
+  copyMenuDay: (from: DayMenu, to: ISODate) => void;
   addActivity: (a: ActivityLog) => void;
   removeActivity: (id: string) => void;
   burnedToday: number;
@@ -121,6 +151,11 @@ export function useApp(): Ctx {
   const c = useContext(AppCtx);
   if (!c) throw new Error('useApp must be used inside AppProvider');
   return c;
+}
+
+/** The state with these menus; the same state when an edit changed nothing. */
+function withMenus(s: AppState, menus: DayMenu[]): AppState {
+  return menus === s.menus ? s : { ...s, menus };
 }
 
 /** Every meal goes into the state this way; `withMealAdded` says what that does. */
@@ -237,6 +272,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // the whole app would keep working against yesterday.
   const { date: today, hour } = useClock();
   const update = useCallback((fn: (s: AppState) => AppState) => setState((s) => fn(s)), []);
+  // Planned lines can name the person's own foods, whatever the diet filter shows.
+  const planFoods = useMemo(() => [...FOODS, ...state.customFoods], [state.customFoods]);
 
   const value = useMemo<Ctx>(() => {
     const targets = dailyTargets(state.profile);
@@ -257,6 +294,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const screenMinutesToday = minutesOn(state.usage, today);
     // A tip is only today's if it was also written in the language now selected.
     const tipRecord = state.tips.find((t) => t.date === today && t.lang === state.profile.lang);
+    const thisWeek = viewWeek(mondayOf(today), state.menus, state.routine, today, planFoods);
 
     return {
       ready,
@@ -363,12 +401,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         update((s) => {
           // The pattern is always on: a menu is a list of slots.
           const routine = { ...s.routine, ...r, enabled: true };
-          // The plan is written against the slots; when they change, it follows.
+          // Menus are written against the slots; when they change, today's and later ones follow. Past ones are history.
           const slotsChanged = r.slots !== undefined && r.slots !== s.routine.slots;
-          const weekPlan = slotsChanged && s.weekPlan ? alignWeekPlan(s.weekPlan, routine, [...FOODS, ...s.customFoods]) : s.weekPlan;
-          return { ...s, routine, weekPlan };
+          const menus = slotsChanged ? alignMenus(s.menus, routine, today, [...FOODS, ...s.customFoods]) : s.menus;
+          return { ...s, routine, menus };
         }),
-      setWeekPlan: (plan) => update((s) => ({ ...s, weekPlan: plan })),
+      weekPlan: weekPlanView(thisWeek),
+      setWeekPlan: (plan) =>
+        update((s) => {
+          const week = viewWeek(mondayOf(today), s.menus, s.routine, today, [...FOODS, ...s.customFoods]);
+          return withMenus(s, applyWeekPlan(plan, week, s.menus, new Date()));
+        }),
+      menuOn: (date) => viewMenu(date, state.menus, state.routine, today, planFoods),
+      weekMenus: (monday) => viewWeek(monday, state.menus, state.routine, today, planFoods),
+      editMenuDay: (day, meals) => update((s) => withMenus(s, setMenuDay(s.menus, day, meals, new Date()))),
+      editMenuLine: (day, mealId, lineIdx, next) => update((s) => withMenus(s, setMenuLine(s.menus, day, mealId, lineIdx, next, new Date()))),
+      addMenuFood: (day, mealId, line) => update((s) => withMenus(s, addMenuLine(s.menus, day, mealId, line, new Date()))),
+      editMenuMeal: (day, meal) => update((s) => withMenus(s, setMenuMeal(s.menus, day, meal, new Date()))),
+      copyMenuDay: (from, to) => update((s) => withMenus(s, copyDay(from, to, s.menus, new Date()))),
       addActivity: (a) => update((s) => ({ ...s, activities: [...(s.activities ?? []), a] })),
       removeActivity: (id) => update((s) => ({ ...s, activities: (s.activities ?? []).filter((x) => x.id !== id) })),
       burnedToday,
@@ -416,7 +466,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

@@ -5,7 +5,7 @@ import { weekdayOf, type PlanLine, type Routine } from './routine';
 import { stable } from './sync';
 import type { FoodItem, ISODate, Meal, MealItem, MealSource, SavedMeal, SlotSkip } from './types';
 import { isOffDay } from './week';
-import { alignDay, lineInfo, planDayFor, type PlanMeal, type WeekPlan } from './weekPlan';
+import { alignDay, lineInfo, planDayFor, type PlanDay, type PlanMeal, type WeekPlan } from './weekPlan';
 
 /**
  * The menu, date by date. Each date holds its own meals, one per slot of the
@@ -94,30 +94,41 @@ export function setMenuDay(menus: DayMenu[], day: DayMenu, meals: PlanMeal[], no
   return menus.some((m) => m.date === day.date) ? menus.map((m) => (m.date === day.date ? next : m)) : [...menus, next];
 }
 
-/** Change one line of one meal on one date. Null or a quantity of 0 removes the line. */
+/**
+ * One meal of one date changed by `change`. The same list when the date has
+ * no meal with that slot id or the change leaves the meal as it was: an edit
+ * that changes nothing is not stamped, so it never beats a real edit from
+ * another device.
+ */
+function editMeal(menus: DayMenu[], day: DayMenu, mealId: string, change: (m: PlanMeal) => PlanMeal, now: Date): DayMenu[] {
+  const at = day.meals.findIndex((m) => m.id === mealId);
+  if (at < 0) return menus;
+  const next = change(day.meals[at]);
+  if (stable(next) === stable(day.meals[at])) return menus;
+  return setMenuDay(menus, day, day.meals.map((m, i) => (i === at ? next : m)), now);
+}
+
+/** Change one line of one meal on one date. Null or a quantity of 0 removes the line; a line that is not there changes nothing. */
 export function setMenuLine(menus: DayMenu[], day: DayMenu, mealId: string, lineIdx: number, next: PlanLine | null, now: Date): DayMenu[] {
-  const meals = day.meals.map((m) => {
-    if (m.id !== mealId) return m;
+  return editMeal(menus, day, mealId, (m) => {
+    if (lineIdx < 0 || lineIdx >= m.lines.length) return m;
     const lines = m.lines.map((l, j) => (j === lineIdx ? next : l)).filter((l): l is PlanLine => !!l && l.qty > 0);
     return { ...m, lines };
-  });
-  return setMenuDay(menus, day, meals, now);
+  }, now);
 }
 
 /** Add a food to one meal on one date. The same food in the same measure again is a bigger portion, not a second line. */
 export function addMenuLine(menus: DayMenu[], day: DayMenu, mealId: string, line: PlanLine, now: Date): DayMenu[] {
-  const meals = day.meals.map((m) => {
-    if (m.id !== mealId) return m;
+  return editMeal(menus, day, mealId, (m) => {
     const same = m.lines.findIndex((l) => l.foodId === line.foodId && l.unit === line.unit);
     const lines = same >= 0 ? m.lines.map((l, j) => (j === same ? { ...l, qty: l.qty + line.qty } : l)) : [...m.lines, line];
     return { ...m, lines };
-  });
-  return setMenuDay(menus, day, meals, now);
+  }, now);
 }
 
 /** Replace one meal of one date, matched by its slot id. */
 export function setMenuMeal(menus: DayMenu[], day: DayMenu, meal: PlanMeal, now: Date): DayMenu[] {
-  return setMenuDay(menus, day, day.meals.map((m) => (m.id === meal.id ? meal : m)), now);
+  return editMeal(menus, day, meal.id, () => meal, now);
 }
 
 /** Copy one date's meals onto another date. The copy is its own, so editing one never edits the other. */
@@ -369,4 +380,21 @@ export function menusFromTemplate(plan: WeekPlan, monday: ISODate, menus: DayMen
     .filter((date) => !menuFor(date, menus) && plan.days[weekdayOf(date)])
     .map((date): DayMenu => ({ date, meals: copyMeals(plan.days[weekdayOf(date)].meals), editedAt: NOT_EDITED }));
   return missing.length ? [...menus, ...missing] : menus;
+}
+
+/** The week's menus in the old one-week shape, index 0 being Sunday, for the plan screen until it is rebuilt. */
+export function weekPlanView(week: DayMenu[]): WeekPlan {
+  const days: PlanDay[] = Array.from({ length: 7 }, () => ({ meals: [] }));
+  for (const m of week) days[weekdayOf(m.date)] = { meals: m.meals };
+  return { days };
+}
+
+/** An edit made on that view, written back: each weekday that changed goes to its own date in the week, stamped now; the rest stay as they are. */
+export function applyWeekPlan(plan: WeekPlan, week: DayMenu[], menus: DayMenu[], now: Date): DayMenu[] {
+  let out = menus;
+  for (const day of week) {
+    const next = plan.days[weekdayOf(day.date)];
+    if (next && stable(next.meals) !== stable(day.meals)) out = setMenuDay(out, day, next.meals, now);
+  }
+  return out;
 }
