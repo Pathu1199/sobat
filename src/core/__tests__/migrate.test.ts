@@ -3,7 +3,7 @@ import { migrateState } from '../../store/migrate';
 import { EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { allowance, pattern } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE } from '../routine';
-import { landMerge, syncRound } from '../sync';
+import { forCloud, landMerge, RoundStop, syncRound, type CloudState } from '../sync';
 import type { AppState } from '../types';
 
 // A realistic v1 blob: the shape the app has been writing until now.
@@ -373,34 +373,50 @@ describe('migrateState', () => {
   });
 });
 
-describe('an account file from before version 7 arriving on a device that was never used', () => {
-  /** The first sync on a never-used device, landed the way the store lands it: the merge, then the migration. */
-  async function signInWith(file: unknown): Promise<AppState> {
-    let now: AppState = { ...EMPTY_STATE };
-    await syncRound({
+/**
+ * One sync round on this device against an account holding `file`, landed the way the store lands it (the merge, then the
+ * migration), with the upgrade the app hands every round. Returns the device after it and every file written.
+ */
+async function syncWith(file: unknown, o: { local?: AppState; base?: CloudState | null; modifiedTime?: string | null } = {}) {
+  let now: AppState = o.local ?? { ...EMPTY_STATE };
+  let account = { state: JSON.stringify(file), modifiedTime: 't1' };
+  const written: CloudState[] = [];
+  const round = (base: CloudState | null, modifiedTime: string | null) =>
+    syncRound({
       pull: true,
-      base: null,
-      modifiedTime: null,
+      base,
+      modifiedTime,
       supported: STATE_VERSION,
+      upgrade: (f) => forCloud(migrateState(f, NOW)),
       io: {
         readNow: async () => now,
         land: (local, merged) => {
           now = migrateState(landMerge(now, local, merged), NOW);
         },
-        get: async () => ({ state: JSON.stringify(file), modifiedTime: 't1' }),
-        put: async () => ({ ok: true, modifiedTime: 't2' }),
+        get: async () => account,
+        put: async (s, at) => {
+          if (at !== account.modifiedTime) return { ok: false, stale: account };
+          written.push(s);
+          account = { state: JSON.stringify(s), modifiedTime: `t${written.length + 1}` };
+          return { ok: true, modifiedTime: account.modifiedTime };
+        },
         live: () => true,
       },
     });
-    return now;
-  }
-  // What a version-6 build writes to the account: no device settings, no caches, a glass and no bottle.
-  const accountFile = (glassMl: number) => ({
-    version: 6,
-    profile: { ...v1.profile },
-    settings: { nudgeMinutes: 60, nudgesEnabled: true, quietStartHour: 22, quietEndHour: 7, waterGoalMl: 3000, glassMl },
-    meals: v1.meals,
-  });
+  const out = await round(o.base ?? null, o.modifiedTime ?? null);
+  return { now: () => now, written, out, round };
+}
+
+// What a version-6 build writes to the account: no device settings, no caches, a glass and no bottle.
+const accountFile = (glassMl: number) => ({
+  version: 6,
+  profile: { ...v1.profile },
+  settings: { nudgeMinutes: 60, nudgesEnabled: true, quietStartHour: 22, quietEndHour: 7, waterGoalMl: 3000, glassMl },
+  meals: v1.meals,
+});
+
+describe('an account file from before version 7 arriving on a device that was never used', () => {
+  const signInWith = async (file: unknown) => (await syncWith(file)).now();
 
   it('the glass size the account holds becomes the bottle, not the bottle this device started with', async () => {
     const chosen = await signInWith(accountFile(300));
@@ -412,5 +428,60 @@ describe('an account file from before version 7 arriving on a device that was ne
 
   it('a bottle size someone picked is never replaced by a glass beside it', () => {
     expect(migrateState({ ...v1, settings: { ...v1.settings, glassMl: 300, bottleMl: 750 } }).settings.bottleMl).toBe(750);
+  });
+
+  it('is migrated as version 6: the untouched example with the pattern off becomes the four meals, reminders off keep the meal-time prompt off, and it goes back as this version once', async () => {
+    const file = { ...accountFile(250), settings: { ...accountFile(250).settings, nudgesEnabled: false }, routine: { ...DEFAULT_ROUTINE, enabled: false } };
+    const s = await syncWith(file);
+    const landed = s.now();
+    expect(landed.routine.slots).toEqual(DEFAULT_SLOTS);
+    expect(landed.routine.slots.map((x) => x.id)).toEqual(['breakfast', 'lunch', 'snack', 'dinner']);
+    expect(landed.routine.avoid).toEqual([]);
+    expect(landed.settings.reminders.mealPrompt).toBe(false);
+    expect(s.written).toHaveLength(1);
+    expect(s.written[0].version).toBe(STATE_VERSION);
+    expect(s.written[0].routine.slots).toEqual(DEFAULT_SLOTS);
+    expect(s.written[0].settings.reminders.mealPrompt).toBe(false);
+    // The next round finds the account as it left it: nothing is written again.
+    expect(await s.round(s.out!.base, s.out!.modifiedTime)).toBeNull();
+    expect(s.written).toHaveLength(1);
+  });
+
+  it('a file newer than this build still stops the round, upgrade or not', async () => {
+    await expect(syncWith({ ...accountFile(250), version: STATE_VERSION + 1 })).rejects.toEqual(new RoundStop('update_app'));
+  });
+});
+
+describe('an account file from before version 7 merged on a device already on version 7', () => {
+  // The file a version-6 build last wrote: the shipped example, never switched on.
+  const base6 = { ...accountFile(250), routine: { ...DEFAULT_ROUTINE, enabled: false } };
+  // This device loaded the same file under this build, so its own store moved to version 7 on load, and it logged a meal since.
+  const dinner = { id: 'm2', at: '2026-10-27T15:00:00.000Z', date: '2026-10-27', type: 'dinner', items: [], kcal: 600, protein: 25 };
+  const local = (): AppState => {
+    const s = migrateState({ ...base6, settings: { ...base6.settings, ollamaUrl: 'http://pc:11434' } }, NOW);
+    return { ...s, meals: [...s.meals, dinner as AppState['meals'][number]] };
+  };
+
+  it('a pattern another version-6 device switched on after the base survives this device\'s own migration', async () => {
+    const remote = { ...base6, routine: { ...DEFAULT_ROUTINE, enabled: true } };
+    const s = await syncWith(remote, { local: local(), base: base6 as unknown as CloudState, modifiedTime: 't0' });
+    const ids = DEFAULT_ROUTINE.slots.map((x) => x.id);
+    expect(s.now().routine.slots.map((x) => x.id)).toEqual(ids);
+    expect(s.now().routine.avoid).toEqual(DEFAULT_ROUTINE.avoid);
+    expect(s.now().meals.map((m) => m.id)).toEqual(['m1', 'm2']);
+    expect(s.written).toHaveLength(1);
+    expect(s.written[0].version).toBe(STATE_VERSION);
+    expect(s.written[0].routine.slots.map((x) => x.id)).toEqual(ids);
+  });
+
+  it('an avoid list another version-6 device edited after the base survives this device\'s own migration', async () => {
+    const avoid = [DEFAULT_ROUTINE.avoid[1]];
+    const remote = { ...base6, routine: { ...DEFAULT_ROUTINE, enabled: false, avoid } };
+    const s = await syncWith(remote, { local: local(), base: base6 as unknown as CloudState, modifiedTime: 't0' });
+    expect(s.now().routine.avoid).toEqual(avoid);
+    expect(s.now().routine.slots).toEqual(DEFAULT_SLOTS);
+    expect(s.now().meals.map((m) => m.id)).toEqual(['m1', 'm2']);
+    expect(s.written[0].routine.avoid).toEqual(avoid);
+    expect(s.written[0].version).toBe(STATE_VERSION);
   });
 });

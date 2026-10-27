@@ -454,6 +454,92 @@ describe('a sync round', () => {
     const d = device(used([v('a', 1), n]), r);
     await expect(syncRound({ pull: false, base, modifiedTime: 't0', supported: STATE_VERSION, io: d.io })).rejects.toEqual(new RoundStop('kept_changing'));
   });
+
+  describe('an account file from an older build', () => {
+    const old = (s: CloudState): CloudState => ({ ...s, version: STATE_VERSION - 1 });
+    const routine = (r: Partial<AppState['routine']>) => ({ routine: { ...EMPTY_STATE.routine, ...r } });
+    /** This build's migration in small: the newer version switched the pattern on for everyone. Records what it was handed. */
+    function upgrader() {
+      const seen: CloudState[] = [];
+      const upgrade = (f: CloudState): CloudState => {
+        seen.push(f);
+        return { ...f, version: STATE_VERSION, routine: { ...f.routine, enabled: true } };
+      };
+      return { seen, upgrade };
+    }
+    /** Counts the writes that reach the relay. */
+    const counted = (r: ReturnType<typeof relay>) => {
+      const c = {
+        puts: 0,
+        put: (s: CloudState, at: string | null) => {
+          c.puts++;
+          return r.put(s, at);
+        },
+      };
+      return c;
+    };
+
+    it('is brought up to this version before it is merged, and written back once even when the device has nothing to add', async () => {
+      const file = old(cloudOf(used([v('a', 1)], routine({ enabled: false }))));
+      const r = relay(file);
+      const c = counted(r);
+      const d = device({ ...EMPTY_STATE }, r, { put: c.put });
+      const { seen, upgrade } = upgrader();
+      const out = await syncRound({ pull: true, base: null, modifiedTime: null, supported: STATE_VERSION, upgrade, io: d.io });
+      expect(seen.every((f) => f.version === STATE_VERSION - 1)).toBe(true);
+      expect(c.puts).toBe(1);
+      expect(r.file()?.version).toBe(STATE_VERSION);
+      expect(r.file()?.routine.enabled).toBe(true);
+      expect(d.now().routine.enabled).toBe(true);
+      // What is remembered is what the account holds, never an upgraded copy that was not written.
+      expect(out && sameCloud(out.base, r.file() as CloudState)).toBe(true);
+      // The next round finds the account as it left it: nothing is written again.
+      expect(await syncRound({ pull: true, base: out!.base, modifiedTime: out!.modifiedTime, supported: STATE_VERSION, upgrade, io: d.io })).toBeNull();
+      expect(c.puts).toBe(1);
+    });
+
+    it('the base is brought up too, so a change another older device made survives this device\'s own upgrade, also across refused writes', async () => {
+      const base = old(cloudOf(used([v('a', 1)], routine({ enabled: false }))));
+      // Another device still on the older build sets a budget before this device's first write, then a lower end before its second.
+      const first = old(cloudOf(used([v('a', 1)], routine({ enabled: false, budgetMax: 150 }))));
+      const second = old(cloudOf(used([v('a', 1)], routine({ enabled: false, budgetMin: 100, budgetMax: 150 }))));
+      const r = relay(base, { 0: first, 1: second });
+      // This device loaded the same file under this build, so its pattern is on, and it logged a meal since.
+      const d = device(used([v('a', 1), n], routine({ enabled: true })), r);
+      const { upgrade } = upgrader();
+      await syncRound({ pull: false, base, modifiedTime: 't0', supported: STATE_VERSION, upgrade, io: d.io });
+      const file = r.file() as CloudState;
+      expect([file.routine.budgetMin, file.routine.budgetMax]).toEqual([100, 150]);
+      expect(file.routine.enabled).toBe(true);
+      expect(file.version).toBe(STATE_VERSION);
+      expect(file.meals.map((m) => m.id)).toEqual(['a', 'n']);
+      expect([d.now().routine.budgetMin, d.now().routine.budgetMax]).toEqual([100, 150]);
+    });
+
+    it('a file newer than this build still stops the round: the upgrade, which stamps this version, never hides it', async () => {
+      const newer = { ...cloudOf(used([v('a', 1)])), version: STATE_VERSION + 1 };
+      const r = relay(newer);
+      const d = device(used([v('b', 1)]), r);
+      const { seen, upgrade } = upgrader();
+      await expect(syncRound({ pull: true, base: null, modifiedTime: null, supported: STATE_VERSION, upgrade, io: d.io })).rejects.toEqual(new RoundStop('update_app'));
+      expect(seen).toEqual([]);
+      expect(r.file()).toEqual(newer);
+      expect(d.now().meals.map((m) => m.id)).toEqual(['b']);
+    });
+
+    it('a file already at this version is never upgraded, and with nothing changed nothing is written', async () => {
+      const file = cloudOf(used([v('a', 1)]));
+      const r = relay(file);
+      const c = counted(r);
+      const d = device(used([v('a', 1)]), r, { put: c.put });
+      const { seen, upgrade } = upgrader();
+      // Pulled as if the file might have moved since this device last saw it, so the round reads it and merges.
+      const out = await syncRound({ pull: true, base: file, modifiedTime: 'old', supported: STATE_VERSION, upgrade, io: d.io });
+      expect(seen).toEqual([]);
+      expect(c.puts).toBe(0);
+      expect(out && sameCloud(out.base, file)).toBe(true);
+    });
+  });
 });
 
 describe('menus, skips and saved meals', () => {
@@ -481,6 +567,33 @@ describe('menus, skips and saved meals', () => {
     const edited = cloudOf(used([meal('a', '2026-10-27T08:00:00.000Z')], { menus: [menu('2026-10-28', 4, '2026-10-27T09:00:00.000Z')] }));
     expect(qtyOn(merge3(null, written, edited), '2026-10-28')).toBe(4);
     expect(qtyOn(merge3(null, edited, written), '2026-10-28')).toBe(4);
+  });
+
+  it('the same date edited on both at the same moment: this device\'s edit stays', () => {
+    const here = cloudOf(used([], { menus: [menu('2026-10-28', 3, '2026-10-27T09:00:00.000Z'), menu('2026-10-29', 2, '')] }));
+    const there = cloudOf(used([], { menus: [menu('2026-10-28', 5, '2026-10-27T09:00:00.000Z'), menu('2026-10-29', 2, '')] }));
+    expect(qtyOn(merge3(base, here, there), '2026-10-28')).toBe(3);
+    expect(qtyOn(merge3(base, there, here), '2026-10-28')).toBe(5);
+  });
+
+  it('a menu with no edit stamp at all counts as one the app wrote, and a real edit beats it', () => {
+    const unstamped = (qty: number): DayMenu => {
+      const { editedAt, ...rest } = menu('2026-10-28', qty, '');
+      void editedAt;
+      return rest as DayMenu;
+    };
+    const app = cloudOf(used([], { menus: [unstamped(6), menu('2026-10-29', 2, '')] }));
+    const edited = cloudOf(used([], { menus: [menu('2026-10-28', 4, '2026-10-27T09:00:00.000Z'), menu('2026-10-29', 2, '')] }));
+    expect(qtyOn(merge3(base, app, edited), '2026-10-28')).toBe(4);
+    expect(qtyOn(merge3(base, edited, app), '2026-10-28')).toBe(4);
+  });
+
+  it('a date gone on one side and edited on the other: this device\'s side, as for every record', () => {
+    // A missing menu has no stamp to compare, so the rule every record follows decides: what this device did stays.
+    const gone = cloudOf(used([], { menus: [menu('2026-10-29', 2, '')] }));
+    const edited = cloudOf(used([], { menus: [menu('2026-10-28', 4, '2026-10-27T09:00:00.000Z'), menu('2026-10-29', 2, '')] }));
+    expect(qtyOn(merge3(base, gone, edited), '2026-10-28')).toBeUndefined();
+    expect(qtyOn(merge3(base, edited, gone), '2026-10-28')).toBe(4);
   });
 
   it('skips and saved meals merge record by record', () => {

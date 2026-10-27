@@ -9,7 +9,9 @@ import type { AppState, Settings } from './types';
  * last-write-wins, each record is merged on its own against the last version
  * this device knew the file to be in (`base`): a record this device changed is
  * kept, a record only the other side changed is taken, and anything neither
- * touched stays. Pure, so every case has a test.
+ * touched stays. A day's menu says when it was last edited, so when both sides
+ * changed the same date the newer edit wins, wherever it was made. Pure, so
+ * every case has a test.
  */
 
 /** Settings that describe this machine, not the person: never synced. */
@@ -149,9 +151,10 @@ function mergeCollection(idOf: (r: AnyRecord) => string, base: unknown, local: u
  * Three-way merge. `base` is the file as this device last saw it; null means
  * this device has never synced. With no base there is nothing to say which
  * side changed, so a record present on both sides is taken from the device
- * (what the person is looking at). A device holding nothing takes the
- * account's copy wholesale: never used, or reset with an old base still
- * about, its emptiness is not a deletion.
+ * (what the person is looking at), except a menu: the newer edit stamp wins,
+ * so one the app wrote never beats a real edit. A device holding nothing
+ * takes the account's copy wholesale: never used, or reset with an old base
+ * still about, its emptiness is not a deletion.
  */
 export function merge3(base: CloudState | null, local: CloudState, remote: CloudState): CloudState {
   if (isPristine(local) && (base === null || !isPristine(base))) return remote;
@@ -276,6 +279,11 @@ export async function syncRound(o: {
   modifiedTime: string | null;
   /** The newest state version this build understands. */
   supported: number;
+  /**
+   * Brings a file from an older build up to this one: the store's migration, handed in because this module cannot reach
+   * it. The file and the base both go through it, so it must give the same answer for the same file all round.
+   */
+  upgrade?: (file: CloudState) => CloudState;
   io: RoundIO;
   tries?: number;
 }): Promise<{ base: CloudState; modifiedTime: string | null } | null> {
@@ -283,6 +291,7 @@ export async function syncRound(o: {
   const check = () => {
     if (!io.live()) throw new RoundStop('abandoned');
   };
+  const older = (f: CloudState) => typeof f.version !== 'number' || f.version < o.supported;
   let base = o.base;
   let baseTime = o.modifiedTime;
   // A file already in hand, from a refused write.
@@ -306,16 +315,24 @@ export async function syncRound(o: {
         if (!changed && remote.modifiedTime === baseTime) return null;
       }
     }
-    const theirs = readAccountFile(remote.state);
-    if (theirs && fromNewerApp(theirs, o.supported)) throw new RoundStop('update_app');
-    const merged = theirs ? merge3(base, local, theirs) : local;
+    // Checked as read: brought up first, it would carry this build's version and hide that it is newer.
+    const raw = readAccountFile(remote.state);
+    if (raw && fromNewerApp(raw, o.supported)) throw new RoundStop('update_app');
+    // An older file, and the base it is merged against, go through this build's migration first. Merged as they are, the
+    // file's version would be lost to this one and its migration skipped, and this device's own migration would read as
+    // an edit made here and win over a change another older device made since.
+    const theirs = raw && older(raw) && o.upgrade ? o.upgrade(raw) : raw;
+    const from = base && older(base) && o.upgrade ? o.upgrade(base) : base;
+    const merged = theirs ? merge3(from, local, theirs) : local;
     if (!sameCloud(merged, local)) io.land(local, merged);
-    // The account already has exactly this; nothing to write.
-    if (theirs && sameCloud(merged, theirs)) return { base: merged, modifiedTime: remote.modifiedTime };
+    // The account already has exactly this; nothing to write. Compared with the file as it is, so an older one is written
+    // back once at this version, and a copy brought up here is never remembered as the account's without being written.
+    if (raw && sameCloud(merged, raw)) return { base: merged, modifiedTime: remote.modifiedTime };
     const res = await io.put(merged, remote.modifiedTime);
     check();
     if (res.ok) return { base: merged, modifiedTime: res.modifiedTime };
-    base = theirs;
+    // The base is what the account really held; the next try brings it up again.
+    base = raw;
     baseTime = remote.modifiedTime;
     inHand = res.stale;
   }

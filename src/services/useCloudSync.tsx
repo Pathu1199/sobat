@@ -5,6 +5,7 @@ import { parkedKey } from '../core/accounts';
 import { bindStart, encodeSavedBase, forCloud, inAccount, isPristine, landMerge, readSavedBase, RoundStop, sameCloud, signOutPlan, syncRound, type CloudState } from '../core/sync';
 import { CLOUD_BASE_KEY, OWNER_KEY, STATE_KEY, useApp } from '../store/AppProvider';
 import { EMPTY_STATE, STATE_VERSION } from '../store/defaults';
+import { migrateState } from '../store/migrate';
 import { CloudError, cloudConfigured, deleteData, getData, putData } from './cloud';
 import { authApi, useAuth } from './useAuth';
 
@@ -121,17 +122,22 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const round = useCallback(
     async (pull: boolean, token: string, uid: string, live: () => boolean) => {
       const extra = { name: stateRef.current.profile.name || user?.name || undefined, platform: Platform.OS };
+      // One moment for the whole round: an older file and its base are brought up against the same week, so the menus the
+      // migration writes for it read the same on both sides and never as an edit.
+      const at = new Date();
       const out = await syncRound({
         pull,
         base: base.current,
         modifiedTime: baseModifiedTime.current,
         supported: STATE_VERSION,
+        // The store's migration, minus the caches and machine settings it fills in.
+        upgrade: (file) => forCloud(migrateState(file, at)),
         io: {
           readNow,
           // Onto the state as it is when this lands, not as it was when the request went out.
           land: (local, merged) => mergeState((now) => landMerge(now, local, merged)),
           get: () => getData(token),
-          put: (file, at) => putData(token, JSON.stringify(file), at, extra),
+          put: (file, builtOn) => putData(token, JSON.stringify(file), builtOn, extra),
           live,
         },
       });
