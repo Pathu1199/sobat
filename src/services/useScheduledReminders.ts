@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
+import type { BreakSettings } from '../core/breaks';
 import { slotStates } from '../core/pattern';
 import { DAILY_IDS, dailyReminders, LONG_BREAK_ID, lastLogDate, plannedReminders, type Reminder } from '../core/reminders';
 import { makeT } from '../i18n';
@@ -54,7 +55,8 @@ export function useScheduledReminders() {
   const mantra = useMantra();
   const mantraText = mantra?.text ?? '';
   const routine = app.state.routine;
-  const breakSettings = app.state.breakSettings;
+  // By value: a sync landing rebuilds this object unchanged, and must not re-register the day's reminders.
+  const breaksJson = JSON.stringify(app.state.breakSettings);
   const { today, hour } = app;
   const { known, active } = useReminderGate();
 
@@ -69,7 +71,7 @@ export function useScheduledReminders() {
       quietStartHour,
       quietEndHour,
       mantra: mantraText,
-      breaks: breakSettings,
+      breaks: JSON.parse(breaksJson) as BreakSettings,
       nowMs: Date.now(),
       t: makeT(lang),
     });
@@ -89,7 +91,7 @@ export function useScheduledReminders() {
     return () => {
       stale = true;
     };
-  }, [known, active, nudgesEnabled, quietStartHour, quietEndHour, lang, breakSettings, mantraText, routine.enabled]);
+  }, [known, active, nudgesEnabled, quietStartHour, quietEndHour, lang, breaksJson, mantraText, routine.enabled]);
 
   // Slots done or skipped today, as one string so the memo below only moves when the set does.
   const doneKey = useMemo(() => {

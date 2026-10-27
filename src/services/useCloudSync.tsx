@@ -26,7 +26,7 @@ import { authApi, useAuth } from './useAuth';
  * A file written by a newer build is never merged or written over: this one
  * would drop what it does not understand. The status says to update.
  */
-export type SyncStatus = 'unconfigured' | 'off' | 'syncing' | 'synced' | 'pending' | 'error' | 'blocked';
+export type SyncStatus = 'unconfigured' | 'off' | 'syncing' | 'synced' | 'pending' | 'error' | 'blocked' | 'outdated';
 
 export type CloudSync = {
   status: SyncStatus;
@@ -87,6 +87,11 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       setStatus('blocked');
       setError(null);
       authApi.signOut().catch(() => {});
+      return;
+    }
+    if (e instanceof CloudError && e.code === 'update_app') {
+      setStatus('outdated');
+      setError(null);
       return;
     }
     setStatus('error');
@@ -242,7 +247,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!configured || !boundUid.current || base.current === null) return;
     if (sameCloud(forCloud(state), base.current)) return;
-    setStatus((s) => (s === 'syncing' || s === 'blocked' ? s : 'pending'));
+    setStatus((s) => (s === 'syncing' || s === 'blocked' || s === 'outdated' ? s : 'pending'));
     if (pushTimer.current) clearTimeout(pushTimer.current);
     pushTimer.current = setTimeout(() => void sync({ pull: false }), PUSH_DELAY_MS);
     return () => {
