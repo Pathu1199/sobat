@@ -1,0 +1,94 @@
+import React, { useMemo } from 'react';
+import { PanResponder, Pressable, Text, View } from 'react-native';
+import { formatDayLabel, formatDayMonth } from '../core/date';
+import type { Lang } from '../core/types';
+import { swipeStep, type StripDay } from '../core/weekStrip';
+import { makeT } from '../i18n';
+import { C, F, lh, S } from '../ui/theme';
+import { IconButton } from './TopBarActions';
+
+/**
+ * Monday to Sunday of the week being looked at, a dot under each day from
+ * the record. Tapping a day shows it; the arrows above, or a sideways swipe,
+ * move a week. The arrows sit in their own row, so each day keeps a full
+ * seventh of the width, never under a finger's size. A day's words stay on
+ * one line at every text size: the weekday's short name, the date, and the
+ * dot; what the dot means is in the day's name for a screen reader.
+ */
+export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; lang: Lang; onSelect: (date: string) => void; onWeek: (by: -1 | 1) => void }) {
+  const t = makeT(lang);
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > 2 * Math.abs(g.dy),
+        onPanResponderRelease: (_e, g) => {
+          const by = swipeStep(g.dx, g.dy);
+          if (by !== 0) onWeek(by);
+        },
+      }),
+    [onWeek],
+  );
+  if (days.length === 0) return null;
+  return (
+    <View style={{ gap: 4 }} {...pan.panHandlers}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <IconButton name="chevron-back" label={t('strip_prev_week')} onPress={() => onWeek(-1)} />
+        <Text numberOfLines={1} style={{ flex: 1, textAlign: 'center', color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
+          {`${formatDayMonth(days[0].date, lang)} – ${formatDayMonth(days[days.length - 1].date, lang)}`}
+        </Text>
+        <IconButton name="chevron-forward" label={t('strip_next_week')} onPress={() => onWeek(1)} />
+      </View>
+      <View style={{ flexDirection: 'row' }}>
+        {days.map((d) => (
+          <Pressable
+            key={d.date}
+            onPress={() => onSelect(d.date)}
+            accessibilityRole="button"
+            aria-selected={d.selected}
+            accessibilityLabel={`${formatDayLabel(d.date, lang)}, ${t(`strip_${d.mark}`)}${d.light ? `, ${t('strip_from_plan')}` : ''}`}
+            style={({ pressed }) => ({
+              flex: 1,
+              minHeight: 60,
+              minWidth: S.touch,
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 3,
+              borderRadius: S.radiusSm,
+              borderWidth: 1,
+              borderColor: d.selected ? C.accent : 'transparent',
+              backgroundColor: d.selected ? C.accentDim : 'transparent',
+              opacity: pressed ? 0.7 : 1,
+            })}>
+            {/* textFaint is too faint on the chosen day's tint, so the chosen day's weekday is textDim. */}
+            <Text numberOfLines={1} style={{ color: d.isToday ? C.accentText : d.selected ? C.textDim : C.textFaint, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
+              {t(`wd_${d.weekday}`)}
+            </Text>
+            <Text numberOfLines={1} style={{ color: d.selected || d.isToday ? C.accentText : C.text, fontSize: F.body, lineHeight: lh(F.body, true), fontWeight: '500', fontVariant: ['tabular-nums'] }}>
+              {d.day}
+            </Text>
+            <Dot mark={d.mark} light={d.light} />
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/** Teal for full, amber for missing, an outline for planned and today; nothing for an off day or a day before the start. Lighter while the day holds meals filled in from the plan. */
+function Dot({ mark, light }: { mark: StripDay['mark']; light: boolean }) {
+  if (mark === 'off' || mark === 'none') return <View style={{ width: 8, height: 8 }} />;
+  const fill = mark === 'full' ? C.accent : mark === 'missing' ? C.amber : 'transparent';
+  return (
+    <View
+      style={{
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: fill,
+        borderWidth: fill === 'transparent' ? 1.5 : 0,
+        borderColor: C.textFaint,
+        opacity: light ? 0.45 : 1,
+      }}
+    />
+  );
+}

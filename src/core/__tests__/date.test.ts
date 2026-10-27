@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { formatDayLabel, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
+import { formatDayLabel, formatDayMonth, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
 describe('local time from ISO strings', () => {
@@ -121,5 +121,12 @@ describe('isIsoDate', () => {
     expect(isIsoDate('27-10-2026')).toBe(false);
     expect(isIsoDate(['2026-10-27'])).toBe(false);
     expect(isIsoDate(undefined)).toBe(false);
+  });
+});
+
+describe('formatDayMonth', () => {
+  it('writes the day and the short month', () => {
+    expect(formatDayMonth('2026-10-26', 'en')).toMatch(/26/);
+    expect(formatDayMonth('2026-10-26', 'en')).toMatch(/Oct/);
   });
 });

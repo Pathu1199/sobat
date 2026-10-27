@@ -99,3 +99,13 @@ export function formatDayLabel(date: ISODate, lang: Lang): string {
     return date;
   }
 }
+
+/** "26 Oct" in the chosen language. Falls back to the ISO date if Intl is missing. */
+export function formatDayMonth(date: ISODate, lang: Lang): string {
+  try {
+    const s = new Date(date + 'T12:00:00').toLocaleDateString(LOCALE[lang] ?? 'en-IN', { day: 'numeric', month: 'short' });
+    return s && s !== 'Invalid Date' ? s : date;
+  } catch {
+    return date;
+  }
+}

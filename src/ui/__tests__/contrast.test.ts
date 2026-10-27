@@ -47,6 +47,12 @@ describe('palette', () => {
       expect(contrastRatio(P.red, P.redSoft), 'red on redSoft').toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(P.amber, P.amberSoft), 'amber on amberSoft').toBeGreaterThanOrEqual(4.5);
     });
+
+    it(`${mode}: the week strip's chosen day, drawn on accentDim, sets its words in text, textDim or accentText, never textFaint`, () => {
+      for (const fg of ['text', 'textDim', 'accentText'] as const) {
+        expect(contrastRatio(P[fg], P.accentDim), `${fg} on accentDim`).toBeGreaterThanOrEqual(4.5);
+      }
+    });
   }
 
   it('has no ghost text colour left to reach for', () => {

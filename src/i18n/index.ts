@@ -1038,6 +1038,8 @@ const en: Dict = {
   add_save_as_title: 'Save as my meal?', add_save_as_body: 'Next time it is one tap.', add_meal_name: 'Name', add_meal_name_hint: 'e.g. My usual thali',
   add_not_now: 'Not now', add_saved_meal: 'Saved to your meals',
   menu_ate_planned: 'Ate as planned', menu_change: 'Change',
+  strip_full: 'All meals logged', strip_missing: 'Meals missing', strip_today: 'Today, still going', strip_planned: 'Planned', strip_off: 'Free day', strip_none: 'Before you started',
+  strip_from_plan: 'filled in from the plan', strip_prev_week: 'Previous week', strip_next_week: 'Next week',
 };
 
 const mr: Dict = {
@@ -2080,6 +2082,8 @@ const mr: Dict = {
   add_save_as_title: 'माझं जेवण म्हणून जतन करायचं?', add_save_as_body: 'पुढच्या वेळी एका टॅपमध्ये नोंद होईल.', add_meal_name: 'नाव', add_meal_name_hint: 'उदा. माझं नेहमीचं ताट',
   add_not_now: 'आत्ता नको', add_saved_meal: 'तुमच्या जेवणांत जतन केलं',
   menu_ate_planned: 'ठरवल्याप्रमाणे खाल्लं', menu_change: 'बदला',
+  strip_full: 'सर्व जेवणं नोंदली', strip_missing: 'काही जेवणं राहिली', strip_today: 'आज, सुरू आहे', strip_planned: 'ठरवलेलं', strip_off: 'मोकळा दिवस', strip_none: 'सुरुवातीआधी',
+  strip_from_plan: 'नियोजनावरून भरलेलं', strip_prev_week: 'मागचा आठवडा', strip_next_week: 'पुढचा आठवडा',
 };
 
 const hi: Dict = {
@@ -3120,6 +3124,8 @@ const hi: Dict = {
   add_save_as_title: 'मेरे खाने के रूप में सहेजें?', add_save_as_body: 'अगली बार एक टैप में दर्ज होगा.', add_meal_name: 'नाम', add_meal_name_hint: 'जैसे मेरी रोज़ की थाली',
   add_not_now: 'अभी नहीं', add_saved_meal: 'आपके खानों में सहेजा',
   menu_ate_planned: 'प्लान के मुताबिक़ खाया', menu_change: 'बदलें',
+  strip_full: 'सारे खाने दर्ज', strip_missing: 'कुछ खाने बाकी', strip_today: 'आज, जारी है', strip_planned: 'तय', strip_off: 'छुट्टी का दिन', strip_none: 'शुरुआत से पहले',
+  strip_from_plan: 'प्लान से भरा', strip_prev_week: 'पिछला हफ़्ता', strip_next_week: 'अगला हफ़्ता',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
