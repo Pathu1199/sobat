@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { pageTitle, titleKeyFor } from '../screenTitle';
+import { makeT } from '../../i18n';
+import { pageTitle, TITLES, titleKeyFor } from '../screenTitle';
 
 describe('page titles', () => {
   it('names each address, ignoring the query and a trailing slash', () => {
@@ -15,5 +16,10 @@ describe('page titles', () => {
     const word = (k: string) => words[k] ?? k;
     expect(pageTitle('/me', word)).toBe('Me · Sobat');
     expect(pageTitle('/welcome', word)).toBe('Sobat');
+  });
+
+  it('every page title is a word the English list has, never the raw key', () => {
+    const en = makeT('en');
+    for (const key of Object.values(TITLES)) expect(en(key), key).not.toBe(key);
   });
 });

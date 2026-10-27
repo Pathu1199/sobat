@@ -2,7 +2,7 @@
  * The web page title for each address, as an i18n key, so a browser tab and
  * its history say which page they are. Pages with no entry show the app name.
  */
-const TITLES: Record<string, string> = {
+export const TITLES: Record<string, string> = {
   '/': 'tab_today',
   '/me': 'tab_me',
   '/progress': 'tab_progress',
