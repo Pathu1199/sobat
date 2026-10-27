@@ -109,9 +109,12 @@ export const WALK_ACTIVITY_ID = 'walk';
  * A walk from the walk tile: an activity log like any other (walking, normal
  * effort, at the person's weight then), so its calories are earned back the
  * usual way. Today's is logged now; one added to an earlier day at its noon.
+ * Never another activity in its place: with no walking in the activity list
+ * this throws, as the list itself is wrong.
  */
 export function walkLog(input: { id: string; date: ISODate; minutes: number; weightKg: number; now: Date }): ActivityLog {
-  const walk = ACTIVITIES.find((a) => a.id === WALK_ACTIVITY_ID) ?? ACTIVITIES[0];
+  const walk = activityById(WALK_ACTIVITY_ID);
+  if (!walk) throw new Error(`The activity list has no walking activity ('${WALK_ACTIVITY_ID}') for the walk tile to log.`);
   const at = input.date === toISODate(input.now) ? input.now : new Date(`${input.date}T12:00:00`);
   return { id: input.id, date: input.date, at: at.toISOString(), activityId: walk.id, minutes: input.minutes, intensity: 1, kcal: kcalBurned(walk, 1, input.minutes, input.weightKg) };
 }

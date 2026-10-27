@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { biggestLever, breakStreak, findPatterns, scoreDay, streak, weightTrend } from '../insights';
 import { lastNDates } from '../date';
+import { DAY_ENDS_AT_HOUR, expectedWaterByHour } from '../nudge';
 import { pattern } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS } from '../routine';
 import type { BreakLog } from '../breaks';
@@ -132,6 +133,16 @@ describe('scoreDay', () => {
     // From 21:00 the day is over for water and movement too.
     const night = scoreDay({ ...idle, waterMl: 2100, minutes: 21 * 60, expectedWaterMl: 2100 });
     expect(night.water).toBe(70);
+  });
+
+  it('ends the waking day at the same hour as the water pace: on pace until 21:00, against the whole goal from then', () => {
+    expect(DAY_ENDS_AT_HOUR).toBe(21);
+    expect(expectedWaterByHour(DAY_ENDS_AT_HOUR - 1, 3000)).toBeLessThan(3000);
+    expect(expectedWaterByHour(DAY_ENDS_AT_HOUR, 3000)).toBe(3000);
+    const early = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS.filter((s) => s.id !== 'dinner').map((s) => (s.id === 'snack' ? { ...s, time: '17:00' } : s)) });
+    const at = (minutes: number) => scoreDay({ ...b, kcal: 1800, slots: early, waterMl: 2100, minutes, expectedWaterMl: 2100 });
+    expect(at(DAY_ENDS_AT_HOUR * 60 - 1).water).toBe(100);
+    expect(at(DAY_ENDS_AT_HOUR * 60).water).toBe(70);
   });
 
   it('judges movement from 18:00 exactly', () => {

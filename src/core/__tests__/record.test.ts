@@ -103,6 +103,48 @@ describe('recordStreak', () => {
     expect(recordStreak({ ...base, skips, menuOn: menu, meals })).toBe(3);
   });
 
+  it('a meal logged without a slot settles the slot it was eaten in, matched by its type and time', () => {
+    const d = '2026-10-26';
+    // Breakfast at 08:45 and dinner at 20:10, neither naming its slot.
+    const loose = (id: string, type: Meal['type'], hhmm: string): Meal => ({ id, at: new Date(`${d}T${hhmm}:00`).toISOString(), date: d, type, items: [], kcal: 400, protein: 10 });
+    const meals = [loose('b', 'breakfast', '08:45'), meal(d, 'lunch'), loose('d', 'dinner', '20:10')];
+    expect(rec(d, meals).state).toBe('full');
+    expect(streakOf([...fullDay('2026-10-25'), ...meals])).toBe(2);
+  });
+
+  it('on dates whose menu holds no meals, a day with anything eaten counts and a day with nothing breaks the run', () => {
+    const bare = (date: string): DayMenu => ({ date, editedAt: '', meals: [] });
+    const meals = [meal('2026-10-23', 'lunch'), meal('2026-10-25', 'lunch'), meal('2026-10-26', 'dinner')];
+    expect(recordStreak({ ...base, menuOn: bare, meals })).toBe(2);
+    expect(dayRecord({ ...base, date: '2026-10-24', menu: bare('2026-10-24'), meals }).state).toBe('empty');
+  });
+
+  it('looks back no further than the limit', () => {
+    const meals = ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', TODAY].flatMap(fullDay);
+    expect(streakOf(meals)).toBe(8);
+    expect(recordStreak({ ...base, menuOn: menu, meals, limit: 3 })).toBe(3);
+    // Today not settled yet still takes one of the days looked at.
+    expect(recordStreak({ ...base, menuOn: menu, meals: meals.filter((m) => m.date !== TODAY), limit: 3 })).toBe(2);
+  });
+
+  it('a today with some meals eaten neither counts nor breaks the run until it is full', () => {
+    const before = [...fullDay('2026-10-25'), ...fullDay('2026-10-26')];
+    expect(streakOf([...before, meal(TODAY, 'morning')])).toBe(2);
+    expect(streakOf([...before, meal(TODAY, 'morning'), meal(TODAY, 'lunch')])).toBe(2);
+    expect(streakOf([...before, ...fullDay(TODAY)])).toBe(3);
+  });
+
+  it('skips on several days inside the run keep it going, each day counting for what was eaten', () => {
+    const skips = addSkip(addSkip(addSkip([], '2026-10-24', 'dinner'), '2026-10-25', 'morning'), TODAY, 'lunch');
+    const meals = [
+      meal('2026-10-24', 'morning'), meal('2026-10-24', 'lunch'),
+      meal('2026-10-25', 'lunch'), meal('2026-10-25', 'dinner'),
+      ...fullDay('2026-10-26'),
+      meal(TODAY, 'morning'), meal(TODAY, 'dinner'),
+    ];
+    expect(recordStreak({ ...base, skips, menuOn: menu, meals })).toBe(4);
+  });
+
   it('a today of nothing but skips neither counts nor breaks the run while it is going', () => {
     const meals = [...fullDay('2026-10-24'), ...fullDay('2026-10-25'), ...fullDay('2026-10-26')];
     expect(recordStreak({ ...base, skips: allSkipped(TODAY), menuOn: menu, meals })).toBe(3);

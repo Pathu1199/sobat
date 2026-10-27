@@ -1,5 +1,6 @@
 import { breakStats, type BreakLog } from './breaks';
 import { addDays, lastNDates, localHour } from './date';
+import { DAY_ENDS_AT_HOUR } from './nudge';
 import { expectedKcalByMinute, openedKcalByMinute, pattern, windowsCloseAt, type PatternSlot } from './pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS } from './routine';
 import type { ISODate, Meal, MoodLog, SleepLog, WaterLog, WeightLog, WorkoutLog } from './types';
@@ -19,9 +20,6 @@ export type LeverKey = 'eating' | 'movement' | 'water' | 'sleep' | 'mood';
 
 /** Movement is only judged once the evening window opens, unless it already happened. */
 const MOVEMENT_JUDGED_FROM_HOUR = 18;
-
-/** Water and movement are judged as the day runs until this hour at least, whatever time the last meal is. */
-const DAY_ENDS_AT_HOUR = 21;
 
 /** The four meals of the day, for a running day judged without the person's own pattern. */
 const DEFAULT_PATTERN = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS });

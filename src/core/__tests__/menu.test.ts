@@ -112,6 +112,15 @@ describe('editing one date', () => {
     expect(lunchQty(wed)).toBe(2);
   });
 
+  it('no line in its place removes the line, and only that one, stamped', () => {
+    const two = setMenuDay(menus, wed, menu('2026-10-28', 2).meals.map((m) => (m.id === 'lunch' ? { ...m, lines: [chapati(2), { foodId: 'moong-dal', unit: 'katori', qty: 1 }] } : m)), NOW);
+    const out = setMenuLine(two, menuFor('2026-10-28', two)!, 'lunch', 0, null, NOW);
+    expect(menuFor('2026-10-28', out)!.meals[1].lines).toEqual([{ foodId: 'moong-dal', unit: 'katori', qty: 1 }]);
+    expect(menuFor('2026-10-28', setMenuLine(menus, wed, 'lunch', 0, null, NOW))!.meals[1].lines).toEqual([]);
+    expect(menuFor('2026-10-28', setMenuLine(menus, wed, 'lunch', 0, null, NOW))!.editedAt).toBe(NOW.toISOString());
+    expect(menuFor('2026-10-29', setMenuLine(menus, wed, 'lunch', 0, null, NOW))).toBe(thu);
+  });
+
   it('a quantity of 0 removes the line; the same food in the same measure again is a bigger portion', () => {
     expect(menuFor('2026-10-28', setMenuLine(menus, wed, 'lunch', 0, chapati(0), NOW))!.meals[1].lines).toEqual([]);
     expect(menuFor('2026-10-28', addMenuLine(menus, wed, 'lunch', chapati(1), NOW))!.meals[1].lines).toEqual([chapati(3)]);
@@ -195,6 +204,29 @@ describe('following the slots', () => {
     expect(alignMenu(m, routine, '2026-10-27')).toBe(m);
     const list = [m, menu('2026-10-20', 1)];
     expect(alignMenus(list, routine, '2026-10-27')).toBe(list);
+  });
+
+  it('reshapes only the stored dates from today on; a past date comes back as the same object', () => {
+    const past = menu('2026-10-26', 2);
+    const list = [past, menu('2026-10-27', 2), menu('2026-10-29', 3)];
+    const out = alignMenus(list, withTea, '2026-10-27', foods);
+    expect(out[0]).toBe(past);
+    expect(out.map((m) => m.meals.map((x) => x.id))).toEqual([
+      ['morning', 'lunch', 'dinner'],
+      ['morning', 'lunch', 'tea', 'dinner'],
+      ['morning', 'lunch', 'tea', 'dinner'],
+    ]);
+    expect(out.map(lunchQty)).toEqual([2, 2, 3]);
+    expect(out.map((m) => m.editedAt)).toEqual(list.map((m) => m.editedAt));
+  });
+
+  it('shows a stored date exactly as it is stored: the same object, a past one even when the slots have changed since', () => {
+    const past = menu('2026-10-20', 1);
+    const ahead = menu('2026-10-28', 2);
+    const menus = [past, ahead];
+    expect(viewMenu('2026-10-20', menus, withTea, '2026-10-27', foods)).toBe(past);
+    expect(viewMenu('2026-10-28', menus, routine, '2026-10-27', foods)).toBe(ahead);
+    expect(viewMenu('2026-10-28', menus, routine, '2026-10-27', foods, fitFor(EMPTY_STATE.profile, routine))).toBe(ahead);
   });
 
   it('shows a date as stored or as it starts, following the slots', () => {

@@ -72,10 +72,13 @@ export function pickNudge(ctx: NudgeContext): NudgeChoice {
   return null;
 }
 
+/** The end of the waking day, 21:00: the water pace reaches the whole goal then, and the day score judges water and movement until then at least. */
+export const DAY_ENDS_AT_HOUR = 21;
+
 /** Water should be spread across waking hours, not gulped at night. */
 export function expectedWaterByHour(hour: number, goalMl: number): number {
   const start = 7;
-  const end = 21;
+  const end = DAY_ENDS_AT_HOUR;
   if (hour <= start) return 0;
   if (hour >= end) return goalMl;
   return Math.round(((hour - start) / (end - start)) * goalMl);

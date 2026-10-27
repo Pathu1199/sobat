@@ -15,18 +15,24 @@ export function fillFraction(amount: number, goal: number): number {
 
 export type WaterTile = { fraction: number; bottlesLeft: number; reached: boolean };
 
-/** Water in bottles: the bottles still to drink are rounded up, so half a bottle left is one bottle. */
+/**
+ * Water in bottles: the bottles still to drink are rounded up, so half a bottle left is one bottle. The goal is reached
+ * when the tile is full, so with no goal above 0 an empty tile is not reached and has no bottles left to count.
+ */
 export function waterTile(ml: number, goalMl: number, bottleMl: number): WaterTile {
-  const reached = ml >= goalMl;
-  const bottlesLeft = reached || !(bottleMl > 0) ? 0 : Math.ceil((goalMl - ml) / bottleMl);
-  return { fraction: fillFraction(ml, goalMl), bottlesLeft, reached };
+  const fraction = fillFraction(ml, goalMl);
+  const reached = fraction === 1;
+  const bottlesLeft = reached || !(goalMl > 0) || !(bottleMl > 0) ? 0 : Math.ceil((goalMl - ml) / bottleMl);
+  return { fraction, bottlesLeft, reached };
 }
 
 export type WalkTile = { fraction: number; minutesLeft: number; reached: boolean };
 
-/** Walking in minutes toward the day's goal. */
+/** Walking in minutes toward the day's goal, reached when the tile is full, the same way as water. */
 export function walkTile(minutes: number, goalMin: number): WalkTile {
-  return { fraction: fillFraction(minutes, goalMin), minutesLeft: Math.max(0, Math.ceil(goalMin - minutes)), reached: minutes >= goalMin };
+  const fraction = fillFraction(minutes, goalMin);
+  const reached = fraction === 1;
+  return { fraction, minutesLeft: reached || !(goalMin > 0) ? 0 : Math.ceil(goalMin - minutes), reached };
 }
 
 /** The night arc: minutes slept over the target. */

@@ -47,7 +47,7 @@ export function YogaPanel() {
 
   function log(a: Asana, minutes: number) {
     const act = activityById(a.id === 'surya-namaskar' ? 'surya-namaskar' : 'yoga')!;
-    const kcal = kcalBurned(act, 1, state.profile.weightKg, minutes);
+    const kcal = kcalBurned(act, 1, minutes, state.profile.weightKg);
     app.addActivity({ id: newId(), date: today, at: new Date().toISOString(), activityId: act.id, minutes, intensity: 1, kcal });
     fb.haptic('success');
     fb.notify(fill(t('act_saved'), { kcal, g: fatGrams(kcal) }));
@@ -56,7 +56,7 @@ export function YogaPanel() {
   function logRoutine(id: string) {
     const r = YOGA_ROUTINES.find((x) => x.id === id)!;
     const act = activityById('yoga')!;
-    const kcal = kcalBurned(act, 1, state.profile.weightKg, r.minutes);
+    const kcal = kcalBurned(act, 1, r.minutes, state.profile.weightKg);
     app.addActivity({ id: newId(), date: today, at: new Date().toISOString(), activityId: 'yoga', minutes: r.minutes, intensity: 1, kcal });
     fb.haptic('success');
     fb.notify(fill(t('act_saved'), { kcal, g: fatGrams(kcal) }));

@@ -91,6 +91,11 @@ describe('weeks', () => {
     expect(mondayOf('2026-11-02')).toBe('2026-11-02');
   });
 
+  it('finds a Monday in the year before: 1 January 2026 is a Thursday of the week from 29 December 2025', () => {
+    expect(mondayOf('2026-01-01')).toBe('2025-12-29');
+    expect(weekDates(mondayOf('2026-01-01'))).toEqual(['2025-12-29', '2025-12-30', '2025-12-31', '2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04']);
+  });
+
   it('lists the seven dates from Monday', () => {
     expect(weekDates('2026-10-26')).toEqual(['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01']);
   });

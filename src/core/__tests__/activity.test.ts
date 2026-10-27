@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ACTIVITIES, activityById } from '../../data/activities';
-import { activitiesFor, burnedOn, eatBack, fatGrams, kcalBurned, walkLog, weekActivity } from '../activity';
+import { activitiesFor, burnedOn, eatBack, fatGrams, kcalBurned, WALK_ACTIVITY_ID, walkLog, weekActivity } from '../activity';
 import type { ActivityLog } from '../types';
 
 const walk = activityById('walk')!;
@@ -59,5 +59,28 @@ describe('walkLog', () => {
   it('a walk added to an earlier day is placed at noon of that day', () => {
     const log = walkLog({ id: 'w1', date: '2026-10-25', minutes: 10, weightKg: 80, now: new Date('2026-10-27T18:05:00') });
     expect(log.at).toBe(new Date('2026-10-25T12:00:00').toISOString());
+  });
+
+  it('logs the walking activity, which the activity list holds', () => {
+    const a = activityById(WALK_ACTIVITY_ID);
+    expect(a).toBeDefined();
+    expect(a!.name_en).toBe('Walking');
+    expect(a!.category).toBe('walk');
+  });
+
+  it('never logs another activity in its place: with no walking activity in the list it fails, saying so', async () => {
+    vi.resetModules();
+    vi.doMock('../../data/activities', async (importOriginal) => {
+      const real = await importOriginal<typeof import('../../data/activities')>();
+      const list = real.ACTIVITIES.filter((a) => a.id !== WALK_ACTIVITY_ID);
+      return { ...real, ACTIVITIES: list, activityById: (id: string) => list.find((a) => a.id === id) };
+    });
+    try {
+      const { walkLog: walkLogWithout } = await import('../activity');
+      expect(() => walkLogWithout({ id: 'w1', date: '2026-10-27', minutes: 10, weightKg: 80, now: new Date('2026-10-27T18:05:00') })).toThrow(/walk/i);
+    } finally {
+      vi.doUnmock('../../data/activities');
+      vi.resetModules();
+    }
   });
 });

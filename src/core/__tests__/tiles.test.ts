@@ -14,6 +14,8 @@ describe('water', () => {
     // 1.5 L left is two 1 L bottles.
     expect(waterTile(1500, 3000, 1000).bottlesLeft).toBe(2);
     expect(waterTile(2900, 3000, 500).bottlesLeft).toBe(1);
+    // 1 L left is one and a third 750 ml bottles, so two.
+    expect(waterTile(2000, 3000, 750).bottlesLeft).toBe(2);
   });
 
   it('says the goal is reached, and keeps counting past it', () => {
@@ -43,6 +45,29 @@ describe('walk, sleep and streak', () => {
   });
 });
 
+describe('a goal of 0 or less, or no goal at all', () => {
+  const noGoal = [0, -500, Number.NaN, undefined as unknown as number, 'none' as unknown as number];
+
+  it('an empty tile never reads as reached, and nothing is left to drink or walk', () => {
+    for (const goal of noGoal) {
+      expect(waterTile(0, goal, 500)).toEqual({ fraction: 0, bottlesLeft: 0, reached: false });
+      expect(walkTile(0, goal)).toEqual({ fraction: 0, minutesLeft: 0, reached: false });
+    }
+  });
+
+  it('once anything is logged the tile is full and reached, as a goal of 0 is', () => {
+    for (const goal of noGoal) {
+      expect(waterTile(250, goal, 500)).toEqual({ fraction: 1, bottlesLeft: 0, reached: true });
+      expect(walkTile(5, goal)).toEqual({ fraction: 1, minutesLeft: 0, reached: true });
+    }
+  });
+
+  it('a bottle of no size leaves no count of bottles, never a number that is not one', () => {
+    expect(waterTile(1000, 3000, 0).bottlesLeft).toBe(0);
+    expect(waterTile(1000, 3000, Number.NaN).bottlesLeft).toBe(0);
+  });
+});
+
 describe('weightPoints', () => {
   const w = (date: string, kg: number) => ({ date, kg });
 
@@ -55,7 +80,13 @@ describe('weightPoints', () => {
     expect(pts[7]).toEqual({ x: 100, y: 42 });
   });
 
-  it('sorts by date, puts equal weights in the middle, and one weigh-in in the centre', () => {
+  it('sorts by date, so the latest weigh-in is last however the list was stored', () => {
+    // Stored newest first: 96 kg on the 3rd is the latest and the lightest.
+    const pts = weightPoints([w('2026-09-03', 96), w('2026-09-01', 100), w('2026-09-02', 99)]);
+    expect(pts).toEqual([{ x: 0, y: 0 }, { x: 50, y: 10.5 }, { x: 100, y: 42 }]);
+  });
+
+  it('puts equal weights in the middle, and one weigh-in in the centre', () => {
     expect(weightPoints([w('2026-09-02', 98), w('2026-09-01', 98)]).map((p) => p.y)).toEqual([21, 21]);
     expect(weightPoints([w('2026-09-01', 98)])).toEqual([{ x: 50, y: 21 }]);
     expect(weightPoints([])).toEqual([]);
