@@ -189,16 +189,23 @@ export function suggestMeals(
 
 /** How close a match must be for the add sheet, 0 exact to 1 anything. "poha" against chikoo (by its alias "sapota") scores about 0.59. */
 export const MATCH_CUTOFF = 0.5;
+/** With nothing that close, the nearest few under this score are shown instead: "misal paav" finds misal pav at about 0.7. */
+export const LOOSE_CUTOFF = 0.8;
+const LOOSE_LIMIT = 8;
 
-/** The add sheet's search: the closest matches first, without the far-fetched ones. A blank search finds nothing. */
+/**
+ * The add sheet's search: the closest matches first, without the far-fetched
+ * ones. A misspelling with no close match shows the nearest few instead of an
+ * empty list. A blank search finds nothing.
+ */
 export function findFoods(foods: FoodItem[], query: string, limit = 30): FoodItem[] {
   const q = query.trim();
   if (!q) return [];
   if (!cached || cached.list !== foods) buildIndex(foods);
-  return cached!.fuse
-    .search(q, { limit })
-    .filter((r) => (r.score ?? 1) < MATCH_CUTOFF)
-    .map((r) => r.item);
+  const hits = cached!.fuse.search(q, { limit });
+  const close = hits.filter((r) => (r.score ?? 1) < MATCH_CUTOFF);
+  const shown = close.length > 0 ? close : hits.filter((r) => (r.score ?? 1) < LOOSE_CUTOFF).slice(0, LOOSE_LIMIT);
+  return shown.map((r) => r.item);
 }
 
 /**

@@ -156,7 +156,6 @@ describe('everyday names in English letters', () => {
   });
 });
 
-
 describe('findFoods, the add sheet search', () => {
   const ALL = foodsJson as unknown as FoodItem[];
   const ids = (q: string) => findFoods(ALL, q).map((f) => f.id);
@@ -177,14 +176,42 @@ describe('findFoods, the add sheet search', () => {
     expect(ids('lal math')).toContain('lal-math-bhaji');
     expect(ids('   ')).toEqual([]);
   });
+
+  it('finds the food for the everyday spellings people type', () => {
+    const first = (q: string) => ids(q)[0];
+    expect(first('idly')).toBe('idli');
+    expect(first('omlet')).toBe('omelette');
+    expect(first('wada pav')).toBe('vada-pav');
+    expect(first('vadapav')).toBe('vada-pav');
+    expect(['besan-ladoo', 'rava-ladoo', 'motichoor-ladoo', 'til-ladoo']).toContain(first('laddu'));
+    expect(['paneer-bhurji', 'palak-paneer', 'matar-paneer', 'kadai-paneer', 'paneer-tikka', 'paneer-raw']).toContain(first('panir'));
+    expect(['paratha-plain', 'aloo-paratha']).toContain(first('parantha'));
+    expect(['chicken-biryani', 'veg-biryani']).toContain(first('biriyani'));
+    expect(first('shira')).toBe('sheera');
+    expect(first('dokla')).toBe('dhokla');
+    expect(first('upama')).toBe('upma');
+    expect(['plain-dosa', 'masala-dosa']).toContain(first('dosai'));
+    expect(first('cofee')).toBe('coffee');
+  });
+
+  it('a misspelling with no close match still shows the nearest few, never an empty list; a close match keeps the list short', () => {
+    expect(ids('misal paav')).toContain('misal-pav');
+    expect(ids('sabudana khichadi')).toContain('sabudana-khichdi');
+    expect(ids('misal paav').length).toBeLessThanOrEqual(8);
+    expect(ids('poha')).not.toContain('chikoo');
+    expect(ids('poha')).not.toContain('phanas');
+    expect(ids('zzzz')).toEqual([]);
+  });
 });
 
 describe('itemName', () => {
   const ALL = foodsJson as unknown as FoodItem[];
 
   it('names a logged item in the chosen language: Hindi from the database, English when there is none, never the Marathi name for Hindi', () => {
-    const chapati = ALL.find((f) => f.id === 'chapati')!;
-    expect(itemName({ foodId: 'chapati', name_en: 'Chapati', name_mr: 'चपाती' }, ALL, 'hi')).toBe(chapati.name_hi);
+    const dal = ALL.find((f) => f.id === 'dal-tadka')!;
+    expect(dal.name_hi).not.toBe(dal.name_mr);
+    expect(itemName({ foodId: 'dal-tadka', name_en: 'Dal Tadka', name_mr: dal.name_mr }, ALL, 'hi')).toBe(dal.name_hi);
+    expect(itemName({ foodId: 'dal-tadka', name_en: 'Dal Tadka', name_mr: dal.name_mr }, ALL, 'mr')).toBe(dal.name_mr);
     expect(itemName({ name_en: 'Home dal', name_mr: 'घरचं वरण' }, ALL, 'hi')).toBe('Home dal');
     expect(itemName({ name_en: 'Home dal', name_mr: 'घरचं वरण' }, ALL, 'mr')).toBe('घरचं वरण');
     expect(itemName({ name_en: 'Home dal', name_mr: 'घरचं वरण' }, ALL, 'en')).toBe('Home dal');

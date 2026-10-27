@@ -488,7 +488,11 @@
       "breakfast",
       "fried"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "parantha",
+      "paratha"
+    ]
   },
   {
     "id": "aloo-paratha",
@@ -522,7 +526,11 @@
       "breakfast",
       "fried"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "parantha",
+      "paratha"
+    ]
   },
   {
     "id": "idli",
@@ -555,7 +563,10 @@
       "veg",
       "breakfast"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "idly"
+    ]
   },
   {
     "id": "plain-dosa",
@@ -588,7 +599,10 @@
       "veg",
       "breakfast"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "dosai"
+    ]
   },
   {
     "id": "masala-dosa",
@@ -622,7 +636,10 @@
       "breakfast",
       "fried"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "dosai"
+    ]
   },
   {
     "id": "uttapam",
@@ -726,7 +743,8 @@
     "aliases": [
       "upit",
       "upeet",
-      "sanjacha upit"
+      "sanjacha upit",
+      "upama"
     ]
   },
   {
@@ -800,7 +818,10 @@
       "breakfast",
       "healthy_swap"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "dokla"
+    ]
   },
   {
     "id": "dal-tadka",
@@ -838,7 +859,9 @@
     "source": "IFCT2017",
     "aliases": [
       "dal fry",
-      "tadka"
+      "tadka",
+      "daal",
+      "dhal"
     ]
   },
   {
@@ -874,7 +897,10 @@
       "dal"
     ],
     "source": "estimate",
-    "aliases": []
+    "aliases": [
+      "daal",
+      "dhal"
+    ]
   },
   {
     "id": "rajma",
@@ -1241,7 +1267,9 @@
       "varan bhat",
       "toor dal",
       "tur dal",
-      "plain dal"
+      "plain dal",
+      "daal",
+      "dhal"
     ]
   },
   {
@@ -1366,7 +1394,8 @@
     ],
     "source": "estimate",
     "aliases": [
-      "paneer bhurji"
+      "paneer bhurji",
+      "panir"
     ]
   },
   {
@@ -1406,7 +1435,8 @@
     ],
     "source": "estimate",
     "aliases": [
-      "palak paneer"
+      "palak paneer",
+      "panir"
     ]
   },
   {
@@ -1640,7 +1670,8 @@
     ],
     "source": "estimate",
     "aliases": [
-      "matar paneer"
+      "matar paneer",
+      "panir"
     ]
   },
   {
@@ -1679,7 +1710,8 @@
     ],
     "source": "estimate",
     "aliases": [
-      "kadai paneer"
+      "kadai paneer",
+      "panir"
     ]
   },
   {
@@ -1821,7 +1853,9 @@
       "src_b12"
     ],
     "source": "estimate",
-    "aliases": []
+    "aliases": [
+      "panir"
+    ]
   },
   {
     "id": "thecha",
@@ -3044,7 +3078,10 @@
       "sweet",
       "breakfast"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "shira"
+    ]
   },
   {
     "id": "gulab-jamun",
@@ -3145,7 +3182,11 @@
       "veg",
       "sweet"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "laddu",
+      "ladu"
+    ]
   },
   {
     "id": "rava-ladoo",
@@ -3178,7 +3219,11 @@
       "veg",
       "sweet"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "laddu",
+      "ladu"
+    ]
   },
   {
     "id": "motichoor-ladoo",
@@ -3212,7 +3257,11 @@
       "fried",
       "sweet"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "laddu",
+      "ladu"
+    ]
   },
   {
     "id": "barfi",
@@ -3582,7 +3631,12 @@
       "fried",
       "street_food"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "wada pav",
+      "wadapav",
+      "vadapav"
+    ]
   },
   {
     "id": "batata-vada",
@@ -4249,7 +4303,11 @@
     "tags": [
       "nonveg"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "biriyani",
+      "biriani"
+    ]
   },
   {
     "id": "veg-biryani",
@@ -4281,7 +4339,11 @@
     "tags": [
       "veg"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "biriyani",
+      "biriani"
+    ]
   },
   {
     "id": "mutton-curry",
@@ -4846,7 +4908,11 @@
       "egg",
       "high_protein"
     ],
-    "source": "estimate"
+    "source": "estimate",
+    "aliases": [
+      "omlet",
+      "amlet"
+    ]
   },
   {
     "id": "egg-white-omelette",
@@ -5015,7 +5081,10 @@
       "veg",
       "high_protein"
     ],
-    "source": "IFCT2017"
+    "source": "IFCT2017",
+    "aliases": [
+      "panir"
+    ]
   },
   {
     "id": "cheese-slice",
@@ -5175,7 +5244,9 @@
     "source": "estimate",
     "aliases": [
       "doodh coffee",
-      "milk coffee"
+      "milk coffee",
+      "cofee",
+      "kofi"
     ]
   },
   {
@@ -7595,7 +7666,9 @@
     "aliases": [
       "mug dal",
       "moong dal",
-      "pivli dal"
+      "pivli dal",
+      "daal",
+      "dhal"
     ]
   },
   {
@@ -7636,7 +7709,9 @@
     "source": "estimate",
     "aliases": [
       "masoor dal",
-      "lal dal"
+      "lal dal",
+      "daal",
+      "dhal"
     ]
   },
   {
@@ -8284,7 +8359,9 @@
       "shevga",
       "drumstick",
       "shevgyachi amti",
-      "sahjan"
+      "sahjan",
+      "daal",
+      "dhal"
     ],
     "source": "estimate"
   },
@@ -9251,7 +9328,9 @@
       "til ladoo",
       "til gul",
       "tilgul",
-      "sesame ladoo"
+      "sesame ladoo",
+      "laddu",
+      "ladu"
     ]
   },
   {
@@ -11829,7 +11908,9 @@
     "source": "estimate",
     "aliases": [
       "dudhi chana dal",
-      "lauki chana"
+      "lauki chana",
+      "daal",
+      "dhal"
     ]
   }
 ]

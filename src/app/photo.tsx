@@ -6,7 +6,7 @@ import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { FOOD_PHOTO_SCHEMA, foodPhotoPrompt } from '../ai/prompts';
 import { toISODate } from '../core/date';
 import { newId } from '../core/id';
-import { defaultPortion, foodName, resolveByName, searchFoods, toMealItem } from '../core/foods';
+import { defaultPortion, foodName, itemName, resolveByName, searchFoods, toMealItem } from '../core/foods';
 import { mealTypeForHour } from '../core/nutrition';
 import { pattern, slotOf } from '../core/pattern';
 import { pendingCount } from '../core/queue';
@@ -242,7 +242,8 @@ export default function PhotoScreen() {
               {drafts.map((d, idx) => {
                 const item = items[idx];
                 const displayEn = d.food ? d.food.name_en : d.rawName;
-                const displayMr = d.food ? foodName(d.food, lang) : d.nameMrGuess;
+                // The model's Marathi guess is only for Marathi readers; Hindi and English readers get its English name.
+                const displayMr = itemName(item, app.foods, lang);
                 return (
                   <View key={d.key} style={{ gap: 9 }}>
                     {idx > 0 ? <Divider /> : null}
