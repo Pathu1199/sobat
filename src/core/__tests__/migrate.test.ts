@@ -3,6 +3,7 @@ import { migrateState, upgradeFile } from '../../store/migrate';
 import { EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { allowance, pattern } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE } from '../routine';
+import { DEFAULT_TODAY_CARDS } from '../tabs';
 import { menuFor, setMenuLine } from '../menu';
 import { landMerge, RoundStop, syncRound, type CloudState } from '../sync';
 import type { AppState } from '../types';
@@ -585,6 +586,63 @@ describe('this week\'s menus on devices whose stores moved to version 7 in diffe
     for (const m of week) {
       expect(menuFor(m.date, current.now().menus)).toEqual(m);
       expect(menuFor(m.date, account.file().menus)).toEqual(m);
+    }
+  });
+});
+
+describe('settings in an odd shape, from sync or an old file', () => {
+  // A version-6 store whose settings carry every shape the migration has to clean.
+  const v6 = (settings: Record<string, unknown>) => ({ ...v1, version: 6, settings: { ...v1.settings, glassMl: undefined, ...settings } });
+  const settingsOf = (settings: Record<string, unknown>) => migrateState(v6(settings), NOW).settings;
+  const FEATURES = { breaks: false, mantra: false, autoPlates: false };
+  const REMINDERS = { mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false };
+
+  it('the Today cards: every known card once, in the order stored, the unknown and second copies dropped, the missing ones added off', () => {
+    const cards = settingsOf({ todayCards: [{ id: 'steps', on: true }, { id: 'nope', on: true }, { id: 'menu', on: 'yes' }, { id: 'steps', on: false }] }).todayCards;
+    expect(cards.map((c) => c.id)).toEqual(['steps', 'menu', 'coach', 'waterWalk', 'weight', 'sleep', 'climb', 'mantra']);
+    expect(cards.filter((c) => c.on).map((c) => c.id)).toEqual(['steps']);
+    expect(settingsOf({ todayCards: { menu: true } }).todayCards).toEqual(DEFAULT_TODAY_CARDS);
+  });
+
+  it('the feature and reminder switches: each known one true or false, anything else its default, unknown keys dropped', () => {
+    const s = settingsOf({ features: { mantra: true, breaks: 'yes', autoPlates: 1, dark: true }, reminders: { mealPrompt: null, planWeek: true, weeklyReport: [], extra: false } });
+    expect(s.features).toEqual({ breaks: false, mantra: true, autoPlates: false });
+    expect(s.reminders).toEqual({ mealPrompt: true, fillYesterday: false, planWeek: true, weeklyReport: false });
+  });
+
+  it('a list where the switches should be is not a record of switches: that group takes its defaults', () => {
+    const s = settingsOf({ features: [true, true, true], reminders: ['mealPrompt'] });
+    expect(s.features).toEqual(FEATURES);
+    expect(s.reminders).toEqual(REMINDERS);
+    // With no record of reminders, reminders switched off before the switches existed still keep the meal-time prompt off.
+    expect(settingsOf({ reminders: [], nudgesEnabled: false }).reminders.mealPrompt).toBe(false);
+  });
+
+  it('a bottle or walk goal that is not a number, is not a number at all, or is 0 or less takes the default', () => {
+    for (const bad of ['500', null, Number.NaN, 0, -250, [], {}]) {
+      const s = settingsOf({ bottleMl: bad, walkGoalMin: bad });
+      expect(s.bottleMl).toBe(500);
+      expect(s.walkGoalMin).toBe(30);
+    }
+  });
+
+  it('a bottle size already a number is kept as it is, with or without a glass beside it', () => {
+    expect(settingsOf({ bottleMl: 750 }).bottleMl).toBe(750);
+    expect(settingsOf({ bottleMl: 750, glassMl: 300 }).bottleMl).toBe(750);
+    expect(settingsOf({ bottleMl: 1000, walkGoalMin: 45 }).walkGoalMin).toBe(45);
+    // A bottle that is no size at all does not hide the glass beside it.
+    expect(settingsOf({ bottleMl: Number.NaN, glassMl: 300 }).bottleMl).toBe(300);
+  });
+
+  it('a second load changes nothing, whatever shape the settings came in', () => {
+    const odd = [
+      { todayCards: [{ id: 'steps', on: 1 }, { id: 'nope' }, 'menu'], features: [true], reminders: { mealPrompt: 'no', extra: true }, bottleMl: Number.NaN, walkGoalMin: -5 },
+      { todayCards: 'menu', features: { mantra: true, x: 1 }, reminders: [], nudgesEnabled: false, bottleMl: '500', walkGoalMin: 0, glassMl: 300 },
+      { todayCards: null, features: null, reminders: null, bottleMl: 0, walkGoalMin: null, tabs: 'coach' },
+    ];
+    for (const settings of odd) {
+      const once = migrateState(v6(settings), NOW);
+      expect(migrateState(once, NOW)).toEqual(once);
     }
   });
 });

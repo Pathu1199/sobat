@@ -24,3 +24,22 @@ export function normalizeTabs(tabs: unknown): TabId[] {
   }
   return out;
 }
+
+/**
+ * Every known card exactly once, in the order stored, each switch true or
+ * false (anything but true is off). Unknown ids and second copies are dropped;
+ * a known card missing from the list is added at the end, switched off, so a
+ * card added in an update waits to be switched on. Anything that is not a
+ * list gets the default cards.
+ */
+export function normalizeTodayCards(cards: unknown): { id: TodayCardId; on: boolean }[] {
+  if (!Array.isArray(cards)) return DEFAULT_TODAY_CARDS.map((c) => ({ ...c }));
+  const out: { id: TodayCardId; on: boolean }[] = [];
+  for (const c of cards) {
+    if (typeof c !== 'object' || c === null) continue;
+    const { id, on } = c as { id?: unknown; on?: unknown };
+    if (typeof id === 'string' && (TODAY_CARD_IDS as string[]).includes(id) && !out.some((o) => o.id === id)) out.push({ id: id as TodayCardId, on: on === true });
+  }
+  for (const id of TODAY_CARD_IDS) if (!out.some((o) => o.id === id)) out.push({ id, on: false });
+  return out;
+}

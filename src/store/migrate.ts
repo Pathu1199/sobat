@@ -5,7 +5,7 @@ import { addSkip, menusFromTemplate, settleAuto, type DayMenu } from '../core/me
 import { slotShare } from '../core/pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
 import { forCloud, stable, type CloudState } from '../core/sync';
-import { DEFAULT_TODAY_CARDS, normalizeTabs } from '../core/tabs';
+import { normalizeTabs, normalizeTodayCards } from '../core/tabs';
 import type { AppState, Meal, SavedMeal, SlotSkip } from '../core/types';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
 import { DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER, STATE_VERSION } from './defaults';
@@ -123,25 +123,51 @@ function upgradeRoutine(old: unknown, fromVersion: number, hadPlan: boolean): Ap
   return r;
 }
 
+/** A size or a goal: a number above 0. Anything else, NaN included, is not one. */
+function isPositive(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v) && v > 0;
+}
+
+/** A record of switches, as stored: an object that is not a list. */
+function isSwitches(v: unknown): v is Record<string, unknown> {
+  return isRecord(v) && !Array.isArray(v);
+}
+
+/** Each known switch true or false, anything else its default; unknown keys are dropped, and anything not a record of switches gets the defaults. */
+function upgradeSwitches<T extends Record<string, boolean>>(old: unknown, defaults: T): T {
+  const out = { ...defaults };
+  if (!isSwitches(old)) return out;
+  for (const key of Object.keys(defaults) as (keyof T & string)[]) {
+    const v = old[key];
+    if (typeof v === 'boolean') out[key] = v as T[keyof T & string];
+  }
+  return out;
+}
+
 /** An address nobody changed from the old placeholder moves to this platform's default; settings added later get their defaults. */
 function upgradeAppSettings(old: unknown): AppState['settings'] {
   const raw: Record<string, unknown> = isRecord(old) ? old : {};
-  const s = { ...EMPTY_STATE.settings, ...raw } as AppState['settings'] & { glassMl?: unknown };
+  const defaults = EMPTY_STATE.settings;
+  const s = { ...defaults, ...raw } as AppState['settings'] & { glassMl?: unknown };
   if (s.ollamaUrl === OLD_OLLAMA_PLACEHOLDER) s.ollamaUrl = DEFAULT_OLLAMA_URL;
   // Version 7: water is counted in bottles. The old default glass becomes the default 500 ml bottle; a size the person chose stays.
   // Only a build from before version 7 wrote a glass, and none of them wrote a bottle: a default bottle beside a glass is the one
-  // this device filled in under an older account file as it landed, so the glass decides. A bottle size someone picked stays.
+  // this device filled in under an older account file as it landed, so the glass decides. A bottle size someone picked stays;
+  // a bottle that is no size at all was never picked.
   const glass = raw.glassMl;
-  const bottleFilledIn = typeof raw.bottleMl !== 'number' || raw.bottleMl === EMPTY_STATE.settings.bottleMl;
-  if (typeof glass === 'number' && glass > 0 && bottleFilledIn) s.bottleMl = glass === 250 ? 500 : glass;
+  const bottleFilledIn = !isPositive(raw.bottleMl) || raw.bottleMl === defaults.bottleMl;
+  if (isPositive(glass) && bottleFilledIn) s.bottleMl = glass === 250 ? 500 : glass;
   delete s.glassMl;
-  s.features = { ...EMPTY_STATE.settings.features, ...(isRecord(raw.features) ? raw.features : {}) } as AppState['settings']['features'];
-  s.reminders = { ...EMPTY_STATE.settings.reminders, ...(isRecord(raw.reminders) ? raw.reminders : {}) } as AppState['settings']['reminders'];
+  // A bottle or a walk goal that is not a number above 0 cannot be counted toward: it takes the default.
+  if (!isPositive(s.bottleMl)) s.bottleMl = defaults.bottleMl;
+  if (!isPositive(s.walkGoalMin)) s.walkGoalMin = defaults.walkGoalMin;
+  s.features = upgradeSwitches(raw.features, defaults.features);
+  s.reminders = upgradeSwitches(raw.reminders, defaults.reminders);
   // Someone who switched the app's reminders off before these switches existed does not get the meal-time prompt switched on by an update.
-  if (!isRecord(raw.reminders) && raw.nudgesEnabled === false) s.reminders.mealPrompt = false;
-  // A tab list from sync or an old file can never hide Today, ➕ or Me.
+  if (!isSwitches(raw.reminders) && raw.nudgesEnabled === false) s.reminders.mealPrompt = false;
+  // A tab list or a card list from sync or an old file can never hide Today, ➕ or Me, or lose a card for good.
   s.tabs = normalizeTabs(s.tabs);
-  if (!Array.isArray(s.todayCards)) s.todayCards = DEFAULT_TODAY_CARDS.map((c) => ({ ...c }));
+  s.todayCards = normalizeTodayCards(s.todayCards);
   return s;
 }
 

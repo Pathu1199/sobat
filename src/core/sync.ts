@@ -51,6 +51,9 @@ export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => strin
   // (a reset empties the whole device, which then takes the account's file whole), so a date missing on one side is one
   // that side never had: a device whose store moved to this version in another week has other weeks' menus from the old
   // template, and another device's edit to this week must not read as undone there.
+  // So no merge ever removes a menu date: erasing everywhere or restoring a backup cannot take away menus another device
+  // holds, which come back with its next round. Any future pruning of old menus must be one shared, deterministic date
+  // cutoff applied the same way on every side; a removal made on one device alone is undone by the next merge.
   { key: 'menus', idOf: (r) => String(r.date), stampOf: (r) => String(r.editedAt ?? ''), neverDeleted: true },
   { key: 'slotSkips', idOf: (r) => String(r.id) },
   { key: 'savedMeals', idOf: (r) => String(r.id) },
