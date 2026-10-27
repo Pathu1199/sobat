@@ -22,7 +22,7 @@ export function StartHereCard() {
 
   const steps = [
     { key: 'meal', done: state.meals.length > 0, icon: 'restaurant-outline' as const, go: () => router.push('/log') },
-    { key: 'water', done: state.water.length > 0, icon: 'water-outline' as const, go: () => app.addWater(state.settings.glassMl) },
+    { key: 'water', done: state.water.length > 0, icon: 'water-outline' as const, go: () => app.addWater(state.settings.bottleMl) },
     { key: 'weigh', done: state.weights.length > 1, icon: 'scale-outline' as const, go: () => setWeighOpen(true) },
   ];
   if (steps.every((s) => s.done)) return null;

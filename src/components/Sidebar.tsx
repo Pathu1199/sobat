@@ -111,8 +111,8 @@ export function Sidebar() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Ionicons name="water-outline" size={16} color={C.cyan} />
             <Text style={{ color: C.textDim, fontSize: F.small }}>
-              {Math.round(app.waterToday / state.settings.glassMl)}
-              <Text style={{ color: C.textFaint }}> / {Math.round(state.settings.waterGoalMl / state.settings.glassMl)} {t('water_glasses')}</Text>
+              {Math.round(app.waterToday / state.settings.bottleMl)}
+              <Text style={{ color: C.textFaint }}> / {Math.round(state.settings.waterGoalMl / state.settings.bottleMl)} {t('water_glasses')}</Text>
             </Text>
           </View>
         </View>

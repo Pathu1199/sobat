@@ -161,13 +161,13 @@ export default function LogScreen() {
   }
 
   function addGlass() {
-    app.addWater(app.state.settings.glassMl);
+    app.addWater(app.state.settings.bottleMl);
     fb.haptic('light');
     fb.notify(t('toast_water_added'));
   }
 
-  const glasses = Math.round(app.waterToday / app.state.settings.glassMl);
-  const glassGoal = Math.round(app.state.settings.waterGoalMl / app.state.settings.glassMl);
+  const glasses = Math.round(app.waterToday / app.state.settings.bottleMl);
+  const glassGoal = Math.round(app.state.settings.waterGoalMl / app.state.settings.bottleMl);
 
   const quickRow = (
     <Row style={{ gap: 10, alignItems: 'stretch' }}>

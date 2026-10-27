@@ -167,4 +167,25 @@ describe('migrateState', () => {
     expect(slots.find((s) => s.type === 'dinner')!.id).toBe('dinner-2');
     expect(slots.filter((s) => s.id === 'dinner')).toHaveLength(1);
   });
+
+  it('version 7: the old default glass becomes a 500 ml bottle, a size the person chose stays, and the new settings get their defaults', () => {
+    const s = migrateState(v1);
+    expect(s.settings.bottleMl).toBe(500);
+    expect((s.settings as unknown as Record<string, unknown>).glassMl).toBeUndefined();
+    expect(migrateState({ ...v1, settings: { ...v1.settings, glassMl: 750 } }).settings.bottleMl).toBe(750);
+    expect(s.settings.walkGoalMin).toBe(30);
+    expect(s.settings.tabs).toEqual(['progress']);
+    expect(s.settings.features).toEqual({ breaks: false, mantra: false, autoPlates: false });
+    expect(s.settings.reminders).toEqual({ mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false });
+    expect(s.settings.todayCards.filter((c) => c.on).map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk']);
+  });
+
+  it('version 7: a choice made after the migration survives the next load, and a bad tab list is cleaned', () => {
+    const once = migrateState(v1);
+    const chosen = { ...once, settings: { ...once.settings, bottleMl: 1000, tabs: ['coach', 'sleep', 'body'], features: { ...once.settings.features, mantra: true } } };
+    const again = migrateState(chosen);
+    expect(again.settings.bottleMl).toBe(1000);
+    expect(again.settings.tabs).toEqual(['coach', 'sleep']);
+    expect(again.settings.features.mantra).toBe(true);
+  });
 });

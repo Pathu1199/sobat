@@ -38,7 +38,7 @@ export function WaterSheet({ open, onClose }: { open: boolean; onClose: () => vo
           {(waterToday / 1000).toFixed(2)}
           <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${goal / 1000} L`}</Text>
         </Text>
-        <Micro>{`${Math.round(waterToday / state.settings.glassMl)} ${t('glasses')}`}</Micro>
+        <Micro>{`${Math.round(waterToday / state.settings.bottleMl)} ${t('glasses')}`}</Micro>
       </Row>
       <Bar value={waterToday} max={goal} color={waterToday >= goal ? C.green : C.cyan} height={8} />
       <Micro>{t('water_add')}</Micro>

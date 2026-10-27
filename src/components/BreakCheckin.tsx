@@ -49,7 +49,7 @@ export function BreakCheckin() {
     // Ticking water is drinking water; it counts towards the day.
     if (entry.item === 'water') {
       if (turningOn) {
-        app.addWater(settings.glassMl);
+        app.addWater(settings.bottleMl);
         fb.notify(t('toast_water_added'));
       } else {
         app.undoWater();

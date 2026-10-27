@@ -24,7 +24,7 @@ export function NowStrip({ wide }: { wide?: boolean }) {
   const moodToday = state.moods.filter((m) => m.date === today).slice(-1)[0];
   const r = readiness({ lastSleep: sleepLast, lastWorkout, moodScore: moodToday?.score });
 
-  const glass = Math.max(1, state.settings.glassMl);
+  const glass = Math.max(1, state.settings.bottleMl);
   const expected = expectedWaterByHour(hour, state.settings.waterGoalMl);
   const diffGlasses = Math.round((waterToday - expected) / glass);
   const waterSub = diffGlasses === 0 ? t('on_pace') : diffGlasses < 0 ? t('behind_glasses').replace('{n}', String(-diffGlasses)) : t('ahead_glasses').replace('{n}', String(diffGlasses));

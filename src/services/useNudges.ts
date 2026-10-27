@@ -94,7 +94,7 @@ export function useNudges() {
     if (!current?.choice) return;
     app.logNudge(current.choice.type, action);
     if (action === 'done') {
-      if (current.choice.type === 'water') app.addWater(app.state.settings.glassMl);
+      if (current.choice.type === 'water') app.addWater(app.state.settings.bottleMl);
       sittingSince.current = Date.now();
     }
     setCurrent(null);

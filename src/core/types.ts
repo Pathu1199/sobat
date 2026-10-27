@@ -39,7 +39,18 @@ export type Settings = {
   quietStartHour: number;
   quietEndHour: number;
   waterGoalMl: number;
-  glassMl: number;
+  /** One tap on the water tile adds a bottle of this many ml. */
+  bottleMl: number;
+  /** Minutes of walking a day the walk tile fills toward. */
+  walkGoalMin: number;
+  /** Extra tabs beside Today, ➕ and Me, in order; at most two. */
+  tabs: TabId[];
+  /** The cards on Today under the calories left, in order, each on or off. */
+  todayCards: { id: TodayCardId; on: boolean }[];
+  /** Parts of the app that stay off unless switched on in Settings. */
+  features: { breaks: boolean; mantra: boolean; autoPlates: boolean };
+  /** Which reminders go out. Only the meal-time prompt is on by default. */
+  reminders: { mealPrompt: boolean; fillYesterday: boolean; planWeek: boolean; weeklyReport: boolean };
   /** When the last Google Drive backup was written, ISO time. */
   driveBackupAt?: string;
   /** What the food list may show. 'veg' hides meat, fish and eggs. */
@@ -61,6 +72,11 @@ export type Settings = {
 };
 
 export type Diet = 'veg' | 'egg' | 'nonveg';
+
+/** A tab the person may add beside Today, ➕ and Me. */
+export type TabId = 'progress' | 'coach' | 'body' | 'sleep' | 'plan';
+/** A card the person may show on Today, under the calories left. */
+export type TodayCardId = 'coach' | 'waterWalk' | 'menu' | 'weight' | 'sleep' | 'steps' | 'climb' | 'mantra';
 
 export type MealItem = {
   foodId?: string;

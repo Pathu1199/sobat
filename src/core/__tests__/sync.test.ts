@@ -156,10 +156,10 @@ describe('three-way merge of single values', () => {
   const base = cloudOf(used([], { settings: { ...EMPTY_STATE.settings, waterGoalMl: 3000 } }));
 
   it('a setting changed elsewhere arrives; one changed here is kept', () => {
-    const local = cloudOf(used([], { settings: { ...EMPTY_STATE.settings, waterGoalMl: 3000, glassMl: 300 } }));
+    const local = cloudOf(used([], { settings: { ...EMPTY_STATE.settings, waterGoalMl: 3000, bottleMl: 750 } }));
     const remote = cloudOf(used([], { settings: { ...EMPTY_STATE.settings, waterGoalMl: 2500 } }));
     // Settings is one value: the side that changed it wins whole.
-    expect(merge3(base, local, remote).settings.glassMl).toBe(300);
+    expect(merge3(base, local, remote).settings.bottleMl).toBe(750);
     expect(merge3(base, cloudOf(used([])), remote).settings.waterGoalMl).toBe(2500);
   });
 

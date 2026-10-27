@@ -43,7 +43,7 @@ export function CravingSOS() {
     setLeft(WAIT_SECONDS);
     // Step one is a glass of water, so it may as well be counted.
     if (!waterAdded.current) {
-      app.addWater(app.state.settings.glassMl);
+      app.addWater(app.state.settings.bottleMl);
       waterAdded.current = true;
     }
   }

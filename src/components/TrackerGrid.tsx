@@ -24,7 +24,7 @@ export function TrackerGrid() {
   const [weightOpen, setWeightOpen] = useState(false);
   const [waterOpen, setWaterOpen] = useState(false);
 
-  const glass = state.settings.glassMl;
+  const glass = state.settings.bottleMl;
   const glasses = Math.round(waterToday / glass);
   const glassGoal = Math.round(state.settings.waterGoalMl / glass);
   const sleep = [...state.sleep].sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0];

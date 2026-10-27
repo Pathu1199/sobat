@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS } from '../core/breaks';
 import { DEFAULT_ROUTINE } from '../core/routine';
 import { DEFAULT_SCHEDULE } from '../core/schedule';
+import { DEFAULT_TABS, DEFAULT_TODAY_CARDS } from '../core/tabs';
 import type { AppState, Profile, Settings } from '../core/types';
 
 export const DEFAULT_PROFILE: Profile = {
@@ -38,7 +39,15 @@ export const DEFAULT_SETTINGS: Settings = {
   quietStartHour: 22,
   quietEndHour: 7,
   waterGoalMl: 3000,
-  glassMl: 250,
+  // Water is counted in bottles and walking in minutes, one tap at a time.
+  bottleMl: 500,
+  walkGoalMin: 30,
+  tabs: [...DEFAULT_TABS],
+  todayCards: DEFAULT_TODAY_CARDS.map((c) => ({ ...c })),
+  // Off unless switched on: the screen breaks, the mantra and the plates the app makes up.
+  features: { breaks: false, mantra: false, autoPlates: false },
+  // Only the meal-time prompt is on; the rest are a switch away.
+  reminders: { mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false },
   // Most of the people this is built for are vegetarian; the setting is one tap away.
   diet: 'veg',
   appearance: 'system',

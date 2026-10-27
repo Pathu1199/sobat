@@ -3,6 +3,7 @@ import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../co
 import type { AppState } from '../core/types';
 import { DEFAULT_ROUTINE, DINNER_SLOT } from '../core/routine';
 import { slotShare } from '../core/pattern';
+import { DEFAULT_TODAY_CARDS, normalizeTabs } from '../core/tabs';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
 import { DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER, STATE_VERSION } from './defaults';
 
@@ -82,10 +83,20 @@ function upgradeRoutine(old: unknown, fromVersion: number): AppState['routine'] 
   return r;
 }
 
-/** An address nobody changed from the old placeholder moves to this platform's default. */
+/** An address nobody changed from the old placeholder moves to this platform's default; settings added later get their defaults. */
 function upgradeAppSettings(old: unknown): AppState['settings'] {
-  const s = { ...EMPTY_STATE.settings, ...(isRecord(old) ? old : {}) };
+  const raw: Record<string, unknown> = isRecord(old) ? old : {};
+  const s = { ...EMPTY_STATE.settings, ...raw } as AppState['settings'] & { glassMl?: unknown };
   if (s.ollamaUrl === OLD_OLLAMA_PLACEHOLDER) s.ollamaUrl = DEFAULT_OLLAMA_URL;
+  // Version 7: water is counted in bottles. The old default glass becomes the default 500 ml bottle; a size the person chose stays.
+  const glass = raw.glassMl;
+  if (typeof glass === 'number' && glass > 0 && typeof raw.bottleMl !== 'number') s.bottleMl = glass === 250 ? 500 : glass;
+  delete s.glassMl;
+  s.features = { ...EMPTY_STATE.settings.features, ...(isRecord(raw.features) ? raw.features : {}) } as AppState['settings']['features'];
+  s.reminders = { ...EMPTY_STATE.settings.reminders, ...(isRecord(raw.reminders) ? raw.reminders : {}) } as AppState['settings']['reminders'];
+  // A tab list from sync or an old file can never hide Today, ➕ or Me.
+  s.tabs = normalizeTabs(s.tabs);
+  if (!Array.isArray(s.todayCards)) s.todayCards = DEFAULT_TODAY_CARDS.map((c) => ({ ...c }));
   return s;
 }
 

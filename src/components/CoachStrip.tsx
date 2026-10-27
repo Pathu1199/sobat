@@ -34,7 +34,7 @@ export function useAdviceAction() {
   return (a: Advice, open?: { suggest?: () => void; weigh?: () => void }) => {
     if (a.action === 'log') router.push('/log');
     else if (a.action === 'plan') (open?.suggest ?? (() => router.push('/log')))();
-    else if (a.action === 'water') app.addWater(app.state.settings.glassMl);
+    else if (a.action === 'water') app.addWater(app.state.settings.bottleMl);
     else if (a.action === 'walk') router.push('/body');
     else if (a.action === 'sleep') router.push('/body?s=sleep');
     else if (a.action === 'weigh') (open?.weigh ?? (() => router.push('/progress')))();
