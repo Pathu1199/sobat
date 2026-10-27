@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  breaksAsSwitched,
   breakStats,
   canSkip,
   clocksAfter,
@@ -304,5 +305,17 @@ describe('inWindow', () => {
     expect(inWindow(3, 22, 6)).toBe(true);
     expect(inWindow(12, 22, 6)).toBe(false);
     expect(inWindow(5, 9, 9)).toBe(true);
+  });
+});
+
+describe('breaksAsSwitched', () => {
+  it('reads the breaks as off while eye-care breaks are switched off in Settings, and as stored while they are on', () => {
+    expect(breaksAsSwitched(DEFAULT_BREAK_SETTINGS, true)).toBe(DEFAULT_BREAK_SETTINGS);
+    const off = breaksAsSwitched(DEFAULT_BREAK_SETTINGS, false);
+    expect(off.enabled).toBe(false);
+    // Nothing else is touched: switched on again, the break panel's own choices are all still there.
+    expect({ ...off, enabled: true }).toEqual(DEFAULT_BREAK_SETTINGS);
+    const stopped = { ...DEFAULT_BREAK_SETTINGS, enabled: false };
+    expect(breaksAsSwitched(stopped, true)).toBe(stopped);
   });
 });

@@ -8,6 +8,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { factsFrom, memoryExtractionPrompt, MEMORY_SCHEMA, systemPrompt } from '../../ai/prompts';
 import { adviceText, CoachStrip } from '../../components/CoachStrip';
+import { FitsCard } from '../../components/FitsCard';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { formatMinutes, toISODate } from '../../core/date';
 import { newId } from '../../core/id';
@@ -330,6 +331,8 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
             </Row>
 
             <CoachStrip max={8} />
+            {/* "What fits today": plates the app puts together, only while switched on in Settings. */}
+            {app.state.settings.features.autoPlates ? <FitsCard compact /> : null}
 
             {crisis ? (
               <Card tone={C.red}>

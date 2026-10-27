@@ -52,3 +52,23 @@ describe('buildPushSchedule: meal-time prompts', () => {
     expect(build(off, '2026-10-13').slots).toEqual([]);
   });
 });
+
+describe('buildPushSchedule: the parts of the app switched on in Settings', () => {
+  const state: AppState = { ...EMPTY_STATE, profile: { ...EMPTY_STATE.profile, onboarded: true, onboardedOn: '2026-10-12' } };
+  const build = (s: AppState) => buildPushSchedule(s, '2026-10-13', (k) => k, 'Asia/Kolkata');
+  const withFeatures = (features: Partial<AppState['settings']['features']>): AppState => ({ ...state, settings: { ...state.settings, features: { ...state.settings.features, ...features } } });
+
+  it('sends no short breaks while eye-care breaks are off, whatever the break panel says', () => {
+    expect(state.settings.features.breaks).toBe(false);
+    expect(build(state).breaks).toBeNull();
+    expect(build(withFeatures({ breaks: true })).breaks).toMatchObject({ everyMinutes: 20, from: '09:00', to: '18:00', title: 'brk_micro' });
+  });
+
+  it("sends the day's lines only while the day's line is switched on", () => {
+    expect(state.settings.features.mantra).toBe(false);
+    expect(build(state).mantras).toEqual([]);
+    const on = build(withFeatures({ mantra: true })).mantras;
+    expect(on).toHaveLength(7);
+    expect(on[0]).toMatchObject({ date: '2026-10-13', title: 'mantra_title' });
+  });
+});

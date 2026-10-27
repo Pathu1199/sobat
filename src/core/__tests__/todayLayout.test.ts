@@ -28,7 +28,14 @@ describe('todayBlocks', () => {
   });
 
   it('leaves out unknown, repeated and switched-off cards', () => {
-    expect(todayBlocks([on('menu'), on('menu'), { id: 'today', on: true }, 42, off('coach'), on('steps'), on('mantra')])).toEqual([{ kind: 'menu' }, { kind: 'steps' }, { kind: 'mantra' }]);
+    expect(todayBlocks([on('menu'), on('menu'), { id: 'today', on: true }, 42, off('coach'), on('steps'), on('mantra')], 'today', true)).toEqual([{ kind: 'menu' }, { kind: 'steps' }, { kind: 'mantra' }]);
+  });
+
+  it("never shows the day's line while it is switched off in Settings, even with its card on", () => {
+    const cards = [on('menu'), on('mantra'), on('coach')];
+    expect(todayBlocks(cards, 'today', false)).toEqual([{ kind: 'menu' }, { kind: 'coach' }]);
+    expect(todayBlocks(cards)).toEqual([{ kind: 'menu' }, { kind: 'coach' }]);
+    expect(todayBlocks(cards, 'today', true)).toEqual([{ kind: 'menu' }, { kind: 'mantra' }, { kind: 'coach' }]);
   });
 });
 

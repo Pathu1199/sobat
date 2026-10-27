@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Animated, Easing, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { makeT } from '../i18n';
+import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useReducedMotion } from '../ui/animated';
 import { Btn } from '../ui/components';
 import { Logo } from '../ui/Logo';
-import { C, F, lh, M, MICRO } from '../ui/theme';
+import { C, F, lh, M, MICRO, S } from '../ui/theme';
 
 // Colour names, not values: the palette changes with the theme, so each page reads C at render.
 const PAGES: { icon: keyof typeof Ionicons.glyphMap; color: keyof typeof C }[] = [
@@ -18,12 +18,14 @@ const PAGES: { icon: keyof typeof Ionicons.glyphMap; color: keyof typeof C }[] =
 ];
 
 /**
- * Three screens after setup: the ring, the routine, the weekly habits. Each
- * says one thing. Reachable again from Settings → About.
+ * Three screens about the app: the day's number, the routine, the weekly
+ * habits. Each says one thing. Opened from Me → Guide and Settings → About,
+ * once setup is done (setup goes on to the permissions screen, not here).
+ * Every control is a finger wide on every platform by its own box, the web
+ * included, where reach added around a control does not count.
  */
 export default function TourScreen() {
   const router = useRouter();
-  const { from } = useLocalSearchParams<{ from?: string }>();
   const insets = useSafeAreaInsets();
   const { state } = useApp();
   const t = makeT(state.profile.lang);
@@ -45,8 +47,8 @@ export default function TourScreen() {
   }
 
   function done() {
-    // After setup the permissions screen is next; from Settings, just go home.
-    router.replace(from === 'settings' ? '/' : '/permissions');
+    // Skip and Start go to Today, wherever the tour was opened from.
+    router.replace('/');
   }
 
   const p = PAGES[page];
@@ -55,7 +57,11 @@ export default function TourScreen() {
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top + 16, paddingBottom: Math.max(insets.bottom, 16) + 8, paddingHorizontal: 24 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Logo size={28} />
-        <Pressable onPress={done} hitSlop={10} accessibilityRole="button">
+        <Pressable
+          onPress={done}
+          accessibilityRole="button"
+          accessibilityLabel={t('tour_skip')}
+          style={({ pressed }) => ({ minHeight: S.touch, minWidth: S.touch, alignItems: 'flex-end', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
           <Text style={[MICRO, { color: C.textFaint }]}>{t('tour_skip')}</Text>
         </Pressable>
       </View>
@@ -70,9 +76,15 @@ export default function TourScreen() {
       </Animated.View>
 
       <View style={{ gap: 18, alignItems: 'center' }}>
-        <View style={{ flexDirection: 'row', gap: 7 }}>
+        <View style={{ flexDirection: 'row' }}>
           {PAGES.map((_, i) => (
-            <Pressable key={i} onPress={() => go(i)} hitSlop={8}>
+            <Pressable
+              key={i}
+              onPress={() => go(i)}
+              accessibilityRole="button"
+              accessibilityLabel={fill(t('tour_page'), { n: i + 1, m: PAGES.length })}
+              aria-selected={i === page}
+              style={{ minWidth: S.touch, minHeight: S.touch, alignItems: 'center', justifyContent: 'center' }}>
               <View style={{ width: i === page ? 22 : 7, height: 7, borderRadius: 4, backgroundColor: i === page ? C.accent : C.borderStrong }} />
             </Pressable>
           ))}

@@ -3,12 +3,14 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Linking, Platform, Pressable, Text, View } from 'react-native';
 import { isUp, listModels, normalizeUrl } from '../ai/ollama';
-import type { Lang } from '../core/types';
-import { fill, LANG_NAMES, makeT } from '../i18n';
+import type { Activity, Lang } from '../core/types';
+import { fill, LANG_NAMES, makeT, numberText } from '../i18n';
 import { notifyNow, requestPermission } from '../services/notify';
 import { pushConfigured, stopPush, testPush } from '../services/push';
 import Constants from 'expo-constants';
 import { OllamaSetup } from '../components/OllamaSetup';
+import { FeatureSettings } from '../components/FeatureSettings';
+import { ReminderSettings } from '../components/ReminderSettings';
 import { ScheduleEditor } from '../components/ScheduleEditor';
 import { useDriveBackup } from '../services/useDriveBackup';
 import { firebaseEnabled } from '../services/firebase';
@@ -17,12 +19,17 @@ import { useCloudSync } from '../services/useCloudSync';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
 import { DEFAULT_OLLAMA_URL } from '../store/defaults';
-import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
+import { Btn, Card, Choice, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
 import { C, F, TEXT_SCALES } from '../ui/theme';
+
+/** The paces a person can choose, in kilos a week, as setup offers them. */
+const PACES = [0.25, 0.5, 0.75, 1];
+const ACTIVITIES: Activity[] = ['sedentary', 'light', 'moderate', 'active'];
 
 export default function SettingsScreen() {
   const app = useApp();
   const s = app.state.settings;
+  const profile = app.state.profile;
   const br = app.state.breakSettings;
   const lang = app.state.profile.lang;
   const t = makeT(lang);
@@ -190,16 +197,36 @@ export default function SettingsScreen() {
         </Card>
       </View>
 
+      {/* Asked in setup too; nowhere else changes the activity, so it is here, beside the pace, with the target they give. */}
+      <View style={{ gap: 10 }}>
+        <SectionHeader title={t('setup_done_title')} icon={<Ionicons name="flame-outline" size={13} color={C.textFaint} />} />
+        <Card>
+          <Micro>{t('activity_q')}</Micro>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {ACTIVITIES.map((a) => (
+              <Choice key={a} label={t(a)} on={profile.activity === a} onPress={() => app.setProfile({ activity: a })} />
+            ))}
+          </Row>
+          <Divider />
+          <Micro>{t('rate_q')}</Micro>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {PACES.map((r) => (
+              <Choice key={r} label={`${r} ${t('unit_kg')}`} on={profile.rateKgPerWeek === r} onPress={() => app.setProfile({ rateKgPerWeek: r })} />
+            ))}
+          </Row>
+          <Small color={C.textDim}>{fill(t('plan_daily'), { kcal: numberText(app.targets.kcal), p: app.targets.proteinG })}</Small>
+          {app.targets.floored ? <Small color={C.amber}>{t('floor_note')}</Small> : null}
+        </Card>
+      </View>
+
 
       <View style={{ gap: 10 }}>
-        <SectionHeader title={t('reminders')} meta={s.nudgesEnabled ? 'On' : 'Off'} icon={<Ionicons name="notifications-outline" size={13} color={C.textFaint} />} />
+        <SectionHeader title={t('reminders')} icon={<Ionicons name="notifications-outline" size={13} color={C.textFaint} />} />
+        <ReminderSettings />
         <Card>
-          <Toggle
-            title={t('nudge_every')}
-            desc={t('nudge_desc')}
-            on={s.nudgesEnabled}
-            onToggle={() => app.setSettings({ nudgesEnabled: !s.nudgesEnabled })}
-          />
+          {/* One switch for everything that speaks up while Sobat is open: the nudges, water among them, the coach's tips, and the relay's water. */}
+          <Toggle title={t('rem_nudges')} desc={t('rem_nudges_desc')} on={s.nudgesEnabled} onToggle={() => app.setSettings({ nudgesEnabled: !s.nudgesEnabled })} />
+          <Micro>{t('nudge_every')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[30, 60, 90, 120].map((m) => (
               <Pill key={m} label={`${m}m`} active={s.nudgeMinutes === m} onPress={() => app.setSettings({ nudgeMinutes: m })} />
@@ -268,6 +295,11 @@ export default function SettingsScreen() {
             <Field label={t('time_to')} value={String(s.quietEndHour)} onChangeText={(v) => app.setSettings({ quietEndHour: Number(v) || 0 })} keyboardType="numeric" />
           </Row>
         </Card>
+      </View>
+
+      <View style={{ gap: 10 }}>
+        <SectionHeader title={t('features_title')} icon={<Ionicons name="options-outline" size={13} color={C.textFaint} />} />
+        <FeatureSettings />
       </View>
 
       <View style={{ gap: 10 }}>
@@ -370,8 +402,10 @@ export default function SettingsScreen() {
             </Card>
           </View>
     
+          {/* Only while eye-care breaks are on in Features: its own switch would otherwise read on while nothing runs. */}
+          {s.features.breaks ? (
           <View style={{ gap: 10 }}>
-            <SectionHeader title={t('break_monitor')} meta={br.enabled ? 'On' : 'Off'} />
+            <SectionHeader title={t('break_monitor')} />
             <Card>
               <Toggle
                 title={t('break_monitor')}
@@ -486,6 +520,7 @@ export default function SettingsScreen() {
               </Row>
             </Card>
           </View>
+          ) : null}
           </View>
         ) : null}
         </>

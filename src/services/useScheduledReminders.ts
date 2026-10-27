@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
-import type { BreakSettings } from '../core/breaks';
+import { breaksAsSwitched, type BreakSettings } from '../core/breaks';
 import { addDays } from '../core/date';
 import { settledSlotIds, slotStates } from '../core/pattern';
 import type { DayRecordState } from '../core/record';
@@ -71,7 +71,7 @@ export function useScheduledReminders() {
   const routine = app.state.routine;
   // By value: a sync landing rebuilds this object unchanged, and must not re-register the day's reminders.
   // Eye-care breaks off in Settings means no long-break notifications, whatever the break panel says.
-  const breaksJson = JSON.stringify(features.breaks ? app.state.breakSettings : { ...app.state.breakSettings, enabled: false });
+  const breaksJson = JSON.stringify(breaksAsSwitched(app.state.breakSettings, features.breaks));
   const { today, menuOn, planFoods } = app;
   const minute = useMinute();
   const recordOn = useRecordOn();

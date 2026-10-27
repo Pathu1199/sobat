@@ -94,8 +94,8 @@ export default function TodayScreen() {
       </Card>
       {/* Days in a row under the safe minimum are said plainly, today only; nothing shows otherwise. */}
       {mode === 'today' ? <IntakeCard /> : null}
-      {/* A day still to come has no night to check in yet, so todayBlocks leaves its Sleep tile out. */}
-      {todayBlocks(state.settings.todayCards, mode).map((b, i) => {
+      {/* A day still to come has no night to check in yet, so todayBlocks leaves its Sleep tile out; the day's line shows only while it is switched on. */}
+      {todayBlocks(state.settings.todayCards, mode, state.settings.features.mantra).map((b, i) => {
         if (b.kind === 'menu') return <DayMenu key="menu" date={viewed} view={view} menu={menu} onOpenMeal={setOpenMeal} />;
         // The coach and the mantra speak about now; nothing is drunk or walked on a day still to come.
         if (b.kind === 'coach') return mode === 'today' ? <CoachLine key="coach" /> : null;

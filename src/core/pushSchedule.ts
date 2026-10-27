@@ -1,3 +1,4 @@
+import { breaksAsSwitched } from './breaks';
 import { addDays } from './date';
 import { pickMantra } from './mantra';
 import { planFrom } from './plan';
@@ -10,7 +11,9 @@ import type { AppState, ISODate, Lang } from './types';
 /**
  * Everything the relay needs to send reminders while the app is closed, and
  * nothing more: times, labels in the person's language, and the next week of
- * mantras. No food, weight, mood or sleep ever leaves the device.
+ * mantras. No food, weight, mood or sleep ever leaves the device. It follows
+ * the same switches as the app: no short breaks while eye-care breaks are
+ * off, and no day's line while it is off.
  */
 export type PushSchedule = {
   v: 1;
@@ -45,7 +48,8 @@ export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string
   const blocks = sched.enabled ? orderedBlocks(sched) : [];
   const start = blocks.find((b) => b.kind === 'start')?.start ?? '09:00';
   const end = blocks.find((b) => b.kind === 'end')?.start ?? '18:00';
-  const br = state.breakSettings;
+  // Eye-care breaks switched off in Settings read as off here too, whatever the break panel says.
+  const br = breaksAsSwitched(state.breakSettings, state.settings.features.breaks);
 
   // The week's mantras, from today's situation; close enough for a line a day.
   const targets = dailyTargets(state.profile);
@@ -76,7 +80,8 @@ export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string
       state.settings.nudgesEnabled
         ? { everyMinutes: Math.max(20, state.settings.nudgeMinutes), from: sched.enabled ? start : '08:00', to: sched.enabled ? end : '21:00', title: t('add_water'), body: t('act_drink_water') }
         : null,
-    mantras,
+    // The day's line goes out only while it is switched on in Settings.
+    mantras: state.settings.features.mantra ? mantras : [],
     quiet: { from: state.settings.quietStartHour, to: state.settings.quietEndHour },
     weigh: { weekday: state.settings.weighDay ?? 1, title: t('weigh_q'), body: t('weigh_hint') },
   };

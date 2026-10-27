@@ -48,6 +48,17 @@ export const DEFAULT_BREAK_SETTINGS: BreakSettings = {
   pausedUntilMs: null,
 };
 
+/**
+ * The break settings as the app follows them: off while eye-care breaks are
+ * switched off in Settings (`settings.features.breaks`), whatever the break
+ * panel says, so no clock runs and no break notification is planned; as
+ * stored while they are on. Only `enabled` is read differently, so switching
+ * them on again finds every choice on the panel as it was.
+ */
+export function breaksAsSwitched(stored: BreakSettings, on: boolean): BreakSettings {
+  return on || !stored.enabled ? stored : { ...stored, enabled: false };
+}
+
 export function inQuiet(hour: number, start: number, end: number): boolean {
   if (start === end) return false;
   if (start > end) return hour >= start || hour < end;

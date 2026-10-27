@@ -7,11 +7,17 @@ import { isWorkDay } from '../core/schedule';
 import { MANTRAS, type Mantra } from '../data/mantras';
 import { useApp } from '../store/AppProvider';
 
-/** Today's line, chosen from yesterday's slips, the stage of the journey and the kind of day. */
+/**
+ * Today's line, chosen from yesterday's slips, the stage of the journey and
+ * the kind of day. Null while the day's line is switched off in Settings: no
+ * card on Today and no line at eight.
+ */
 export function useMantra(): Mantra | null {
   const { state, targets, today, hour } = useApp();
   const lang = state.profile.lang;
+  const on = state.settings.features.mantra;
   return useMemo(() => {
+    if (!on) return null;
     const plan = planFrom(state.profile, state.weights, targets, today);
     const yesterday = addDays(today, -1);
     const waterY = state.water.filter((w) => w.date === yesterday).reduce((a, w) => a + w.ml, 0);
@@ -31,5 +37,5 @@ export function useMantra(): Mantra | null {
       },
       today,
     );
-  }, [state.profile, state.weights, state.water, state.meals, state.sleep, state.settings.waterGoalMl, state.schedule, targets, today, hour, lang]);
+  }, [on, state.profile, state.weights, state.water, state.meals, state.sleep, state.settings.waterGoalMl, state.schedule, targets, today, hour, lang]);
 }

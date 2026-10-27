@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
 import {
+  breaksAsSwitched,
   clocksAfter,
   clocksAfterIdle,
   isPaused,
@@ -41,7 +42,11 @@ const UNSTARTED_CLOCKS: BreakClocks = { micro: 0, long: 0, posture: 0, blink: 0 
 function useBreakClock() {
   const app = useApp();
   const t = makeT(app.state.profile.lang);
-  const settings = app.state.breakSettings;
+  // Eye-care breaks are off unless switched on in Settings: with the feature off the clock reads the breaks as off.
+  // Kept the same object between renders, as the callbacks and the tick below depend on it.
+  const breaksOn = app.state.settings.features.breaks;
+  const stored = app.state.breakSettings;
+  const settings = useMemo(() => breaksAsSwitched(stored, breaksOn), [stored, breaksOn]);
   const { known, active } = useReminderGate();
   const on = known && active;
 

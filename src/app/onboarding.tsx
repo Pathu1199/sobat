@@ -1,38 +1,16 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { AccessibilityInfo, Platform, Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, Platform, Text, View } from 'react-native';
 import { formatDayMonthYear } from '../core/date';
 import { healthyWeightRange } from '../core/nutrition';
 import { setupBlocks, setupNumber, setupProblems, setupTarget, type SetupField } from '../core/setup';
 import type { Activity, Lang, Profile, Sex } from '../core/types';
 import { fill, LANG_NAMES, latinDigits, makeT, numberText } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Bar, Btn, Card, Field, H1, H2, Micro, Row, Screen, Small } from '../ui/components';
-import { C, F, lh, S } from '../ui/theme';
+import { Bar, Btn, Card, Choice, Field, H1, H2, Micro, Row, Screen, Small } from '../ui/components';
+import { C, F, lh } from '../ui/theme';
 
 const STEPS = 4;
-
-/** One choice of a few, a finger tall on every platform: the box itself is 44, the chip sits in its middle. */
-function Choice({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} aria-selected={on} style={{ minHeight: S.touch, justifyContent: 'center' }}>
-      {({ pressed }) => (
-        <View
-          style={{
-            paddingVertical: 7,
-            paddingHorizontal: 13,
-            borderRadius: 999,
-            borderWidth: S.hairline,
-            borderColor: on ? C.accent : C.border,
-            backgroundColor: on ? C.accent : C.card,
-            opacity: pressed ? 0.8 : 1,
-          }}>
-          <Text style={{ color: on ? C.onAccent : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{label}</Text>
-        </View>
-      )}
-    </Pressable>
-  );
-}
 
 /**
  * Setup in four short steps with a line showing how far along it is: the

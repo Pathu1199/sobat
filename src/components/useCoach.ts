@@ -48,10 +48,11 @@ export function useCoach(nowMinutes: number): Advice[] {
       streakDays: app.streakDays,
       routine: state.routine,
       settledSlotIds: settled,
-      nextPlate: slot ? { id: slot.id, type: slot.type, budget: slot.budget, kcal: slot.kcal, names: slot.picks.map((p) => foodName(p.food, lang)) } : null,
+      // A plate the app puts together is offered only while "What fits today" is switched on.
+      nextPlate: state.settings.features.autoPlates && slot ? { id: slot.id, type: slot.type, budget: slot.budget, kcal: slot.kcal, names: slot.picks.map((p) => foodName(p.food, lang)) } : null,
       // Today's menu: a slot it plans is spoken of with its planned calories, as the menu shows them.
       plannedKcal: plannedKcalBySlot(menuOn(today), planFoods),
     });
     // The minute is the clock; everything else is read when it ticks or the logs change.
-  }, [nowMinutes, today, hour, budget, state.meals, state.water, state.sleep, state.weights, state.routine, state.settings.waterGoalMl, state.settings.bottleMl, state.settings.weighDay, state.settings.offDays, foods, targets.kcal, skippedToday, app.stepsToday, app.streakDays, lang, menuOn, planFoods]);
+  }, [nowMinutes, today, hour, budget, state.meals, state.water, state.sleep, state.weights, state.routine, state.settings.waterGoalMl, state.settings.bottleMl, state.settings.weighDay, state.settings.offDays, foods, targets.kcal, skippedToday, app.stepsToday, app.streakDays, state.settings.features.autoPlates, lang, menuOn, planFoods]);
 }

@@ -203,6 +203,32 @@ export function Pill({
 }
 
 /** A status chip: a coloured dot and a small label, used in headers. */
+/**
+ * One choice of a few, a finger tall on every platform: the box itself is 44,
+ * the web included, and the chip sits in its middle. Setup and Settings use
+ * it; it says whether it is chosen.
+ */
+export function Choice({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} aria-selected={on} style={{ minHeight: S.touch, justifyContent: 'center' }}>
+      {({ pressed }) => (
+        <View
+          style={{
+            paddingVertical: 7,
+            paddingHorizontal: 13,
+            borderRadius: 999,
+            borderWidth: S.hairline,
+            borderColor: on ? C.accent : C.border,
+            backgroundColor: on ? C.accent : C.card,
+            opacity: pressed ? 0.8 : 1,
+          }}>
+          <Text style={{ color: on ? C.onAccent : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{label}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
 export function StatusChip({ label, color = C.accent }: { label: string; color?: string }) {
   return (
     <View style={[st.pill, { backgroundColor: C.cardAlt, borderColor: C.border, flexDirection: 'row', alignItems: 'center', gap: 6 }]}>

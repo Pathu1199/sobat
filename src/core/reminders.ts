@@ -7,7 +7,7 @@ import { completeIntake, fullDays } from './progress';
 import type { DayRecord, DayRecordState } from './record';
 import { slotLabel, type Routine } from './routine';
 import { shownWeight, signedKg } from './tileText';
-import type { ISODate, Lang, Meal, SlotSkip, WeightLog } from './types';
+import type { ISODate, Lang, Meal, Settings, SlotSkip, WeightLog } from './types';
 import { isOffDay } from './week';
 import { fill, numberText } from '../i18n';
 
@@ -25,6 +25,22 @@ import { fill, numberText } from '../i18n';
  * cancels one as it goes out.
  */
 export type ReminderKind = 'slot' | 'fill' | 'planweek' | 'report' | 'away';
+
+/**
+ * Settings → Reminders: one switch for each reminder the app sends on its
+ * own, in the order they come in a day and a week, the meal-time prompt
+ * first. Each row's words are `rem_<name>` and `rem_<name>_desc`.
+ */
+export const REMINDER_ROWS: { key: keyof Settings['reminders']; name: string }[] = [
+  { key: 'mealPrompt', name: 'meal_prompt' },
+  { key: 'fillYesterday', name: 'fill' },
+  { key: 'planWeek', name: 'planweek' },
+  { key: 'weeklyReport', name: 'report' },
+  { key: 'sleepCheckin', name: 'sleep' },
+  { key: 'water', name: 'water' },
+  { key: 'dayReview', name: 'review' },
+  { key: 'away', name: 'away' },
+];
 export type Reminder = {
   id: string;
   date: ISODate;

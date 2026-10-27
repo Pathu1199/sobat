@@ -14,6 +14,7 @@ import {
   pendingFit,
   plannedReminders,
   promptOutcome,
+  REMINDER_ROWS,
   reportMonday,
   reportText,
   tapPlan,
@@ -26,6 +27,7 @@ import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import { shownWeight } from '../tileText';
 import type { Meal } from '../types';
 import { makeT } from '../../i18n';
+import { DEFAULT_SETTINGS } from '../../store/defaults';
 
 const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
 const routine: Routine = { ...DEFAULT_ROUTINE, enabled: true, slots: [slot('morning', 'breakfast', '08:30', 25), slot('lunch', 'lunch', '13:00', 40), slot('dinner', 'dinner', '19:30', 35)] };
@@ -583,5 +585,38 @@ describe('the phone\'s cap on pending notifications', () => {
     expect(fit.planned).toBe(planned.length);
     expect(fit.planned + office + daily.length).toBe(PENDING_LIMIT);
     expect(daily.filter((r) => !isLong(r))).toHaveLength(4);
+  });
+});
+
+describe('Settings: a switch for every reminder', () => {
+  it('lists each reminder once, in the order they come in a day and a week, the meal-time prompt first and the only one on to begin with', () => {
+    expect(REMINDER_ROWS.map((r) => r.key).sort()).toEqual(Object.keys(DEFAULT_SETTINGS.reminders).sort());
+    expect(REMINDER_ROWS.map((r) => r.key)).toEqual(['mealPrompt', 'fillYesterday', 'planWeek', 'weeklyReport', 'sleepCheckin', 'water', 'dayReview', 'away']);
+    expect(Object.entries(DEFAULT_SETTINGS.reminders).filter(([, on]) => on).map(([k]) => k)).toEqual(['mealPrompt']);
+    expect(Object.values(DEFAULT_SETTINGS.features)).toEqual([false, false, false]);
+  });
+
+  it('names every switch in English, Marathi and Hindi, in plain words', () => {
+    const keys = [
+      ...REMINDER_ROWS.flatMap((r) => [`rem_${r.name}`, `rem_${r.name}_desc`]),
+      'rem_web_note',
+      'rem_nudges',
+      'rem_nudges_desc',
+      'features_title',
+      'feat_breaks',
+      'feat_breaks_desc',
+      'feat_mantra',
+      'feat_mantra_desc',
+      'feat_plates',
+      'feat_plates_desc',
+      'tour_page',
+    ];
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const words = makeT(lang);
+      for (const k of keys) {
+        expect(words(k), `${lang} ${k}`).not.toBe(k);
+        expect(words(k), `${lang} ${k}`).not.toMatch(/[\u0966-\u096F\u2014]|\b(TDEE|BMR|XP)\b/);
+      }
+    }
   });
 });
