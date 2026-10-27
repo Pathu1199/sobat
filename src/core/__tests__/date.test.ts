@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { formatDayLabel, localDate, localHHMM, localHour, msToNextMinute } from '../date';
+import { formatDayLabel, localDate, localHHMM, localHour, mondayOf, msToNextMinute, weekDates } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
 describe('local time from ISO strings', () => {
@@ -80,5 +80,18 @@ describe('msToNextMinute', () => {
       expect(landed.getMilliseconds()).toBe(0);
       expect(landed.getMinutes()).toBe((start.getMinutes() + 1) % 60);
     }
+  });
+});
+
+describe('weeks', () => {
+  it('finds the Monday of any date; weeks run Monday to Sunday', () => {
+    expect(mondayOf('2026-10-26')).toBe('2026-10-26');
+    expect(mondayOf('2026-10-27')).toBe('2026-10-26');
+    expect(mondayOf('2026-11-01')).toBe('2026-10-26');
+    expect(mondayOf('2026-11-02')).toBe('2026-11-02');
+  });
+
+  it('lists the seven dates from Monday', () => {
+    expect(weekDates('2026-10-26')).toEqual(['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01']);
   });
 });

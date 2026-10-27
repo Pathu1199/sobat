@@ -177,13 +177,15 @@ export function slotPlanLines(routine: Routine, slot: RoutineSlot, d: number, fo
   return lines;
 }
 
-/** The week from the pattern: one meal per slot, every day, in time order. Empty meals stay, so a slot can be filled later. */
+/** One weekday from the pattern: a meal per slot, in time order, with that weekday's lines. Empty meals stay, so a slot can be filled later. */
+export function planDayFor(routine: Routine, weekday: number, foods: FoodItem[]): PlanDay {
+  return { meals: pattern(routine).map((p) => ({ id: p.id, type: p.type, time: slotTime(p.slot), lines: slotPlanLines(routine, p.slot, weekday, foods) })) };
+}
+
+/** The week from the pattern: one meal per slot, every day, in time order. */
 export function buildWeekPlan(routine: Routine, foods: FoodItem[]): WeekPlan {
-  const slots = pattern(routine);
   const days: PlanDay[] = [];
-  for (let d = 0; d < 7; d++) {
-    days.push({ meals: slots.map((p) => ({ id: p.id, type: p.type, time: slotTime(p.slot), lines: slotPlanLines(routine, p.slot, d, foods) })) });
-  }
+  for (let d = 0; d < 7; d++) days.push(planDayFor(routine, d, foods));
   return { days };
 }
 
@@ -202,35 +204,37 @@ function toMin(hhmm: string | undefined): number {
  * given, an empty one otherwise.
  */
 export function alignWeekPlan(plan: WeekPlan, routine: Routine, foods?: FoodItem[]): WeekPlan {
+  return { days: plan.days.map((day, d) => alignDay(day, routine, d, foods)) };
+}
+
+/** One day reshaped to the current slots, the way alignWeekPlan reshapes each; `weekday` picks the lines a newly added slot gets. */
+export function alignDay(day: PlanDay, routine: Routine, weekday: number, foods?: FoodItem[]): PlanDay {
   const slots = pattern(routine);
-  const days = plan.days.map((day, d) => {
-    const meals: PlanMeal[] = [];
-    const taken = (id: string) => meals.some((m) => m.id === id);
-    const usedOld = new Set<string>();
-    for (const p of slots) {
-      const m = day.meals.find((x) => x.id === p.id);
-      if (m) {
-        usedOld.add(m.id);
-        meals.push({ ...m, type: p.type, time: slotTime(p.slot) });
-      }
-    }
-    for (const m of day.meals) {
-      if (usedOld.has(m.id)) continue;
-      const free = slots.filter((p) => p.type === m.type && !taken(p.id));
-      if (free.length === 0) continue;
-      const best = free.reduce((a, b) => (Math.abs(b.minutes - toMin(m.time)) < Math.abs(a.minutes - toMin(m.time)) ? b : a));
+  const meals: PlanMeal[] = [];
+  const taken = (id: string) => meals.some((m) => m.id === id);
+  const usedOld = new Set<string>();
+  for (const p of slots) {
+    const m = day.meals.find((x) => x.id === p.id);
+    if (m) {
       usedOld.add(m.id);
-      meals.push({ ...m, id: best.id, type: best.type, time: slotTime(best.slot) });
+      meals.push({ ...m, type: p.type, time: slotTime(p.slot) });
     }
-    for (const p of slots) {
-      if (taken(p.id)) continue;
-      meals.push({ id: p.id, type: p.type, time: slotTime(p.slot), lines: foods ? slotPlanLines(routine, p.slot, d, foods) : [] });
-    }
-    const order = new Map(slots.map((p, i) => [p.id, i]));
-    meals.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
-    return { meals };
-  });
-  return { days };
+  }
+  for (const m of day.meals) {
+    if (usedOld.has(m.id)) continue;
+    const free = slots.filter((p) => p.type === m.type && !taken(p.id));
+    if (free.length === 0) continue;
+    const best = free.reduce((a, b) => (Math.abs(b.minutes - toMin(m.time)) < Math.abs(a.minutes - toMin(m.time)) ? b : a));
+    usedOld.add(m.id);
+    meals.push({ ...m, id: best.id, type: best.type, time: slotTime(best.slot) });
+  }
+  for (const p of slots) {
+    if (taken(p.id)) continue;
+    meals.push({ id: p.id, type: p.type, time: slotTime(p.slot), lines: foods ? slotPlanLines(routine, p.slot, weekday, foods) : [] });
+  }
+  const order = new Map(slots.map((p, i) => [p.id, i]));
+  meals.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  return { meals };
 }
 
 type Step = { key: string; params: Record<string, string | number>; apply: (d: PlanDay) => PlanDay | null };

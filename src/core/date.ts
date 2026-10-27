@@ -13,6 +13,16 @@ export function addDays(date: ISODate, n: number): ISODate {
   return toISODate(d);
 }
 
+/** The Monday of the week a date is in. Weeks run Monday to Sunday, the way the plan screen shows them. */
+export function mondayOf(date: ISODate): ISODate {
+  return addDays(date, -((new Date(date + 'T12:00:00').getDay() + 6) % 7));
+}
+
+/** The seven dates of the week starting on `monday`. */
+export function weekDates(monday: ISODate): ISODate[] {
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+}
+
 export function lastNDates(n: number, end: ISODate = toISODate()): ISODate[] {
   const out: ISODate[] = [];
   for (let i = n - 1; i >= 0; i--) out.push(addDays(end, -i));

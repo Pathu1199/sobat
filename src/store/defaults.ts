@@ -90,4 +90,5 @@ export const EMPTY_STATE: AppState = {
   celebrated: null,
   activities: [],
   groceryTicks: null,
+  menus: [],
 };

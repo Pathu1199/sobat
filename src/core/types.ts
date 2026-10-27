@@ -233,6 +233,8 @@ export type AppState = {
   activities: ActivityLog[];
   /** Grocery lines ticked off, for one week at a time. */
   groceryTicks?: { week: string; ids: string[] } | null;
+  /** The menu of each date that was written: edited, or carried over from the old week plan. Other dates show as they start (see core/menu.ts). */
+  menus: import('./menu').DayMenu[];
 };
 
 export type StepLog = { date: ISODate; count: number };
