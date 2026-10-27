@@ -1092,6 +1092,11 @@ const en: Dict = {
   chapter_body: 'Your climb starts again today, from {kg} kg. Lost counts from here, and the weekly challenge and the streak start fresh. Nothing is deleted: every meal, weigh-in and badge stays, and History shows everything.',
   chapter_stale: 'Last weigh-in {date}. If your weight has changed since, weigh in first.',
   chapter_confirm: 'Start from today', chapter_started: 'A new chapter starts today',
+  prompt_title: '{slot} · {kcal} kcal', prompt_body: 'Eaten as planned? Tap the button, or open Sobat to change it.',
+  rem_fill_title: 'Fill in yesterday', rem_fill_body: 'Some of yesterday\'s meals are missing. It takes a minute.',
+  rem_planweek_title: 'Plan next week', rem_planweek_body: 'Look over next week\'s menu and save it.',
+  rem_report_title: 'Your week', rem_report_full: '{n} of {m} days complete', rem_report_avg: 'average {avg} kcal a day, goal {goal}',
+  rem_report_weight: 'weight {kg} kg in {weeks} weeks',
 };
 
 const mr: Dict = {
@@ -2188,6 +2193,11 @@ const mr: Dict = {
   chapter_body: 'तुमची चढाई आज {kg} किलोपासून पुन्हा सुरू होते. कमी झालेलं वजन इथून मोजलं जातं, आणि आठवड्याचं आव्हान आणि सलग दिवस नव्याने सुरू होतात. काहीही पुसलं जात नाही: प्रत्येक जेवण, वजन आणि बॅज राहतो, आणि इतिहासात सगळं दिसतं.',
   chapter_stale: 'शेवटचं वजन {date}. तेव्हापासून वजन बदललं असेल तर आधी वजन नोंदवा.',
   chapter_confirm: 'आजपासून सुरू करा', chapter_started: 'आजपासून नवा अध्याय सुरू',
+  prompt_title: '{slot} · {kcal} kcal', prompt_body: 'ठरल्याप्रमाणे खाल्लं? बटण दाबा, किंवा बदलण्यासाठी Sobat उघडा.',
+  rem_fill_title: 'कालचं भरा', rem_fill_body: 'कालची काही जेवणं नोंदवायची राहिली आहेत. एक मिनिट लागेल.',
+  rem_planweek_title: 'पुढच्या आठवड्याचं नियोजन', rem_planweek_body: 'पुढच्या आठवड्याचा मेन्यू पाहा आणि जतन करा.',
+  rem_report_title: 'तुमचा आठवडा', rem_report_full: '{m} पैकी {n} दिवस पूर्ण', rem_report_avg: 'रोज सरासरी {avg} kcal, लक्ष्य {goal}',
+  rem_report_weight: 'वजन {weeks} आठवड्यांत {kg} किलो',
 };
 
 const hi: Dict = {
@@ -3282,6 +3292,11 @@ const hi: Dict = {
   chapter_body: 'आपकी चढ़ाई आज {kg} किलो से फिर शुरू होती है. कम हुआ वज़न यहीं से गिना जाता है, और हफ़्ते की चुनौती और लगातार दिन नए सिरे से शुरू होते हैं. कुछ भी मिटता नहीं: हर खाना, वज़न और बैज रहता है, और इतिहास में सब दिखता है.',
   chapter_stale: 'आख़िरी वज़न {date}. अगर तब से वज़न बदला है, तो पहले वज़न दर्ज करें.',
   chapter_confirm: 'आज से शुरू करें', chapter_started: 'आज से नया अध्याय शुरू',
+  prompt_title: '{slot} · {kcal} kcal', prompt_body: 'तय के मुताबिक खाया? बटन दबाएँ, या बदलने के लिए Sobat खोलें.',
+  rem_fill_title: 'कल का भरें', rem_fill_body: 'कल के कुछ खाने दर्ज होने बाकी हैं. एक मिनट लगेगा.',
+  rem_planweek_title: 'अगले हफ़्ते की योजना', rem_planweek_body: 'अगले हफ़्ते का मेन्यू देखें और सहेजें.',
+  rem_report_title: 'आपका हफ़्ता', rem_report_full: '{m} में से {n} दिन पूरे', rem_report_avg: 'रोज़ औसत {avg} kcal, लक्ष्य {goal}',
+  rem_report_weight: 'वज़न {weeks} हफ़्तों में {kg} किलो',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

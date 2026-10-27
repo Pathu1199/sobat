@@ -63,7 +63,12 @@ export function fullDays(dates: ISODate[], recordOn: (date: ISODate) => DayRecor
  * without a complete day.
  */
 export function recentIntake(input: { today: ISODate; since: ISODate; meals: Pick<Meal, 'date' | 'kcal'>[]; recordOn: (date: ISODate) => DayRecord }): { avg: number; days: number } | null {
-  const days = lastNDates(7, input.today).filter((d) => {
+  return completeIntake({ ...input, dates: lastNDates(7, input.today) });
+}
+
+/** The same average over any dates, as the weekly report takes it for a week: only the complete days of them count. */
+export function completeIntake(input: { dates: ISODate[]; today: ISODate; since: ISODate; meals: Pick<Meal, 'date' | 'kcal'>[]; recordOn: (date: ISODate) => DayRecord }): { avg: number; days: number } | null {
+  const days = input.dates.filter((d) => {
     const mark = markOf(input.recordOn(d), d, input.today, input.since).mark;
     return mark === 'full' || mark === 'skipped';
   });

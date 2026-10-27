@@ -168,10 +168,14 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   if (!isPositive(s.walkGoalMin)) s.walkGoalMin = defaults.walkGoalMin;
   s.features = upgradeSwitches(raw.features, defaults.features);
   s.reminders = upgradeSwitches(raw.reminders, defaults.reminders);
-  // A meal-time prompt nobody set follows the app's reminders switch: someone who switched those off before these switches
-  // existed does not get the prompt switched on by an update. One stored as anything but true or false reads off, as above.
+  // A meal-time prompt nobody set follows the app's reminders switch as it was stored: someone who switched those off before
+  // these switches existed does not get the prompt switched on by an update. One stored as anything but true or false reads
+  // off, as above, and so does a reminders switch stored that way: only one never stored at all leaves the prompt at its default.
   const prompt = isSwitches(raw.reminders) ? raw.reminders.mealPrompt : undefined;
-  if (prompt === undefined) s.reminders.mealPrompt = raw.nudgesEnabled !== false;
+  const nudges = raw.nudgesEnabled;
+  if (prompt === undefined) s.reminders.mealPrompt = typeof nudges === 'boolean' ? nudges : nudges === undefined;
+  // The hourly nudges themselves: a switch stored as anything but true or false reads off.
+  if (typeof s.nudgesEnabled !== 'boolean') s.nudgesEnabled = false;
   // A tab list or a card list from sync or an old file can never hide Today, ➕ or Me, or lose a card for good.
   s.tabs = normalizeTabs(s.tabs);
   s.todayCards = normalizeTodayCards(s.todayCards);
@@ -248,6 +252,9 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
   if (fromVersion < 4 && settings.weighDay === 1) settings.weighDay = 0;
   // Version 5: reminders space out. Nothing closer than an hour unless chosen.
   if (fromVersion < 5 && settings.nudgeMinutes < 60) settings.nudgeMinutes = 60;
+  // Version 7: the old reminders are off unless switched on again, each with its own switch; the hourly in-app nudges too.
+  // After upgradeAppSettings, which read the stored switch to set the meal-time prompt: that choice is already made.
+  if (fromVersion < 7) settings.nudgesEnabled = false;
   const profile = { ...EMPTY_STATE.profile, ...(raw.profile as object) } as AppState['profile'];
   if (profile.startWeightKg === undefined) {
     const weights = Array.isArray(raw.weights) ? ([...(raw.weights as AppState['weights'])].sort((a, b) => a.date.localeCompare(b.date))) : [];

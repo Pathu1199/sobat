@@ -205,7 +205,7 @@ describe('migrateState', () => {
     expect(s.settings.walkGoalMin).toBe(30);
     expect(s.settings.tabs).toEqual(['progress']);
     expect(s.settings.features).toEqual({ breaks: false, mantra: false, autoPlates: false });
-    expect(s.settings.reminders).toEqual({ mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false });
+    expect(s.settings.reminders).toEqual({ mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false });
     expect(s.settings.todayCards.filter((c) => c.on).map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk']);
   });
 
@@ -415,6 +415,34 @@ describe('migrateState', () => {
     expect(migrateState(chosen).settings.reminders.mealPrompt).toBe(true);
     const off = migrateState({ ...v1, settings: { ...v1.settings, nudgesEnabled: false } });
     expect(migrateState(off)).toEqual(off);
+  });
+
+  it('version 7: the hourly nudges are switched off once, after the meal-time prompt has followed them as stored, and a later choice stays', () => {
+    // Nudges off before: the prompt stays off.
+    const off = migrateState({ ...v1, version: 6, settings: { ...v1.settings, nudgesEnabled: false } });
+    expect([off.settings.nudgesEnabled, off.settings.reminders.mealPrompt]).toEqual([false, false]);
+    // Nudges on before: the prompt is on, though the nudges now start off; a second load keeps both.
+    const on = migrateState({ ...v1, version: 6, settings: { ...v1.settings, nudgesEnabled: true } });
+    expect([on.settings.nudgesEnabled, on.settings.reminders.mealPrompt]).toEqual([false, true]);
+    expect(migrateState(on)).toEqual(on);
+    // Switched on again after the update, the nudges stay on.
+    expect(migrateState({ ...on, settings: { ...on.settings, nudgesEnabled: true } }).settings.nudgesEnabled).toBe(true);
+    // A store already on version 7 keeps its own choice.
+    expect(migrateState({ ...v1, version: 7, settings: { ...v1.settings, nudgesEnabled: true } }).settings.nudgesEnabled).toBe(true);
+    // The old reminders each have their own switch now, all off, whatever the nudges were.
+    const { away, water, sleepCheckin, dayReview } = on.settings.reminders;
+    expect([away, water, sleepCheckin, dayReview]).toEqual([false, false, false, false]);
+  });
+
+  it('a nudges switch stored as anything but true or false never turns the meal-time prompt or the nudges on', () => {
+    for (const bad of [null, 'yes', 1, 'true', {}]) {
+      const s = migrateState({ ...v1, version: 6, settings: { ...v1.settings, nudgesEnabled: bad } }).settings;
+      expect([s.nudgesEnabled, s.reminders.mealPrompt], String(bad)).toEqual([false, false]);
+      expect(migrateState({ ...v1, version: 7, settings: { ...v1.settings, nudgesEnabled: bad } }).settings.nudgesEnabled, String(bad)).toBe(false);
+    }
+    // One never stored at all is the default: the prompt on, the nudges off.
+    const fresh = migrateState({ ...v1, version: 6, settings: { ...v1.settings, nudgesEnabled: undefined } }).settings;
+    expect([fresh.nudgesEnabled, fresh.reminders.mealPrompt]).toEqual([false, true]);
   });
 
   it('version 7: a routine someone switched on, planned or edited keeps its bhaji week, avoid list, budget and walk exactly', () => {
@@ -655,7 +683,7 @@ describe('settings in an odd shape, from sync or an old file', () => {
   const v6 = (settings: Record<string, unknown>) => ({ ...v1, version: 6, settings: { ...v1.settings, glassMl: undefined, ...settings } });
   const settingsOf = (settings: Record<string, unknown>) => migrateState(v6(settings), NOW).settings;
   const FEATURES = { breaks: false, mantra: false, autoPlates: false };
-  const REMINDERS = { mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false };
+  const REMINDERS = { mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false };
 
   it('the Today cards: every known card once, in the order stored, the unknown and second copies dropped, the missing ones added off', () => {
     const cards = settingsOf({ todayCards: [{ id: 'steps', on: true }, { id: 'nope', on: true }, { id: 'menu', on: 'yes' }, { id: 'steps', on: false }] }).todayCards;
@@ -668,7 +696,7 @@ describe('settings in an odd shape, from sync or an old file', () => {
     const s = settingsOf({ features: { mantra: true, breaks: 'yes', autoPlates: 1, dark: true }, reminders: { planWeek: true, weeklyReport: [], fillYesterday: 'true', extra: false } });
     expect(s.features).toEqual({ breaks: false, mantra: true, autoPlates: false });
     // The meal-time prompt is missing and the app's reminders are on (v1's), so it takes its default, on.
-    expect(s.reminders).toEqual({ mealPrompt: true, fillYesterday: false, planWeek: true, weeklyReport: false });
+    expect(s.reminders).toEqual({ ...REMINDERS, planWeek: true });
   });
 
   it('a corrupt switch never turns a reminder on: the meal-time prompt stored as anything but true or false reads off, whatever the app\'s reminders switch says', () => {

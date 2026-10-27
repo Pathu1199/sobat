@@ -57,8 +57,21 @@ export type Settings = {
   todayCards: { id: TodayCardId; on: boolean }[];
   /** Parts of the app that stay off unless switched on in Settings. */
   features: { breaks: boolean; mantra: boolean; autoPlates: boolean };
-  /** Which reminders go out. Only the meal-time prompt is on by default. */
-  reminders: { mealPrompt: boolean; fillYesterday: boolean; planWeek: boolean; weeklyReport: boolean };
+  /** Which reminders go out, one switch each. Only the meal-time prompt is on by default. */
+  reminders: {
+    mealPrompt: boolean;
+    fillYesterday: boolean;
+    planWeek: boolean;
+    weeklyReport: boolean;
+    /** The lines after two to four days without a log. */
+    away: boolean;
+    /** Water at 15:00. */
+    water: boolean;
+    /** The morning check-in at 07:30. */
+    sleepCheckin: boolean;
+    /** The evening review at 21:30. */
+    dayReview: boolean;
+  };
   /** Mondays of the weeks the person looked over and saved on the plan screen, newest first. */
   reviewedWeeks?: ISODate[];
   /** When the last Google Drive backup was written, ISO time. */

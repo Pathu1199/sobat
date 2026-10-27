@@ -43,7 +43,8 @@ export const DEFAULT_SETTINGS: Settings = {
   visionModel: 'qwen2.5vl:7b',
   nudgeMinutes: 60,
   notifyGapMinutes: 60,
-  nudgesEnabled: true,
+  // The hourly in-app nudges are off unless switched on in Settings.
+  nudgesEnabled: false,
   quietStartHour: 22,
   quietEndHour: 7,
   waterGoalMl: 3000,
@@ -55,7 +56,7 @@ export const DEFAULT_SETTINGS: Settings = {
   // Off unless switched on: the screen breaks, the mantra and the plates the app makes up.
   features: { breaks: false, mantra: false, autoPlates: false },
   // Only the meal-time prompt is on; the rest are a switch away.
-  reminders: { mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false },
+  reminders: { mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false },
   // Most of the people this is built for are vegetarian; the setting is one tap away.
   diet: 'veg',
   appearance: 'system',

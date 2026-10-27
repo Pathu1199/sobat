@@ -1,10 +1,15 @@
 import { useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
 import type { BreakSettings } from '../core/breaks';
+import { addDays } from '../core/date';
 import { settledSlotIds, slotStates } from '../core/pattern';
-import { DAILY_IDS, dailyReminders, LONG_BREAK_ID, lastLogDate, plannedReminders, type Reminder } from '../core/reminders';
+import type { DayRecordState } from '../core/record';
+import { DAILY_IDS, dailyReminders, LONG_BREAK_ID, lastLogDate, MORNING_HOUR, plannedReminders, reportMonday, reportText, SLOT_DAYS, weekReport, type Reminder } from '../core/reminders';
+import { stripSince } from '../core/weekStrip';
+import { mealTotals } from '../core/weekPlan';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
+import { useRecordOn } from '../store/useRecordOn';
 import { firebaseEnabled } from './firebase';
 import { cancel, scheduleAt, scheduleDaily, scheduledIds, setupAndroidChannel } from './notify';
 import { useAuth } from './useAuth';
@@ -14,9 +19,9 @@ import { useMantra } from './useMantra';
 /** Everything planned a week ahead carries this, so it can be told apart from the daily ones. */
 const PLANNED = 'sobat-r-';
 
-/** A short signature of when and what a reminder says, so a changed slot time, name or language replaces the pending notification instead of leaving the old one. */
+/** A short signature of when and what a reminder says and does, so a changed slot time, plan, name or language replaces the pending notification instead of leaving the old one. */
 function signature(r: Reminder): string {
-  const s = `${r.time}\n${r.title}\n${r.body}`;
+  const s = `${r.time}\n${r.title}\n${r.body}\n${r.category ?? ''}\n${JSON.stringify(r.data)}`;
   let h = 5381;
   for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
   return h.toString(36);
@@ -43,25 +48,29 @@ export function useReminderGate(): { known: boolean; active: boolean } {
 }
 
 /**
- * Registers the reminders that must fire while the app is closed. The in-app
- * nudge timer only runs when the app is open, so on a phone these are what
- * actually reach you. The daily ones are re-registered on change; the week
- * of slot prompts and absence lines is reconciled against what the OS still
- * holds, so a logged slot's prompt is cancelled and a quiet week stays covered.
+ * Registers the reminders that must fire while the app is closed, each kind
+ * by its own switch in Settings (core/reminders.ts says what and when). The
+ * daily ones are re-registered on change; the meal-time prompts and the other
+ * planned ones are reconciled against what the OS still holds, so a logged
+ * slot's prompt is cancelled and a quiet week stays covered. The web and the
+ * PC keep their in-app prompts instead.
  */
 export function useScheduledReminders() {
   const app = useApp();
-  const { nudgesEnabled, quietStartHour, quietEndHour, offDays } = app.state.settings;
-  const mealPrompt = app.state.settings.reminders.mealPrompt;
+  const { quietStartHour, quietEndHour, offDays, reminders, features, reviewedWeeks } = app.state.settings;
   const { lang, onboardedOn } = app.state.profile;
   const mantra = useMantra();
-  const mantraText = mantra?.text ?? '';
+  // The day's line goes out only while it is switched on in Settings.
+  const mantraText = features.mantra ? (mantra?.text ?? '') : '';
   const routine = app.state.routine;
   // By value: a sync landing rebuilds this object unchanged, and must not re-register the day's reminders.
-  const breaksJson = JSON.stringify(app.state.breakSettings);
-  const { today } = app;
+  // Eye-care breaks off in Settings means no long-break notifications, whatever the break panel says.
+  const breaksJson = JSON.stringify(features.breaks ? app.state.breakSettings : { ...app.state.breakSettings, enabled: false });
+  const { today, menuOn, planFoods } = app;
   const minute = useMinute();
+  const recordOn = useRecordOn();
   const { known, active } = useReminderGate();
+  const { sleepCheckin, water, dayReview } = reminders;
 
   // The daily ones: whatever the plan does not hold is cancelled, so a sign-out
   // or a reset clears them and the repeating long break older builds left goes too.
@@ -69,7 +78,9 @@ export function useScheduledReminders() {
     if (Platform.OS === 'web' || !known) return;
     const want = dailyReminders({
       active,
-      nudgesEnabled,
+      sleepCheckin,
+      water,
+      dayReview,
       quietStartHour,
       quietEndHour,
       mantra: mantraText,
@@ -93,9 +104,9 @@ export function useScheduledReminders() {
     return () => {
       stale = true;
     };
-  }, [known, active, nudgesEnabled, quietStartHour, quietEndHour, lang, breaksJson, mantraText]);
+  }, [known, active, sleepCheckin, water, dayReview, quietStartHour, quietEndHour, lang, breaksJson, mantraText]);
 
-  // Slots done or skipped today, as one string so the memo below only moves when the set does.
+  // Slots done or skipped today (a meal the app filled in counts as eaten), as one string so the plan below only moves when the set does.
   const doneKey = useMemo(() => {
     const todayMeals = app.state.meals.filter((m) => m.date === today);
     return settledSlotIds(slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday }))
@@ -104,25 +115,80 @@ export function useScheduledReminders() {
   }, [routine, app.state.meals, today, app.targets.kcal, minute, app.skippedToday]);
   const lastLog = useMemo(() => lastLogDate(app.state.meals, today), [app.state.meals, today]);
 
-  // The slot prompts follow the meal-time prompt's switch and the absence lines the app's reminders switch, so either one on plans something.
+  // Each slot's planned calories on the days that get prompts, as one string for the same reason.
+  const plannedJson = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (let k = 0; k < SLOT_DAYS; k++) {
+      const date = addDays(today, k);
+      for (const m of menuOn(date).meals) out[`${date}:${m.id}`] = mealTotals(m, planFoods).kcal;
+    }
+    return JSON.stringify(out);
+  }, [menuOn, planFoods, today]);
+
+  // Yesterday's and today's record, read the way Progress reads it, for "fill in yesterday".
+  const recordsJson = useMemo(() => {
+    const yesterday = addDays(today, -1);
+    return JSON.stringify({ [yesterday]: recordOn(yesterday).state, [today]: recordOn(today).state });
+  }, [recordOn, today]);
+
+  // The coming Monday's report as things stand, by Progress's rules; every open works it out again.
+  const morning = Math.max(MORNING_HOUR, quietEndHour) * 60;
+  const reportJson = useMemo(() => {
+    if (!reminders.weeklyReport) return '';
+    const monday = reportMonday(today, minute, morning);
+    const since = stripSince(onboardedOn, app.state.meals, today);
+    const r = weekReport({ monday, today, since, recordOn, meals: app.state.meals, weights: app.state.weights, goal: app.targets.kcal });
+    return r ? JSON.stringify({ monday, text: reportText(r, makeT(lang)) }) : '';
+  }, [reminders.weeklyReport, today, minute, morning, onboardedOn, recordOn, app.state.meals, app.state.weights, app.targets.kcal, lang]);
+
+  const anyOn = reminders.mealPrompt || reminders.away || reminders.fillYesterday || reminders.planWeek || reminders.weeklyReport;
   const wanted = useMemo(() => {
-    if (Platform.OS === 'web' || !active || (!nudgesEnabled && !mealPrompt)) return [];
+    if (Platform.OS === 'web' || !active || !anyOn) return [];
     return plannedReminders({
       today,
       nowMinutes: minute,
       routine,
-      mealPrompt,
-      nudgesEnabled,
+      mealPrompt: reminders.mealPrompt,
+      awayLines: reminders.away,
       onboardedOn,
       doneSlotIds: doneKey ? doneKey.split(',') : [],
+      skips: app.state.slotSkips,
+      plannedKcal: JSON.parse(plannedJson) as Record<string, number>,
       lastLogDate: lastLog,
       offDays: offDays ?? [],
       quietStartHour,
       quietEndHour,
       lang,
       t: makeT(lang),
+      fillYesterday: reminders.fillYesterday,
+      records: JSON.parse(recordsJson) as Record<string, DayRecordState>,
+      planWeek: reminders.planWeek,
+      reviewedWeeks: reviewedWeeks ?? [],
+      report: reportJson ? (JSON.parse(reportJson) as { monday: string; text: string }) : null,
     });
-  }, [active, nudgesEnabled, mealPrompt, onboardedOn, today, minute, routine, doneKey, lastLog, offDays, quietStartHour, quietEndHour, lang]);
+  }, [
+    active,
+    anyOn,
+    reminders.mealPrompt,
+    reminders.away,
+    reminders.fillYesterday,
+    reminders.planWeek,
+    onboardedOn,
+    today,
+    minute,
+    routine,
+    doneKey,
+    app.state.slotSkips,
+    plannedJson,
+    lastLog,
+    offDays,
+    quietStartHour,
+    quietEndHour,
+    lang,
+    recordsJson,
+    reviewedWeeks,
+    reportJson,
+  ]);
   // By value: the list is worked out again every minute, and only a real change is taken to the OS.
   const wantedJson = JSON.stringify(wanted);
 
