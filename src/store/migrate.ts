@@ -6,9 +6,9 @@ import { slotShare } from '../core/pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
 import { forCloud, stable, type CloudState } from '../core/sync';
 import { normalizeTabs, normalizeTodayCards } from '../core/tabs';
-import type { AppState, Meal, SavedMeal, SlotSkip } from '../core/types';
+import type { AppState, FoodItem, ISODate, Meal, SavedMeal, SlotSkip } from '../core/types';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
-import { DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER, STATE_VERSION } from './defaults';
+import { allFoods, DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER, STATE_VERSION } from './defaults';
 
 /** The shape break settings had in version 1. */
 type V1BreakSettings = {
@@ -180,6 +180,15 @@ function alignOrDrop(plan: WeekPlan, routine: AppState['routine']): WeekPlan | n
   }
 }
 
+/** The template's days as menus, leaving out a day still as the app built it; a pattern that cannot be built from what is stored writes every day, as before. */
+function templateMenus(plan: WeekPlan, monday: ISODate, menus: DayMenu[], routine: AppState['routine'], customFoods: FoodItem[]): DayMenu[] {
+  try {
+    return menusFromTemplate(plan, monday, menus, { routine, foods: allFoods(customFoods) });
+  } catch {
+    return menusFromTemplate(plan, monday, menus);
+  }
+}
+
 /** A done-key older builds wrote for a skipped slot. */
 function isSkipKey(a: unknown): a is { date: string; key: string } {
   return isRecord(a) && typeof a.date === 'string' && typeof a.key === 'string' && a.key.startsWith(SKIP_PREFIX);
@@ -210,8 +219,10 @@ export function migrateState(raw: unknown, now: Date = new Date()): AppState {
   // Version 6: plan meals are named after the pattern's slots; older names land on the slot of their type nearest their time.
   const weekPlan = rawPlan ? alignOrDrop(rawPlan, routine) : null;
   // Version 7: the one-week template becomes this week's menus, date by date, its index 0 being Sunday. A date that already has a menu keeps it.
+  // A day still as the app built it from this pattern is not written, so its date shows the suggestion fitted to the person.
   const storedMenus = Array.isArray(raw.menus) ? (raw.menus as DayMenu[]) : [];
-  const menus = weekPlan ? menusFromTemplate(weekPlan, mondayOf(toISODate(now)), storedMenus) : storedMenus;
+  const customFoods = Array.isArray(raw.customFoods) ? (raw.customFoods as FoodItem[]) : [];
+  const menus = weekPlan ? templateMenus(weekPlan, mondayOf(toISODate(now)), storedMenus, routine, customFoods) : storedMenus;
   // Version 7: a skipped slot is its own record with its date, not a done-key that lasted only the day.
   const actions = Array.isArray(raw.actionsDone) ? (raw.actionsDone as unknown[]) : [];
   let slotSkips = Array.isArray(raw.slotSkips) ? (raw.slotSkips as SlotSkip[]) : [];

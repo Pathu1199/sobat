@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import foodsJson from '../data/foods.json';
 import exercisesJson from '../data/exercises.json';
 import { AppState as RNAppState } from 'react-native';
 import { mondayOf, toISODate } from '../core/date';
@@ -31,6 +30,7 @@ import {
   setMenuLine,
   setMenuMeal,
   skippedOn,
+  suggestionFor,
   viewMenu,
   viewWeek,
   weekPlanView,
@@ -43,13 +43,14 @@ import {
   withSavedMeal,
   withSkipAdded,
   type DayMenu,
+  type MenuFit,
 } from '../core/menu';
 import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
-import type { PlanMeal, WeekPlan } from '../core/weekPlan';
+import type { PlanDay, PlanMeal, WeekPlan } from '../core/weekPlan';
 import type { BreakKind, BreakSettings } from '../core/breaks';
 import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MealSource, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
-import { EMPTY_STATE } from './defaults';
+import { allFoods, EMPTY_STATE } from './defaults';
 import { migrateState } from './migrate';
 
 export const STATE_KEY = 'sobat.state.v1';
@@ -58,13 +59,7 @@ export const CLOUD_BASE_KEY = 'sobat.state.v1.cloudBase';
 /** Whose data the stored state is, so another account signing in never sees or syncs it. */
 export const OWNER_KEY = 'sobat.cloud.owner';
 
-const FOODS = foodsJson as unknown as FoodItem[];
 const EXERCISES = exercisesJson as unknown as Exercise[];
-
-/** Every food there is: the database and the person's own. Planned lines can name any of them, whatever the diet filter shows. */
-function allFoods(customFoods: FoodItem[]): FoodItem[] {
-  return [...FOODS, ...customFoods];
-}
 
 type Ctx = {
   ready: boolean;
@@ -123,6 +118,8 @@ type Ctx = {
   menuOn: (date: ISODate) => DayMenu;
   /** A day holding just what the app suggests for its weekday, fitted to the person's day: the app's suggestion, not a plan the person shaped. */
   isSuggestedMenu: (day: Pick<DayMenu, 'date' | 'meals'>) => boolean;
+  /** What the app suggests for a date, fitted to the person's day, as a copy of its own: the meals a date nobody wrote shows. Rebuild puts a day back to it. */
+  suggestionOn: (date: ISODate) => PlanDay;
   /** The seven menus of the week starting on `monday`, Monday first. */
   weekMenus: (monday: ISODate) => DayMenu[];
   /** Edits to one date's menu; `day` is the menu as shown. Every other date is left as it is. */
@@ -194,10 +191,16 @@ function withMeal(s: AppState, m: Meal, target: number, now: Date): AppState {
   return { ...s, ...withMealAdded(s, m, target, now) };
 }
 
+/** The fit for the person on a date: their target that date (it counts their age), the safe minimum and their avoid list. */
+function fitOn(profile: Profile, routine: Routine, date: ISODate): MenuFit {
+  return fitFor(profile, routine, new Date(`${date}T12:00:00`));
+}
+
 /** The app's own run, now: today marked as a day the app was open and the planned meals that are due filled in, a day nobody wrote as it shows, fitted to the person's day. The same state when there is nothing to do. */
 function withAutoFillNow(s: AppState): AppState {
-  const fit = fitFor(s.profile, s.routine);
-  return withAutoFill(s, new Date(), allFoods(s.customFoods), fit.target, fit);
+  const now = new Date();
+  const fit = fitFor(s.profile, s.routine, now);
+  return withAutoFill(s, now, allFoods(s.customFoods), fit.target, fit);
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -311,7 +314,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const update = useCallback((fn: (s: AppState) => AppState) => setState((s) => fn(s)), []);
   const planFoods = useMemo(() => allFoods(state.customFoods), [state.customFoods]);
   // A day nobody wrote shows the app's suggestion fitted to the person's target, never under the safe minimum, without the foods they avoid.
-  const fit = useMemo(() => fitFor(state.profile, state.routine), [state.profile, state.routine]);
+  // The target counts the person's age, so the fit is worked out again when the date changes, as Today's targets are.
+  const fit = useMemo(() => fitOn(state.profile, state.routine, today), [state.profile, state.routine, today]);
 
   // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run while it is going.
   // A day settled only by skips never counts and ends the run.
@@ -486,11 +490,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setWeekPlan: (plan) =>
         update((s) => {
           // The week as the screen showed it, fitted the same way, so only the days that changed are written.
-          const week = viewWeek(mondayOf(today), s.menus, s.routine, today, allFoods(s.customFoods), fitFor(s.profile, s.routine));
+          const week = viewWeek(mondayOf(today), s.menus, s.routine, today, allFoods(s.customFoods), fitOn(s.profile, s.routine, today));
           return withMenus(s, applyWeekPlan(plan, week, s.menus, new Date()));
         }),
       menuOn: (date) => viewMenu(date, state.menus, state.routine, today, planFoods, fit),
       isSuggestedMenu: (day) => isSuggested(day, state.routine, planFoods, fit),
+      suggestionOn: (date) => suggestionFor(date, state.routine, planFoods, fit),
       weekMenus: (monday) => viewWeek(monday, state.menus, state.routine, today, planFoods, fit),
       editMenuDay: (day, meals) => update((s) => withMenus(s, setMenuDay(s.menus, day, meals, new Date()))),
       editMenuLine: (day, mealId, lineIdx, next) => update((s) => withMenus(s, setMenuLine(s.menus, day, mealId, lineIdx, next, new Date()))),
@@ -501,7 +506,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         update((s) => {
           const now = new Date();
           const foods = allFoods(s.customFoods);
-          const slot = viewMenu(date, s.menus, s.routine, today, foods, fitFor(s.profile, s.routine)).meals.find((m) => m.id === slotId);
+          const slot = viewMenu(date, s.menus, s.routine, today, foods, fitOn(s.profile, s.routine, today)).meals.find((m) => m.id === slotId);
           const meal = slot ? mealFromLines({ id: newId(), date, slot, lines: slot.lines, foods, source, now }) : null;
           return meal ? withMeal(s, meal, targets.kcal, now) : s;
         }),
@@ -519,7 +524,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         update((s) => {
           const now = new Date();
           const foods = allFoods(s.customFoods);
-          const menu = viewMenu(date, s.menus, s.routine, today, foods, fitFor(s.profile, s.routine));
+          const menu = viewMenu(date, s.menus, s.routine, today, foods, fitOn(s.profile, s.routine, today));
           return fillFromPlan({ now, menu, meals: s.meals, skips: s.slotSkips, foods }).reduce((acc, m) => withMeal(acc, m, targets.kcal, now), s);
         }),
       runAutoFill: () => update(withAutoFillNow),

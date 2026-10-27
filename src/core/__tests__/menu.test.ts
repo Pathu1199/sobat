@@ -29,6 +29,7 @@ import {
   settleAuto,
   skippedOn,
   skipsAfterRemove,
+  suggestionFor,
   viewMenu,
   viewWeek,
   weekPlanView,
@@ -603,13 +604,74 @@ describe('the app\'s suggestion fits the person\'s day', () => {
     expect(isSuggested(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods), NEUTRAL_ROUTINE, foods, fit)).toBe(false);
   });
 
-  it('stays as balanced as it gets when the foods allowed cannot reach the floor, and still reads as the suggestion', () => {
+  it('is the pattern\'s own day when every food is avoided: nothing is added or made bigger, and it still reads as the suggestion', () => {
     const avoidAll: MenuFit = { target: 1800, floor: 1200, avoided: new Set(foods.map((f) => f.id)) };
-    const shown = viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods, avoidAll);
-    expect(kcal(shown)).toBeGreaterThan(kcal(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods)));
-    expect(kcal(shown)).toBeLessThan(1200);
-    // So the line under the safe minimum, with the way to Balance, still shows.
-    expect(isSuggested(shown, NEUTRAL_ROUTINE, foods, avoidAll)).toBe(true);
+    for (const date of weekDates(MON)) {
+      const shown = viewMenu(date, [], NEUTRAL_ROUTINE, TODAY, foods, avoidAll);
+      expect(shown.meals).toEqual(viewMenu(date, [], NEUTRAL_ROUTINE, TODAY, foods).meals);
+      expect(kcal(shown)).toBeLessThan(1200);
+      // So the line under the safe minimum, with the way to Balance, still shows.
+      expect(isSuggested(shown, NEUTRAL_ROUTINE, foods, avoidAll)).toBe(true);
+    }
+  });
+
+  it('never gives a person who avoids chapati more chapati than the pattern gave, and the app fills in no more of it', () => {
+    const chapatiFood = foods.find((f) => f.id === 'chapati')!;
+    const avoids = fitFor({ ...EMPTY_STATE.profile, sex: 'female' }, { ...NEUTRAL_ROUTINE, avoid: [ruleForFood(chapatiFood)] });
+    expect([...avoids.avoided]).toEqual(['chapati']);
+    const noChapati: MenuFit = { ...fit, avoided: avoids.avoided };
+    const chapatiIn = (m: PlanMeal) => m.lines.filter((l) => l.foodId === 'chapati').reduce((a, l) => a + l.qty, 0);
+    let pattern = 0;
+    for (const date of weekDates(MON)) {
+      const raw = viewMenu(date, [], NEUTRAL_ROUTINE, TODAY, foods);
+      const shown = viewMenu(date, [], NEUTRAL_ROUTINE, TODAY, foods, noChapati);
+      for (const m of shown.meals) expect(chapatiIn(m)).toBeLessThanOrEqual(chapatiIn(raw.meals.find((r) => r.id === m.id)!));
+      pattern += raw.meals.reduce((a, m) => a + chapatiIn(m), 0);
+      // The rest of the day is still fitted.
+      expect(kcal(shown)).toBeGreaterThan(kcal(raw));
+    }
+    // The pattern does give chapati, so there was something to keep from growing.
+    expect(pattern).toBeGreaterThan(0);
+    const state = {
+      profile: { ...EMPTY_STATE.profile, onboarded: true },
+      menus: [] as DayMenu[],
+      routine: NEUTRAL_ROUTINE,
+      meals: [] as Meal[],
+      slotSkips: [] as SlotSkip[],
+      usage: [] as typeof EMPTY_STATE.usage,
+      openedDates: [] as string[],
+      settings: { ...EMPTY_STATE.settings, offDays: [] },
+    };
+    const now = new Date('2026-10-27T22:00:00');
+    const chapatiGrams = (meals: Meal[]) => meals.flatMap((m) => m.items).filter((i) => i.foodId === 'chapati').reduce((a, i) => a + i.grams, 0);
+    const filled = dueAutoFills({ state, now, foods, fit: noChapati });
+    expect(filled.length).toBeGreaterThan(0);
+    expect(chapatiGrams(filled)).toBeLessThanOrEqual(chapatiGrams(dueAutoFills({ state, now, foods })));
+  });
+
+  it('is what Rebuild puts back: the meals a date nobody wrote shows, as its own copy, so the day reads as the suggestion again', () => {
+    const rebuilt = suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit);
+    expect(rebuilt.meals).toEqual(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods, fit).meals);
+    // Not the pattern's own lines, which are under the target.
+    expect(rebuilt.meals).not.toEqual(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods).meals);
+    // Its own copy: changing it changes neither the next one nor the day shown.
+    rebuilt.meals[1].lines[0].qty = 9;
+    rebuilt.meals[1].lines.push(chapati(4));
+    expect(suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit).meals).toEqual(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods, fit).meals);
+    // A Wednesday the person edited, rebuilt through the plan screen's week, is the suggestion again.
+    const week = viewWeek(MON, [], NEUTRAL_ROUTINE, TODAY, foods, fit);
+    const edited = addMenuLine([], week[2], 'snack', { foodId: 'banana', unit: 'medium', qty: 1 }, NOW);
+    const shownWeek = viewWeek(MON, edited, NEUTRAL_ROUTINE, TODAY, foods, fit);
+    const plan = weekPlanView(shownWeek);
+    plan.days[3] = suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit);
+    const later = new Date('2026-10-27T11:00:00');
+    const out = applyWeekPlan(plan, shownWeek, edited, later);
+    expect(menuFor(WED, out)!.editedAt).toBe(later.toISOString());
+    expect(isSuggested(viewMenu(WED, out, NEUTRAL_ROUTINE, TODAY, foods, fit), NEUTRAL_ROUTINE, foods, fit)).toBe(true);
+    // Rebuilding a day nobody wrote writes nothing.
+    const fresh = weekPlanView(week);
+    fresh.days[3] = suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit);
+    expect(applyWeekPlan(fresh, week, [], later)).toEqual([]);
   });
 
   it('is what the app fills in: the fitted lines, with calories from the food database at their grams', () => {
@@ -651,6 +713,15 @@ describe('the app\'s suggestion fits the person\'s day', () => {
     expect(f.target).toBe(dailyTargets(profile).kcal);
     expect(f.floor).toBe(KCAL_FLOOR.female);
     expect([...f.avoided]).toEqual(['steamed-rice']);
+  });
+
+  it('is fitted to the target of the date it is worked out on, as the person\'s age counts toward it', () => {
+    const profile = { ...EMPTY_STATE.profile, sex: 'male' as const, birthYear: 1990, weightKg: 90, heightCm: 175, goalWeightKg: 75 };
+    const eve = new Date('2026-12-31T12:00:00');
+    const newYear = new Date('2027-01-01T12:00:00');
+    expect(fitFor(profile, NEUTRAL_ROUTINE, eve).target).toBe(dailyTargets(profile, eve).kcal);
+    expect(fitFor(profile, NEUTRAL_ROUTINE, newYear).target).toBe(dailyTargets(profile, newYear).kcal);
+    expect(fitFor(profile, NEUTRAL_ROUTINE, newYear).target).toBeLessThan(fitFor(profile, NEUTRAL_ROUTINE, eve).target);
   });
 });
 

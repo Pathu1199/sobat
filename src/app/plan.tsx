@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { FoodDetailSheet, FoodThumb } from '../components/FoodDetailSheet';
 import { GrocerySheet } from '../components/GrocerySheet';
+import { mondayOf, weekDates } from '../core/date';
 import { foodName, searchFoods } from '../core/foods';
 import { newId } from '../core/id';
 import { KCAL_FLOOR } from '../core/nutrition';
@@ -12,7 +13,6 @@ import type { FoodItem } from '../core/types';
 import {
   addLine,
   balanceDay,
-  buildWeekPlan,
   copyToWeekdays,
   dayStatus,
   dayTotals,
@@ -104,8 +104,9 @@ export default function PlanScreen() {
     fb.haptic('success');
   }
   function rebuild() {
-    const fresh = buildWeekPlan(state.routine, foods);
-    save(setDay(plan, dayIdx, fresh.days[dayIdx]));
+    // The app's suggestion for this date, fitted to the person's day: what the day shows when nobody has written it.
+    const date = weekDates(mondayOf(today)).find((d) => weekdayOf(d) === dayIdx)!;
+    save(setDay(plan, dayIdx, app.suggestionOn(date)));
     setNote(t('plan_rebuilt'));
   }
   function copyWeekdays() {

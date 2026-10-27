@@ -1,9 +1,17 @@
 import { Platform } from 'react-native';
+import foodsJson from '../data/foods.json';
 import { DEFAULT_BREAK_SETTINGS } from '../core/breaks';
 import { NEUTRAL_ROUTINE } from '../core/routine';
 import { DEFAULT_SCHEDULE } from '../core/schedule';
 import { DEFAULT_TABS, DEFAULT_TODAY_CARDS } from '../core/tabs';
-import type { AppState, Profile, Settings } from '../core/types';
+import type { AppState, FoodItem, Profile, Settings } from '../core/types';
+
+const FOODS = foodsJson as unknown as FoodItem[];
+
+/** Every food there is: the database and the person's own. Planned lines can name any of them, whatever the diet filter shows. */
+export function allFoods(customFoods: FoodItem[]): FoodItem[] {
+  return [...FOODS, ...customFoods];
+}
 
 export const DEFAULT_PROFILE: Profile = {
   name: '',

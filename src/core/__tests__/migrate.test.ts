@@ -4,9 +4,14 @@ import { EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { allowance, pattern } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE } from '../routine';
 import { DEFAULT_TODAY_CARDS } from '../tabs';
-import { menuFor, setMenuLine } from '../menu';
+import foodsJson from '../../data/foods.json';
+import { weekDates } from '../date';
+import { fitFor, isSuggested, menuFor, setMenuLine, viewMenu } from '../menu';
 import { landMerge, RoundStop, syncRound, type CloudState } from '../sync';
-import type { AppState } from '../types';
+import type { AppState, FoodItem } from '../types';
+import { buildWeekPlan } from '../weekPlan';
+
+const foods = foodsJson as FoodItem[];
 
 // A realistic v1 blob: the shape the app has been writing until now.
 const v1 = {
@@ -229,6 +234,50 @@ describe('migrateState', () => {
     const out = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...DEFAULT_ROUTINE, enabled: true }, weekPlan: { days }, menus: [mine] }, NOW);
     expect(out.menus.find((m) => m.date === '2026-10-28')).toEqual(mine);
     expect(out.menus).toHaveLength(7);
+  });
+
+  it('version 7: an old plan the app built and nobody changed is not stored, so every date shows the suggestion fitted to the person', () => {
+    // The plan screen saved the week it built the first time it was opened.
+    const mine = { ...DEFAULT_ROUTINE, enabled: true };
+    const store = { version: 6, profile: { ...EMPTY_STATE.profile, onboarded: true }, meals: [], routine: mine, weekPlan: buildWeekPlan(mine, foods) };
+    const out = migrateState(store, NOW);
+    expect(out.menus).toEqual([]);
+    expect(out.weekPlan).toBeNull();
+    const fit = fitFor(out.profile, out.routine);
+    for (const date of weekDates('2026-10-26')) {
+      const shown = viewMenu(date, out.menus, out.routine, '2026-10-28', foods, fit);
+      expect(isSuggested(shown, out.routine, foods, fit)).toBe(true);
+    }
+    expect(migrateState(out, NOW)).toEqual(out);
+    // A pattern naming the person's own food was built with it, so it counts as built too.
+    const ragi = { ...foods.find((f) => f.id === 'chapati')!, id: 'custom-ragi-roti', name_en: 'My ragi roti', tags: ['custom'] };
+    const own = { ...NEUTRAL_ROUTINE, slots: NEUTRAL_ROUTINE.slots.map((s) => (s.type === 'breakfast' ? { ...s, options: [[{ foodId: ragi.id, unit: 'piece', qty: 2 }]] } : s)) };
+    const built = buildWeekPlan(own, [...foods, ragi]);
+    expect(built.days[3].meals[0].lines.some((l) => l.foodId === ragi.id)).toBe(true);
+    const withOwn = migrateState({ ...store, routine: own, customFoods: [ragi], weekPlan: built }, NOW);
+    expect(withOwn.menus).toEqual([]);
+  });
+
+  it('version 7: of an old plan the app built, only the day the person changed is stored, and a second load changes nothing', () => {
+    const mine = { ...DEFAULT_ROUTINE, enabled: true };
+    const plan = buildWeekPlan(mine, foods);
+    // Wednesday's lunch got a third chapati.
+    plan.days[3] = { meals: plan.days[3].meals.map((m) => (m.id === 'lunch' ? { ...m, lines: [...m.lines, { foodId: 'chapati', unit: 'piece', qty: 3 }] } : m)) };
+    const out = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile, onboarded: true }, meals: [], routine: mine, weekPlan: plan }, NOW);
+    expect(out.menus.map((m) => m.date)).toEqual(['2026-10-28']);
+    expect(out.menus[0].meals).toEqual(plan.days[3].meals);
+    expect(out.menus[0].editedAt).toBe('');
+    expect(migrateState(out, NOW)).toEqual(out);
+  });
+
+  it('version 7: a pattern that cannot be built from what is stored does not fail the load; the old plan is written as it was', () => {
+    // A food of the person's own, stored without its tags or measures, named in a slot.
+    const broken = { id: 'custom-broken', name_en: 'Broken', category: 'grain' };
+    const mine = { ...DEFAULT_ROUTINE, enabled: true, slots: DEFAULT_ROUTINE.slots.map((s) => (s.id === 'fruit' ? { ...s, options: [[{ foodId: broken.id, unit: 'piece', qty: 1 }]] } : s)) };
+    const plan = buildWeekPlan({ ...DEFAULT_ROUTINE, enabled: true }, foods);
+    const store = { version: 6, profile: { ...EMPTY_STATE.profile, onboarded: true }, meals: [], routine: mine, customFoods: [broken], weekPlan: plan };
+    expect(() => migrateState(store, NOW)).not.toThrow();
+    expect(migrateState(store, NOW).menus).toHaveLength(7);
   });
 
   it('version 7: someone who never used the pattern starts from the four meals of the day; a planned or used routine keeps its slots', () => {

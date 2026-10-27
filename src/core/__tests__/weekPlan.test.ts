@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, type Routine } from '../routine';
+import { avoidedFoodIds, DEFAULT_ROUTINE, NEUTRAL_ROUTINE, ruleForFood, type Routine } from '../routine';
 import type { FoodItem } from '../types';
 import { alignWeekPlan, balanceDay, buildWeekPlan, copyToWeekdays, dayStatus, dayTotals, lineInfo, planDayFor, roleOf, setLine, swapsFor, type WeekPlan } from '../weekPlan';
 
@@ -82,6 +82,34 @@ describe('weekPlan', () => {
     const k = dayTotals(balanceDay(plan.days[1], foods, 1250, new Set(), 1250).day, foods).kcal;
     expect(k).toBeLessThan(before);
     expect(k).toBeGreaterThanOrEqual(1250);
+  });
+
+  it('never adds a food the person avoids, or more of one already on the plate; taking some away is still fine', () => {
+    const qtyOf = (day: { meals: { lines: { foodId: string; qty: number }[] }[] }, id: string) =>
+      day.meals.flatMap((m) => m.lines).filter((l) => l.foodId === id).reduce((a, l) => a + l.qty, 0);
+    for (const routine of [NEUTRAL_ROUTINE, DEFAULT_ROUTINE]) {
+      for (let d = 0; d < 7; d++) {
+        const raw = planDayFor(routine, d, foods);
+        // Everything on the plate is avoided: the bread, the dal, the bhaji.
+        const onPlate = new Set(raw.meals.flatMap((m) => m.lines.map((l) => l.foodId)));
+        const { day } = balanceDay(raw, foods, 2600, onPlate, 1500);
+        for (const id of onPlate) expect(qtyOf(day, id)).toBeLessThanOrEqual(qtyOf(raw, id));
+        // With every food avoided, nothing at all can be added.
+        const all = new Set(foods.map((f) => f.id));
+        expect(balanceDay(raw, foods, 2600, all, 1500).day).toEqual(raw);
+      }
+    }
+    // The plan screen's Balance reads the avoid list from the routine the same way.
+    const noChapati = avoidedFoodIds({ ...NEUTRAL_ROUTINE, avoid: [ruleForFood(byId('chapati'))], enabled: true });
+    const monday = planDayFor(NEUTRAL_ROUTINE, 1, foods);
+    expect(qtyOf(monday, 'chapati')).toBeGreaterThan(0);
+    const lifted = balanceDay(monday, foods, 2000, noChapati, 1200);
+    expect(qtyOf(lifted.day, 'chapati')).toBeLessThanOrEqual(qtyOf(monday, 'chapati'));
+    expect(lifted.changes.length).toBeGreaterThan(0);
+    // On the way down an avoided bread can still be cut.
+    const heavy = { meals: monday.meals.map((m) => (m.id === 'lunch' ? { ...m, lines: m.lines.map((l) => (l.foodId === 'chapati' ? { ...l, qty: 3 } : l)) } : m)) };
+    const cut = balanceDay(heavy, foods, dayTotals(heavy, foods).kcal - 250, noChapati);
+    expect(qtyOf(cut.day, 'chapati')).toBeLessThan(qtyOf(heavy, 'chapati'));
   });
 
   it('brings a day that is too high down, and never below one bread', () => {

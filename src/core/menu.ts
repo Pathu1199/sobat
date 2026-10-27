@@ -40,9 +40,13 @@ function copyMeals(meals: PlanMeal[]): PlanMeal[] {
 /** What the app's own suggestion is fitted to: the person's day target, never under the safe minimum, with none of the foods they avoid. */
 export type MenuFit = { target: number; floor: number; avoided: Set<string> };
 
-/** The fit for this person: the target and the safe minimum Today shows, and the routine's avoid list, the one Balance uses. */
-export function fitFor(profile: Profile, routine: Routine): MenuFit {
-  return { target: dailyTargets(profile).kcal, floor: KCAL_FLOOR[profile.sex], avoided: avoidedFoodIds({ ...routine, enabled: true }) };
+/**
+ * The fit for this person on the date of `now`: the target and the safe
+ * minimum Today shows, and the routine's avoid list, the one Balance uses.
+ * The target counts the person's age, so it can change at a new year.
+ */
+export function fitFor(profile: Profile, routine: Routine, now?: Date): MenuFit {
+  return { target: dailyTargets(profile, now).kcal, floor: KCAL_FLOOR[profile.sex], avoided: avoidedFoodIds({ ...routine, enabled: true }) };
 }
 
 // The fitted day of each weekday, worked out once per fit, pattern and food list: the streak alone reads sixty dates.
@@ -51,10 +55,10 @@ const fitted = new WeakMap<MenuFit, { routine: Routine; foods: FoodItem[]; days:
 /**
  * What the app suggests for a weekday nobody wrote: the pattern's own lines
  * for it and, given a fit, balanced to the person's day target and never
- * under the safe minimum, or as near as the foods allowed get. Never changed
- * in place: callers copy before they edit.
+ * under the safe minimum, or as near as the foods allowed get. The fitted day
+ * is shared by every caller, so it never leaves this file uncopied.
  */
-export function suggestedDay(routine: Routine, weekday: number, foods: FoodItem[], fit?: MenuFit): PlanDay {
+function suggestedDay(routine: Routine, weekday: number, foods: FoodItem[], fit?: MenuFit): PlanDay {
   if (!fit) return planDayFor(routine, weekday, foods);
   let memo = fitted.get(fit);
   if (!memo || memo.routine !== routine || memo.foods !== foods) {
@@ -70,6 +74,15 @@ export function suggestedDay(routine: Routine, weekday: number, foods: FoodItem[
 }
 
 /**
+ * What the app suggests for a date, fitted to the person's day when a fit is
+ * given, as a copy of its own to keep or edit: the meals a date nobody wrote
+ * shows when there is no earlier week to carry forward. Rebuild puts it back.
+ */
+export function suggestionFor(date: ISODate, routine: Routine, foods: FoodItem[], fit?: MenuFit): PlanDay {
+  return { meals: copyMeals(suggestedDay(routine, weekdayOf(date), foods, fit).meals) };
+}
+
+/**
  * The menu a date starts as when nothing is stored for it: the same weekday a
  * week earlier; else the newest earlier menu of that weekday; else the app's
  * suggestion for that weekday, fitted to the person's day when a fit is
@@ -81,7 +94,7 @@ export function startingMenu(date: ISODate, menus: DayMenu[], routine: Routine, 
     menuFor(addDays(date, -7), menus) ??
     menus.filter((m) => m.date < date && weekdayOf(m.date) === wd).sort((a, b) => b.date.localeCompare(a.date))[0] ??
     null;
-  return { date, meals: copyMeals(source ? source.meals : suggestedDay(routine, wd, foods, fit).meals), editedAt: NOT_EDITED };
+  return { date, meals: source ? copyMeals(source.meals) : suggestionFor(date, routine, foods, fit).meals, editedAt: NOT_EDITED };
 }
 
 /** The seven menus of the week starting on `monday`, Monday first: a stored one as it is, a missing one as it starts. Never overwrites a stored date. */
@@ -458,10 +471,18 @@ export function withoutSavedMeal(list: SavedMeal[], id: string): SavedMeal[] {
  * starting on `monday` that has no menu yet takes the template's day for its
  * weekday (index 0 is Sunday). A date that has a menu keeps it. Stamped as
  * written by the app. The same list when nothing was missing.
+ *
+ * Given the pattern it was built from (`built`: the routine and every food,
+ * the person's own included), a day still exactly as the app built it from
+ * that pattern is not written either: the old plan screen saved the week it
+ * built the first time it was opened, so that day is the app's and not the
+ * person's, and its date shows the app's suggestion, fitted to the person,
+ * like any date nobody wrote. A day the person changed is written.
  */
-export function menusFromTemplate(plan: WeekPlan, monday: ISODate, menus: DayMenu[]): DayMenu[] {
+export function menusFromTemplate(plan: WeekPlan, monday: ISODate, menus: DayMenu[], built?: { routine: Routine; foods: FoodItem[] }): DayMenu[] {
+  const asBuilt = (day: PlanDay, weekday: number) => !!built && stable(day.meals) === stable(planDayFor(built.routine, weekday, built.foods).meals);
   const missing = weekDates(monday)
-    .filter((date) => !menuFor(date, menus) && plan.days[weekdayOf(date)])
+    .filter((date) => !menuFor(date, menus) && plan.days[weekdayOf(date)] && !asBuilt(plan.days[weekdayOf(date)], weekdayOf(date)))
     .map((date): DayMenu => ({ date, meals: copyMeals(plan.days[weekdayOf(date)].meals), editedAt: NOT_EDITED }));
   return missing.length ? [...menus, ...missing] : menus;
 }

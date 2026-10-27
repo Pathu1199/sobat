@@ -265,11 +265,12 @@ function editMeal(day: PlanDay, w: Where, fn: (m: PlanMeal) => PlanMeal | null):
   return next ? { meals: day.meals.map((x) => (x.id === m.id ? next : x)) } : null;
 }
 
-function bumpRole(day: PlanDay, foods: FoodItem[], w: Where, role: Role, by: number, min: number, max: number): PlanDay | null {
+/** Changes the count of the meal's first line of a role; a line whose food is in `skip` is passed over, so more is never added of a food the person avoids. */
+function bumpRole(day: PlanDay, foods: FoodItem[], w: Where, role: Role, by: number, min: number, max: number, skip?: Set<string>): PlanDay | null {
   return editMeal(day, w, (m) => {
     const i = m.lines.findIndex((l) => {
       const f = foods.find((x) => x.id === l.foodId);
-      return f && roleOf(f) === role;
+      return f && roleOf(f) === role && !skip?.has(f.id);
     });
     if (i < 0) return null;
     const q = m.lines[i].qty + by;
@@ -302,13 +303,15 @@ export type Balanced = { day: PlanDay; changes: { key: string; params: Record<st
 /**
  * Nudges a day toward the target, one kitchen-sized step at a time: another
  * chapati or bhakri, a katori of curd, a fruit, a handful of chana; or the
- * other way, one roti fewer, rice off, bhel off. Protein-first when adding.
- * Stops inside ±5% or when nothing sensible is left to change, and never
+ * other way, one roti fewer, rice off, bhel off. Protein-first when adding,
+ * and never more of a food the person avoids, not even one already on the
+ * plate. Stops inside ±5% or when nothing sensible is left to change, and never
  * short of the safe minimum while a step can still lift it there. Each change
  * names the meal by its type, which every screen can translate.
  */
 export function balanceDay(day: PlanDay, foods: FoodItem[], target: number, avoided: Set<string>, floor = 0): Balanced {
   const ok = (id: string) => has(foods, id) && !avoided.has(id);
+  // No step up adds a food the person avoids or makes a line of one bigger; a step down may still take it away.
   const ups: Step[] = [
     // A plate first gets its staples back, then extras.
     { key: 'bal_add_bread', params: { meal: 'lunch' }, apply: (d) => (ok('chapati') ? addIfMissing(d, foods, LUNCH, 'bread', { foodId: 'chapati', unit: 'piece', qty: 2 }) : null) },
@@ -316,13 +319,13 @@ export function balanceDay(day: PlanDay, foods: FoodItem[], target: number, avoi
     { key: 'bal_add_dal', params: { meal: 'lunch' }, apply: (d) => (ok('moong-dal') ? addIfMissing(d, foods, LUNCH, 'dal', { foodId: 'moong-dal', unit: 'katori', qty: 1 }) : null) },
     { key: 'bal_add_dal', params: { meal: 'dinner' }, apply: (d) => (ok('varan') ? addIfMissing(d, foods, DINNER, 'dal', lineFor(foods.find((f) => f.id === 'varan')!)) : null) },
     { key: 'bal_add_curd', params: { meal: 'lunch' }, apply: (d) => (ok('curd') ? addTo(d, foods, LUNCH, 'curd') : null) },
-    { key: 'bal_more_bread', params: { meal: 'dinner' }, apply: (d) => bumpRole(d, foods, DINNER, 'bread', 1, 1, 3) },
-    { key: 'bal_more_bread', params: { meal: 'lunch' }, apply: (d) => bumpRole(d, foods, LUNCH, 'bread', 1, 1, 3) },
+    { key: 'bal_more_bread', params: { meal: 'dinner' }, apply: (d) => bumpRole(d, foods, DINNER, 'bread', 1, 1, 3, avoided) },
+    { key: 'bal_more_bread', params: { meal: 'lunch' }, apply: (d) => bumpRole(d, foods, LUNCH, 'bread', 1, 1, 3, avoided) },
     { key: 'bal_add_sprouts', params: { meal: 'snack' }, apply: (d) => (ok('sprouts-boiled') ? addTo(d, foods, EVENING, 'sprouts-boiled') : null) },
     { key: 'bal_add_fruit', params: { meal: 'snack' }, apply: (d) => (ok('banana') ? addTo(d, foods, EVENING, 'banana') : ok('apple') ? addTo(d, foods, EVENING, 'apple') : null) },
     { key: 'bal_add_rice', params: { meal: 'lunch' }, apply: (d) => (ok('steamed-rice') ? addTo(d, foods, LUNCH, 'steamed-rice', 'katori') : null) },
     { key: 'bal_add_chana', params: { meal: 'snack' }, apply: (d) => (ok('roasted-chana') ? addTo(d, foods, MID, 'roasted-chana') : null) },
-    { key: 'bal_more_dal', params: { meal: 'dinner' }, apply: (d) => bumpRole(d, foods, DINNER, 'dal', 0.5, 0.5, 1.5) },
+    { key: 'bal_more_dal', params: { meal: 'dinner' }, apply: (d) => bumpRole(d, foods, DINNER, 'dal', 0.5, 0.5, 1.5, avoided) },
   ];
   const downs: Step[] = [
     { key: 'bal_drop_rice', params: { meal: 'lunch' }, apply: (d) => dropFrom(d, 'lunch', 'steamed-rice') },
