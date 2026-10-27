@@ -12,10 +12,10 @@ import { C } from '../ui/theme';
 
 /**
  * Me → "Start a new chapter", in plain words: the climb starts again today
- * from the weight Progress shows, Lost counts from there, the weekly challenge
- * and the streak start fresh, and nothing is deleted (the points and the
- * badges stay). A weigh-in more than
- * thirty days old is named, so the person can weigh in first.
+ * from the weight Progress shows, Lost counts from there, the weekly
+ * challenge and the streak start fresh, and nothing is deleted (the points
+ * and the badges stay). A weigh-in more than thirty days old is named, so the
+ * person can weigh in first.
  */
 export function ChapterSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const app = useApp();

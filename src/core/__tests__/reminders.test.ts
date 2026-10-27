@@ -17,7 +17,10 @@ import {
   REMINDER_ROWS,
   reportMonday,
   reportText,
+  firstTap,
+  tapKey,
   tapPlan,
+  tapPlanAt,
   tapRoute,
   weeklyReport,
   weekReport,
@@ -466,6 +469,52 @@ describe('a tap on a notification', () => {
     expect(tap('ate', { data: { kind: 'slot', date: '2026-10-12' } }).ate).toBeNull();
     expect(tap('ate', { data: { kind: 'fill', date: '2026-10-12', slotId: 'lunch' } })).toEqual({ route: '/', ate: null });
     expect(tap('ate', { data: {} })).toEqual({ route: '/', ate: null });
+  });
+
+  // The store as a tap finds it: no meal yet, and the day's line switched on with its card on Today or not.
+  const store = (mantraCard: boolean) => ({
+    meals: [] as Meal[],
+    slotSkips: [],
+    settings: {
+      todayCards: [...DEFAULT_SETTINGS.todayCards.filter((c) => c.id !== 'mantra'), { id: 'mantra' as const, on: mantraCard }],
+      features: { ...DEFAULT_SETTINGS.features, mantra: true },
+    },
+  });
+  const arrives = (action: 'open' | 'ate', data: Record<string, unknown>, now: string, mantraCard = false) =>
+    tapPlanAt({ action, data, now: new Date(now), menuOn: (date) => ({ ...menu, date }), state: store(mantraCard) });
+
+  it('a tap reads today from the clock as it arrives, so a woken app whose day has not turned yet still logs this morning\'s meal', () => {
+    const today = { kind: 'slot', date: '2026-10-13', slotId: 'lunch' };
+    // The clock says 13 October; the store may still say the 12th for a moment.
+    expect(arrives('ate', today, '2026-10-13T13:05:00')).toEqual({ route: '/', ate: { date: '2026-10-13', slotId: 'lunch', outcome: { kind: 'log' } } });
+    // Read on the store's day, the same tap would be a day still to come, and log nothing.
+    expect(tap('ate', { data: today, today: '2026-10-12' }).ate).toBeNull();
+  });
+
+  it('a tap just after midnight on yesterday\'s prompt logs and opens that day, not the new one', () => {
+    expect(arrives('ate', prompt, '2026-10-13T00:10:00')).toEqual({ route: '/?date=2026-10-12', ate: { date: '2026-10-12', slotId: 'lunch', outcome: { kind: 'log' } } });
+    expect(arrives('open', { kind: 'fill', date: '2026-10-12' }, '2026-10-13T09:00:00').route).toBe('/?date=2026-10-12');
+  });
+
+  it('the day\'s line opens Today while its card is shown there, and Mind otherwise', () => {
+    expect(arrives('open', { kind: 'mantra' }, '2026-10-12T08:00:00', true).route).toBe('/');
+    expect(arrives('open', { kind: 'mantra' }, '2026-10-12T08:00:00', false).route).toBe('/mind');
+  });
+
+  it('acts on a tap once: read at start and from the listener it is one tap; the button and the body, or a reminder back the next day, are new ones', () => {
+    const seen = firstTap(new Set(), tapKey('sobat-water', 'open', 1000));
+    expect(seen).not.toBeNull();
+    expect(firstTap(seen!, tapKey('sobat-water', 'open', 1000))).toBeNull();
+    expect(firstTap(seen!, tapKey('sobat-water', 'ate', 1000))).not.toBeNull();
+    expect(firstTap(seen!, tapKey('sobat-water', 'open', 1000 + 86400000))).not.toBeNull();
+    expect(firstTap(seen!, tapKey('sobat-water@2026-10-12', 'open', 1000))).not.toBeNull();
+  });
+
+  it('the check for a first tap is pure: the keys given are left as they were', () => {
+    const given: ReadonlySet<string> = new Set(['a']);
+    const next = firstTap(given, 'b');
+    expect([...given]).toEqual(['a']);
+    expect([...next!]).toEqual(['a', 'b']);
   });
 
   it('says what the button did in English, Marathi and Hindi, in plain words', () => {

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { tapKey } from '../core/reminders';
 
 /**
  * Notifications differ per platform, so everything else in the app talks to
@@ -263,7 +264,7 @@ type NativeResponse = Parameters<Parameters<NativeModule['addNotificationRespons
 function toTap(r: NativeResponse): TapResponse {
   const id = r.notification.request.identifier;
   const action = r.actionIdentifier === ATE_ACTION ? 'ate' : 'open';
-  return { id, action, data: r.notification.request.content.data ?? {}, key: `${id}|${action}|${r.notification.date}` };
+  return { id, action, data: r.notification.request.content.data ?? {}, key: tapKey(id, action, r.notification.date) };
 }
 
 /** Calls back on every tap while the app runs; returns the way to stop listening. Nothing on the web. */

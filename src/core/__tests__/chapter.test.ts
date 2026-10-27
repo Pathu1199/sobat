@@ -90,6 +90,14 @@ describe('shownPlan', () => {
     expect(shownPlan({ ...profile, startWeightKg: 85, chapterStart: '2026-10-20', firstStartWeightKg: 92 }, weights, targets, TODAY).startKg).toBe(85);
   });
 
+  it('a chapter start after today (a clock ahead on another device) is no chapter yet: Lost counts from the very first start', () => {
+    const ahead = { ...profile, startWeightKg: 85, chapterStart: '2026-10-29', firstStartWeightKg: 92 };
+    expect(shownPlan(ahead, weights, targets, TODAY)).toEqual(shownPlan(profile, weights, targets, TODAY));
+    expect(planFrom(ahead, weights, targets, TODAY).startKg).toBe(92);
+    // From its first day on, it is the chapter's start.
+    expect(shownPlan(ahead, weights, targets, '2026-10-29').startKg).toBe(85);
+  });
+
   it('with no weigh-in it is the plan as it was', () => {
     expect(shownPlan(profile, [], targets, TODAY)).toEqual(planFrom(profile, [], targets, TODAY));
   });
@@ -148,6 +156,16 @@ describe('gameView', () => {
     const ahead = { ...profile, chapterStart: '2026-11-05' };
     expect(view(ahead).challenge.n).toBe(view(profile).challenge.n);
     expect(view(ahead).trail).toEqual(view(profile).trail);
+  });
+
+  it('with a chapter start after today, Lost, To go and the camps count from the very first start too, so every part agrees', () => {
+    // A chapter started on another device whose clock is ahead: its start weight is in the profile, its first day still to come.
+    const ahead = { ...chapter, chapterStart: '2026-11-05' };
+    expect(ahead.startWeightKg).not.toBe(92);
+    const g = view(ahead);
+    const none = view(profile);
+    expect(g.plan.startKg).toBe(92);
+    expect({ plan: g.plan, progress: g.progress, camps: g.camps, trail: g.trail, points: g.points }).toEqual({ plan: none.plan, progress: none.progress, camps: none.camps, trail: none.trail, points: none.points });
   });
 });
 

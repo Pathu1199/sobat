@@ -1,5 +1,6 @@
 import type { BreakSettings } from './breaks';
-import { addDays, isIsoDate, weekDates } from './date';
+import { cardsShown } from './customize';
+import { addDays, isIsoDate, toISODate, weekDates } from './date';
 import { menuSlots, skippedOn, type DayMenu } from './menu';
 import { inQuietHours } from './nudge';
 import { pattern, slotOf } from './pattern';
@@ -7,7 +8,7 @@ import { completeIntake, fullDays } from './progress';
 import type { DayRecord, DayRecordState } from './record';
 import { slotLabel, type Routine } from './routine';
 import { shownWeight, signedKg } from './tileText';
-import type { ISODate, Lang, Meal, Settings, SlotSkip, WeightLog } from './types';
+import type { AppState, ISODate, Lang, Meal, Settings, SlotSkip, WeightLog } from './types';
 import { isOffDay } from './week';
 import { fill, numberText } from '../i18n';
 
@@ -359,6 +360,45 @@ export function tapPlan(input: {
   if (input.action !== 'ate' || data.kind !== 'slot' || !isIsoDate(data.date) || typeof data.slotId !== 'string' || data.date > input.today) return { route, ate: null };
   const outcome = promptOutcome({ menu: input.menuOn(data.date), meals: input.meals, skips: input.skips, slotId: data.slotId });
   return { route, ate: { date: data.date, slotId: data.slotId, outcome } };
+}
+
+/**
+ * `tapPlan` for a tap as it arrives, on the store as it is then. Today is the
+ * date on the clock at the tap (`now`), never the store's own, which on an
+ * app the tap has just woken can still be yesterday: a prompt for this
+ * morning would read as a day still to come and log nothing, and a tap just
+ * after midnight on yesterday's prompt would open the new day. The day's line
+ * opens Today only while its card is shown there.
+ */
+export function tapPlanAt(input: {
+  action: 'open' | 'ate';
+  data: Record<string, unknown>;
+  now: Date;
+  menuOn: (date: ISODate) => DayMenu;
+  state: Pick<AppState, 'meals' | 'slotSkips'> & { settings: Pick<Settings, 'todayCards' | 'features'> };
+}): TapPlan {
+  const { meals, slotSkips, settings } = input.state;
+  const mantraOnToday = cardsShown(settings.todayCards, settings.features.mantra).on.some((c) => c.id === 'mantra');
+  return tapPlan({ action: input.action, data: input.data, today: toISODate(input.now), menuOn: input.menuOn, meals, skips: slotSkips, mantraOnToday });
+}
+
+/**
+ * One tap on one delivery of a notification: the button and the body of one
+ * delivery are two taps, and a reminder that comes back the next day (the
+ * same id) is a new one.
+ */
+export function tapKey(id: string, action: 'open' | 'ate', deliveredAt: number): string {
+  return `${id}|${action}|${deliveredAt}`;
+}
+
+/**
+ * Whether a tap is acted on: only the first time its key comes. Returns the
+ * keys with this one added when it is new, null when it was already acted on,
+ * so the same tap read at start and from the listener is acted on once. Pure:
+ * the keys given are left as they were.
+ */
+export function firstTap(seen: ReadonlySet<string>, key: string): ReadonlySet<string> | null {
+  return seen.has(key) ? null : new Set([...seen, key]);
 }
 
 /** A reminder the OS repeats every day at one clock time, app closed or not. `data.kind` says what a tap on it opens (`tapRoute`). */

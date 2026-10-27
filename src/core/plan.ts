@@ -1,3 +1,4 @@
+import { chapterSince } from './chapter';
 import { addDays, daysBetween } from './date';
 import type { Targets } from './nutrition';
 import { shownWeight } from './tileText';
@@ -53,10 +54,21 @@ function eta(toGo: number, rate: number | null, today: ISODate): { weeks: number
   return { weeks: Math.ceil(days / 7), date: addDays(today, days) };
 }
 
+/**
+ * The weight Lost counts from: the chapter's start weight, or the very first
+ * start while a chapter's first day is still to come (a clock ahead on
+ * another device), the way the streak, the challenge and the trail ignore it
+ * until then (`chapterSince`). Undefined when the profile holds neither.
+ */
+function startWeightOn(profile: Pick<Profile, 'startWeightKg' | 'firstStartWeightKg' | 'chapterStart'>, today: ISODate): number | undefined {
+  const notYet = profile.chapterStart !== undefined && chapterSince(profile.chapterStart, today) === undefined;
+  return notYet ? (profile.firstStartWeightKg ?? profile.startWeightKg) : profile.startWeightKg;
+}
+
 /** `nowKg`, when given, is the weight to read the plan at (the weight a screen shows); else the latest weigh-in. */
 export function planFrom(profile: Profile, weights: WeightLog[], targets: Targets, today: ISODate, nowKg?: number): Plan {
   const sorted = [...weights].sort((a, b) => a.date.localeCompare(b.date));
-  const startKg = profile.startWeightKg ?? sorted[0]?.kg ?? profile.weightKg;
+  const startKg = startWeightOn(profile, today) ?? sorted[0]?.kg ?? profile.weightKg;
   const currentKg = nowKg ?? sorted[sorted.length - 1]?.kg ?? profile.weightKg;
   const goalKg = profile.goalWeightKg > 0 ? profile.goalWeightKg : currentKg;
   const lostKg = r1(startKg - currentKg);
