@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { slotBefore, undoSteps } from '../core/addSheet';
 import { amountText, stepFoodLine } from '../core/basket';
-import { draftKey, fillUndoSteps, offersDayConfirm, planNote, rowLines, rowOffers, stepDraft, type DayView, type MenuRow, type RowLine } from '../core/dayView';
+import { draftKey, fillUndoSteps, offersDayConfirm, planNote, recordTone, rowLines, rowOffers, stepDraft, type DayView, type MenuRow, type RowLine } from '../core/dayView';
 import { itemName } from '../core/foods';
 import type { DayMenu as Menu } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
@@ -327,7 +327,8 @@ export function DayMenu({
       ) : null}
       {view.mode === 'past' && view.judged && view.required > 0 ? (
         <View style={{ gap: 6 }}>
-          <Bar value={view.settled} max={view.required} color={view.settled === view.required ? C.accent : C.amber} />
+          {/* A day of meals all skipped with nothing eaten is complete but quiet, never the teal of a full day. */}
+          <Bar value={view.settled} max={view.required} color={{ full: C.accent, skipped: C.textFaint, missing: C.amber }[recordTone(view)]} />
           <Text style={small}>{fill(t(view.required === 1 ? 'menu_record_one' : 'menu_record'), { n: view.settled, of: view.required })}</Text>
         </View>
       ) : null}

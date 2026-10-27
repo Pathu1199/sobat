@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
 import type { UndoStep } from '../addSheet';
-import { dayMode, dayView, draftKey, fillUndoSteps, offersDayConfirm, planNote, rowLines, rowOffers, stepDraft, type MenuRow } from '../dayView';
+import { dayMode, dayView, draftKey, fillUndoSteps, offersDayConfirm, planNote, recordTone, rowLines, rowOffers, stepDraft, type MenuRow } from '../dayView';
 import { measureName } from '../foods';
 import { fillFromPlan, planFillId, removeSkip, withMealAdded, withMealRemoved, type DayMenu, type MealState } from '../menu';
 import { DEFAULT_ROUTINE } from '../routine';
@@ -108,6 +108,21 @@ describe('a past day', () => {
   it('a meal logged without a slot lands in the slot of its kind nearest its time', () => {
     const d = '2026-10-25';
     expect(view(d, [meal(d, undefined, 'dinner', '20:45', 500)]).rows[3].state).toBe('done');
+  });
+});
+
+describe("a past day's record bar", () => {
+  const d = '2026-10-20';
+  const all = ['breakfast', 'lunch', 'dinner'];
+
+  it('is full when every planned meal was eaten or skipped, missing while some are open', () => {
+    expect(recordTone(view(d, [meal(d, 'breakfast', 'breakfast', '08:40', 300), meal(d, 'lunch', 'lunch', '13:10', 500)], { skippedIds: ['dinner'] }))).toBe('full');
+    expect(recordTone(view(d, [meal(d, 'breakfast', 'breakfast', '08:40', 300)]))).toBe('missing');
+  });
+
+  it('with every meal skipped and nothing eaten is a record of its own, never the teal of a full day; a drink in one slot is still nothing eaten', () => {
+    expect(recordTone(view(d, [], { skippedIds: all }))).toBe('skipped');
+    expect(recordTone(view(d, [meal(d, 'breakfast', 'breakfast', '08:40', 30)], { skippedIds: ['lunch', 'dinner'] }))).toBe('skipped');
   });
 });
 

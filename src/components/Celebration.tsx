@@ -9,6 +9,7 @@ import { Btn } from '../ui/components';
 import { Banner } from '../ui/Banner';
 import { Sheet } from '../ui/Sheet';
 import { C, F, lh } from '../ui/theme';
+import { useAddSheetOpen } from './AddSheet';
 import { useGame } from './MountainCard';
 
 const LEVEL_ICON: Record<string, string> = { camp1: '⛺', camp2: '🏕️', camp3: '🧗', camp4: '🏔️', summit: '🚩' };
@@ -17,6 +18,8 @@ const LEVEL_ICON: Record<string, string> = { camp1: '⛺', camp2: '🏕️', cam
  * A win, made to feel like one: a badge earned, a camp reached, the week's
  * challenge done. One at a time, each once, on a flat panel with the
  * points so far. Mounted on Today; says nothing when there is nothing new.
+ * A win that lands from the add sheet waits until the sheet has closed, its
+ * "Save as my meal?" too, so the two never sit on each other.
  */
 export function Celebration() {
   const app = useApp();
@@ -25,7 +28,8 @@ export function Celebration() {
   const t = makeT(app.state.profile.lang);
   const g = useGame();
   const earned = useMemo(() => g.badges.filter((b) => b.earned).map((b) => b.key), [g.badges]);
-  const { seed, next } = nextWin({ earned, level: g.level.key, challenge: g.challenge, celebrated: app.state.celebrated });
+  const waiting = useAddSheetOpen();
+  const { seed, next } = nextWin({ earned, level: g.level.key, challenge: g.challenge, celebrated: app.state.celebrated, waiting });
 
   // First run: everything already earned counts as seen, so nobody opens the app to ten pop-ups.
   useEffect(() => {

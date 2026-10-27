@@ -35,9 +35,9 @@ type Token = keyof (typeof PALETTES)['light'];
  * The colour of each dot, a token that stands out at 3:1 on the card, the
  * page and the chosen day's tint in light and dark (the contrast test checks
  * it): the deeper teal of words for a full day, amber for meals missing, and
- * the quiet word colour for an outline.
+ * the quiet word colour for an outline and for a day of meals all skipped.
  */
-export const STRIP_DOT = { full: 'accentText', missing: 'amber', outline: 'textFaint' } as const satisfies Record<string, Token>;
+export const STRIP_DOT = { full: 'accentText', missing: 'amber', outline: 'textFaint', skipped: 'textFaint' } as const satisfies Record<string, Token>;
 
 /** The dot's size, the width of its ring, and the dot in the middle of a ring. */
 export const STRIP_DOT_SIZE = 8;
@@ -49,12 +49,14 @@ export type StripDot = { kind: 'none' } | { kind: 'dot' | 'ring' | 'ringDot'; co
 /**
  * How a day's dot is drawn, always at full colour so it keeps 3:1: a filled
  * dot for a full day and for meals missing, a ring for a planned day and for
- * today. A day still holding meals filled in from the plan is told apart by
- * its shape, a ring in its colour with a small dot in the middle, never by
- * fading it. Nothing on a free day or before the person started.
+ * today, and a grey dot for a day of meals all skipped. A day still holding
+ * meals filled in from the plan is told apart by its shape, a ring in its
+ * colour with a small dot in the middle, never by fading it. Nothing on a free
+ * day or before the person started.
  */
 export function stripDot(mark: StripMark, fromPlan: boolean): StripDot {
   if (mark === 'off' || mark === 'none') return { kind: 'none' };
+  if (mark === 'skipped') return { kind: 'dot', color: STRIP_DOT.skipped };
   const color = mark === 'full' ? STRIP_DOT.full : mark === 'missing' ? STRIP_DOT.missing : STRIP_DOT.outline;
   if (fromPlan && mark !== 'planned') return { kind: 'ringDot', color };
   return { kind: mark === 'planned' || mark === 'today' ? 'ring' : 'dot', color };

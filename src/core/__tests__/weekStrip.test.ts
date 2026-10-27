@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { DayRecord } from '../record';
+import { t } from '../../i18n';
 import { markOf, stripSince, swipeStep, weekStrip } from '../weekStrip';
 
-const r = (state: DayRecord['state'], fromPlan = false): DayRecord => ({ state, fromPlan });
+const r = (state: DayRecord['state'], fromPlan = false, nothingEaten = false): DayRecord => ({ state, fromPlan, nothingEaten });
 const MON = '2026-10-26';
 // A Wednesday.
 const TODAY = '2026-10-28';
@@ -50,5 +51,26 @@ describe('markOf', () => {
     expect(markOf(r('empty'), '2026-09-20', TODAY, '2026-10-01')).toEqual({ mark: 'none', light: false });
     expect(markOf(r('planned'), '2026-10-30', TODAY, '2026-10-01')).toEqual({ mark: 'planned', light: false });
     expect(markOf(r('off', true), '2026-10-25', TODAY, '2026-10-01')).toEqual({ mark: 'off', light: false });
+  });
+});
+
+describe('a day with every meal skipped and nothing eaten', () => {
+  it('is never a teal full day: its own quiet mark, on the strip and on the calendar alike, today too', () => {
+    const skipped = r('full', false, true);
+    expect(markOf(skipped, '2026-10-20', TODAY, '2026-10-01')).toEqual({ mark: 'skipped', light: false });
+    expect(markOf(skipped, TODAY, TODAY, '2026-10-01')).toEqual({ mark: 'skipped', light: false });
+    // Before the start it has nothing to show, as any day there.
+    expect(markOf(skipped, '2026-09-20', TODAY, '2026-10-01')).toEqual({ mark: 'none', light: false });
+    const days = weekStrip({ monday: MON, today: TODAY, viewed: TODAY, since: '2026-10-01', records: [skipped, r('full'), skipped, r('planned'), r('planned'), r('planned'), r('planned')] });
+    expect(days.slice(0, 3).map((d) => d.mark)).toEqual(['skipped', 'full', 'skipped']);
+  });
+
+  it('is named plainly in every language, and not as a full day', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      expect(t(lang, 'strip_skipped'), lang).not.toBe('strip_skipped');
+      expect(t(lang, 'strip_skipped'), lang).not.toBe(t(lang, 'strip_full'));
+    }
+    expect(t('mr', 'strip_skipped')).not.toBe(t('en', 'strip_skipped'));
+    expect(t('hi', 'strip_skipped')).not.toBe(t('en', 'strip_skipped'));
   });
 });

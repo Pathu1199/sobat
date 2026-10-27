@@ -4,6 +4,7 @@ import { foodName, measureName } from './foods';
 import { menuSlots, outsideRecord, planFillId, type DayMenu } from './menu';
 import { DAY_ENDS_AT_HOUR } from './nudge';
 import { slotOf } from './pattern';
+import { NOTHING_EATEN_KCAL } from './record';
 import type { PlanLine } from './routine';
 import type { FoodItem, ISODate, Lang, Meal, MealType } from './types';
 import { dayStatus, lineInfo } from './weekPlan';
@@ -202,6 +203,18 @@ export function rowOffers(row: Pick<MenuRow, 'state' | 'lines' | 'planned'>): Ro
 export function offersDayConfirm(view: Pick<DayView, 'mode' | 'autoIds'>, hour: number): boolean {
   if (view.autoIds.length === 0) return false;
   return view.mode === 'past' || (view.mode === 'today' && hour >= DAY_ENDS_AT_HOUR);
+}
+
+/**
+ * How a past day's record bar ("3 of 3 meals") is drawn: full when every
+ * planned meal was eaten or skipped, missing while some are open. A day of
+ * meals all skipped with nothing eaten (a drink at most) is `skipped`, a
+ * record of its own and never the teal of a full day, as the week strip
+ * marks it (core/weekStrip.ts `markOf`): skipping is not praised.
+ */
+export function recordTone(view: Pick<DayView, 'settled' | 'required' | 'eatenKcal'>): 'full' | 'skipped' | 'missing' {
+  if (view.settled < view.required) return 'missing';
+  return view.eatenKcal < NOTHING_EATEN_KCAL ? 'skipped' : 'full';
 }
 
 /** The line under a future day's total. */

@@ -1,13 +1,14 @@
-import { lastNDates } from './date';
-import { streak } from './insights';
 import type { ISODate, Meal, SleepLog, StepLog, WaterLog, WeightLog, WorkoutLog } from './types';
-import { isOffDay, weekSummary } from './week';
+import { weekSummary } from './week';
 
 /**
  * The game around the climb: points for the things that move the weight,
  * camps reached on the way up, badges for firsts and streaks, and one
  * challenge a week. All derived from the logs, nothing stored, so it can
- * never disagree with the data.
+ * never disagree with the data. The streak is the record's (core/record.ts),
+ * the one the streak tile shows: full days eaten at or above the safe
+ * minimum, a day of meals all skipped ending the run. A badge already won
+ * (celebrated) is kept.
  */
 export type GameInput = {
   today: ISODate;
@@ -22,6 +23,12 @@ export type GameInput = {
   startKg: number;
   goalKg: number;
   offDays?: number[];
+  /** Days in a row by the record, as the store works them out (`recordStreak`). */
+  streakDays: number;
+  /** The best run in the streak's window, by the same rule (`bestStreak`); never less than `streakDays`. */
+  bestStreakDays: number;
+  /** Wins already celebrated (badge:, level:, challenge: ids): a badge among them stays earned. */
+  celebrated?: string[] | null;
 };
 
 export const LEVELS = ['base', 'camp1', 'camp2', 'camp3', 'camp4', 'summit'] as const;
@@ -31,18 +38,16 @@ const LEVEL_XP = [0, 300, 900, 2000, 4000, 7000];
 export type Level = { key: LevelKey; index: number; xp: number; next: number | null; progress: number };
 
 function dayCounts(input: GameInput) {
-  const mealDays = new Set(input.meals.map((m) => m.date));
   const waterByDay = new Map<string, number>();
   for (const w of input.water) waterByDay.set(w.date, (waterByDay.get(w.date) ?? 0) + w.ml);
   const waterGoalDays = [...waterByDay.values()].filter((ml) => ml >= input.waterGoalMl).length;
-  return { mealDays, waterByDay, waterGoalDays };
+  return { waterByDay, waterGoalDays };
 }
 
-/** Points: meals 10 each, a water-goal day 15, a weigh-in 25, a night logged 10, a workout 20, plus 5 per streak day. */
+/** Points: meals 10 each, a water-goal day 15, a weigh-in 25, a night logged 10, a workout 20, plus 5 per day of the record streak. */
 export function xp(input: GameInput): number {
   const { waterGoalDays } = dayCounts(input);
-  const s = streak(lastNDates(365, input.today), (d) => input.meals.some((m) => m.date === d) || isOffDay(input.offDays, d));
-  return input.meals.length * 10 + waterGoalDays * 15 + input.weights.length * 25 + input.sleep.length * 10 + input.workouts.length * 20 + s * 5;
+  return input.meals.length * 10 + waterGoalDays * 15 + input.weights.length * 25 + input.sleep.length * 10 + input.workouts.length * 20 + input.streakDays * 5;
 }
 
 export function level(points: number): Level {
@@ -55,11 +60,16 @@ export function level(points: number): Level {
 
 export type Badge = { key: string; earned: boolean; progress: number; n: number; target: number };
 
-/** Firsts, streaks and kilos. `progress` is 0..1 towards `target`; `n` is the raw count. */
+/**
+ * Firsts, streaks and kilos. `progress` is 0..1 towards `target`; `n` is the
+ * raw count. A streak badge is earned by a run of the record streak that long
+ * in its window, and counts today's run toward the next. A badge already
+ * celebrated stays earned, whatever its count is now.
+ */
 export function badges(input: GameInput): Badge[] {
-  const { mealDays, waterGoalDays } = dayCounts(input);
-  const dates = lastNDates(365, input.today);
-  const mealStreak = streak(dates, (d) => mealDays.has(d) || isOffDay(input.offDays, d));
+  const { waterGoalDays } = dayCounts(input);
+  const best = Math.max(input.streakDays, input.bestStreakDays);
+  const kept = new Set(input.celebrated ?? []);
   const sorted = [...input.weights].sort((a, b) => a.date.localeCompare(b.date));
   const lost = sorted.length ? Math.max(0, input.startKg - sorted[sorted.length - 1].kg) : 0;
   const total = Math.max(0, input.startKg - input.goalKg);
@@ -77,12 +87,15 @@ export function badges(input: GameInput): Badge[] {
     if (input.weights.some((x) => x.date >= a && x.date <= b)) weighWeeks++;
     else break;
   }
-  const mk = (key: string, n: number, target: number): Badge => ({ key, n, target, earned: n >= target, progress: Math.min(1, n / target) });
+  const mk = (key: string, n: number, target: number, reached = n >= target): Badge => {
+    const earned = reached || kept.has(`badge:${key}`);
+    return { key, n, target, earned, progress: earned ? 1 : Math.min(1, n / target) };
+  };
   return [
     mk('first_meal', input.meals.length, 1),
     mk('first_weigh', input.weights.length, 1),
-    mk('streak_7', mealStreak, 7),
-    mk('streak_30', mealStreak, 30),
+    mk('streak_7', input.streakDays, 7, best >= 7),
+    mk('streak_30', input.streakDays, 30, best >= 30),
     mk('meals_100', input.meals.length, 100),
     mk('water_7', waterGoalDays, 7),
     mk('water_30', waterGoalDays, 30),
@@ -164,15 +177,17 @@ export type Win = { id: string; kind: 'badge' | 'level' | 'challenge'; key: stri
  * Which win to celebrate next. Wins are badges earned, camps reached and the
  * weekly challenge done; each is shown once. The first time this runs there
  * is no record yet, so everything already earned is marked seen rather than
- * celebrated in a flood.
+ * celebrated in a flood. While `waiting` (the add sheet is open, its "Save as
+ * my meal?" too) nothing is celebrated yet; the win waits for it to close.
  */
-export function nextWin(input: { earned: string[]; level: LevelKey; challenge: Challenge; celebrated: string[] | null | undefined }): { seed: string[] | null; next: Win | null } {
+export function nextWin(input: { earned: string[]; level: LevelKey; challenge: Challenge; celebrated: string[] | null | undefined; waiting?: boolean }): { seed: string[] | null; next: Win | null } {
   const all: Win[] = [
     ...(input.level !== 'base' ? [{ id: `level:${input.level}`, kind: 'level' as const, key: input.level }] : []),
     ...input.earned.map((k) => ({ id: `badge:${k}`, kind: 'badge' as const, key: k })),
     ...(input.challenge.done ? [{ id: `challenge:${input.challenge.weekStart}`, kind: 'challenge' as const, key: input.challenge.key }] : []),
   ];
   if (!input.celebrated) return { seed: all.map((w) => w.id), next: null };
+  if (input.waiting) return { seed: null, next: null };
   const seen = new Set(input.celebrated);
   return { seed: null, next: all.find((w) => !seen.has(w.id)) ?? null };
 }

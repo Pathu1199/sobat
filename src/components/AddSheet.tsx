@@ -54,6 +54,8 @@ export type AddRequest = { date: ISODate; slotId?: string; lines?: PlanLine[]; m
 
 type AddSheetApi = { open: (r: AddRequest) => void };
 const AddCtx = createContext<AddSheetApi | null>(null);
+// Whether the sheet is open, apart from the stable `open`, so only the few that wait on it re-render when it opens or closes.
+const AddOpenCtx = createContext(false);
 
 /** Opens the add sheet from anywhere under the tabs: the ➕, the sidebar, Today's menu, the old /log address. */
 export function useAddSheet(): AddSheetApi {
@@ -62,14 +64,21 @@ export function useAddSheet(): AddSheetApi {
   return c;
 }
 
+/** Whether the add sheet is open, "Save as my meal?" included: a celebration waits until it has closed. */
+export function useAddSheetOpen(): boolean {
+  return useContext(AddOpenCtx);
+}
+
 /** Holds the one add sheet. Each opening starts it fresh. */
 export function AddSheetProvider({ children }: { children: React.ReactNode }) {
   const [request, setRequest] = useState<(AddRequest & { n: number }) | null>(null);
   const api = useMemo<AddSheetApi>(() => ({ open: (r) => setRequest((p) => ({ ...r, n: (p?.n ?? 0) + 1 })) }), []);
   return (
     <AddCtx.Provider value={api}>
-      {children}
-      {request ? <AddSheet key={request.n} request={request} onClose={() => setRequest(null)} /> : null}
+      <AddOpenCtx.Provider value={request !== null}>
+        {children}
+        {request ? <AddSheet key={request.n} request={request} onClose={() => setRequest(null)} /> : null}
+      </AddOpenCtx.Provider>
     </AddCtx.Provider>
   );
 }

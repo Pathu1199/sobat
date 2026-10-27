@@ -6,10 +6,12 @@ import type { ISODate, Meal } from './types';
  * The week strip on Today: Monday to Sunday of the week being looked at,
  * each day with a mark from the record. Full is a filled teal dot, a past day
  * with meals missing amber, a planned day (and today, until it is full) an
- * outline; a day still holding meals filled in from the plan is drawn
- * lighter; an off day and a day before the person started have no dot. Pure.
+ * outline; a full day of meals all skipped with nothing eaten is a grey dot of
+ * its own, a complete record but never praised as full; a day still holding
+ * meals filled in from the plan is drawn lighter; an off day and a day before
+ * the person started have no dot. Pure.
  */
-export type StripMark = 'full' | 'missing' | 'today' | 'planned' | 'off' | 'none';
+export type StripMark = 'full' | 'skipped' | 'missing' | 'today' | 'planned' | 'off' | 'none';
 export type StripDay = {
   date: ISODate;
   /** Date.getDay(): 0 is Sunday, for the weekday's short name. */
@@ -36,10 +38,15 @@ export function weekStrip(input: { monday: ISODate; today: ISODate; viewed: ISOD
   });
 }
 
-/** One day's mark from its record, the same on the week strip and on Progress's calendar. */
+/**
+ * One day's mark from its record, the same on the week strip and on
+ * Progress's calendar. A full day with nothing eaten (every meal skipped, a
+ * drink at most) is `skipped`, never `full`: the record is complete, but
+ * skipping is not praised, as the streak never counts it.
+ */
 export function markOf(r: DayRecord, date: ISODate, today: ISODate, since: ISODate): { mark: StripMark; light: boolean } {
   const mark: StripMark =
-    r.state === 'off' ? 'off' : date > today ? 'planned' : date < since ? 'none' : r.state === 'full' ? 'full' : date === today ? 'today' : 'missing';
+    r.state === 'off' ? 'off' : date > today ? 'planned' : date < since ? 'none' : r.state === 'full' ? (r.nothingEaten ? 'skipped' : 'full') : date === today ? 'today' : 'missing';
   return { mark, light: r.fromPlan && (mark === 'full' || mark === 'missing' || mark === 'today') };
 }
 

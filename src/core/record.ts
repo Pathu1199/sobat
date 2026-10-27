@@ -19,6 +19,8 @@ export type DayRecord = {
   state: DayRecordState;
   /** Some meal that day was filled in from the plan and is not confirmed yet. */
   fromPlan: boolean;
+  /** Under `NOTHING_EATEN_KCAL` eaten that day: on a full day, its meals were all skipped (a drink at most), never a day to praise. */
+  nothingEaten: boolean;
 };
 
 type RecordBase = { today: ISODate; routine: Routine; meals: Meal[]; skips: SlotSkip[]; offDays: number[] };
@@ -26,15 +28,17 @@ type RecordBase = { today: ISODate; routine: Routine; meals: Meal[]; skips: Slot
 export function dayRecord(input: RecordBase & { date: ISODate; menu: DayMenu | null }): DayRecord {
   const dayMeals = input.meals.filter((m) => m.date === input.date);
   const fromPlan = dayMeals.some((m) => m.source === 'auto');
-  if (isOffDay(input.offDays, input.date)) return { state: 'off', fromPlan };
-  if (input.date > input.today) return { state: 'planned', fromPlan };
+  const nothingEaten = eatenKcal(dayMeals) < NOTHING_EATEN_KCAL;
+  const at = (state: DayRecordState): DayRecord => ({ state, fromPlan, nothingEaten });
+  if (isOffDay(input.offDays, input.date)) return at('off');
+  if (input.date > input.today) return at('planned');
   // Meals are matched against every slot of the date; only the ones with something planned must be settled.
   // A date with no menu at all is judged against the pattern's slots, every one of them.
   const all: (SlotPoint & { planned: boolean })[] = input.menu
     ? menuSlots(input.menu).map((s) => ({ id: s.id, type: s.type, minutes: s.minutes, planned: s.meal.lines.length > 0 }))
     : pattern(input.routine).map((p) => ({ id: p.id, type: p.type, minutes: p.minutes, planned: true }));
   const required = all.filter((s) => s.planned);
-  if (required.length === 0) return { state: dayMeals.length > 0 ? 'full' : 'empty', fromPlan };
+  if (required.length === 0) return at(dayMeals.length > 0 ? 'full' : 'empty');
   const skipped = new Set(skippedOn(input.skips, input.date));
   const eaten = new Set<string>();
   for (const m of dayMeals) {
@@ -42,8 +46,8 @@ export function dayRecord(input: RecordBase & { date: ISODate; menu: DayMenu | n
     if (s) eaten.add(s.id);
   }
   const settled = required.filter((s) => eaten.has(s.id) || skipped.has(s.id)).length;
-  if (settled === required.length) return { state: 'full', fromPlan };
-  return { state: settled > 0 || dayMeals.length > 0 ? 'partial' : 'empty', fromPlan };
+  if (settled === required.length) return at('full');
+  return at(settled > 0 || dayMeals.length > 0 ? 'partial' : 'empty');
 }
 
 /** The seven records of the week starting on `monday`, Monday first, for the week strip. */

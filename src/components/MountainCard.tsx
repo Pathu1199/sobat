@@ -10,9 +10,9 @@ import { Bar, Card, Micro, Pill, Row, Small } from '../ui/components';
 import { Mountain } from '../ui/Mountain';
 import { C, F } from '../ui/theme';
 
-/** Everything the game needs, from the store. Shared with the Journey screen. */
+/** Everything the game needs, from the store. Shared with the Journey screen. The streak is the record's, as the streak tile shows it. */
 export function useGame() {
-  const { state, targets, today } = useApp();
+  const { state, targets, today, streakDays, bestStreakDays } = useApp();
   return useMemo(() => {
     const plan = planFrom(state.profile, state.weights, targets, today);
     const input: GameInput = {
@@ -28,13 +28,16 @@ export function useGame() {
       startKg: plan.startKg,
       goalKg: plan.goalKg,
       offDays: state.settings.offDays,
+      streakDays,
+      bestStreakDays,
+      celebrated: state.celebrated,
     };
     const total = Math.max(0, plan.startKg - plan.goalKg);
     const progress = total > 0 ? Math.min(1, Math.max(0, plan.lostKg / total)) : plan.toGoKg <= 0 ? 1 : 0;
     const camps = total > 0 ? [0.25, 0.5, 0.75].map((p) => ({ p, label: `${Math.round((plan.startKg - total * p) * 10) / 10}` })) : [];
     const points = xp(input);
     return { plan, input, progress, camps, trail: climbTrail(state.weights, plan.startKg, plan.goalKg).map((t) => t.p), points, level: level(points), badges: badges(input), challenge: weeklyChallenge(input, state.settings.weighDay) };
-  }, [state.profile, state.weights, state.meals, state.water, state.sleep, state.steps, state.workouts, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, targets, today]);
+  }, [state.profile, state.weights, state.meals, state.water, state.sleep, state.steps, state.workouts, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, state.celebrated, streakDays, bestStreakDays, targets, today]);
 }
 
 /**

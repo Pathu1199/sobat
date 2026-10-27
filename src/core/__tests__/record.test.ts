@@ -31,7 +31,7 @@ const rec = (date: string, meals: Meal[], extra: Partial<Parameters<typeof dayRe
 describe('dayRecord', () => {
   it('is full when every planned meal was eaten or skipped; a slot with nothing planned does not count', () => {
     const d = '2026-10-26';
-    expect(rec(d, [meal(d, 'morning'), meal(d, 'lunch')], { skips: addSkip([], d, 'dinner') })).toEqual({ state: 'full', fromPlan: false });
+    expect(rec(d, [meal(d, 'morning'), meal(d, 'lunch')], { skips: addSkip([], d, 'dinner') })).toEqual({ state: 'full', fromPlan: false, nothingEaten: false });
   });
 
   it('is partial with some, empty with none, and partial when only an unplanned slot was eaten', () => {
@@ -54,7 +54,7 @@ describe('dayRecord', () => {
 
   it('marks a day while any meal of it is still filled in from the plan', () => {
     const d = '2026-10-26';
-    expect(rec(d, [meal(d, 'morning', 'auto'), meal(d, 'lunch', 'plan'), meal(d, 'dinner')])).toEqual({ state: 'full', fromPlan: true });
+    expect(rec(d, [meal(d, 'morning', 'auto'), meal(d, 'lunch', 'plan'), meal(d, 'dinner')])).toEqual({ state: 'full', fromPlan: true, nothingEaten: false });
     expect(rec(d, [meal(d, 'morning', 'plan'), meal(d, 'lunch', 'plan'), meal(d, 'dinner', 'plan')]).fromPlan).toBe(false);
   });
 
@@ -95,7 +95,7 @@ describe('recordStreak', () => {
   const allSkipped = (date: string) => ['morning', 'lunch', 'dinner'].reduce<SlotSkip[]>((acc, id) => addSkip(acc, date, id), []);
 
   it('a day settled only by skips is a complete record, but never counts and ends the run: skipping is never rewarded', () => {
-    expect(rec('2026-10-25', [], { skips: allSkipped('2026-10-25') }).state).toBe('full');
+    expect(rec('2026-10-25', [], { skips: allSkipped('2026-10-25') })).toEqual({ state: 'full', fromPlan: false, nothingEaten: true });
     const meals = [...fullDay('2026-10-24'), ...fullDay('2026-10-26')];
     expect(recordStreak({ ...base, skips: allSkipped('2026-10-25'), menuOn: menu, meals })).toBe(1);
   });
@@ -165,7 +165,7 @@ describe('recordStreak', () => {
       ...fullDay('2026-10-26'),
       meal(TODAY, 'morning'), meal(TODAY, 'dinner'),
     ];
-    for (const d of ['2026-10-24', '2026-10-25', '2026-10-26', TODAY]) expect(rec(d, meals, { skips }), d).toEqual({ state: 'full', fromPlan: false });
+    for (const d of ['2026-10-24', '2026-10-25', '2026-10-26', TODAY]) expect(rec(d, meals, { skips }), d).toEqual({ state: 'full', fromPlan: false, nothingEaten: false });
     expect(recordStreak({ ...base, skips, menuOn: menu, meals })).toBe(4);
   });
 
@@ -186,7 +186,9 @@ describe('recordStreak', () => {
     const after = fullDay('2026-10-26');
     // Warm water: 0 kcal.
     const water = [...before, meal(d, 'morning', undefined, 0), ...after];
-    expect(rec(d, water, { skips }).state).toBe('full');
+    expect(rec(d, water, { skips })).toMatchObject({ state: 'full', nothingEaten: true });
+    expect(rec(d, [meal(d, 'morning', undefined, 40)], { skips }).nothingEaten).toBe(true);
+    expect(rec(d, [meal(d, 'morning')], { skips }).nothingEaten).toBe(false);
     expect(recordStreak({ ...base, skips, menuOn: menu, meals: water })).toBe(1);
     // A cup of tea: 40 kcal.
     expect(recordStreak({ ...base, skips, menuOn: menu, meals: [...before, meal(d, 'morning', undefined, 40), ...after] })).toBe(1);

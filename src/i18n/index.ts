@@ -1060,6 +1060,7 @@ const en: Dict = {
   planweek_row_a11y: '{day}: {dish}, {kcal} kcal, {status}', planweek_row_none_a11y: '{day}: {status}', planweek_instead_a11y: 'Pick another food instead of {food}',
   planweek_past_note: 'This day has passed. What was eaten is filled in on Today.', planweek_open_today: 'Open on Today',
   coach_water_one: 'You are behind on water: one bottle to catch up. Start it now.',
+  strip_skipped: 'All meals skipped',
 };
 
 const mr: Dict = {
@@ -2124,6 +2125,7 @@ const mr: Dict = {
   planweek_row_a11y: '{day}: {dish}, {kcal} kcal, {status}', planweek_row_none_a11y: '{day}: {status}', planweek_instead_a11y: '{food} ऐवजी दुसरं निवडा',
   planweek_past_note: 'हा दिवस गेला. काय खाल्लं ते आजच्या पानावर भरा.', planweek_open_today: 'आजच्या पानावर उघडा',
   coach_water_one: 'पाणी मागे आहे: एक बाटली भरून काढायची. ती आत्ता सुरू करा.',
+  strip_skipped: 'सगळी जेवणं टाळली',
 };
 
 const hi: Dict = {
@@ -3186,6 +3188,7 @@ const hi: Dict = {
   planweek_row_a11y: '{day}: {dish}, {kcal} kcal, {status}', planweek_row_none_a11y: '{day}: {status}', planweek_instead_a11y: '{food} की जगह कुछ और चुनें',
   planweek_past_note: 'यह दिन बीत गया. क्या खाया, वह आज वाले पन्ने पर भरें.', planweek_open_today: 'आज वाले पन्ने पर खोलें',
   coach_water_one: 'पानी पीछे है: एक बोतल पूरी करनी है. अभी शुरू करें.',
+  strip_skipped: 'सारे खाने छोड़े',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

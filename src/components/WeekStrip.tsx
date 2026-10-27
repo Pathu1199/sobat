@@ -79,9 +79,9 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
 }
 
 /**
- * Teal for full, amber for missing, a ring for planned and today; nothing for an off day or a day before the start. A day still
- * holding meals filled in from the plan is a ring with a dot in its middle, in the same colour: told apart by its shape, so it
- * keeps 3:1 where the strip is drawn (ui/stripGeometry.ts `stripDot`).
+ * Teal for full, amber for missing, a ring for planned and today, grey for a day of meals all skipped; nothing for an off day or
+ * a day before the start. A day still holding meals filled in from the plan is a ring with a dot in its middle, in the same
+ * colour: told apart by its shape, so it keeps 3:1 where the strip is drawn (ui/stripGeometry.ts `stripDot`).
  */
 function Dot({ mark, light }: { mark: StripDay['mark']; light: boolean }) {
   const dot = stripDot(mark, light);

@@ -27,6 +27,9 @@ const base: GameInput = {
   waterGoalMl: 3000,
   startKg: 98,
   goalKg: 88,
+  // The record streak, as the store works it out (full days eaten at or above the safe minimum), and its best run.
+  streakDays: 7,
+  bestStreakDays: 7,
 };
 
 describe('game', () => {
@@ -70,13 +73,35 @@ describe('game', () => {
     expect(climbTrail(base.weights, 88, 98)).toEqual([]);
   });
 
-  it('keeps the streak across a free day', () => {
-    // Seven days of meals but none on Sunday 2026-10-04: the streak breaks without a free day and holds with one.
-    const gap = { ...base, meals: base.meals.filter((m) => m.date !== '2026-10-04') };
-    const broken = badges(gap).find((b) => b.key === 'streak_7')!;
-    const held = badges({ ...gap, offDays: [0] }).find((b) => b.key === 'streak_7')!;
-    expect(broken.earned).toBe(false);
-    expect(held.earned).toBe(true);
+  it('counts the streak by the record, the one the streak tile shows, never by days with any meal', () => {
+    // Seven days with meals, but only two full days at or above the safe minimum in a row and three at best.
+    const short = { ...base, streakDays: 2, bestStreakDays: 3 };
+    const b = Object.fromEntries(badges(short).map((x) => [x.key, x]));
+    expect(b.streak_7.earned).toBe(false);
+    expect([b.streak_7.n, b.streak_30.n]).toEqual([2, 2]);
+    expect(xp(short)).toBe(xp(base) - 5 * 5);
+    // A run of seven earlier in the window has earned it, though today's run is shorter; today's run is what the next badge counts.
+    const earlier = Object.fromEntries(badges({ ...base, streakDays: 2, bestStreakDays: 8 }).map((x) => [x.key, x]));
+    expect(earlier.streak_7).toMatchObject({ earned: true, progress: 1 });
+    expect(earlier.streak_30).toMatchObject({ earned: false, n: 2 });
+  });
+
+  it('keeps a badge already earned: one celebrated stays earned, under the record streak and after a kilo comes back', () => {
+    const now = { ...base, streakDays: 0, bestStreakDays: 0, weights: [...base.weights, { date: d(-1), kg: 98.5 }] };
+    const before = Object.fromEntries(badges(now).map((x) => [x.key, x]));
+    expect([before.streak_7.earned, before.kg_1.earned]).toEqual([false, false]);
+    const kept = Object.fromEntries(badges({ ...now, celebrated: ['badge:streak_7', 'badge:kg_1'] }).map((x) => [x.key, x]));
+    expect(kept.streak_7).toMatchObject({ earned: true, progress: 1, n: 0 });
+    expect(kept.kg_1).toMatchObject({ earned: true, progress: 1 });
+    expect(kept.streak_30.earned).toBe(false);
+  });
+
+  it('celebrates no streak on a meal save that makes seven days with meals but not seven full days in a row', () => {
+    const challenge = weeklyChallenge(base);
+    const earned = (input: typeof base) => badges(input).filter((b) => b.earned).map((b) => b.key);
+    const seen = ['badge:first_meal', 'badge:first_weigh', 'badge:weigh_4', 'badge:kg_1'];
+    expect(nextWin({ earned: earned({ ...base, streakDays: 6, bestStreakDays: 6 }), level: 'base', challenge, celebrated: seen }).next).toBeNull();
+    expect(nextWin({ earned: earned(base), level: 'base', challenge, celebrated: seen }).next?.id).toBe('badge:streak_7');
   });
 
   it('celebrates each win once, and does not flood the first time', () => {
@@ -91,6 +116,14 @@ describe('game', () => {
     const done = { ...challenge, done: true };
     const all = nextWin({ earned: [], level: 'base', challenge: done, celebrated: [] });
     expect(all.next?.id).toBe(`challenge:${challenge.weekStart}`);
+  });
+
+  it('waits while the add sheet is open, its "Save as my meal?" too, and celebrates once it has closed; a first run still seeds quietly', () => {
+    const challenge = weeklyChallenge(base);
+    const win = { earned: ['first_meal'], level: 'base' as const, challenge, celebrated: [] as string[] };
+    expect(nextWin({ ...win, waiting: true })).toEqual({ seed: null, next: null });
+    expect(nextWin({ ...win, waiting: false }).next?.id).toBe('badge:first_meal');
+    expect(nextWin({ ...win, celebrated: null, waiting: true }).seed).toEqual(['badge:first_meal']);
   });
 });
 
