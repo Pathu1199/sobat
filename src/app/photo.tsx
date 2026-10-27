@@ -177,7 +177,7 @@ export default function PhotoScreen() {
       date: toISODate(now),
       type: mealType,
       // The type was picked here, so the meal goes to the nearest slot of that type rather than whichever slot is on now.
-      slotId: app.state.routine.enabled ? slotOf({ type: mealType, at }, pattern(app.state.routine))?.id : undefined,
+      slotId: slotOf({ type: mealType, at }, pattern(app.state.routine))?.id,
       items,
       kcal: totalKcal,
       protein: totalProtein,

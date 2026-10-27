@@ -89,8 +89,6 @@ export function RoutineCard() {
     [routine, targets.kcal, todayMeals, minute, app.skippedToday, planned],
   );
 
-  if (!routine.enabled) return null;
-
   const hits = avoidHits(todayMeals.flatMap((m) => m.items), routine.avoid);
   const status = spendStatus(app.spentToday, routine.budgetMin, routine.budgetMax);
   const spendColor = status === 'over' ? C.red : status === 'in' ? C.green : C.cyan;

@@ -61,7 +61,7 @@ export type SpendLog = {
 };
 
 export type Routine = {
-  /** True on every store since version 7 (store/migrate.ts): the pattern is always on, and nothing reads this. */
+  /** True on every store since version 7 (store/migrate.ts, which reads it only from an older store): the pattern is always on, and nothing else reads this. */
   enabled: boolean;
   walk: boolean;
   /** Bhaji choices per weekday, index 0 = Sunday as `Date.getDay()` counts. The first is the default. */

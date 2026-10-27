@@ -212,9 +212,17 @@ function isMenuMeal(m: unknown): boolean {
   return isRecord(m) && typeof m.id === 'string' && typeof m.type === 'string' && typeof m.time === 'string' && canPlace(m) && isLines(m.lines);
 }
 
-/** A date's menu as the app reads it: a date, and meals each in the shape `isMenuMeal` reads. */
-function isMenu(v: unknown): v is DayMenu {
-  return isRecord(v) && typeof v.date === 'string' && Array.isArray(v.meals) && v.meals.every(isMenuMeal);
+/**
+ * A date's menu as the app reads it: a date and its meals, each in the shape
+ * `isMenuMeal` reads. A meal in any other shape is dropped and the rest of the
+ * day stays, so a lived day never vanishes for one bad meal; a menu none of
+ * whose meals can be read is dropped, and so is one with no date or no list.
+ */
+function readMenu(v: unknown): DayMenu | null {
+  if (!isRecord(v) || typeof v.date !== 'string' || !Array.isArray(v.meals)) return null;
+  const meals = v.meals.filter(isMenuMeal);
+  if (meals.length === v.meals.length) return v as DayMenu;
+  return meals.length > 0 ? ({ ...v, meals } as DayMenu) : null;
 }
 
 function isSlotSkip(v: unknown): v is SlotSkip {
@@ -275,7 +283,7 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
   const weekPlan = rawPlan ? alignOrDrop(rawPlan, routine) : null;
   // Version 7: the one-week template becomes this week's menus, date by date, its index 0 being Sunday. A date that already has a menu keeps it.
   // A day still as the app built it from this pattern is not written, so its date shows the suggestion fitted to the person.
-  const storedMenus = wellFormed(raw.menus, isMenu);
+  const storedMenus = Array.isArray(raw.menus) ? raw.menus.map(readMenu).filter((m): m is DayMenu => m !== null) : [];
   const customFoods = Array.isArray(raw.customFoods) ? (raw.customFoods as FoodItem[]) : [];
   const menus = weekPlan ? templateMenus(weekPlan, mondayOf(toISODate(now)), storedMenus, routine, customFoods) : storedMenus;
   // Version 7: a skipped slot is its own record with its date, not a done-key that lasted only the day.

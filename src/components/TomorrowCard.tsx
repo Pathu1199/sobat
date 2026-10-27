@@ -43,7 +43,7 @@ export function TomorrowCard() {
     return ordered.slice(0, CHOICES);
   }, [foods, routine.week, tomorrow, chosen]);
 
-  if (!routine.enabled || !hasBhajiWeek(routine) || hour < EVENING_HOUR) return null;
+  if (!hasBhajiWeek(routine) || hour < EVENING_HOUR) return null;
 
   function pick(id: string) {
     const next = chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id].slice(-2);

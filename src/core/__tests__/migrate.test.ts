@@ -711,6 +711,13 @@ describe('settings in an odd shape, from sync or an old file', () => {
     expect(settingsOf({ reminders: { mealPrompt: false } }).reminders.mealPrompt).toBe(false);
   });
 
+  it('an app reminders switch stored as anything but true or false never turns on a meal-time prompt nobody set', () => {
+    for (const bad of [null, 'yes', 1, 'true', {}]) {
+      expect(settingsOf({ reminders: { planWeek: true }, nudgesEnabled: bad }).reminders.mealPrompt, String(bad)).toBe(false);
+      expect(settingsOf({ nudgesEnabled: bad }).reminders.mealPrompt, String(bad)).toBe(false);
+    }
+  });
+
   it('a list where the switches should be is not a record of switches: that group takes its defaults', () => {
     const s = settingsOf({ features: [true, true, true], reminders: ['mealPrompt'] });
     expect(s.features).toEqual(FEATURES);
@@ -861,6 +868,18 @@ describe('records in an odd shape, from sync or an old file', () => {
     const s = migrateState({ ...v1, version: 7, menus: [goodMenu, lost, knownType, clockTime] }, NOW);
     expect(s.menus).toEqual([goodMenu, knownType, clockTime]);
     expect(migrateState({ ...v1, version: 7, menus: [{ ...lost, meals: [{ id: 'x', type: 'toString', time: '', lines: [] }] }] }, NOW).menus).toEqual([]);
+  });
+
+  it('drops only the meal it cannot read: the rest of that date\'s menu stays, so a lived day never vanishes for one bad meal', () => {
+    const lunch = { id: 'lunch', type: 'lunch', time: '13:00', lines: [line] };
+    const dinner = { id: 'dinner', type: 'dinner', time: '20:00', lines: [line] };
+    const mixed = { date: '2026-10-26', editedAt: '2026-10-26T09:00:00.000Z', frozen: true, meals: [lunch, { id: 'x', type: 'brunch', time: '25:99', lines: [] }, null, { id: 'y', lines: [7] }, dinner] };
+    const s = migrateState({ ...v1, version: 7, menus: [goodMenu, mixed] }, NOW);
+    expect(s.menus).toEqual([goodMenu, { ...mixed, meals: [lunch, dinner] }]);
+    // A day planned with nothing stays a day planned with nothing, and a second load changes nothing.
+    const empty = { date: '2026-10-27', editedAt: '', meals: [] };
+    expect(migrateState({ ...v1, version: 7, menus: [empty] }, NOW).menus).toEqual([empty]);
+    expect(migrateState(s, NOW)).toEqual(s);
   });
 
   it('keeps every field of a well-formed record as it was, and a list that is not a list at all is an empty one', () => {

@@ -92,12 +92,13 @@ export const SHEET_RANGE = { water: { min: 10, max: 3000 }, walk: { min: 1, max:
 
 /**
  * An amount typed in the long-press sheet, rounded to a whole number, or null
- * when the box holds anything but a number (letters after it too) or the
- * number is outside `SHEET_RANGE`, so Add stays off.
+ * when the box holds anything but digits with a decimal point if any (letters
+ * after them, a sign, 1e3 or 0x10 too) or the number is outside
+ * `SHEET_RANGE`, so Add stays off.
  */
 export function sheetAmount(kind: 'water' | 'walk', text: string): number | null {
   const trimmed = text.trim();
-  if (trimmed === '') return null;
+  if (!/^\d+(\.\d+)?$/.test(trimmed)) return null;
   const n = Math.round(Number(trimmed));
   const { min, max } = SHEET_RANGE[kind];
   return Number.isFinite(n) && n >= min && n <= max ? n : null;

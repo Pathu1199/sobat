@@ -151,8 +151,8 @@ describe('another amount, typed in the long-press sheet', () => {
     expect(sheetAmount('walk', '301')).toBeNull();
   });
 
-  it('takes nothing that is not a number: an empty box, words, or a number with letters after it', () => {
-    for (const text of ['', ' ', 'abc', '12abc', '1,000', 'Infinity', '-250']) {
+  it('takes only digits, with a decimal point if any: not an empty box, words, letters after a number, or a number written another way', () => {
+    for (const text of ['', ' ', 'abc', '12abc', '1,000', 'Infinity', '-250', '1e3', '0x10', '+250', '.5', '250.', '0b11', '25 0']) {
       expect(sheetAmount('water', text), text).toBeNull();
       expect(sheetAmount('walk', text), text).toBeNull();
     }

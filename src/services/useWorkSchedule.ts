@@ -12,7 +12,7 @@ import { useMinute } from './useClock';
 import { useReminderGate } from './useScheduledReminders';
 
 // The minute clock lives beside the hour clock, where the store can read it too; the screens still import it from here.
-export { nowMinutes, useMinute } from './useClock';
+export { useMinute } from './useClock';
 
 const PREFIX = 'sobat-sched-';
 

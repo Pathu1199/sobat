@@ -70,17 +70,24 @@ export function sheetStep(count: number, unit: string, by: 1 | -1): number {
 
 const MAX_GRAMS = 3000;
 
-/** Grams as typed in the grams box: a plain number above 0 and up to 3 kg, or null ("12abc", "1e3", "", "0"). */
+/**
+ * Grams as typed in the grams box: a plain number above 0 and up to 3 kg, its
+ * decimal point a point or a comma ("12,5" is 12.5, for a keyboard that has
+ * only a comma), or null ("12abc", "1e3", "", "0").
+ */
 export function parseGrams(text: string): number | null {
   const v = text.trim();
-  if (!/^\d+(\.\d+)?$/.test(v)) return null;
-  const g = Number(v);
+  if (!/^\d+([.,]\d+)?$/.test(v)) return null;
+  const g = Number(v.replace(',', '.'));
   return g > 0 && g <= MAX_GRAMS ? g : null;
 }
 
-/** A count that rounds to 0 counts as nothing: written down it would be a line of nothing. */
-function countsAsSomething(count: number): boolean {
-  return round2(count) > 0;
+/**
+ * Grams that round to under 1 g count as nothing, in any measure: written
+ * down they would be a line that reads 0 g.
+ */
+function countsAsSomething(grams: number): boolean {
+  return Math.round(grams) >= 1;
 }
 
 /**
@@ -91,8 +98,7 @@ function countsAsSomething(count: number): boolean {
 export function countFromGrams(text: string, gramsPerUnit: number): number | null {
   const g = parseGrams(text);
   if (g === null || !(gramsPerUnit > 0)) return null;
-  const count = g / gramsPerUnit;
-  return countsAsSomething(count) ? count : null;
+  return countsAsSomething(g) ? g / gramsPerUnit : null;
 }
 
 /** A food's line at its own default measure. */
@@ -132,8 +138,7 @@ export function setGrams(basket: BasketLine[], foodId: string, grams: number): B
   const b = basket.find((x) => x.foodId === foodId);
   if (!b) return basket;
   if (!(grams > 0) || !(b.gramsPerUnit > 0)) return setCount(basket, foodId, 0);
-  const count = grams / b.gramsPerUnit;
-  return countsAsSomething(count) ? setCount(basket, foodId, count) : basket;
+  return countsAsSomething(grams) ? setCount(basket, foodId, grams / b.gramsPerUnit) : basket;
 }
 
 export function lineGrams(line: BasketLine): number {
@@ -204,14 +209,22 @@ export function linesFromBasket(basket: BasketLine[], foods: FoodItem[]): PlanLi
   for (const b of basket) {
     const food = foods.find((f) => f.id === b.foodId);
     if (!food || b.count <= 0) continue;
+    // The line as written, and what one of its measure weighs as the line is read back.
     let line: PlanLine | null = null;
-    if (food.portions.some((p) => p.unit === b.unit)) line = { foodId: b.foodId, unit: b.unit, qty: round4(b.count) };
-    else {
+    let per = 0;
+    const own = food.portions.find((p) => p.unit === b.unit);
+    if (own) {
+      line = { foodId: b.foodId, unit: b.unit, qty: round4(b.count) };
+      per = own.grams;
+    } else {
       const p = defaultPortion(food);
-      if (p && p.grams > 0) line = { foodId: b.foodId, unit: p.unit, qty: round4(lineGrams(b) / p.grams) };
+      if (p && p.grams > 0) {
+        line = { foodId: b.foodId, unit: p.unit, qty: round4(lineGrams(b) / p.grams) };
+        per = p.grams;
+      }
     }
     // A line that counts as nothing is not written.
-    if (line && countsAsSomething(line.qty)) lines.push(line);
+    if (line && countsAsSomething(line.qty * per)) lines.push(line);
   }
   return lines;
 }

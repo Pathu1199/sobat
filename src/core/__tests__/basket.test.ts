@@ -94,7 +94,8 @@ describe('the basket', () => {
     const once = addLine([], lineOf(food('poha')));
     expect(addLine(once, { foodId: 'poha', unit: 'plate', gramsPerUnit: 0, count: 2 })).toEqual(once);
     const weightless = [{ foodId: 'poha', unit: 'katori', gramsPerUnit: 0, count: 1 }];
-    expect(Number.isFinite(addLine(weightless, { foodId: 'poha', unit: 'plate', gramsPerUnit: 200, count: 1 })[0].count)).toBe(true);
+    // A line kept in a measure of no weight can hold nothing more: the new line takes its place.
+    expect(addLine(weightless, { foodId: 'poha', unit: 'plate', gramsPerUnit: 200, count: 1 })).toEqual([{ foodId: 'poha', unit: 'plate', gramsPerUnit: 200, count: 1 }]);
   });
 
   it('the detail sheet replaces a line; a count or grams of 0 takes it out', () => {
@@ -122,6 +123,10 @@ describe('the basket', () => {
     expect(parseGrams('100')).toBe(100);
     expect(parseGrams(' 80 ')).toBe(80);
     expect(parseGrams('12.5')).toBe(12.5);
+    // A keyboard that has a comma for its decimal point.
+    expect(parseGrams('12,5')).toBe(12.5);
+    expect(parseGrams(' 0,5 ')).toBe(0.5);
+    for (const bad of ['12,', ',5', '1,2,3', '1.2,3', '12abc']) expect(parseGrams(bad), bad).toBeNull();
     expect(parseGrams('12abc')).toBeNull();
     expect(parseGrams('1e3')).toBeNull();
     expect(parseGrams('')).toBeNull();
@@ -130,7 +135,7 @@ describe('the basket', () => {
     expect(parseGrams('3001')).toBeNull();
     expect(countFromGrams('100', 150)).toBeCloseTo(0.6667, 4);
     expect(Math.round(150 * countFromGrams('100', 150)!)).toBe(100);
-    expect(countFromGrams('1', 220)).toBeNull();
+    expect(countFromGrams('0.4', 220)).toBeNull();
     expect(countFromGrams('12abc', 150)).toBeNull();
     expect(countFromGrams('100', 0)).toBeNull();
   });
@@ -157,6 +162,24 @@ describe('the basket', () => {
     expect(lineInfo(lines[0], foods)?.grams).toBe(100);
     expect(lineGrams(basketFromLines(lines, foods)[0])).toBe(100);
     expect(linesFromBasket([{ foodId: 'poha', unit: 'katori', gramsPerUnit: 150, count: 0.001 }], foods)).toEqual([]);
+  });
+
+  it('under 1 g counts as nothing in any measure, and 1 g counts in any measure', () => {
+    // A gram in a big measure is a line of 1 g, typed, set or written; it is not lost to the measure's size.
+    for (const per of [1, 5, 150, 220, 1000]) {
+      const count = countFromGrams('1', per);
+      expect(count, String(per)).not.toBeNull();
+      expect(lineGrams({ foodId: 'poha', unit: 'katori', gramsPerUnit: per, count: count! }), String(per)).toBe(1);
+      // Under a gram is nothing, whatever the measure: never a line that reads 0 g.
+      expect(countFromGrams('0.4', per), String(per)).toBeNull();
+      const b = [{ foodId: 'poha', unit: 'katori', gramsPerUnit: per, count: 1 }];
+      expect(setGrams(b, 'poha', 0.4), String(per)).toEqual(b);
+      expect(lineGrams(setGrams(b, 'poha', 1)[0]), String(per)).toBe(1);
+    }
+    // Written down, a gram in a 150 g katori is still a line that reads back as 1 g; under a gram is not written.
+    const [gram] = linesFromBasket([{ foodId: 'poha', unit: 'katori', gramsPerUnit: 150, count: 1 / 150 }], foods);
+    expect(lineInfo(gram, foods)?.grams).toBe(1);
+    expect(linesFromBasket([{ foodId: 'poha', unit: 'spoon_big', gramsPerUnit: 15, count: 0.02 }], foods)).toEqual([]);
   });
 
   it('typed grams in a household measure keep their grams when written in the food\'s own measure', () => {
