@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useEased, useEntrance } from './animated';
 import { C, F, lh, lift, MICRO, onThemeChange, S } from './theme';
@@ -7,10 +7,8 @@ import { C, F, lh, lift, MICRO, onThemeChange, S } from './theme';
 // A pressable says whether it is selected or checked with aria-selected / aria-checked, not accessibilityState:
 // React Native reads either, but react-native-web only reads the aria props, so the web would announce no state.
 
-/** Extra reach around a pill, so a 35-point chip still takes a 44-point finger. */
-const PILL_SLOP = { top: 6, bottom: 6, left: 4, right: 4 };
-/** The web ignores hitSlop, so there the chip's own button grows to a finger and the chip stays 35 tall in the middle of it. */
-const PILL_REACH: ViewStyle | undefined = Platform.OS === 'web' ? { minHeight: S.touch, justifyContent: 'center' } : undefined;
+/** A chip's button is a finger wide and tall on every platform, sized by the box itself (the web adds no reach around a control); the chip stays 35 tall in the middle of it. */
+const PILL_REACH: ViewStyle = { minHeight: S.touch, minWidth: S.touch, justifyContent: 'center' };
 
 export function Screen({ children, refreshing, wide }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean }) {
   return (
@@ -170,6 +168,7 @@ export function Pill({
   onPress,
   active,
   tone,
+  accessibilityLabel,
 }: {
   label: string;
   color?: string;
@@ -177,6 +176,8 @@ export function Pill({
   onPress?: () => void;
   active?: boolean;
   tone?: string;
+  /** What a screen reader says for a chip whose words alone do not say what it sets ("Bottle size 500 ml" for "500 ml"); the words otherwise. */
+  accessibilityLabel?: string;
 }) {
   const bg = active ? C.accent : color ?? C.card;
   const bd = active ? C.accent : tone ?? C.border;
@@ -188,13 +189,7 @@ export function Pill({
   );
   // Only a chip given `active` claims a state; an action chip ("History ›") is not "not selected".
   return onPress ? (
-    <Pressable
-      onPress={onPress}
-      hitSlop={PILL_SLOP}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      aria-selected={active}
-      style={PILL_REACH}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} aria-selected={active} style={PILL_REACH}>
       {body}
     </Pressable>
   ) : (

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_VALUE, sleepWords, waterWords, weightWords } from '../../core/tileText';
 import { makeT } from '../../i18n';
 import type { Lang } from '../../core/types';
-import { addedText, bottleLabel, shownWords, tileRole } from '../tileWords';
+import { addedOn, addedText, bottleLabel, bottleName, shownWords, tileRole, walkGoalLabel, walkGoalName } from '../tileWords';
 
 const LANGS: Lang[] = ['en', 'mr', 'hi'];
 
@@ -37,13 +37,36 @@ describe('shownWords', () => {
 
 describe('the line under the tiles, and the bottle sizes', () => {
   it('says what a tap added: "Added 500 ml water", "Added 10 min walk"', () => {
-    expect(addedText({ kind: 'water', id: 'a', amount: 500 }, makeT('en'))).toBe('Added 500 ml water');
-    expect(addedText({ kind: 'walk', id: 'b', amount: 10 }, makeT('en'))).toBe('Added 10 min walk');
+    const day = '2026-10-28';
+    expect(addedText({ kind: 'water', id: 'a', amount: 500, date: day }, makeT('en'))).toBe('Added 500 ml water');
+    expect(addedText({ kind: 'walk', id: 'b', amount: 10, date: day }, makeT('en'))).toBe('Added 10 min walk');
     for (const lang of LANGS) {
       const t = makeT(lang);
-      expect(addedText({ kind: 'water', id: 'a', amount: 750 }, t), lang).toContain('750');
-      expect(addedText({ kind: 'walk', id: 'b', amount: 25 }, t), lang).toContain('25');
-      expect(addedText({ kind: 'walk', id: 'b', amount: 25 }, t), lang).not.toContain('{');
+      expect(addedText({ kind: 'water', id: 'a', amount: 750, date: day }, t), lang).toContain('750');
+      expect(addedText({ kind: 'walk', id: 'b', amount: 25, date: day }, t), lang).toContain('25');
+      expect(addedText({ kind: 'walk', id: 'b', amount: 25, date: day }, t), lang).not.toContain('{');
+    }
+  });
+
+  it('shows the line only on the day the water or the walk was added to, never on another day shown', () => {
+    const added = { kind: 'water' as const, id: 'a', amount: 500, date: '2026-10-28' };
+    expect(addedOn(added, '2026-10-28')).toBe(added);
+    expect(addedOn(added, '2026-10-27')).toBeNull();
+    expect(addedOn(added, '2026-10-29')).toBeNull();
+    expect(addedOn(null, '2026-10-28')).toBeNull();
+  });
+
+  it('names each bottle and walk goal chip for a screen reader with what it sets: "Bottle size 500 ml", "Walk goal 20 min"', () => {
+    const en = makeT('en');
+    expect(walkGoalLabel(20, en)).toBe('20 min');
+    expect(bottleName(500, en)).toBe('Bottle size 500 ml');
+    expect(bottleName(1000, en)).toBe('Bottle size 1 L');
+    expect(walkGoalName(20, en)).toBe('Walk goal 20 min');
+    for (const lang of LANGS) {
+      const t = makeT(lang);
+      expect(bottleName(750, t), lang).toBe(`${t('tile_bottle_size')} ${bottleLabel(750, t)}`);
+      expect(walkGoalName(45, t), lang).toBe(`${t('walk_target')} ${walkGoalLabel(45, t)}`);
+      expect(walkGoalName(45, t), lang).toContain('45');
     }
   });
 
@@ -57,6 +80,18 @@ describe('the line under the tiles, and the bottle sizes', () => {
 });
 
 describe('how a screen reader takes a tile', () => {
+  it('names the hold of the water and walk tiles as an action, in each language of its own', () => {
+    for (const key of ['tile_hold_water', 'tile_hold_walk']) {
+      const en = makeT('en')(key);
+      expect(en, key).not.toBe(key);
+      for (const lang of ['mr', 'hi'] as const) {
+        const said = makeT(lang)(key);
+        expect(said, `${lang} ${key}`).not.toBe(en);
+        expect(said, `${lang} ${key}`).not.toMatch(/[०-९]/);
+      }
+    }
+  });
+
   it('a tile with a tap, or with only a hold, is a button, so the hold is never lost', () => {
     expect(tileRole({ tap: true, hold: false }, 'ios')).toBe('button');
     expect(tileRole({ tap: true, hold: true }, 'web')).toBe('button');

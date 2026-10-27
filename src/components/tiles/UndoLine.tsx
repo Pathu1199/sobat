@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, Platform, Pressable, Text, View } from 'react-native';
 import { C, F, lh, S } from '../../ui/theme';
 import type { Added } from '../../ui/tileWords';
 
@@ -29,9 +29,13 @@ export function useAddedLine(): { added: Added | null; show: (a: Added) => void;
  * The Undo line: what was just done, and an Undo a finger wide. Under the
  * tiles after a tap, and inside a sheet after a delete, where the app-wide
  * toast would be hidden behind the sheet. No confirm dialogs: a wrong tap is
- * one more tap to put right.
+ * one more tap to put right. A screen reader says the line as it appears:
+ * Android and the web from the live region, iOS, which has none, from here.
  */
 export function UndoLine({ text, undoLabel, onUndo }: { text: string; undoLabel: string; onUndo: () => void }) {
+  useEffect(() => {
+    if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibilityWithOptions(text, { queue: true });
+  }, [text]);
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch }}>
       <Text accessibilityLiveRegion="polite" style={{ flex: 1, color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '400' }}>

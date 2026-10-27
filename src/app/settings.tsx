@@ -13,6 +13,7 @@ import { BreakSettingsCard } from '../components/BreakSettingsCard';
 import { FeatureSettings } from '../components/FeatureSettings';
 import { ReminderSettings } from '../components/ReminderSettings';
 import { ScheduleEditor } from '../components/ScheduleEditor';
+import { BOTTLES, WALK_GOALS } from '../components/tiles/TileSheet';
 import { useDriveBackup } from '../services/useDriveBackup';
 import { firebaseEnabled } from '../services/firebase';
 import { useAuth } from '../services/useAuth';
@@ -22,6 +23,7 @@ import { useApp } from '../store/AppProvider';
 import { DEFAULT_OLLAMA_URL } from '../store/defaults';
 import { Btn, Card, Choice, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
 import { C, F, TEXT_SCALES } from '../ui/theme';
+import { bottleLabel, bottleName, walkGoalLabel, walkGoalName } from '../ui/tileWords';
 
 /** The paces a person can choose, in kilos a week, as setup offers them. */
 const PACES = [0.25, 0.5, 0.75, 1];
@@ -304,12 +306,28 @@ export default function SettingsScreen() {
         {s.features.breaks ? <BreakSettingsCard /> : null}
       </View>
 
+      {/* The bottle and the walk goal are also on a long press of their tiles; here they are a tap away for anyone who cannot hold. */}
       <View style={{ gap: 10 }}>
-        <SectionHeader title={t('water_goal')} meta={`${s.waterGoalMl / 1000} L`} icon={<Ionicons name="water-outline" size={13} color={C.textFaint} />} />
+        <SectionHeader title={t('cust_card_waterWalk')} icon={<Ionicons name="water-outline" size={13} color={C.textFaint} />} />
         <Card>
+          <Micro>{t('water_goal')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[2000, 2500, 3000, 3500, 4000].map((m) => (
               <Pill key={m} label={`${m / 1000} L`} active={s.waterGoalMl === m} onPress={() => app.setSettings({ waterGoalMl: m })} />
+            ))}
+          </Row>
+          <Divider />
+          <Micro>{t('tile_bottle_size')}</Micro>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {BOTTLES.map((ml) => (
+              <Pill key={ml} label={bottleLabel(ml, t)} accessibilityLabel={bottleName(ml, t)} active={s.bottleMl === ml} onPress={() => app.setSettings({ bottleMl: ml })} />
+            ))}
+          </Row>
+          <Divider />
+          <Micro>{t('walk_target')}</Micro>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {WALK_GOALS.map((m) => (
+              <Pill key={m} label={walkGoalLabel(m, t)} accessibilityLabel={walkGoalName(m, t)} active={s.walkGoalMin === m} onPress={() => app.setSettings({ walkGoalMin: m })} />
             ))}
           </Row>
         </Card>

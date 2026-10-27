@@ -1,4 +1,5 @@
 import type { TileWords } from '../core/tileText';
+import type { ISODate } from '../core/types';
 import { fill } from '../i18n';
 
 /**
@@ -18,17 +19,37 @@ export function shownWords(words: TileWords, t: (key: string) => string): ShownW
   };
 }
 
-/** What a tile tap or the sheet just added: which record, so Undo takes exactly that one away. */
-export type Added = { kind: 'water' | 'walk'; id: string; amount: number };
+/** What a tile tap or the sheet just added: which record, so Undo takes exactly that one away, and the day it went to. */
+export type Added = { kind: 'water' | 'walk'; id: string; amount: number; date: ISODate };
 
 /** The line under the tiles: "Added 500 ml water", "Added 10 min walk". */
 export function addedText(a: Added, t: (key: string) => string): string {
   return a.kind === 'water' ? fill(t('tile_added_water'), { ml: a.amount }) : fill(t('tile_added_walk'), { min: a.amount });
 }
 
+/** What was just added, while the day shown is the day it went to; null on any other day, so the line never shows there. */
+export function addedOn(a: Added | null, date: ISODate): Added | null {
+  return a && a.date === date ? a : null;
+}
+
 /** A bottle size on its chip: "500 ml", and a litre or more in litres, "1 L". */
 export function bottleLabel(ml: number, t: (key: string) => string): string {
   return ml >= 1000 ? `${ml / 1000} ${t('tile_unit_l')}` : `${ml} ${t('tile_unit_ml')}`;
+}
+
+/** A walk goal on its chip: "20 min". */
+export function walkGoalLabel(min: number, t: (key: string) => string): string {
+  return `${min} ${t('tile_unit_min')}`;
+}
+
+/** A bottle chip as a screen reader names it, with what it sets: "Bottle size 500 ml". */
+export function bottleName(ml: number, t: (key: string) => string): string {
+  return `${t('tile_bottle_size')} ${bottleLabel(ml, t)}`;
+}
+
+/** A walk goal chip as a screen reader names it: "Walk goal 20 min". */
+export function walkGoalName(min: number, t: (key: string) => string): string {
+  return `${t('walk_target')} ${walkGoalLabel(min, t)}`;
 }
 
 /**

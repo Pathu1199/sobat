@@ -19,8 +19,8 @@ export function WaterWalkTiles({ date }: { date: ISODate }) {
   return (
     <View style={{ gap: 8 }}>
       <TileRow>
-        <WaterTile date={date} onAdded={(id, ml) => adds.show({ kind: 'water', id, amount: ml })} onHold={() => adds.hold('water')} />
-        <WalkTile date={date} onAdded={(id, minutes) => adds.show({ kind: 'walk', id, amount: minutes })} onHold={() => adds.hold('walk')} />
+        <WaterTile date={date} onAdded={(id, ml) => adds.show({ kind: 'water', id, amount: ml, date })} onHold={() => adds.hold('water')} />
+        <WalkTile date={date} onAdded={(id, minutes) => adds.show({ kind: 'walk', id, amount: minutes, date })} onHold={() => adds.hold('walk')} />
       </TileRow>
       {adds.undoLine}
       {adds.sheet}

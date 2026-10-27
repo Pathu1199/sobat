@@ -13,7 +13,7 @@ export function WalkSleepTiles() {
   return (
     <View style={{ gap: 8 }}>
       <TileRow>
-        <WalkTile date={app.today} onAdded={(id, minutes) => adds.show({ kind: 'walk', id, amount: minutes })} onHold={() => adds.hold('walk')} />
+        <WalkTile date={app.today} onAdded={(id, minutes) => adds.show({ kind: 'walk', id, amount: minutes, date: app.today })} onHold={() => adds.hold('walk')} />
         <SleepTile date={app.today} />
       </TileRow>
       {adds.undoLine}

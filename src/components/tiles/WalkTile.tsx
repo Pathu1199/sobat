@@ -50,6 +50,7 @@ export function WalkTile({ date, onAdded, onHold }: { date: ISODate; onAdded?: (
       onLongPress={onHold}
       label={fill(t('tile_walk_a11y'), { step: WALK_STEP_MIN, now: minutes, goal })}
       hint={onHold ? t('tile_hint_walk') : undefined}
+      holdLabel={onHold ? t('tile_hold_walk') : undefined}
     />
   );
 }

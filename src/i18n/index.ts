@@ -1115,6 +1115,7 @@ const en: Dict = {
   review_mood: 'Mood {n} out of 5.', review_mood_note: 'Mood {n} out of 5, wrote: {note}.',
   review_screen: 'Screen time {time}, longest sitting {long}.', review_streak: '{n} full days in a row.',
   brk_settings: 'Break settings',
+  tile_hold_water: 'Change the bottle size or add another amount', tile_hold_walk: 'Change the walk goal or add other minutes',
 };
 
 const mr: Dict = {
@@ -2234,6 +2235,7 @@ const mr: Dict = {
   review_mood: 'मूड 5 पैकी {n}.', review_mood_note: 'मूड 5 पैकी {n}, लिहिलं: {note}.',
   review_screen: 'स्क्रीन वेळ {time}, सर्वात जास्त सलग बसणे {long}.', review_streak: 'सलग {n} पूर्ण दिवस.',
   brk_settings: 'ब्रेकची सेटिंग',
+  tile_hold_water: 'बाटलीचा आकार बदला किंवा दुसरं प्रमाण घाला', tile_hold_walk: 'चालण्याचं लक्ष्य बदला किंवा इतर मिनिटं घाला',
 };
 
 const hi: Dict = {
@@ -3351,6 +3353,7 @@ const hi: Dict = {
   review_mood: 'मूड 5 में से {n}.', review_mood_note: 'मूड 5 में से {n}, लिखा: {note}.',
   review_screen: 'स्क्रीन समय {time}, सबसे लंबा लगातार बैठना {long}.', review_streak: 'लगातार {n} पूरे दिन.',
   brk_settings: 'ब्रेक की सेटिंग',
+  tile_hold_water: 'बोतल का आकार बदलें या दूसरी मात्रा जोड़ें', tile_hold_walk: 'चलने का लक्ष्य बदलें या दूसरे मिनट जोड़ें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

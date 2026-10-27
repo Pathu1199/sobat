@@ -48,6 +48,7 @@ export function WaterTile({ date, onAdded, onHold }: { date: ISODate; onAdded?: 
       onLongPress={onHold}
       label={fill(t(label.key), label.params ?? {})}
       hint={onHold ? t('tile_hint_water') : undefined}
+      holdLabel={onHold ? t('tile_hold_water') : undefined}
     />
   );
 }

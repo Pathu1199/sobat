@@ -33,7 +33,9 @@ export function TileArt({ children }: { children: React.ReactNode }) {
  * taller than square only when the text size needs the room. Each tracker
  * brings its art, its words and its tap; a tile with no tap and no hold is
  * not a button, just the tile, read by a screen reader as one phrase (its
- * label), on the web too (`tileRole`).
+ * label), on the web too (`tileRole`). The hold is also an action a screen
+ * reader offers by name (`holdLabel`), and on the web the context menu key,
+ * Shift+F10 or a right click opens it, since a key held down is no hold.
  */
 export function LivingTile({
   icon,
@@ -47,6 +49,7 @@ export function LivingTile({
   onLongPress,
   label,
   hint,
+  holdLabel,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   /** The tracker's own colour, for its icon. */
@@ -64,6 +67,8 @@ export function LivingTile({
   label: string;
   /** What a tap or a hold does, said by a screen reader; only for a tile that has one. */
   hint?: string;
+  /** The hold as a screen reader's action names it ("Change the bottle size or add another amount"). */
+  holdLabel?: string;
 }) {
   const scale = textScale();
   const type = tileType(scale);
@@ -119,6 +124,17 @@ export function LivingTile({
       </View>
     );
   }
+  // The web's context menu, from the keyboard or a right click, opens the hold; a long touch has opened it already and marks its menu, so it never opens twice.
+  const webHold =
+    Platform.OS === 'web' && onLongPress
+      ? {
+          onContextMenu: (e: { defaultPrevented: boolean; preventDefault: () => void }) => {
+            if (e.defaultPrevented) return;
+            e.preventDefault();
+            onLongPress();
+          },
+        }
+      : {};
   return (
     <Pressable
       onPress={onPress}
@@ -128,6 +144,11 @@ export function LivingTile({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={hint}
+      accessibilityActions={onLongPress ? [{ name: 'longpress', label: holdLabel ?? hint }] : undefined}
+      onAccessibilityAction={(e) => {
+        if (e.nativeEvent.actionName === 'longpress') onLongPress?.();
+      }}
+      {...webHold}
       style={({ pressed }) => frame(pressed)}>
       {inside}
     </Pressable>
