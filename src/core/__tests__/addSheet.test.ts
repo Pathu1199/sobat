@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, plannedSummary, repeatItems, sheetMode, slotBefore, slotLine, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
+import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, plannedSummary, removeUndoSteps, repeatItems, sheetMode, slotBefore, slotLine, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
 import { addLine, basketFromLines, lineOf, setCount, slotPreview, type BasketLine } from '../basket';
 import { addSkip } from '../menu';
 import { kcalForGrams } from '../nutrition';
@@ -303,6 +303,35 @@ describe('the Undo of a one-tap log', () => {
     expect(undoSteps({ id: 'm1', date: d, slotId: 'lunch', replaced: [], wasSkipped: true })).toEqual([
       { kind: 'remove', id: 'm1' },
       { kind: 'skip', date: d, slotId: 'lunch' },
+    ]);
+  });
+});
+
+describe('the Undo of a meal deleted from its sheet', () => {
+  const d = '2026-10-25';
+  const eaten = meal('m1', d, 'lunch', 'manual');
+
+  it('puts the meal back as the state held it, through addMeal, and leaves its slot not skipped when it was not', () => {
+    const stale = { ...eaten, kcal: 1 };
+    expect(removeUndoSteps({ meals: [eaten], slotSkips: [] }, stale)).toEqual([
+      { kind: 'add', meal: eaten },
+      { kind: 'unskip', date: d, slotId: 'lunch' },
+    ]);
+  });
+
+  it('marks the slot skipped again when it was skipped before the delete', () => {
+    expect(removeUndoSteps({ meals: [eaten], slotSkips: addSkip([], d, 'lunch') }, eaten)).toEqual([
+      { kind: 'add', meal: eaten },
+      { kind: 'skip', date: d, slotId: 'lunch' },
+    ]);
+  });
+
+  it('a meal that names no slot only comes back; a meal no longer in the state comes back as the sheet had it', () => {
+    const loose = meal('m2', d, undefined, 'manual');
+    expect(removeUndoSteps({ meals: [loose], slotSkips: [] }, loose)).toEqual([{ kind: 'add', meal: loose }]);
+    expect(removeUndoSteps({ meals: [], slotSkips: [] }, eaten)).toEqual([
+      { kind: 'add', meal: eaten },
+      { kind: 'unskip', date: d, slotId: 'lunch' },
     ]);
   });
 });

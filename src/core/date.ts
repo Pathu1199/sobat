@@ -7,9 +7,9 @@ export function toISODate(d: Date = new Date()): ISODate {
   return `${y}-${m}-${day}`;
 }
 
-/** A date written YYYY-MM-DD, the way Today's ?date= and the add page's carry one. */
+/** A date written YYYY-MM-DD, the way Today's ?date= and the add page's carry one, and a day the calendar has (not 2026-02-30). */
 export function isIsoDate(v: unknown): v is ISODate {
-  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && addDays(v, 0) === v;
 }
 
 export function addDays(date: ISODate, n: number): ISODate {

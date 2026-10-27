@@ -122,6 +122,16 @@ describe('isIsoDate', () => {
     expect(isIsoDate(['2026-10-27'])).toBe(false);
     expect(isIsoDate(undefined)).toBe(false);
   });
+
+  it('takes only a day the calendar has, so an address like /?date=2026-02-30 never opens a broken day', () => {
+    expect(isIsoDate('2026-13-01')).toBe(false);
+    expect(isIsoDate('2026-10-32')).toBe(false);
+    expect(isIsoDate('2026-02-30')).toBe(false);
+    expect(isIsoDate('2026-02-29')).toBe(false);
+    expect(isIsoDate('2028-02-29')).toBe(true);
+    expect(isIsoDate('2026-00-10')).toBe(false);
+    expect(isIsoDate('2026-12-31')).toBe(true);
+  });
 });
 
 describe('formatDayMonth', () => {

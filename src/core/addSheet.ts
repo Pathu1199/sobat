@@ -231,6 +231,24 @@ export function undoSteps(tap: { id: string; date: ISODate; slotId: string; repl
   ];
 }
 
+/**
+ * The Undo of a meal deleted from its sheet, taken before the delete: the
+ * meal put back as the state holds it (the sheet's copy only when it is gone
+ * already) through addMeal, then its slot's skip exactly as it was. Taking a
+ * meal away can mark its slot skipped (so the app does not fill it straight
+ * back), and addMeal lifts that skip; a slot that was skipped beside its meal
+ * is skipped again. A meal that names no slot only comes back.
+ */
+export function removeUndoSteps(state: MealsAndSkips, meal: Meal): UndoStep[] {
+  const gone = state.meals.find((m) => m.id === meal.id) ?? meal;
+  if (!gone.slotId) return [{ kind: 'add', meal: gone }];
+  const wasSkipped = skippedOn(state.slotSkips, gone.date).includes(gone.slotId);
+  return [
+    { kind: 'add', meal: gone },
+    { kind: wasSkipped ? 'skip' : 'unskip', date: gone.date, slotId: gone.slotId },
+  ];
+}
+
 /** A line's food, measure and amount, the amount to three places so a count read back from grams still matches. */
 const lineKey = (l: PlanLine) => `${l.foodId}|${l.unit}|${Math.round(l.qty * 1000)}`;
 const linesKey = (lines: PlanLine[]) => lines.map(lineKey).sort().join(',');

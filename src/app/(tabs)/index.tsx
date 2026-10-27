@@ -1,373 +1,112 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { AwayCard } from '../../components/AwayCard';
-import { BreakCheckin } from '../../components/BreakCheckin';
-import { BreakPanel } from '../../components/BreakPanel';
-import { DayReview } from '../../components/DayReview';
-import { DayScoreCard } from '../../components/DayScore';
-import { DecisionCard } from '../../components/DecisionCard';
-import { IntakeCard } from '../../components/IntakeCard';
-import { MealSheet } from '../../components/MealSheet';
-import { NotificationNudge } from '../../components/NotificationNudge';
-import { NutrientCard } from '../../components/NutrientCard';
-import { StartHereCard } from '../../components/StartHereCard';
-import { SuggestSheet } from '../../components/SuggestSheet';
-import { NowStrip } from '../../components/NowStrip';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { View } from 'react-native';
+import { CaloriesLeft } from '../../components/CaloriesLeft';
 import { Celebration } from '../../components/Celebration';
-import { CoachStrip } from '../../components/CoachStrip';
-import { PlanTodayCard } from '../../components/PlanTodayCard';
-import { FitsCard } from '../../components/FitsCard';
-import { MountainCard } from '../../components/MountainCard';
-import { RecoveryCard } from '../../components/RecoveryCard';
-import { RoutineCard } from '../../components/RoutineCard';
-import { TomorrowCard } from '../../components/TomorrowCard';
-import { TrackerGrid } from '../../components/TrackerGrid';
-import { WeighInCard } from '../../components/WeighInCard';
-import { TipCard } from '../../components/TipCard';
-import { TimingCard } from '../../components/TimingCard';
-import { IconButton, TopBarActions } from '../../components/TopBarActions';
-import { addDays, formatDayLabel, localHHMM, localHour } from '../../core/date';
-import { decide } from '../../core/decide';
-import { scoreDay } from '../../core/insights';
-import { pattern } from '../../core/pattern';
-import { expectedWaterByHour } from '../../core/nudge';
-import { sumTotals } from '../../core/nutrition';
+import { CoachLine } from '../../components/CoachLine';
+import { DayMenu } from '../../components/DayMenu';
+import { MantraCard } from '../../components/MantraCard';
+import { MealSheet } from '../../components/MealSheet';
+import { StepsCard } from '../../components/StepsCard';
+import { SleepTile } from '../../components/tiles/SleepTile';
+import { StreakTile } from '../../components/tiles/StreakTile';
+import { TileRow } from '../../components/tiles/TileRow';
+import { WaterWalkTiles } from '../../components/tiles/WaterWalk';
+import { WeightTile } from '../../components/tiles/WeightTile';
+import { IconButton } from '../../components/TopBarActions';
+import { WeekStrip } from '../../components/WeekStrip';
+import { addDays, formatDayLabel, isIsoDate, mondayOf } from '../../core/date';
+import { dayMode, dayView } from '../../core/dayView';
+import { skippedOn } from '../../core/menu';
+import { currentSlot, slotStates } from '../../core/pattern';
 import { pendingCount } from '../../core/queue';
+import { weekRecord } from '../../core/record';
+import { todayBlocks, type PairTile } from '../../core/todayLayout';
 import type { Meal } from '../../core/types';
+import { isOffDay } from '../../core/week';
+import { stripSince, weekStrip } from '../../core/weekStrip';
 import { fill, makeT } from '../../i18n';
-import { useFeedback } from '../../services/feedback';
-import { useMantra } from '../../services/useMantra';
 import { useMinute } from '../../services/useWorkSchedule';
 import { useApp } from '../../store/AppProvider';
-import { Banner, BannerBar } from '../../ui/Banner';
-import { Card, Divider, ListRow, MeterRow, Micro, Quote, Row, Small } from '../../ui/components';
+import { Card, Small } from '../../ui/components';
 import { Logo } from '../../ui/Logo';
+import { STRIP_EDGE } from '../../ui/stripGeometry';
+import { C, S } from '../../ui/theme';
 import { Page } from '../../ui/TopBar';
-import { Cols } from '../../ui/tiles';
-import { C, F, lh } from '../../ui/theme';
-import { useBreakpoint } from '../../ui/useBreakpoint';
 
+/**
+ * Today: the calories left and the day's menu to tick off. The week strip
+ * on top picks the day (?date=, none for today); under the number come the
+ * cards the person keeps on, in their order: by default the menu, one coach
+ * line and the Water and Walk tiles. A past day is filled in, a future day is
+ * planned, in the same place; nothing here logs into a date after today.
+ */
 export default function TodayScreen() {
   const app = useApp();
   const router = useRouter();
-  const fb = useFeedback();
-  const { state, budget, targets, waterToday, streakDays, today, hour } = app;
+  const { state, today, targets } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
-  // The design leads in English with the chosen language beside it.
-  const en = makeT('en');
-  const wide = useBreakpoint() === 'desktop';
-  const mantra = useMantra();
-  // The day's score is judged to the minute against the person's own pattern.
   const minute = useMinute();
-  const [mantraWhy, setMantraWhy] = useState(false);
-
-  // Today by default; the chevrons under the meals walk back a day at a time.
-  // Held as an offset, not a date: the day can roll over while the app is open
-  // (the desktop build starts with the machine), and an offset follows it.
-  const [dayOffset, setDayOffset] = useState(0);
-  const viewDate = dayOffset === 0 ? today : addDays(today, dayOffset);
-  const isToday = dayOffset === 0;
+  const { date } = useLocalSearchParams<{ date?: string }>();
+  const viewed = isIsoDate(date) ? date : today;
+  const mode = dayMode(viewed, today);
   const [openMeal, setOpenMeal] = useState<Meal | null>(null);
-  // The phone shows the essentials; the rest waits behind one tap.
-  const [more, setMore] = useState(false);
-  const [suggestOpen, setSuggestOpen] = useState(false);
 
-  const greetKey = hour < 12 ? 'good_morning' : hour < 17 ? 'good_afternoon' : 'good_evening';
-  const greeting = en(greetKey);
-  const greetingAlt = lang === 'en' ? undefined : t(greetKey);
+  const go = useCallback((d: string) => router.setParams({ date: d === today ? undefined : d }), [router, today]);
+  // Stable between renders, so the strip's swipe handler is not made again every minute.
+  const onWeek = useCallback((by: -1 | 1) => go(addDays(viewed, 7 * by)), [go, viewed]);
 
-  const dayMeals = state.meals.filter((m) => m.date === viewDate);
-  const dayTotals = sumTotals(dayMeals.flatMap((m) => m.items));
-  const dayWater = isToday ? waterToday : state.water.filter((w) => w.date === viewDate).reduce((a, w) => a + w.ml, 0);
-  const daySteps = state.steps.find((s) => s.date === viewDate)?.count ?? 0;
-  const workoutDay = state.workouts.find((w) => w.date === viewDate && w.status === 'done');
-  const moodDay = state.moods.filter((m) => m.date === viewDate).slice(-1)[0];
-  const sleepDay = state.sleep.find((s) => s.date === viewDate);
+  // The store's own menu for the date, the one its logging and filling read.
+  const menu = app.menuOn(viewed);
+  const offDays = state.settings.offDays ?? [];
+  // Where the record starts: the week strip's first day with a mark, and the first day the menu can miss a meal.
+  const since = stripSince(state.profile.onboardedOn, state.meals, today);
+  const dayMeals = state.meals.filter((m) => m.date === viewed);
+  const skippedIds = skippedOn(state.slotSkips, viewed);
+  // Today, the slot whose turn it is by the person's own pattern.
+  const currentId =
+    mode === 'today' ? (currentSlot(slotStates({ routine: state.routine, target: targets.kcal, meals: dayMeals, nowMinutes: minute, skippedSlots: skippedIds }), minute)?.slot.id ?? null) : null;
+  const view = dayView({ date: viewed, today, menu, meals: dayMeals, skippedIds, currentId, foods: app.planFoods, lang, offDay: isOffDay(offDays, viewed), startDate: since });
 
-  // Today uses the live budget; an earlier day is judged against the full target.
-  const dayBudget = isToday
-    ? budget
-    : {
-        target: targets.kcal,
-        consumed: dayTotals.kcal,
-        remaining: targets.kcal - dayTotals.kcal,
-        proteinTarget: targets.proteinG,
-        proteinConsumed: Math.round(dayTotals.protein),
-        earned: 0,
-      };
-  const over = dayBudget.remaining < 0;
-
-  const lateMealDays = useMemo(() => new Set(state.meals.filter((m) => localHour(m.at) >= 22).map((m) => m.date)).size, [state.meals]);
-
-  const decision = useMemo(
-    () =>
-      decide({
-        budget,
-        hour,
-        waterMl: waterToday,
-        waterGoalMl: state.settings.waterGoalMl,
-        movedToday: !!state.workouts.find((w) => w.date === today && w.status === 'done'),
-        lateMealDays,
-      }),
-    [budget, hour, waterToday, state.settings.waterGoalMl, state.workouts, today, lateMealDays],
-  );
-
-  const score = scoreDay({
-    date: viewDate,
-    kcal: dayBudget.consumed,
-    kcalTarget: dayBudget.target,
-    waterMl: dayWater,
-    waterGoalMl: state.settings.waterGoalMl,
-    workedOut: !!workoutDay,
-    workoutMinutes: workoutDay?.minutes ?? 0,
-    sleepScore: sleepDay?.score,
-    moodScore: moodDay?.score,
-    minutes: isToday ? minute : undefined,
-    slots: pattern(state.routine),
-    expectedWaterMl: isToday ? expectedWaterByHour(hour, state.settings.waterGoalMl) : undefined,
-  });
+  // One Monday for the record and the strip, so the dots and the days are the same week.
+  const monday = mondayOf(viewed);
+  const records = weekRecord({ monday, today, routine: state.routine, meals: state.meals, skips: state.slotSkips, offDays, menuOn: app.menuOn });
+  const days = weekStrip({ monday, today, viewed, records, since });
 
   const queued = pendingCount(state.photoQueue);
-  const subtitle = `${formatDayLabel(today, lang)}${streakDays > 0 ? ` · ${streakDays} ${t('streak_days')}` : ''}`;
-  const titleName = state.profile.name ? `${greeting}, ${state.profile.name}` : greeting;
-  const waterMarker = isToday ? expectedWaterByHour(hour, state.settings.waterGoalMl) / Math.max(1, state.settings.waterGoalMl) : undefined;
-
-
-  const heroCard = (
-    <Card>
-      <View style={{ gap: 14 }}>
-        {/* The one number the day is about, on a flat panel: what is left, and how far through the day's food. */}
-        <Banner over={over}>
-          <Micro color={over ? C.red : C.textDim}>{over ? t('kcal_over') : t('kcal_left')}</Micro>
-          <Text style={{ color: over ? C.red : C.text, fontSize: F.number, fontWeight: '500', lineHeight: lh(F.number, true) }}>{Math.abs(dayBudget.remaining).toLocaleString()}</Text>
-          <BannerBar value={dayBudget.consumed} max={dayBudget.target} over={over} />
-          <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '400' }}>{`${dayBudget.consumed.toLocaleString()} / ${dayBudget.target.toLocaleString()} kcal${dayBudget.earned > 0 ? ` +${dayBudget.earned} ${t('earned_short')}` : ''} · ${dayBudget.proteinConsumed} / ${dayBudget.proteinTarget} g ${t('protein').toLowerCase()}`}</Text>
-        </Banner>
-        <View style={{ gap: 13 }}>
-          <MeterRow label={t('protein')} alt={lang === 'en' ? undefined : t('protein')} value={dayBudget.proteinConsumed} total={dayBudget.proteinTarget} unit="g" color={C.violet} />
-          <MeterRow label={t('water')} alt={lang === 'en' ? undefined : t('water')} value={dayWater} total={state.settings.waterGoalMl} unit="ml" color={C.cyan} marker={waterMarker} />
-          {daySteps > 0 ? <MeterRow label={t('steps_today')} alt={lang === 'en' ? undefined : t('steps_today')} value={daySteps} total={8000} color={C.green} /> : null}
-        </View>
-      </View>
-      {isToday ? (
-        <>
-          {mantra ? (
-            <Pressable onPress={() => setMantraWhy((w) => !w)} accessibilityRole="button" accessibilityLabel={t('mantra_why')}>
-              <Micro color={C.cyan}>{t('mantra_title')}</Micro>
-              <View style={{ height: 6 }} />
-              <Quote color={C.cyan}>{mantra.text}</Quote>
-              {mantraWhy ? (
-                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), marginTop: 8, paddingLeft: 14 }}>{`${mantra.why}\n`}<Text style={{ color: C.textFaint }}>{t('mantra_source')}</Text></Text>
-              ) : (
-                <Micro color={C.textFaint}>{`${t('mantra_why')} ›`}</Micro>
-              )}
-            </Pressable>
-          ) : null}
-          <Divider />
-          <Row style={{ gap: 8 }}>
-            <QuickAction icon="add" label={t('add_food')} onPress={() => router.push('/log')} />
-            <QuickAction icon="camera-outline" label={t('add_photo')} onPress={() => router.push('/photo')} />
-            <QuickAction icon="bulb-outline" label={t('suggest')} onPress={() => setSuggestOpen(true)} />
-          </Row>
-        </>
-      ) : null}
-    </Card>
-  );
-
-  const dayLabel = isToday ? t('tab_today') : viewDate === addDays(today, -1) ? t('yesterday') : formatDayLabel(viewDate, lang);
-
-  const mealsBlock = (
-    <View style={{ gap: 10 }}>
-      <Row style={{ justifyContent: 'space-between' }}>
-        <Row style={{ gap: 0 }}>
-          <IconButton name="chevron-back" label={t('yesterday')} onPress={() => setDayOffset((d) => d - 1)} />
-          <Micro color={C.textDim}>{`${t('logged_intake')} · ${dayLabel}`}</Micro>
-          <IconButton name="chevron-forward" label={t('tab_today')} disabled={isToday} onPress={() => setDayOffset((d) => Math.min(0, d + 1))} />
-        </Row>
-        <Pressable onPress={() => router.push('/food?s=history')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Micro>{`${dayMeals.length} ${dayMeals.length === 1 ? t('session_one') : t('session_many')}`}</Micro>
-          <Micro color={C.accentText}>{` · ${t('history')} ›`}</Micro>
-        </Pressable>
-      </Row>
-      {!isToday ? (
-        <Pressable
-          onPress={() => router.push({ pathname: '/log', params: { date: viewDate } })}
-          accessibilityRole="button"
-          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, opacity: pressed ? 0.7 : 1 })}>
-          <Ionicons name="add-circle-outline" size={18} color={C.accent} />
-          <Small color={C.accentText}>{fill(t('add_food_for'), { day: dayLabel })}</Small>
-        </Pressable>
-      ) : null}
-      <TimingCard date={viewDate} />
-      <Card>
-        {dayMeals.length === 0 ? (
-          <Small color={C.textFaint}>{t('nothing_logged')}</Small>
-        ) : (
-          dayMeals.map((m, i) => (
-            <MealRow
-              key={m.id}
-              meal={m}
-              first={i === 0}
-              lang={lang}
-              onPress={() => setOpenMeal(m)}
-              onDelete={() => {
-                app.removeMeal(m.id);
-                fb.notify(t('meal_removed'), { label: t('undo'), onPress: () => app.addMeal(m) });
-              }}
-            />
-          ))
-        )}
-      </Card>
-    </View>
-  );
-
-  const rightColumn = (
-    <>
-      {isToday ? <BreakPanel /> : null}
-      {isToday ? <NowStrip wide /> : null}
-      <DayScoreCard score={score} />
-    </>
-  );
-
-  if (wide) {
-    return (
-      <Page title={titleName} alt={greetingAlt} subtitle={subtitle} right={<TopBarActions streak={streakDays} />} wide>
-        {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
-        {isToday ? <AwayCard /> : null}
-        <Cols weights={[1.15, 1, 0.95]}>
-          <>
-            {heroCard}
-            {isToday ? <CoachStrip onSuggest={() => setSuggestOpen(true)} /> : null}
-            {isToday ? <IntakeCard /> : null}
-      {isToday && !state.routine.enabled ? <PlanTodayCard /> : null}
-            {isToday ? <FitsCard /> : null}
-            {isToday ? <TrackerGrid /> : null}
-            {isToday ? <StartHereCard /> : null}
-            {isToday ? <NutrientCard /> : null}
-            {isToday ? <NotificationNudge /> : null}
-            {isToday ? <WeighInCard /> : null}
-            {isToday ? <RecoveryCard /> : null}
-            {isToday ? <BreakCheckin /> : null}
-            {isToday ? <RoutineCard /> : null}
-            {isToday ? <TomorrowCard /> : null}
-            {mealsBlock}
-          </>
-          <>
-            {isToday ? <MountainCard /> : null}
-            {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
-            {isToday ? <TipCard /> : null}
-            {isToday ? <DayReview /> : null}
-          </>
-          {rightColumn}
-        </Cols>
-        <Small color={C.textFaint}>{t('medical_note')}</Small>
-        <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
-        <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
-        {isToday ? <Celebration /> : null}
-      </Page>
-    );
-  }
+  const title = mode === 'today' ? t('tab_today') : viewed === addDays(today, -1) ? t('yesterday') : formatDayLabel(viewed, lang);
+  const pairTile = (id: PairTile) =>
+    id === 'weight' ? <WeightTile key={id} /> : id === 'sleep' ? <SleepTile key={id} date={viewed} /> : <StreakTile key={id} onPress={() => router.push('/progress')} hint={t('tile_hint_streak')} />;
 
   return (
-    <Page title={state.profile.name || greeting} alt={undefined} subtitle={`${greeting} · ${subtitle}`} left={<Logo size={26} />} right={<TopBarActions streak={streakDays} />}>
-      {queued > 0 ? <Small color={C.cyan}>{(queued === 1 ? t('photos_queued') : t('photos_queued_plural')).replace('{n}', String(queued))}</Small> : null}
-      {isToday ? <AwayCard /> : null}
-      {heroCard}
-      {isToday ? <CoachStrip onSuggest={() => setSuggestOpen(true)} /> : null}
-      {isToday ? <IntakeCard /> : null}
-      {isToday && !state.routine.enabled ? <PlanTodayCard /> : null}
-      {isToday ? <TrackerGrid /> : null}
-      {isToday ? <StartHereCard /> : null}
-      {isToday ? <WeighInCard /> : null}
-      {isToday ? <RecoveryCard /> : null}
-      {isToday ? <BreakCheckin /> : null}
-      {isToday ? <RoutineCard /> : null}
-      {mealsBlock}
-      {isToday ? <MountainCard /> : null}
-      <Pressable
-        onPress={() => setMore((m) => !m)}
-        accessibilityRole="button"
-        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, opacity: pressed ? 0.7 : 1 })}>
-        <Micro color={C.textDim}>{t('more_today')}</Micro>
-        <Ionicons name={more ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />
-      </Pressable>
-      {more ? (
-        <>
-          {isToday ? <FitsCard compact /> : null}
-          {isToday ? <DecisionCard decision={decision} lang={lang} targets={targets} budget={budget} /> : null}
-          {isToday ? <NutrientCard /> : null}
-          {isToday ? <TomorrowCard /> : null}
-          {isToday ? <NotificationNudge /> : null}
-          <DayScoreCard score={score} />
-          {isToday ? <TipCard /> : null}
-          {isToday ? <DayReview /> : null}
-        </>
-      ) : null}
+    <Page title={title} left={<Logo size={26} />} right={mode === 'today' ? undefined : <IconButton name="today-outline" label={t('today_back')} onPress={() => go(today)} />}>
+      {queued > 0 ? <Small color={C.cyan}>{fill(t(queued === 1 ? 'photos_queued' : 'photos_queued_plural'), { n: queued })}</Small> : null}
+      <Card>
+        {/* The strip reaches over the card's padding, so each day is a finger wide on a 360 point phone (ui/stripGeometry.ts). */}
+        <View style={{ marginHorizontal: STRIP_EDGE - S.padLg }}>
+          <WeekStrip days={days} lang={lang} onSelect={go} onWeek={onWeek} />
+        </View>
+        <CaloriesLeft mode={mode} view={view} />
+      </Card>
+      {todayBlocks(state.settings.todayCards).map((b, i) => {
+        if (b.kind === 'menu') return <DayMenu key="menu" date={viewed} view={view} menu={menu} onOpenMeal={setOpenMeal} />;
+        // The coach and the mantra speak about now; nothing is drunk or walked on a day still to come.
+        if (b.kind === 'coach') return mode === 'today' ? <CoachLine key="coach" /> : null;
+        // Keyed by the date, so "Added … · Undo" and the sheet of one day never stay on screen for another.
+        if (b.kind === 'waterWalk') return mode === 'future' ? null : <WaterWalkTiles key={`waterWalk-${viewed}`} date={viewed} />;
+        if (b.kind === 'steps') return <StepsCard key="steps" date={viewed} />;
+        if (b.kind === 'mantra') return mode === 'today' ? <MantraCard key="mantra" /> : null;
+        return (
+          <TileRow key={`pair-${i}`}>
+            {b.tiles.map(pairTile)}
+            {b.tiles.length === 1 ? <View style={{ flex: 1 }} /> : null}
+          </TileRow>
+        );
+      })}
       <Small color={C.textFaint}>{t('medical_note')}</Small>
       <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
-      <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
-      {isToday ? <Celebration /> : null}
+      {mode === 'today' ? <Celebration /> : null}
     </Page>
-  );
-}
-
-/** One logged meal: type, first items, time, calories. */
-export function MealRow({ meal, first, lang, onPress, onDelete }: { meal: Meal; first: boolean; lang: 'en' | 'mr' | 'hi'; onPress: () => void; onDelete?: () => void }) {
-  const t = makeT(lang);
-  const names = meal.items.map((x) => x.name_en).filter(Boolean);
-  const alt = lang !== 'en' ? meal.items.map((x) => x.name_mr).filter(Boolean)[0] : undefined;
-  return (
-    <View>
-      {!first ? <Divider /> : null}
-      <ListRow
-        icon={<Ionicons name="restaurant-outline" size={15} color={C.textDim} />}
-        title={t(meal.type)}
-        alt={names[0] ? `· ${names.slice(0, 2).join(', ')}` : alt}
-        sub={meal.note === 'needs_review' ? t('needs_review') : `${localHHMM(meal.at)} · ${meal.items.some((x) => x.estimated) ? t('estimated') : t('verified_record')}`}
-        value={String(meal.kcal)}
-        valueUnit="kcal"
-        onPress={onPress}
-        trailing={onDelete ? undefined : <Ionicons name="chevron-forward" size={15} color={C.textFaint} />}
-        actions={
-          onDelete ? (
-            // Edit and delete live beside the row, outside its button, each a 44-point target.
-            <Row style={{ gap: 2 }}>
-              <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={t('edit')} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.cardAlt : 'transparent' })}>
-                <Ionicons name="create-outline" size={20} color={C.textDim} />
-              </Pressable>
-              <Pressable onPress={onDelete} accessibilityRole="button" accessibilityLabel={t('delete')} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.redSoft : 'transparent' })}>
-                <Ionicons name="trash-outline" size={20} color={C.textDim} />
-              </Pressable>
-            </Row>
-          ) : undefined
-        }
-      />
-    </View>
-  );
-}
-
-function QuickAction({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flex: 1,
-        backgroundColor: C.accentDim,
-        borderRadius: 16,
-        paddingVertical: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        opacity: pressed ? 0.75 : 1,
-        transform: [{ scale: pressed ? 0.97 : 1 }],
-      })}>
-      <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center' }}>
-        <Ionicons name={icon} size={18} color={C.accent} />
-      </View>
-      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{label}</Text>
-    </Pressable>
   );
 }

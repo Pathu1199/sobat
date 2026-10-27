@@ -1,19 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { removeUndoSteps } from '../core/addSheet';
 import { localHHMM } from '../core/date';
 import { defaultPortion, itemName, scaleMealItem, toMealItem } from '../core/foods';
 import type { Meal, MealItem } from '../core/types';
-import { makeT } from '../i18n';
+import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { BiText, Btn, Divider, Micro, Pill, Row } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
-import { C, F } from '../ui/theme';
+import { C, F, S } from '../ui/theme';
 
 const MULTIPLIERS = [0.5, 1, 1.5, 2];
 
-/** Shows a logged meal's lines; portions can be changed, lines removed, the meal deleted. */
+/** Shows a logged meal's lines; portions can be changed, lines removed, the meal deleted (with Undo). */
 export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () => void }) {
   const app = useApp();
   const fb = useFeedback();
@@ -62,8 +63,20 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
   }
 
   function remove() {
+    // Taken before the delete: the meal as stored, put back through addMeal, which lifts the skip removeMeal may mark, and the slot's skip as it was.
+    const steps = removeUndoSteps(app.state, current);
     app.removeMeal(current.id);
     fb.haptic('light');
+    fb.notify(t('meal_removed'), {
+      label: t('undo'),
+      onPress: () => {
+        for (const step of steps) {
+          if (step.kind === 'add') app.addMeal(step.meal);
+          else if (step.kind === 'skip') app.skipSlot(step.date, step.slotId);
+          else if (step.kind === 'unskip') app.unskipSlot(step.date, step.slotId);
+        }
+      },
+    });
     onClose();
   }
 
@@ -86,13 +99,15 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
                 {it.kcal}
                 <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> kcal</Text>
               </Text>
+              {/* A finger-sized box on every platform, the web too. */}
               <Pressable
                 onPress={() => {
                   setItems((l) => l.filter((_, i) => i !== idx));
                   setOpened((l) => l.filter((_, i) => i !== idx));
                 }}
-                hitSlop={8}
-                accessibilityLabel={t('delete')}>
+                accessibilityRole="button"
+                accessibilityLabel={fill(t('meal_line_remove'), { name: itemName(it, app.foods, lang) })}
+                style={({ pressed }) => ({ width: S.touch, height: S.touch, borderRadius: S.touch / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.cardAlt : 'transparent' })}>
                 <Ionicons name="close" size={17} color={C.textFaint} />
               </Pressable>
             </Row>
