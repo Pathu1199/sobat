@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
 import type { UndoStep } from '../addSheet';
-import { dayMode, dayView, fillUndoSteps, offersDayConfirm, planNote, rowOffers, type MenuRow } from '../dayView';
+import { dayMode, dayView, draftKey, fillUndoSteps, offersDayConfirm, planNote, rowLines, rowOffers, stepDraft, type MenuRow } from '../dayView';
 import { measureName } from '../foods';
 import { fillFromPlan, planFillId, removeSkip, withMealAdded, withMealRemoved, type DayMenu, type MealState } from '../menu';
 import { DEFAULT_ROUTINE } from '../routine';
@@ -263,5 +263,52 @@ describe('"Fill this day from plan" and its Undo', () => {
 
   it('has no Undo to offer for a day it does not fill', () => {
     expect(fillUndoSteps(view('2026-10-25', [meal('2026-10-25', 'breakfast', 'breakfast', '08:40', 300)]))).toEqual([]);
+  });
+});
+
+describe("a past day's − / +, a draft of what was eaten", () => {
+  const d = '2026-10-20';
+  const planned = menu(d).meals[1].lines;
+
+  it('steps only the draft: the planned lines, and so that day\'s menu, stay as they were', () => {
+    const day = menu(d);
+    const more = stepDraft(day.meals[1].lines, 0, 1);
+    expect(more.map((l) => l.qty)).toEqual([3, 0.5]);
+    expect(more[1]).toBe(day.meals[1].lines[1]);
+    // The record of what was planned is untouched.
+    expect(day).toEqual(menu(d));
+    expect(stepDraft(planned, 1, 1).map((l) => l.qty)).toEqual([2, 1]);
+  });
+
+  it('− to nothing takes the food out of the draft only; a step on no line changes nothing', () => {
+    const less = stepDraft(stepDraft(planned, 0, -1), 0, -1);
+    expect(less).toEqual([{ foodId: 'moong-dal', unit: 'katori', qty: 0.5 }]);
+    expect(stepDraft(less, 0, -1)).toEqual([]);
+    expect(stepDraft(less, 3, 1)).toBe(less);
+    expect(planned.map((l) => l.qty)).toEqual([2, 0.5]);
+  });
+
+  it('shows the draft as the menu shows its lines: each food named, with its amount and calories from the database', () => {
+    const lines = rowLines(stepDraft(planned, 0, 1), foods, 'en');
+    expect(lines.map((l) => [l.idx, l.foodId, l.qty])).toEqual([
+      [0, 'chapati', 3],
+      [1, 'moong-dal', 0.5],
+    ]);
+    expect(lines[0].kcal).toBe(lineInfo({ foodId: 'chapati', unit: 'piece', qty: 3 }, foods)!.kcal);
+    // A food gone from the database is left out, and the others keep their place in the draft.
+    expect(rowLines([{ foodId: 'gone', unit: 'piece', qty: 1 }, ...planned], foods, 'en').map((l) => l.idx)).toEqual([1, 2]);
+    // The rows of a day read their lines the same way.
+    expect(view(d, []).rows[1].lines).toEqual(rowLines(planned, foods, 'en'));
+  });
+
+  it('with every food taken out of the draft, "Ate this" goes and "Ate other" and "Skipped" stay', () => {
+    const row = view(d, []).rows[1];
+    expect(rowOffers({ ...row, lines: rowLines([], foods, 'en') })).toEqual(['ate_other', 'skip']);
+    expect(rowOffers(row)).toEqual(['ate_this', 'ate_other', 'skip']);
+  });
+
+  it('keeps one draft per date and slot, so a draft never follows the person to another day', () => {
+    expect(draftKey(d, 'lunch')).not.toBe(draftKey('2026-10-21', 'lunch'));
+    expect(draftKey(d, 'lunch')).not.toBe(draftKey(d, 'dinner'));
   });
 });

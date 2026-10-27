@@ -68,6 +68,8 @@ export default function TodayScreen() {
   const currentId =
     mode === 'today' ? (currentSlot(slotStates({ routine: state.routine, target: targets.kcal, meals: dayMeals, nowMinutes: minute, skippedSlots: skippedIds }), minute)?.slot.id ?? null) : null;
   const view = dayView({ date: viewed, today, menu, meals: dayMeals, skippedIds, currentId, foods: app.planFoods, lang, offDay: isOffDay(offDays, viewed), startDate: since });
+  // Asked once, of the menu shown: whether it is just the app's own suggestion. A past day reads what was eaten instead.
+  const suggested = mode !== 'past' && app.isSuggestedMenu(menu);
 
   // One Monday for the record and the strip, so the dots and the days are the same week.
   const monday = mondayOf(viewed);
@@ -87,7 +89,7 @@ export default function TodayScreen() {
         <View style={{ marginHorizontal: STRIP_EDGE - S.padLg }}>
           <WeekStrip days={days} lang={lang} onSelect={go} onWeek={onWeek} />
         </View>
-        <CaloriesLeft mode={mode} view={view} />
+        <CaloriesLeft mode={mode} view={view} suggested={suggested} />
       </Card>
       {todayBlocks(state.settings.todayCards).map((b, i) => {
         if (b.kind === 'menu') return <DayMenu key="menu" date={viewed} view={view} menu={menu} onOpenMeal={setOpenMeal} />;

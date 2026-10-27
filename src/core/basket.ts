@@ -41,6 +41,12 @@ export function stepCount(count: number, unit: string, by: 1 | -1): number {
   return Math.max(0, round2(n * step));
 }
 
+/** A planned line after one − or +, on the same grid; null when − takes it to nothing, so the line goes. */
+export function steppedLine(line: PlanLine, by: 1 | -1): PlanLine | null {
+  const qty = stepCount(line.qty, line.unit, by);
+  return qty > 0 ? { ...line, qty } : null;
+}
+
 /**
  * The food sheet's − / +: one step on the grid, but never under one step, and
  * − never makes a typed amount below a step (half a chapati) larger. When −

@@ -13,6 +13,7 @@ import {
   copyDay,
   dueAutoFills,
   editedMeal,
+  editedMenus,
   ensureWeek,
   fillFromPlan,
   fitFor,
@@ -23,6 +24,7 @@ import {
   menuSlots,
   menusFromTemplate,
   NOT_EDITED,
+  planMeal,
   removeSkip,
   setMenuDay,
   setMenuLine,
@@ -51,6 +53,7 @@ import {
   type MenuFit,
 } from '../menu';
 import { removeUndoSteps, slotBefore, undoSteps, type UndoStep } from '../addSheet';
+import { steppedLine } from '../basket';
 import { dailyTargets, KCAL_FLOOR, kcalForGrams } from '../nutrition';
 import { dayRecord } from '../record';
 import { forCloud, isPristine } from '../sync';
@@ -197,6 +200,64 @@ describe('editing one date', () => {
     expect(copy.meals[1].lines[0]).not.toBe(wed.meals[1].lines[0]);
     expect(copy.editedAt).toBe(NOW.toISOString());
     expect(menuFor('2026-10-28', out)).toBe(wed);
+  });
+});
+
+describe("the store's menu edits", () => {
+  const TODAY = '2026-10-27';
+  const wed = menu('2026-10-28', 2, NOT_EDITED);
+  const step = (by: 1 | -1) => (ms: DayMenu[], d: DayMenu) => setMenuLine(ms, d, 'lunch', 0, (line) => steppedLine(line, by), NOW);
+
+  it("refuse a date before today: a past day's menu is its record of what was planned, so nothing there rewrites it", () => {
+    const mon = menu('2026-10-26', 2);
+    const menus = [mon];
+    expect(editedMenus(menus, mon, TODAY, (ms, d) => setMenuLine(ms, d, 'lunch', 0, chapati(3), NOW))).toBe(menus);
+    expect(editedMenus(menus, mon, TODAY, step(-1))).toBe(menus);
+    expect(editedMenus(menus, mon, TODAY, (ms, d) => setMenuDay(ms, d, menu('2026-10-26', 4).meals, NOW))).toBe(menus);
+    expect(editedMenus(menus, mon, TODAY, (ms, d) => setMenuMeal(ms, d, { ...mon.meals[1], lines: [chapati(1)] }, NOW))).toBe(menus);
+    // A past date nobody wrote is not stored by a refused edit either.
+    const none: DayMenu[] = [];
+    expect(editedMenus(none, menu('2026-10-20', 2, NOT_EDITED), TODAY, step(1))).toBe(none);
+  });
+
+  it('edit today and a later date as before', () => {
+    const tue = menu(TODAY, 2);
+    expect(lunchQty(menuFor(TODAY, editedMenus([tue], tue, TODAY, step(1))))).toBe(3);
+    expect(lunchQty(menuFor('2026-10-28', editedMenus([], wed, TODAY, step(1))))).toBe(3);
+  });
+
+  it('count two quick taps both: each builds on the menu the one before it stored, not the one on screen before either', () => {
+    const tap = (ms: DayMenu[], by: 1 | -1) => editedMenus(ms, wed, TODAY, step(by));
+    expect(lunchQty(menuFor('2026-10-28', tap(tap([], 1), 1)))).toBe(4);
+    expect(menuFor('2026-10-28', tap(tap([], -1), -1))!.meals[1].lines).toEqual([]);
+  });
+
+  it('step a line on the measure\'s grid; − to nothing takes it out', () => {
+    expect(steppedLine(chapati(2), 1)).toEqual(chapati(3));
+    expect(steppedLine(chapati(1), -1)).toBeNull();
+    expect(steppedLine({ foodId: 'moong-dal', unit: 'katori', qty: 0.5 }, 1)).toEqual({ foodId: 'moong-dal', unit: 'katori', qty: 1 });
+  });
+});
+
+describe('"Ate as planned" and "Ate this", as the store logs them', () => {
+  const day = menu('2026-10-20', 2);
+
+  it("log the slot's planned lines, or the lines given (a past day's draft), with the database calories", () => {
+    const planned = planMeal({ id: 'x', menu: day, slotId: 'lunch', foods, source: 'plan', now: NOW })!;
+    expect(planned).toMatchObject({ id: 'x', date: '2026-10-20', slotId: 'lunch', source: 'plan' });
+    expect(planned.items[0].grams).toBe(lineInfo(chapati(2), foods)!.grams);
+    const drafted = planMeal({ id: 'y', menu: day, slotId: 'lunch', lines: [chapati(1)], foods, source: 'plan', now: NOW })!;
+    const one = lineInfo(chapati(1), foods)!;
+    expect(drafted.items[0]).toMatchObject({ foodId: 'chapati', grams: one.grams, kcal: kcalForGrams(one.food, one.grams).kcal });
+    // The day's menu, its record of what was planned, is left as it was.
+    expect(day).toEqual(menu('2026-10-20', 2));
+  });
+
+  it('give nothing when the store refuses: a date after today, a slot the day does not have, nothing to log', () => {
+    expect(planMeal({ id: 'x', menu: menu('2026-10-28', 2), slotId: 'lunch', foods, source: 'plan', now: NOW })).toBeNull();
+    expect(planMeal({ id: 'x', menu: day, slotId: 'supper', foods, source: 'plan', now: NOW })).toBeNull();
+    expect(planMeal({ id: 'x', menu: day, slotId: 'morning', foods, source: 'plan', now: NOW })).toBeNull();
+    expect(planMeal({ id: 'x', menu: day, slotId: 'lunch', lines: [], foods, source: 'plan', now: NOW })).toBeNull();
   });
 });
 

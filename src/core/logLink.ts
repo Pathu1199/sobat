@@ -37,3 +37,25 @@ export function handOff<S extends TabsState>(state: S, from: string, to: string,
   const history = state.history && [...state.history.filter((h) => keyOf(h) !== from && keyOf(h) !== key), { type: 'route', key }];
   return { ...state, index: at, routes, history };
 }
+
+/**
+ * How /log hands over to Today on the web, where the browser's Back replays
+ * the addresses it recorded and the browser follows the tab bar's way back by
+ * its length: the same length replaces the browser's entry, a shorter one
+ * steps the browser back. The reset (`handOff`) when /log is alone in the way
+ * back (a /log loaded on its own: the same length, so its entry is replaced
+ * and Back never finds it again), or when Today is right behind it (one
+ * shorter: the browser steps back onto Today's own entry, so Today is never
+ * there twice). A replace otherwise, so the browser keeps the page the person
+ * came from: with Today further back, a reset would step the browser back past
+ * the pages in between. A navigator with no way back of its own, or no Today,
+ * gets the replace.
+ */
+export function webHandOff(state: TabsState, from: string, to: string): 'reset' | 'replace' {
+  const today = state.routes.find((r) => r.name === to);
+  if (!state.history || !today) return 'replace';
+  const keys = state.history.map(keyOf);
+  const at = keys.lastIndexOf(from);
+  const behind = at > 0 ? keys[at - 1] : undefined;
+  return behind === undefined || behind === today.key ? 'reset' : 'replace';
+}

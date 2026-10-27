@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STRIP_DAY_HEIGHT, STRIP_EDGE, stripDayWidth, stripRowWidth } from '../stripGeometry';
+import { STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_SIZE, STRIP_EDGE, STRIP_RING, stripDayWidth, stripRowWidth } from '../stripGeometry';
 import { lh, S, scaledSizes, TEXT_SCALES } from '../theme';
 
 /** A digit is about 0.6 of the type size wide (tabular figures). */
@@ -31,6 +31,13 @@ describe('the week strip on the narrowest phone', () => {
   it('every day is a touch box at least a finger tall, and its weekday, date and dot fit in it at the largest text size', () => {
     expect(STRIP_DAY_HEIGHT).toBeGreaterThanOrEqual(S.touch);
     // The weekday, a gap, the date, a gap, the dot.
-    expect(lh(LARGEST.small) + 3 + lh(LARGEST.body, true) + 3 + 8).toBeLessThanOrEqual(STRIP_DAY_HEIGHT);
+    expect(lh(LARGEST.small) + 3 + lh(LARGEST.body, true) + 3 + STRIP_DOT_SIZE).toBeLessThanOrEqual(STRIP_DAY_HEIGHT);
+  });
+});
+
+describe("the week strip's dot", () => {
+  it('a day filled in from the plan is a ring with a dot in its middle, a clear gap between them', () => {
+    expect(STRIP_CORE).toBeGreaterThan(0);
+    expect(STRIP_DOT_SIZE - 2 * STRIP_RING - STRIP_CORE).toBeGreaterThanOrEqual(2);
   });
 });

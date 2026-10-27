@@ -26,11 +26,13 @@ describe('todayBlocks', () => {
 
 describe('caloriesLeft', () => {
   const targets = { kcal: 1800, proteinG: 112 };
-  const view = { plannedKcal: 1650, plannedProtein: 70, eatenKcal: 1200, eatenProtein: 38 };
+  const view = { plannedKcal: 1650, plannedProtein: 70, eatenKcal: 1200, eatenProtein: 38, judged: true };
   const budget = { remaining: 650, earned: 50, proteinConsumed: 40 };
+  /** Everything else as on an ordinary day in the record. */
+  const base = { offDay: false, dayEarned: 0 };
 
   it("today is the live budget, a walk's calories included, with what is planned against the goal", () => {
-    expect(caloriesLeft({ mode: 'today', targets, view, budget, suggested: false })).toEqual({
+    expect(caloriesLeft({ mode: 'today', targets, view, budget, suggested: false, ...base })).toEqual({
       kcal: 650,
       over: false,
       alarm: false,
@@ -40,11 +42,11 @@ describe('caloriesLeft', () => {
       protein: { g: 40, target: 112 },
     });
     // Eaten past the budget today is said, in red.
-    expect(caloriesLeft({ mode: 'today', targets, view, budget: { ...budget, remaining: -120 }, suggested: false })).toMatchObject({ kcal: 120, over: true, alarm: true, label: 'kcal_over' });
+    expect(caloriesLeft({ mode: 'today', targets, view, budget: { ...budget, remaining: -120 }, suggested: false, ...base })).toMatchObject({ kcal: 120, over: true, alarm: true, label: 'kcal_over' });
   });
 
-  it('a past day is the goal less what was eaten, with "Eaten X of Y" and no walk added', () => {
-    expect(caloriesLeft({ mode: 'past', targets, view, budget, suggested: false })).toEqual({
+  it('a past day is the goal less what was eaten, with "Eaten X of Y"', () => {
+    expect(caloriesLeft({ mode: 'past', targets, view, budget, suggested: false, ...base })).toEqual({
       kcal: 600,
       over: false,
       alarm: false,
@@ -54,11 +56,11 @@ describe('caloriesLeft', () => {
       protein: { g: 38, target: 112 },
     });
     // A past day reads what was eaten even when its menu was the app's suggestion.
-    expect(caloriesLeft({ mode: 'past', targets, view: { ...view, eatenKcal: 2000 }, budget, suggested: true })).toMatchObject({ kcal: 200, over: true, alarm: true, line: { key: 'today_eaten_of' } });
+    expect(caloriesLeft({ mode: 'past', targets, view: { ...view, eatenKcal: 2000 }, budget, suggested: true, ...base })).toMatchObject({ kcal: 200, over: true, alarm: true, line: { key: 'today_eaten_of' } });
   });
 
   it('a future day is what the plan leaves, with the planned protein', () => {
-    expect(caloriesLeft({ mode: 'future', targets, view, budget, suggested: false })).toEqual({
+    expect(caloriesLeft({ mode: 'future', targets, view, budget, suggested: false, ...base })).toEqual({
       kcal: 150,
       over: false,
       alarm: false,
@@ -67,18 +69,40 @@ describe('caloriesLeft', () => {
       earned: 0,
       protein: { g: 70, target: 112 },
     });
-    expect(caloriesLeft({ mode: 'future', targets, view: { ...view, plannedKcal: 1900 }, budget, suggested: false })).toMatchObject({ kcal: 100, over: true, alarm: true, label: 'kcal_over' });
+    expect(caloriesLeft({ mode: 'future', targets, view: { ...view, plannedKcal: 1900 }, budget, suggested: false, ...base })).toMatchObject({ kcal: 100, over: true, alarm: true, label: 'kcal_over' });
   });
 
   it("names the app's own suggestion as one and never judges it in red", () => {
-    expect(caloriesLeft({ mode: 'future', targets, view: { ...view, plannedKcal: 1900 }, budget, suggested: true })).toMatchObject({
+    expect(caloriesLeft({ mode: 'future', targets, view: { ...view, plannedKcal: 1900 }, budget, suggested: true, ...base })).toMatchObject({
       kcal: 100,
       over: true,
       alarm: false,
       line: { key: 'today_suggested_goal', kcal: 1900, goal: 1800 },
     });
     // A suggestion under the safe minimum leaves a lot "left"; the menu says it is low, this number stays plain.
-    expect(caloriesLeft({ mode: 'future', targets, view: { ...view, plannedKcal: 900 }, budget, suggested: true })).toMatchObject({ kcal: 900, over: false, alarm: false, label: 'today_left_after_plan' });
-    expect(caloriesLeft({ mode: 'today', targets, view, budget, suggested: true }).line).toEqual({ key: 'today_suggested_goal', kcal: 1650, goal: 1800 });
+    expect(caloriesLeft({ mode: 'future', targets, view: { ...view, plannedKcal: 900 }, budget, suggested: true, ...base })).toMatchObject({ kcal: 900, over: false, alarm: false, label: 'today_left_after_plan' });
+    expect(caloriesLeft({ mode: 'today', targets, view, budget, suggested: true, ...base }).line).toEqual({ key: 'today_suggested_goal', kcal: 1650, goal: 1800 });
+  });
+
+  it("a past day counts that day's walks, so its number is the one today showed and does not change at midnight", () => {
+    expect(caloriesLeft({ mode: 'past', targets, view, budget, suggested: false, offDay: false, dayEarned: 60 })).toMatchObject({ kcal: 660, earned: 60, line: { key: 'today_eaten_of', kcal: 1200, goal: 1800 } });
+    // A day still to come has earned nothing yet.
+    expect(caloriesLeft({ mode: 'future', targets, view, budget, suggested: false, offDay: false, dayEarned: 60 })).toMatchObject({ kcal: 150, earned: 0 });
+  });
+
+  it('today with the app\'s own suggestion and food eaten past the goal is still said in red', () => {
+    expect(caloriesLeft({ mode: 'today', targets, view, budget: { ...budget, remaining: -120 }, suggested: true, ...base })).toMatchObject({ kcal: 120, over: true, alarm: true });
+  });
+
+  it('never raises the red alarm on a free day, today, past or still to come', () => {
+    const free = { ...view, judged: false };
+    expect(caloriesLeft({ mode: 'today', targets, view: free, budget: { ...budget, remaining: -300 }, suggested: false, offDay: true, dayEarned: 0 })).toMatchObject({ over: true, alarm: false, label: 'kcal_over' });
+    expect(caloriesLeft({ mode: 'past', targets, view: { ...free, eatenKcal: 2400 }, budget, suggested: false, offDay: true, dayEarned: 0 })).toMatchObject({ kcal: 600, over: true, alarm: false });
+    expect(caloriesLeft({ mode: 'future', targets, view: { ...free, plannedKcal: 2400 }, budget, suggested: false, offDay: true, dayEarned: 0 })).toMatchObject({ over: true, alarm: false });
+  });
+
+  it('a day before the person started shows what was eaten, with no "left" and no alarm', () => {
+    const before = caloriesLeft({ mode: 'past', targets, view: { ...view, eatenKcal: 2400, judged: false }, budget, suggested: false, offDay: false, dayEarned: 0 });
+    expect(before).toMatchObject({ label: null, alarm: false, line: { key: 'today_eaten_of', kcal: 2400, goal: 1800 } });
   });
 });

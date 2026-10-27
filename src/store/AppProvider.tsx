@@ -21,10 +21,11 @@ import {
   applyWeekPlan,
   copyDay,
   editedMeal,
+  editedMenus,
   fillFromPlan,
   fitFor,
   isSuggested,
-  mealFromLines,
+  planMeal,
   removeSkip,
   setMenuDay,
   setMenuLine,
@@ -136,14 +137,22 @@ type Ctx = {
   suggestionOn: (date: ISODate) => PlanDay;
   /** The seven menus of the week starting on `monday`, Monday first. */
   weekMenus: (monday: ISODate) => DayMenu[];
-  /** Edits to one date's menu; `day` is the menu as shown. Every other date is left as it is. */
+  /**
+   * Edits to one date's menu; `day` is the menu as shown, and each edit builds on the menu as stored when it lands, so two quick
+   * taps both count. Every other date is left as it is, and a date before today is refused: its menu is that day's record.
+   */
   editMenuDay: (day: DayMenu, meals: PlanMeal[]) => void;
-  editMenuLine: (day: DayMenu, mealId: string, lineIdx: number, next: PlanLine | null) => void;
+  /** `next` may be worked out from the line as the stored menu holds it (a − / + step: `steppedLine`). */
+  editMenuLine: (day: DayMenu, mealId: string, lineIdx: number, next: PlanLine | null | ((line: PlanLine) => PlanLine | null)) => void;
   addMenuFood: (day: DayMenu, mealId: string, line: PlanLine) => void;
   editMenuMeal: (day: DayMenu, meal: PlanMeal) => void;
   copyMenuDay: (from: DayMenu, to: ISODate) => void;
-  /** "Ate as planned" for a slot on any date up to today: its planned lines logged with database calories. Returns the meal's id, so the tap can be undone. A date after today changes nothing, and the id then names nothing. */
-  addMealFromPlan: (date: ISODate, slotId: string, source?: MealSource) => string;
+  /**
+   * "Ate as planned" for a slot on any date up to today: its planned lines, or the lines given (a past day's draft), logged with
+   * database calories. Returns the meal's id, so the tap can be undone; null when the store refuses (a date after today, nothing
+   * to log), and then nothing changes.
+   */
+  addMealFromPlan: (date: ISODate, slotId: string, source?: MealSource, lines?: PlanLine[]) => string | null;
   /** A meal the app filled in, confirmed as eaten. */
   confirmMeal: (id: string) => void;
   /** "Day looks right": every filled-in meal of the date confirmed. */
@@ -561,18 +570,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isSuggestedMenu: (day) => isSuggested(day, state.routine, planFoods, fit),
       suggestionOn: (date) => suggestionFor(date, state.routine, planFoods, fit),
       weekMenus: (monday) => viewWeek(monday, state.menus, state.routine, today, planFoods, fit),
-      editMenuDay: (day, meals) => update((s) => withMenus(s, setMenuDay(s.menus, day, meals, new Date()))),
-      editMenuLine: (day, mealId, lineIdx, next) => update((s) => withMenus(s, setMenuLine(s.menus, day, mealId, lineIdx, next, new Date()))),
-      addMenuFood: (day, mealId, line) => update((s) => withMenus(s, addMenuLine(s.menus, day, mealId, line, new Date()))),
-      editMenuMeal: (day, meal) => update((s) => withMenus(s, setMenuMeal(s.menus, day, meal, new Date()))),
+      editMenuDay: (day, meals) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => setMenuDay(ms, d, meals, new Date())))),
+      editMenuLine: (day, mealId, lineIdx, next) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => setMenuLine(ms, d, mealId, lineIdx, next, new Date())))),
+      addMenuFood: (day, mealId, line) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => addMenuLine(ms, d, mealId, line, new Date())))),
+      editMenuMeal: (day, meal) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => setMenuMeal(ms, d, meal, new Date())))),
       copyMenuDay: (from, to) => update((s) => withMenus(s, copyDay(from, to, s.menus, new Date()))),
-      addMealFromPlan: (date, slotId, source = 'plan') => {
+      addMealFromPlan: (date, slotId, source = 'plan', lines) => {
         const id = newId();
-        update((s) => {
-          const now = new Date();
+        const now = new Date();
+        const build = (s: AppState) => {
           const foods = allFoods(s.customFoods);
-          const slot = viewMenu(date, s.menus, s.routine, today, foods, fitOn(s.profile, s.routine, today)).meals.find((m) => m.id === slotId);
-          const meal = slot ? mealFromLines({ id, date, slot, lines: slot.lines, foods, source, now }) : null;
+          return planMeal({ id, menu: viewMenu(date, s.menus, s.routine, today, foods, fitOn(s.profile, s.routine, today)), slotId, lines, foods, source, now });
+        };
+        // Refused at the tap, on the state as shown, so the caller knows nothing was logged and says nothing.
+        if (!build(state)) return null;
+        update((s) => {
+          const meal = build(s);
           return meal ? withMeal(s, meal, targets.kcal, now) : s;
         });
         return id;

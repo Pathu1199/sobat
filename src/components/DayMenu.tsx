@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { slotBefore, undoSteps, type UndoStep } from '../core/addSheet';
-import { amountText, stepCount } from '../core/basket';
-import { fillUndoSteps, offersDayConfirm, planNote, rowOffers, type DayView, type MenuRow, type RowLine } from '../core/dayView';
+import { amountText, steppedLine } from '../core/basket';
+import { draftKey, fillUndoSteps, offersDayConfirm, planNote, rowLines, rowOffers, stepDraft, type DayView, type MenuRow, type RowLine } from '../core/dayView';
 import { itemName } from '../core/foods';
 import type { DayMenu as Menu } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
-import { slotLabel } from '../core/routine';
+import { slotLabel, type PlanLine } from '../core/routine';
 import type { ISODate, Meal } from '../core/types';
 import { isOffDay } from '../core/week';
 import { fill, makeT } from '../i18n';
@@ -38,9 +38,11 @@ function Chip({ label, a11y, onPress }: { label: string; a11y?: string; onPress:
  * turn it is open with Ate as planned and Change, later slots one line. A
  * past day says how many meals are missing with "2 of 3 meals", and fills
  * each open slot as planned, with something else, or as skipped, with − / +
- * on each planned food; an empty day fills from the plan in one tap, with
- * Undo. A future day is the plan itself and logs nothing: − / + and Change
- * edit that date's menu, and the total against the goal updates at once.
+ * on each planned food; those change a draft of what was eaten, which Ate
+ * this logs, never that day's menu (its record of what was planned). An
+ * empty day fills from the plan in one tap, with Undo. A future day is the
+ * plan itself and logs nothing: − / + and Change edit that date's menu, and
+ * the total against the goal updates at once.
  * Meals the app filled in carry a "from plan" chip until they are confirmed,
  * one by one or with "Day looks right" (a past day, or today from 21:00). A
  * free day and a day before the person started are not judged. Every log
@@ -62,6 +64,16 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
     return (s && slotLabel(s, lang)) || t(row.type);
   };
   const plannedLines = (row: MenuRow) => menu.meals.find((m) => m.id === row.slotId)?.lines ?? [];
+  // A past day's − / + work on a draft of what was eaten, one per date and slot, held here until Ate this logs it.
+  const [drafts, setDrafts] = useState<Record<string, PlanLine[]>>({});
+  const past = view.mode === 'past';
+  const draftOf = (row: MenuRow): PlanLine[] | undefined => (past ? drafts[draftKey(date, row.slotId)] : undefined);
+  /** The lines a row shows and Ate this logs: a past day's draft once − / + touched it, else the planned ones. */
+  const shownLines = (row: MenuRow): RowLine[] => {
+    const draft = draftOf(row);
+    return draft ? rowLines(draft, app.planFoods, lang) : row.lines;
+  };
+  const kcalOf = (lines: RowLine[]) => lines.reduce((a, l) => a + l.kcal, 0);
 
   /** Each step of an Undo through the store, so a meal put back lifts the skip taking one away may have marked. */
   function undo(steps: UndoStep[]) {
@@ -74,20 +86,27 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
   }
 
   function stepLine(row: MenuRow, l: RowLine, by: 1 | -1) {
-    const line = plannedLines(row)[l.idx];
-    if (!line) return;
-    const qty = stepCount(line.qty, line.unit, by);
-    app.editMenuLine(menu, row.slotId, l.idx, qty > 0 ? { ...line, qty } : null);
+    if (past) {
+      // A past day: only the draft changes, never what that day planned.
+      const key = draftKey(date, row.slotId);
+      setDrafts((d) => ({ ...d, [key]: stepDraft(d[key] ?? plannedLines(row), l.idx, by) }));
+    } else {
+      // Today and later: that date's menu, the step worked out from the line as the store holds it, so quick taps all count.
+      app.editMenuLine(menu, row.slotId, l.idx, (line) => steppedLine(line, by));
+    }
     fb.haptic('light');
   }
 
-  // Ate as planned (today's slot) and Ate this (an open slot): logged from the plan with calories from the database, never on a
-  // date after today (the store refuses, and a future day offers neither). Undo puts the slot back exactly as it was.
+  // Ate as planned (today's slot) and Ate this (an open slot): logged from the plan, or from a past day's draft, with calories
+  // from the database, never on a date after today (the store refuses, and says so with null: then nothing is said). Undo puts
+  // the slot back exactly as it was.
   function atePlanned(row: MenuRow) {
     const before = slotBefore(state, date, row.slotId);
-    const id = app.addMealFromPlan(date, row.slotId);
+    const lines = draftOf(row);
+    const id = app.addMealFromPlan(date, row.slotId, 'plan', lines);
+    if (id === null) return;
     fb.haptic('success');
-    fb.notify(fill(t('toast_meal_saved'), { kcal: row.plannedKcal }), {
+    fb.notify(fill(t('toast_meal_saved'), { kcal: kcalOf(shownLines(row)) }), {
       label: t('undo'),
       onPress: () => undo(undoSteps({ id, date, slotId: row.slotId, ...before })),
     });
@@ -137,7 +156,8 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
             label={t('menu_change')}
             accessibilityLabel={fill(t('menu_change_a11y'), { slot })}
             onPress={() => addSheet.open({ date, slotId: row.slotId, lines: plannedLines(row), mode: row.state === 'plan' ? 'plan' : 'log' })}
-            style={{ flexGrow: 1 }}
+            // On the current row's tint a soft button has no edge of its own: the teal of words draws one (4.5:1 on that tint).
+            style={row.state === 'current' ? { flexGrow: 1, borderColor: C.accentText } : { flexGrow: 1 }}
           />
         );
       if (o === 'add')
@@ -170,7 +190,7 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
         />
       );
     };
-    const list = rowOffers(row);
+    const list = rowOffers({ ...row, lines: shownLines(row) });
     return list.length > 0 ? <Row style={{ gap: 6, flexWrap: 'wrap' }}>{list.map(btn)}</Row> : null;
   }
 
@@ -253,11 +273,13 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
       return <View style={{ paddingVertical: 10 }}>{head(row, row.lines.length > 0 ? fill(t('menu_planned_kcal'), { kcal: row.plannedKcal }) : t('menu_nothing_planned'))}</View>;
     }
     // Open (a past day, or a slot today passed with nothing in it) and plan (a future day): each planned food with − / +,
-    // which edit that date's menu, so Ate this logs the amounts shown.
+    // so Ate this logs the amounts shown. Today and later they edit that date's menu; on a past day they change only the draft,
+    // and a draft with every food taken out reads 0 kcal, not "nothing planned".
+    const lines = shownLines(row);
     return (
       <View style={{ gap: 8, paddingVertical: 8 }}>
-        {head(row, row.lines.length > 0 ? `${row.plannedKcal} kcal` : t('menu_nothing_planned'))}
-        {row.lines.map((l) => stepperLine(row, l))}
+        {head(row, lines.length > 0 || draftOf(row) ? `${kcalOf(lines)} kcal` : t('menu_nothing_planned'))}
+        {lines.map((l) => stepperLine(row, l))}
         {offers(row)}
       </View>
     );
@@ -277,7 +299,7 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
       {view.mode === 'past' && view.judged && view.required > 0 ? (
         <View style={{ gap: 6 }}>
           <Bar value={view.settled} max={view.required} color={view.settled === view.required ? C.accent : C.amber} />
-          <Text style={small}>{fill(t('menu_record'), { n: view.settled, of: view.required })}</Text>
+          <Text style={small}>{fill(t(view.required === 1 ? 'menu_record_one' : 'menu_record'), { n: view.settled, of: view.required })}</Text>
         </View>
       ) : null}
       {note === 'suggested' || note === 'suggested_low' ? (

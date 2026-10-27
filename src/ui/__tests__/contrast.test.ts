@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contrastRatio, luminance } from '../contrast';
-import { STRIP_DOT } from '../stripGeometry';
+import { STRIP_DOT, stripDot } from '../stripGeometry';
 import { PALETTES, type ThemeMode } from '../theme';
 
 const MODES: ThemeMode[] = ['light', 'dark'];
@@ -55,6 +55,23 @@ describe('palette', () => {
           expect(contrastRatio(P[token], P[bg]), `${kind} dot (${token}) on ${bg}`).toBeGreaterThanOrEqual(3);
         }
       }
+    });
+
+    it(`${mode}: a day filled in from the plan keeps its dot at full colour, 3:1, and is told apart by its shape, never faded`, () => {
+      for (const mark of ['full', 'missing', 'today'] as const) {
+        const plain = stripDot(mark, false);
+        const fromPlan = stripDot(mark, true);
+        expect(fromPlan.kind, mark).toBe('ringDot');
+        expect(fromPlan.kind, mark).not.toBe(plain.kind);
+        if (plain.kind === 'none' || fromPlan.kind === 'none') throw new Error(mark);
+        expect(fromPlan.color, mark).toBe(plain.color);
+        for (const bg of ['bg', 'card', 'cardAlt', 'accentDim'] as const) {
+          expect(contrastRatio(P[fromPlan.color], P[bg]), `${mark} from the plan on ${bg}`).toBeGreaterThanOrEqual(3);
+        }
+      }
+      expect(stripDot('planned', false)).toEqual({ kind: 'ring', color: STRIP_DOT.outline });
+      expect(stripDot('off', true)).toEqual({ kind: 'none' });
+      expect(stripDot('none', false)).toEqual({ kind: 'none' });
     });
 
     it(`${mode}: the week strip's chosen day, drawn on accentDim, sets its words in text, textDim or accentText, never textFaint`, () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { handOff, logLinkStep } from '../logLink';
+import { handOff, logLinkStep, webHandOff } from '../logLink';
 
 describe('logLinkStep', () => {
   it('a new link opens the sheet', () => {
@@ -62,5 +62,28 @@ describe('handOff', () => {
   it('a navigator with no Today is left as it is', () => {
     const s = tabs(['log-1']);
     expect(handOff(s, 'log-1', 'home', {})).toBe(s);
+  });
+});
+
+describe('webHandOff', () => {
+  it('a /log loaded on its own, alone in the way back, hands over with the reset: the same length, so the browser replaces its entry', () => {
+    expect(webHandOff(tabs(['log-1']), 'log-1', 'index')).toBe('reset');
+    expect(keys(handOff(tabs(['log-1']), 'log-1', 'index'))).toHaveLength(1);
+  });
+
+  it('arriving from Today, the reset steps the browser back onto Today\'s own entry, so Today is never there twice', () => {
+    expect(webHandOff(tabs(['me-1', 'index-1', 'log-1']), 'log-1', 'index')).toBe('reset');
+  });
+
+  it('with another page right behind /log, a replace, so the browser keeps that page and Today follows it', () => {
+    expect(webHandOff(tabs(['me-1', 'log-1']), 'log-1', 'index')).toBe('replace');
+    // Today seen earlier is not right behind /log: a reset would step the browser back past the page in between.
+    expect(webHandOff(tabs(['index-1', 'me-1', 'log-1']), 'log-1', 'index')).toBe('replace');
+  });
+
+  it('a navigator with no way back of its own, or no Today, is handed over with a replace', () => {
+    const { history: _h, ...plain } = tabs(['log-1']);
+    expect(webHandOff(plain, 'log-1', 'index')).toBe('replace');
+    expect(webHandOff(tabs(['log-1']), 'log-1', 'home')).toBe('replace');
   });
 });

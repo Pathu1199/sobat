@@ -4,7 +4,7 @@ import { formatDayLabel, formatDayMonth } from '../core/date';
 import type { Lang } from '../core/types';
 import { swipeStep, type StripDay } from '../core/weekStrip';
 import { makeT } from '../i18n';
-import { STRIP_DAY_HEIGHT, STRIP_DOT } from '../ui/stripGeometry';
+import { STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_SIZE, STRIP_RING, stripDot } from '../ui/stripGeometry';
 import { C, F, lh, S } from '../ui/theme';
 import { IconButton } from './TopBarActions';
 
@@ -79,23 +79,27 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
 }
 
 /**
- * Teal for full, amber for missing, an outline for planned and today; nothing for an off day or a day before the start. Lighter
- * while the day holds meals filled in from the plan. Each colour stands out at 3:1 where the strip is drawn (STRIP_DOT).
+ * Teal for full, amber for missing, a ring for planned and today; nothing for an off day or a day before the start. A day still
+ * holding meals filled in from the plan is a ring with a dot in its middle, in the same colour: told apart by its shape, so it
+ * keeps 3:1 where the strip is drawn (ui/stripGeometry.ts `stripDot`).
  */
 function Dot({ mark, light }: { mark: StripDay['mark']; light: boolean }) {
-  if (mark === 'off' || mark === 'none') return <View style={{ width: 8, height: 8 }} />;
-  const fill = mark === 'full' ? C[STRIP_DOT.full] : mark === 'missing' ? C[STRIP_DOT.missing] : 'transparent';
+  const dot = stripDot(mark, light);
+  const size = { width: STRIP_DOT_SIZE, height: STRIP_DOT_SIZE };
+  if (dot.kind === 'none') return <View style={size} />;
+  const color = C[dot.color];
   return (
     <View
       style={{
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: fill,
-        borderWidth: fill === 'transparent' ? 1.5 : 0,
-        borderColor: C[STRIP_DOT.outline],
-        opacity: light ? 0.45 : 1,
-      }}
-    />
+        ...size,
+        borderRadius: STRIP_DOT_SIZE / 2,
+        backgroundColor: dot.kind === 'dot' ? color : 'transparent',
+        borderWidth: dot.kind === 'dot' ? 0 : STRIP_RING,
+        borderColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+      {dot.kind === 'ringDot' ? <View style={{ width: STRIP_CORE, height: STRIP_CORE, borderRadius: STRIP_CORE / 2, backgroundColor: color }} /> : null}
+    </View>
   );
 }

@@ -200,13 +200,30 @@ function editMeal(menus: DayMenu[], day: DayMenu, mealId: string, change: (m: Pl
   return setMenuDay(menus, day, day.meals.map((m, i) => (i === at ? next : m)), now);
 }
 
-/** Change one line of one meal on one date. Null or a quantity of 0 removes the line; a line that is not there changes nothing. */
-export function setMenuLine(menus: DayMenu[], day: DayMenu, mealId: string, lineIdx: number, next: PlanLine | null, now: Date): DayMenu[] {
+/**
+ * Change one line of one meal on one date. Null or a quantity of 0 removes the line; a line that is not there changes nothing.
+ * `next` may be worked out from the line as `day` holds it (a − / + step), so a tap counts from the menu it lands on.
+ */
+export function setMenuLine(menus: DayMenu[], day: DayMenu, mealId: string, lineIdx: number, next: PlanLine | null | ((line: PlanLine) => PlanLine | null), now: Date): DayMenu[] {
   return editMeal(menus, day, mealId, (m) => {
     if (lineIdx < 0 || lineIdx >= m.lines.length) return m;
-    const lines = m.lines.map((l, j) => (j === lineIdx ? next : l)).filter((l): l is PlanLine => !!l && l.qty > 0);
+    const put = typeof next === 'function' ? next(m.lines[lineIdx]) : next;
+    const lines = m.lines.map((l, j) => (j === lineIdx ? put : l)).filter((l): l is PlanLine => !!l && l.qty > 0);
     return { ...m, lines };
   }, now);
+}
+
+/**
+ * An edit to one date's menu as the store makes it. A date before today is
+ * refused, the menus left as they were: a past day's menu is its record of
+ * what was planned, and what was eaten that day is logged as meals (a past
+ * day's − / + is a draft of the meal, never an edit here). Otherwise the edit
+ * builds on the menu as the store holds it now, else on `day` as it was shown,
+ * so a second quick tap counts from what the first one stored.
+ */
+export function editedMenus(menus: DayMenu[], day: DayMenu, today: ISODate, edit: (menus: DayMenu[], day: DayMenu) => DayMenu[]): DayMenu[] {
+  if (day.date < today) return menus;
+  return edit(menus, menuFor(day.date, menus) ?? day);
 }
 
 /** Add a food to one meal on one date. The same food in the same measure again is a bigger portion, not a second line. */
@@ -321,6 +338,18 @@ export function mealFromLines(input: {
     protein: Math.round(items.reduce((a, i) => a + i.protein, 0)),
     source: input.source,
   };
+}
+
+/**
+ * "Ate as planned" and "Ate this": the slot's planned lines on the menu's
+ * date, or the lines given (a past day's draft, as − / + left it), as a meal
+ * with calories from the database. Null when there is nothing to log: a date
+ * after today, a slot the menu does not have, no line naming a known food.
+ */
+export function planMeal(input: { id: string; menu: DayMenu; slotId: string; lines?: PlanLine[]; foods: FoodItem[]; source: MealSource; now: Date }): Meal | null {
+  const slot = input.menu.meals.find((m) => m.id === input.slotId);
+  if (!slot) return null;
+  return mealFromLines({ id: input.id, date: input.menu.date, slot, lines: input.lines ?? slot.lines, foods: input.foods, source: input.source, now: input.now });
 }
 
 /** Minutes after a slot's time before the app fills it in from the plan. */

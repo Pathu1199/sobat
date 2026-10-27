@@ -202,9 +202,11 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
    * the Undo (undoSteps, through the store) takes the meal away, puts back the meal filled in from the plan that it
    * replaced, and leaves the slot skipped or not exactly as it was.
    */
-  function logWithUndo(slotId: string, kcal: number, log: () => string) {
+  function logWithUndo(slotId: string, kcal: number, log: () => string | null) {
     const before = slotBefore(state, date, slotId);
     const id = log();
+    // Refused by the store (nothing logged): nothing is said, and the sheet stays as it was.
+    if (id === null) return;
     fb.haptic('success');
     fb.notify(fill(t('toast_meal_saved'), { kcal }), {
       label: t('undo'),

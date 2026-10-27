@@ -1,9 +1,10 @@
 import type { UndoStep } from './addSheet';
-import { formatQty } from './basket';
+import { formatQty, steppedLine } from './basket';
 import { foodName, measureName } from './foods';
 import { menuSlots, outsideRecord, planFillId, type DayMenu } from './menu';
 import { DAY_ENDS_AT_HOUR } from './nudge';
 import { slotOf } from './pattern';
+import type { PlanLine } from './routine';
 import type { FoodItem, ISODate, Lang, Meal, MealType } from './types';
 import { dayStatus, lineInfo } from './weekPlan';
 
@@ -89,23 +90,7 @@ export function dayView(input: {
   }
   const skipped = new Set(input.skippedIds);
   const rows: MenuRow[] = slots.map((s) => {
-    const lines: RowLine[] = [];
-    s.meal.lines.forEach((line, idx) => {
-      const info = lineInfo(line, input.foods, input.lang);
-      if (info)
-        lines.push({
-          idx,
-          foodId: line.foodId,
-          name: foodName(info.food, input.lang),
-          qty: line.qty,
-          qtyText: formatQty(line.qty),
-          unit: info.unit,
-          measure: measureName(info.food, info.unit, input.lang),
-          grams: info.grams,
-          kcal: info.kcal,
-          protein: info.protein,
-        });
-    });
+    const lines = rowLines(s.meal.lines, input.foods, input.lang);
     const meals = bySlot.get(s.id) ?? [];
     const state: RowState = mode === 'future' ? 'plan' : meals.length > 0 ? 'done' : skipped.has(s.id) ? 'skipped' : 'open';
     return {
@@ -146,6 +131,47 @@ export function dayView(input: {
     autoIds: rows.flatMap((r) => r.autoIds),
     canFill: mode === 'past' && judged && required.length > 0 && dayMeals.length === 0 && rows.every((r) => r.state !== 'skipped'),
   };
+}
+
+/** Planned lines as a row shows them, each with its place in `lines`; a food gone from the database is left out. */
+export function rowLines(lines: PlanLine[], foods: FoodItem[], lang: Lang): RowLine[] {
+  const out: RowLine[] = [];
+  lines.forEach((line, idx) => {
+    const info = lineInfo(line, foods, lang);
+    if (info)
+      out.push({
+        idx,
+        foodId: line.foodId,
+        name: foodName(info.food, lang),
+        qty: line.qty,
+        qtyText: formatQty(line.qty),
+        unit: info.unit,
+        measure: measureName(info.food, info.unit, lang),
+        grams: info.grams,
+        kcal: info.kcal,
+        protein: info.protein,
+      });
+  });
+  return out;
+}
+
+/**
+ * A past day's − / + on an open slot changes a draft of what was eaten, never
+ * that day's menu (its record of what was planned): the slot's planned lines
+ * until a tap, each step on the measure's grid, and − to nothing takes the
+ * food out of the draft. "Ate this" logs the draft. A step on no line changes
+ * nothing.
+ */
+export function stepDraft(lines: PlanLine[], idx: number, by: 1 | -1): PlanLine[] {
+  const line = lines[idx];
+  if (!line) return lines;
+  const next = steppedLine(line, by);
+  return next ? lines.map((l, i) => (i === idx ? next : l)) : lines.filter((_, i) => i !== idx);
+}
+
+/** One draft per date and slot, so a draft never follows the person to another day. */
+export function draftKey(date: ISODate, slotId: string): string {
+  return `${date}:${slotId}`;
 }
 
 /** A button a row of the day's menu offers (the words are DayMenu's). */
