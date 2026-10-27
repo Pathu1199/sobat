@@ -244,14 +244,14 @@ export default function PlanScreen() {
                     </View>
                   </Pressable>
                   <Row style={{ gap: 4 }}>
-                    <Pressable onPress={() => changeQty(meal.id, i, line, -1)} hitSlop={6} accessibilityLabel="−" style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+                    <Pressable onPress={() => changeQty(meal.id, i, line, -1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('less')} style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                       <Ionicons name="remove" size={16} color={C.text} />
                     </Pressable>
                     <Pressable onPress={() => cycleUnit(meal.id, i, line)} style={{ minWidth: 64, alignItems: 'center' }}>
                       <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{qtyText(line.qty)}</Text>
                       <Text style={{ color: C.accentText, fontSize: F.small }} numberOfLines={1}>{`${unitName(info.unit)} · ${info.grams} g`}</Text>
                     </Pressable>
-                    <Pressable onPress={() => changeQty(meal.id, i, line, 1)} hitSlop={6} accessibilityLabel="+" style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+                    <Pressable onPress={() => changeQty(meal.id, i, line, 1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('more')} style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                       <Ionicons name="add" size={16} color={C.text} />
                     </Pressable>
                   </Row>

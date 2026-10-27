@@ -141,14 +141,14 @@ export function ActivityPanel() {
           <View style={{ gap: 14 }}>
             <Micro>{t('act_how_long')}</Micro>
             <Row style={{ gap: 10, alignItems: 'center' }}>
-              <Pressable onPress={() => setMinutes((m) => Math.max(5, m - 5))} accessibilityLabel="−" style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+              <Pressable onPress={() => setMinutes((m) => Math.max(5, m - 5))} accessibilityRole="button" accessibilityLabel={t('less')} style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="remove" size={22} color={C.text} />
               </Pressable>
               <Text style={{ flex: 1, textAlign: 'center', color: C.text, fontSize: F.number, fontWeight: '500' }}>
                 {minutes}
                 <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` ${t('act_min')}`}</Text>
               </Text>
-              <Pressable onPress={() => setMinutes((m) => Math.min(300, m + 5))} accessibilityLabel="+" style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+              <Pressable onPress={() => setMinutes((m) => Math.min(300, m + 5))} accessibilityRole="button" accessibilityLabel={t('more')} style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="add" size={22} color={C.text} />
               </Pressable>
             </Row>

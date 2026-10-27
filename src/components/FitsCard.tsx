@@ -94,7 +94,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
           <Pressable onPress={() => setSeed((s) => s + 1)} accessibilityRole="button" accessibilityLabel={t('fits_shuffle')} hitSlop={8}>
             <Ionicons name="shuffle-outline" size={18} color={C.accent} />
           </Pressable>
-          <Pressable onPress={() => setOpen((o) => !o)} accessibilityRole="button" hitSlop={8}>
+          <Pressable onPress={() => setOpen((o) => !o)} accessibilityRole="button" accessibilityLabel={open ? t('show_less') : t('show_more')} accessibilityState={{ expanded: open }} hitSlop={15}>
             <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />
           </Pressable>
         </Row>

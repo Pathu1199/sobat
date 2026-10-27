@@ -55,7 +55,7 @@ export default function Journey() {
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
           <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t(`level_${g.level.key}`)}</Text>
-          <Micro>{g.level.next ? `${g.points} / ${g.level.next} ${t('xp')}` : `${g.points} ${t('xp')}`}</Micro>
+          <Micro>{fill(t('points_n'), { n: g.level.next ? `${g.points} / ${g.level.next}` : g.points })}</Micro>
         </Row>
         <Bar value={g.level.progress * 100} max={100} color={C.amber} />
         <Micro color={C.textFaint}>{t('xp_how')}</Micro>

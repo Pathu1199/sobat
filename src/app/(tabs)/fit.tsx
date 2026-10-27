@@ -190,7 +190,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
               {i > 0 ? <Divider /> : null}
               <Row style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
                 <Small>{formatDayLabel(w.date, lang)}</Small>
-                <Small color={w.status === 'done' ? C.accentText : C.textFaint}>{w.status === 'done' ? `${t('done')} · ${w.minutes} min` : t('skip_session')}</Small>
+                <Small color={w.status === 'done' ? C.accentText : C.textFaint}>{w.status === 'done' ? `${t('done')} · ${w.minutes} ${t('act_min')}` : t('skip_session')}</Small>
               </Row>
             </View>
           ))}

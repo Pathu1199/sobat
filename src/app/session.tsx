@@ -24,7 +24,6 @@ export default function SessionScreen() {
   const fb = useFeedback();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
-  const en = makeT('en');
   const { width } = useWindowDimensions();
 
   const startDate = app.state.weights[0]?.date ?? app.today;
@@ -129,12 +128,12 @@ export default function SessionScreen() {
     return (
       <Screen>
         <Card tone={C.accent}>
-          <Micro color={C.accentText}>{en(done ? 'session_complete' : 'session_stopped')}</Micro>
+          <Micro color={C.accentText}>{t(done ? 'session_complete' : 'session_stopped')}</Micro>
           <Text style={{ color: C.text, fontSize: F.number, fontWeight: '500' }}>
             {reached}
             <Text style={{ color: C.textFaint, fontSize: F.title }}> / {session.exercises.length}</Text>
           </Text>
-          <Micro>{`${elapsedMinutes} min`}</Micro>
+          <Micro>{`${elapsedMinutes} ${t('act_min')}`}</Micro>
           <Divider />
           <Micro>{t('how_did_it_feel')}</Micro>
           <Row style={{ gap: 6 }}>
@@ -180,7 +179,7 @@ export default function SessionScreen() {
       <Bar value={progressAt(steps, index)} max={1} color={C.accent} />
       <Row style={{ justifyContent: 'space-between' }}>
         <Micro>{`${index + 1} / ${steps.length}`}</Micro>
-        <Micro>{`${Math.round(totalSeconds(steps) / 60)} min`}</Micro>
+        <Micro>{`${Math.round(totalSeconds(steps) / 60)} ${t('act_min')}`}</Micro>
       </Row>
 
       <Card tone={accent}>

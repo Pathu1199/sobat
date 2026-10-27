@@ -127,7 +127,7 @@ export default function TodayScreen() {
 
   const queued = pendingCount(state.photoQueue);
   const subtitle = `${formatDayLabel(today, lang)}${streakDays > 0 ? ` · ${streakDays} ${t('streak_days')}` : ''}`;
-  const titleName = `${greeting}, ${state.profile.name || 'there'}`;
+  const titleName = state.profile.name ? `${greeting}, ${state.profile.name}` : greeting;
   const waterMarker = isToday ? expectedWaterByHour(hour, state.settings.waterGoalMl) / Math.max(1, state.settings.waterGoalMl) : undefined;
 
 
@@ -287,7 +287,7 @@ export default function TodayScreen() {
         onPress={() => setMore((m) => !m)}
         accessibilityRole="button"
         style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, opacity: pressed ? 0.7 : 1 })}>
-        <Micro color={C.textDim}>{`${t('more_today')} · ${t('day_score')} ${score.total}`}</Micro>
+        <Micro color={C.textDim}>{t('more_today')}</Micro>
         <Ionicons name={more ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />
       </Pressable>
       {more ? (

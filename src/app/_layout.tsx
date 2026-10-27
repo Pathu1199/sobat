@@ -122,21 +122,21 @@ function AppShell() {
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="admin" options={{ title: 'Admin' }} />
-        <Stack.Screen name="journey" options={{ title: 'Journey' }} />
-        <Stack.Screen name="history" options={{ title: 'History' }} />
-        <Stack.Screen name="plan" options={{ title: 'Diet plan' }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
-        <Stack.Screen name="photo" options={{ title: 'Photo' }} />
-        <Stack.Screen name="sleep" options={{ title: 'Sleep' }} />
-        <Stack.Screen name="memory" options={{ title: 'Memory' }} />
+        <Stack.Screen name="admin" options={{ title: t('hdr_admin') }} />
+        <Stack.Screen name="journey" options={{ title: t('hdr_journey') }} />
+        <Stack.Screen name="history" options={{ title: t('hdr_history') }} />
+        <Stack.Screen name="plan" options={{ title: t('hdr_plan') }} />
+        <Stack.Screen name="settings" options={{ title: t('hdr_settings') }} />
+        <Stack.Screen name="photo" options={{ title: t('hdr_photo') }} />
+        <Stack.Screen name="sleep" options={{ title: t('hdr_sleep') }} />
+        <Stack.Screen name="memory" options={{ title: t('hdr_memory') }} />
         <Stack.Screen name="routine" options={{ title: t('pattern_title') }} />
-        <Stack.Screen name="guide" options={{ title: 'Guide' }} />
+        <Stack.Screen name="guide" options={{ title: t('hdr_guide') }} />
         <Stack.Screen name="tour" options={{ headerShown: false }} />
-        <Stack.Screen name="foods" options={{ title: 'Foods' }} />
-        <Stack.Screen name="recipes" options={{ title: 'Recipes' }} />
-        <Stack.Screen name="session" options={{ title: 'Session' }} />
-        <Stack.Screen name="scan" options={{ title: 'Scan' }} />
+        <Stack.Screen name="foods" options={{ title: t('hdr_foods') }} />
+        <Stack.Screen name="recipes" options={{ title: t('hdr_recipes') }} />
+        <Stack.Screen name="session" options={{ title: t('hdr_session') }} />
+        <Stack.Screen name="scan" options={{ title: t('hdr_scan') }} />
         <Stack.Screen name="permissions" options={{ headerShown: false }} />
       </Stack>
       <BreakOverlay />
