@@ -1,20 +1,14 @@
 import { useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
+import type { BreakSettings } from '../core/breaks';
 import { slotStates } from '../core/pattern';
-import { lastLogDate, plannedReminders, type Reminder } from '../core/reminders';
+import { DAILY_IDS, dailyReminders, LONG_BREAK_ID, lastLogDate, plannedReminders, type Reminder } from '../core/reminders';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { cancel, scheduleAt, scheduleDaily, scheduledIds, scheduleRepeating, setupAndroidChannel } from './notify';
+import { firebaseEnabled } from './firebase';
+import { cancel, scheduleAt, scheduleDaily, scheduledIds, setupAndroidChannel } from './notify';
+import { useAuth } from './useAuth';
 import { useMantra } from './useMantra';
-
-const IDS = {
-  sleep: 'sobat-sleep-checkin',
-  water: 'sobat-water',
-  dinner: 'sobat-dinner',
-  review: 'sobat-day-review',
-  long: 'sobat-long-break',
-  mantra: 'sobat-mantra',
-};
 
 /** Everything planned a week ahead carries this, so it can be told apart from the daily ones. */
 const PLANNED = 'sobat-r-';
@@ -30,6 +24,22 @@ const osId = (r: Reminder) => `${PLANNED}${r.id}@${signature(r)}`;
 
 // Runs are chained so two never interleave their cancels and adds.
 let chain: Promise<void> = Promise.resolve();
+let dailyChain: Promise<void> = Promise.resolve();
+
+/**
+ * Whether this device may hold reminders, and whether that is known yet.
+ * Reminders belong to a person: a device that is signed out, or reset and not
+ * onboarded again, holds none, so nothing keeps pinging after either. Not
+ * known until the store has loaded and the session has been reported; a store
+ * that failed to load is never taken as the person's.
+ */
+export function useReminderGate(): { known: boolean; active: boolean } {
+  const { ready, storageError, state } = useApp();
+  const { user, ready: authReady } = useAuth();
+  const known = ready && storageError !== 'load' && (!firebaseEnabled || authReady);
+  const active = state.profile.onboarded && (!firebaseEnabled || user !== null);
+  return { known, active };
+}
 
 /**
  * Registers the reminders that must fire while the app is closed. The in-app
@@ -40,52 +50,48 @@ let chain: Promise<void> = Promise.resolve();
  */
 export function useScheduledReminders() {
   const app = useApp();
-  const { nudgesEnabled, waterGoalMl, quietStartHour, quietEndHour, offDays } = app.state.settings;
+  const { nudgesEnabled, quietStartHour, quietEndHour, offDays } = app.state.settings;
   const lang = app.state.profile.lang;
-  const onboarded = app.state.profile.onboarded;
   const mantra = useMantra();
   const mantraText = mantra?.text ?? '';
   const routine = app.state.routine;
-  const { today, hour, ready, storageError } = app;
+  // By value: a sync landing rebuilds this object unchanged, and must not re-register the day's reminders.
+  const breaksJson = JSON.stringify(app.state.breakSettings);
+  const { today, hour } = app;
+  const { known, active } = useReminderGate();
 
+  // The daily ones: whatever the plan does not hold is cancelled, so a sign-out
+  // or a reset clears them and the repeating long break older builds left goes too.
   useEffect(() => {
-    if (Platform.OS === 'web' || !onboarded) return;
-    const t = makeT(lang);
-
-    (async () => {
-      await setupAndroidChannel();
-
-      if (!nudgesEnabled) {
-        await Promise.all(Object.values(IDS).map(cancel));
-        return;
-      }
-
-      // Morning check-in, while last night is still fresh.
-      await scheduleDaily(IDS.sleep, 7, 30, t('sleep_checkin'), t('bed_time'));
-      // The day's line, at eight. Re-registered daily so it is that day's line.
-      if (mantraText) await scheduleDaily(IDS.mantra, 8, 0, t('mantra_title'), mantraText);
-      // A single mid-afternoon water prompt; the in-app engine handles the rest.
-      await scheduleDaily(IDS.water, 15, 0, t('add_water'), t('act_drink_water'));
-      // Nudge dinner earlier than the quiet hours start. With the pattern on, the dinner slot's own prompt does this.
-      if (routine.enabled) await cancel(IDS.dinner);
-      else await scheduleDaily(IDS.dinner, Math.max(18, quietStartHour - 3), 30, t('dinner'), t('act_light_dinner'));
-      // The day recap, just before things wind down.
-      await scheduleDaily(IDS.review, 21, 30, t('day_review'), t('write_review'));
-
-      // The phone cannot blank its own screen, so a long break is a
-      // notification. A repeating notification cannot respect quiet hours or a
-      // schedule, so when either is in force, do not register it at all.
-      const br = app.state.breakSettings;
-      const paused = br.pausedUntilMs !== null && Date.now() < br.pausedUntilMs;
-      if (br.enabled && br.long.enabled && !paused && br.schedule === null) {
-        await scheduleRepeating(IDS.long, br.long.everyMinutes * 60, t('brk_long'), t('brk_long_hint'));
-      } else {
-        await cancel(IDS.long);
-      }
-    })().catch(() => {
-      // Permission refused or the OS declined. The app still works.
+    if (Platform.OS === 'web' || !known) return;
+    const want = dailyReminders({
+      active,
+      nudgesEnabled,
+      routineEnabled: routine.enabled,
+      quietStartHour,
+      quietEndHour,
+      mantra: mantraText,
+      breaks: JSON.parse(breaksJson) as BreakSettings,
+      nowMs: Date.now(),
+      t: makeT(lang),
     });
-  }, [nudgesEnabled, waterGoalMl, quietStartHour, lang, onboarded, app.state.breakSettings, mantraText, routine.enabled]);
+    let stale = false;
+    dailyChain = dailyChain
+      .then(async () => {
+        if (stale) return;
+        await setupAndroidChannel();
+        const ids = new Set(want.map((r) => r.id));
+        for (const id of [...Object.values(DAILY_IDS), LONG_BREAK_ID]) if (!ids.has(id)) await cancel(id);
+        for (const id of await scheduledIds()) if (id.startsWith(LONG_BREAK_ID) && !ids.has(id)) await cancel(id);
+        for (const r of want) await scheduleDaily(r.id, r.hour, r.minute, r.title, r.body);
+      })
+      .catch(() => {
+        // Permission refused or the OS declined. The app still works.
+      });
+    return () => {
+      stale = true;
+    };
+  }, [known, active, nudgesEnabled, quietStartHour, quietEndHour, lang, breaksJson, mantraText, routine.enabled]);
 
   // Slots done or skipped today, as one string so the memo below only moves when the set does.
   const doneKey = useMemo(() => {
@@ -100,7 +106,7 @@ export function useScheduledReminders() {
   const lastLog = useMemo(() => lastLogDate(app.state.meals, today), [app.state.meals, today]);
 
   const wanted = useMemo(() => {
-    if (Platform.OS === 'web' || !ready || !onboarded || !nudgesEnabled) return [];
+    if (Platform.OS === 'web' || !active || !nudgesEnabled) return [];
     return plannedReminders({
       today,
       nowMinutes: hour * 60,
@@ -113,12 +119,12 @@ export function useScheduledReminders() {
       lang,
       t: makeT(lang),
     });
-  }, [ready, onboarded, nudgesEnabled, today, hour, routine, doneKey, lastLog, offDays, quietStartHour, quietEndHour, lang]);
+  }, [active, nudgesEnabled, today, hour, routine, doneKey, lastLog, offDays, quietStartHour, quietEndHour, lang]);
 
-  // Runs once the store is loaded, onboarded or not: after a sign-out or a reset `wanted` is empty and the
-  // planned week is cancelled. Never on a store that failed to load, whose empty state is not the person's.
+  // Runs once the store and the session are known, whoever is there: after a sign-out or a reset `wanted` is
+  // empty and the planned week is cancelled. Never on a store that failed to load, whose empty state is not the person's.
   useEffect(() => {
-    if (Platform.OS === 'web' || !ready || storageError === 'load') return;
+    if (Platform.OS === 'web' || !known) return;
     let stale = false;
     chain = chain
       .then(async () => {
@@ -149,5 +155,5 @@ export function useScheduledReminders() {
     return () => {
       stale = true;
     };
-  }, [wanted, ready, storageError]);
+  }, [wanted, known]);
 }

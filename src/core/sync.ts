@@ -17,7 +17,8 @@ export const DEVICE_SETTINGS = ['ollamaUrl', 'ollamaFallbackUrl', 'textModel', '
 type DeviceKey = (typeof DEVICE_SETTINGS)[number];
 
 /** Per-device caches that have no business in the account. */
-type LocalKey = 'chat' | 'photoQueue' | 'usage' | 'tips';
+const LOCAL_KEYS = ['chat', 'photoQueue', 'usage', 'tips'] as const;
+type LocalKey = (typeof LOCAL_KEYS)[number];
 
 export type CloudSettings = Omit<Settings, DeviceKey>;
 export type CloudState = Omit<AppState, LocalKey | 'settings'> & { settings: CloudSettings };
@@ -140,11 +141,12 @@ function mergeCollection(idOf: (r: AnyRecord) => string, base: unknown, local: u
  * Three-way merge. `base` is the file as this device last saw it; null means
  * this device has never synced. With no base there is nothing to say which
  * side changed, so a record present on both sides is taken from the device
- * (what the person is looking at), and a device that was never used takes
- * the account's copy wholesale.
+ * (what the person is looking at). A device holding nothing takes the
+ * account's copy wholesale: never used, or reset with an old base still
+ * about, its emptiness is not a deletion.
  */
 export function merge3(base: CloudState | null, local: CloudState, remote: CloudState): CloudState {
-  if (base === null && isPristine(local)) return remote;
+  if (isPristine(local) && (base === null || !isPristine(base))) return remote;
   const b = (base ?? {}) as Partial<CloudState>;
   const out = {} as AnyRecord;
 
@@ -172,5 +174,223 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
     }
   }
 
+  // Keys this build does not know were written by a newer one. They are
+  // merged like any single value and never dropped: a dropped key would reach
+  // every other device as a deletion. A device that never had one has not
+  // changed it.
+  const known = new Set<string>([...COLLECTIONS.map((c) => c.key), ...SINGLETONS, ...LOCAL_KEYS]);
+  const l = local as unknown as AnyRecord;
+  const r = remote as unknown as AnyRecord;
+  for (const key of new Set([...Object.keys(l), ...Object.keys(r)])) {
+    if (known.has(key)) continue;
+    const mine = key in l && (base === null || stable(l[key]) !== stable((b as AnyRecord)[key]));
+    const v = mine ? l[key] : r[key];
+    if (v !== undefined) out[key] = v;
+  }
+
   return out as unknown as CloudState;
+}
+
+/**
+ * A file written by a build newer than this one. This build must not write
+ * over it: whatever it does not understand, it would drop or turn back.
+ */
+export function fromNewerApp(file: CloudState, supported: number): boolean {
+  return typeof file.version === 'number' && file.version > supported;
+}
+
+/**
+ * Put a merge result on the device. The merge was worked out from `local`,
+ * the device as it was when the request went out; whatever was done here
+ * since is kept on top of it, the same way the merge kept this device's
+ * edits over the account's.
+ */
+export function landMerge(now: AppState, local: CloudState, merged: CloudState): AppState {
+  return applyCloud(now, merge3(local, forCloud(now), merged));
+}
+
+/** The account file as the relay hands it over: its text, and which version that is. */
+export type AccountFile = { state: string | null; modifiedTime: string | null };
+export type WriteResult = { ok: true; modifiedTime: string } | { ok: false; stale: AccountFile };
+
+/** Why a round stopped without an answer to remember. */
+export class RoundStop extends Error {
+  constructor(public readonly reason: 'abandoned' | 'update_app' | 'unreadable' | 'kept_changing') {
+    super(reason);
+  }
+}
+
+export type RoundIO = {
+  /** This device's state as it is now, every change already made included. */
+  readNow: () => Promise<AppState>;
+  /** Put a merge worked out from `local` on the device. */
+  land: (local: CloudState, merged: CloudState) => void;
+  get: () => Promise<AccountFile>;
+  /** Write the file, built on version `baseModifiedTime`; refused if the file has moved past it. */
+  put: (state: CloudState, baseModifiedTime: string | null) => Promise<WriteResult>;
+  /** False once the account changed: whatever comes back then belongs to nobody here. */
+  live: () => boolean;
+};
+
+const isObject = (v: unknown): v is AnyRecord => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/**
+ * The account's file as a state, or null when there is no file yet. A file
+ * that is there but not a state is refused: merged, it would read as every
+ * record deleted elsewhere; written over, it would be gone.
+ */
+export function readAccountFile(text: string | null): CloudState | null {
+  if (!text) return null;
+  let v: unknown;
+  try {
+    v = JSON.parse(text);
+  } catch {
+    throw new RoundStop('unreadable');
+  }
+  if (!isObject(v) || !isObject(v.profile) || !Array.isArray(v.meals)) throw new RoundStop('unreadable');
+  if (COLLECTIONS.some(({ key }) => v[key] !== undefined && !Array.isArray(v[key]))) throw new RoundStop('unreadable');
+  return v as unknown as CloudState;
+}
+
+/**
+ * One round: push if there are changes, pull if asked, merge whatever the
+ * relay says is newer, land it on the device and write it back. Resolves with
+ * the file the account now holds, or null when nothing moved on either side.
+ *
+ * When a write is refused because another device wrote first, this device
+ * already holds the file it just merged, so that file, not the older base, is
+ * what the next try is merged against: otherwise an edit made elsewhere
+ * between the two tries would read as undone here.
+ */
+export async function syncRound(o: {
+  pull: boolean;
+  base: CloudState | null;
+  modifiedTime: string | null;
+  /** The newest state version this build understands. */
+  supported: number;
+  io: RoundIO;
+  tries?: number;
+}): Promise<{ base: CloudState; modifiedTime: string | null } | null> {
+  const { io } = o;
+  const check = () => {
+    if (!io.live()) throw new RoundStop('abandoned');
+  };
+  let base = o.base;
+  let baseTime = o.modifiedTime;
+  // A file already in hand, from a refused write.
+  let inHand: AccountFile | null = null;
+  for (let attempt = 0; attempt < (o.tries ?? 3); attempt++) {
+    if (base && fromNewerApp(base, o.supported)) throw new RoundStop('update_app');
+    const local = forCloud(await io.readNow());
+    check();
+    let remote = inHand;
+    if (!remote) {
+      const changed = base === null || !sameCloud(local, base);
+      if (changed && !o.pull && base !== null) {
+        // The common case: push on top of the version we know.
+        const res = await io.put(local, baseTime);
+        check();
+        if (res.ok) return { base: local, modifiedTime: res.modifiedTime };
+        remote = res.stale;
+      } else {
+        remote = await io.get();
+        check();
+        if (!changed && remote.modifiedTime === baseTime) return null;
+      }
+    }
+    const theirs = readAccountFile(remote.state);
+    if (theirs && fromNewerApp(theirs, o.supported)) throw new RoundStop('update_app');
+    const merged = theirs ? merge3(base, local, theirs) : local;
+    if (!sameCloud(merged, local)) io.land(local, merged);
+    // The account already has exactly this; nothing to write.
+    if (theirs && sameCloud(merged, theirs)) return { base: merged, modifiedTime: remote.modifiedTime };
+    const res = await io.put(merged, remote.modifiedTime);
+    check();
+    if (res.ok) return { base: merged, modifiedTime: res.modifiedTime };
+    base = theirs;
+    baseTime = remote.modifiedTime;
+    inHand = res.stale;
+  }
+  throw new RoundStop('kept_changing');
+}
+
+/**
+ * The account file as this device last saw it, and which version that was:
+ * the base every merge is worked out against. Kept on disk beside the state
+ * so a restart still knows which side changed what; without it, every record
+ * deleted or edited on another device since would come back as it is here.
+ */
+export type SavedBase = { uid: string; base: CloudState; modifiedTime: string | null };
+
+export function encodeSavedBase(s: SavedBase): string {
+  return JSON.stringify(s);
+}
+
+export function readSavedBase(raw: string | null): SavedBase | null {
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw) as Partial<SavedBase> | null;
+    const b = v?.base as Partial<CloudState> | undefined;
+    if (!v || typeof v.uid !== 'string' || !b || typeof b !== 'object' || !b.profile || !Array.isArray(b.meals)) return null;
+    if (v.modifiedTime !== null && typeof v.modifiedTime !== 'string') return null;
+    return { uid: v.uid, base: v.base as CloudState, modifiedTime: v.modifiedTime };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Where the first sync after binding to an account starts from. Data another
+ * account left on the device is put aside for them before anything syncs
+ * (`move.from` names whose it is), so none of it reaches this account and none
+ * of it is lost; what was put aside for this account comes back with it,
+ * also onto a device a sign-out left empty (`move.from` null). The device is
+ * tagged as this account's at once, not after a sync that may never come. A
+ * saved base only describes the account it was saved for, and only the state
+ * it was saved beside: if that state could not be read, nothing on disk is
+ * known to be anyone's.
+ */
+export function bindStart(o: {
+  uid: string;
+  owner: string | null;
+  saved: SavedBase | null;
+  loaded: boolean;
+  /** Something was put aside on this device for this account. */
+  parked: boolean;
+  /** The device holds nothing worth keeping. */
+  empty: boolean;
+}): {
+  move: { from: string | null } | null;
+  tag: boolean;
+  base: CloudState | null;
+  modifiedTime: string | null;
+} {
+  if (!o.loaded) return { move: null, tag: false, base: null, modifiedTime: null };
+  const holder = o.owner ?? o.saved?.uid ?? null;
+  if (holder !== null && holder !== o.uid) return { move: { from: holder }, tag: true, base: null, modifiedTime: null };
+  if (holder === null && o.parked && o.empty) return { move: { from: null }, tag: true, base: null, modifiedTime: null };
+  if (!o.saved || o.saved.uid !== o.uid) return { move: null, tag: true, base: null, modifiedTime: null };
+  return { move: null, tag: true, base: o.saved.base, modifiedTime: o.saved.modifiedTime };
+}
+
+/**
+ * Whether the account holds everything on this device that it should: the
+ * file it was last seen holding is exactly the device's record. A status that
+ * says "synced" can be a moment behind an edit; this cannot.
+ */
+export function inAccount(base: CloudState | null, now: AppState): boolean {
+  return base !== null && sameCloud(forCloud(now), base);
+}
+
+/**
+ * What signing out does to this device. It is only handed back empty when
+ * the account is known to hold everything; with sync not set up there is no
+ * account copy at all, so the device's copy is the only one, and a store that
+ * could not be read may hold what no account has. Otherwise the person is
+ * asked first, and if they sign out anyway the data stays on the device for
+ * the same account to pick up again.
+ */
+export function signOutPlan(o: { configured: boolean; upToDate: boolean; force: boolean; loaded: boolean }): 'wipe' | 'keep' | 'ask' {
+  if (o.configured && o.upToDate && o.loaded) return 'wipe';
+  return o.force ? 'keep' : 'ask';
 }

@@ -8,6 +8,7 @@ import { newId } from '../core/id';
 import { prunePhotos } from '../services/photoStore';
 import { useClock } from '../services/useClock';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
+import { parkedPhotoIds, switchStored } from '../core/accounts';
 import { burnedOn, eatBack } from '../core/activity';
 import { streak } from '../core/insights';
 import { isOffDay } from '../core/week';
@@ -23,7 +24,11 @@ import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal,
 import { EMPTY_STATE } from './defaults';
 import { migrateState } from './migrate';
 
-const KEY = 'sobat.state.v1';
+export const STATE_KEY = 'sobat.state.v1';
+/** The account file the stored state was last merged with. Only ever written in the same call as the state, and removed with it. */
+export const CLOUD_BASE_KEY = 'sobat.state.v1.cloudBase';
+/** Whose data the stored state is, so another account signing in never sees or syncs it. */
+export const OWNER_KEY = 'sobat.cloud.owner';
 
 const FOODS = foodsJson as unknown as FoodItem[];
 const EXERCISES = exercisesJson as unknown as Exercise[];
@@ -84,9 +89,21 @@ type Ctx = {
   /** Rupees counted against today, bulk buys spread over their days. */
   spentToday: number;
   importState: (json: string) => { ok: boolean; error?: string };
+  /** Apply a change worked out away from the store (a sync round) to the state as it is when the change lands, migrated like an import. */
+  mergeState: (fn: (s: AppState) => AppState) => void;
+  /** The state with every change already made applied, including one not rendered yet. */
+  readNow: () => Promise<AppState>;
+  /**
+   * Another account signed in here: put this device's data aside for `from` (null: it holds nobody's),
+   * never thrown away, and bring back what was aside for `to`, or start empty. Resolves with `to`'s
+   * saved sync base, if one came back. Throws, with nothing changed, if the data could not be put aside.
+   */
+  switchAccount: (from: string | null, to: string) => Promise<string | null>;
   tipToday: string | null;
   screenMinutesToday: number;
   resetAll: () => void;
+  /** Keep the sync base beside the state: written with the next save of the state, in the same storage call. */
+  saveCloudBase: (json: string) => void;
   exportJSON: () => string;
   /** 'load': the stored state could not be read and nothing will be written over it. 'save': the last write failed. */
   storageError: 'load' | 'save' | null;
@@ -105,15 +122,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState<'load' | 'save' | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The sync base waiting to go out with the next save. A base on disk that is
+  // newer than the state beside it would read the missing records as deleted here.
+  const pendingBase = useRef<string | null>(null);
+  const [baseTick, setBaseTick] = useState(0);
+  // While one account's data is being put aside, no save may write it back over the next one's,
+  // nor may a save armed before the switch ended: each switch starts a new generation.
+  const switching = useRef(false);
+  const saveGen = useRef(0);
 
   useEffect(() => {
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(KEY);
+        const raw = await AsyncStorage.getItem(STATE_KEY);
         if (raw) {
           const loaded = migrateState(JSON.parse(raw));
           setState(loaded);
-          void prunePhotos(loaded.photoQueue.map((p) => p.id));
+          // Photos queued by an account whose data is put aside wait for it too.
+          parkedPhotoIds(AsyncStorage, STATE_KEY)
+            .then((parked) => prunePhotos([...loaded.photoQueue.map((p) => p.id), ...parked]))
+            .catch(() => {});
         }
       } catch {
         // The store is there but could not be read or parsed. Running on in
@@ -131,12 +159,68 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!ready || storageError === 'load') return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
+    // Taken now, beside the state this render holds, not whatever is pending when the timer fires.
+    const base = pendingBase.current;
+    const gen = saveGen.current;
     saveTimer.current = setTimeout(() => {
-      AsyncStorage.setItem(KEY, JSON.stringify(state))
-        .then(() => setStorageError((e) => (e === 'save' ? null : e)))
+      if (switching.current || gen !== saveGen.current) return;
+      const pairs: [string, string][] = [[STATE_KEY, JSON.stringify(state)]];
+      if (base !== null) pairs.push([CLOUD_BASE_KEY, base]);
+      AsyncStorage.multiSet(pairs)
+        .then(() => {
+          if (pendingBase.current === base) pendingBase.current = null;
+          setStorageError((e) => (e === 'save' ? null : e));
+        })
         .catch(() => setStorageError('save'));
     }, 250);
-  }, [state, ready, storageError]);
+  }, [state, ready, storageError, baseTick]);
+
+  // Read through the update queue, so it sees a reset or a merge the moment it was asked for.
+  const readNow = useCallback(
+    () =>
+      new Promise<AppState>((resolve) =>
+        setState((s) => {
+          resolve(s);
+          return s;
+        }),
+      ),
+    [],
+  );
+
+  const switchAccount = useCallback(
+    async (from: string | null, to: string) => {
+      switching.current = true;
+      saveGen.current += 1;
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      pendingBase.current = null;
+      try {
+        const current = await readNow();
+        const back = await switchStored(
+          AsyncStorage,
+          { state: STATE_KEY, base: CLOUD_BASE_KEY, owner: OWNER_KEY },
+          { from, to, current: JSON.stringify(current), empty: JSON.stringify(EMPTY_STATE) },
+        );
+        let next = EMPTY_STATE;
+        try {
+          if (back.state) next = migrateState(JSON.parse(back.state));
+        } catch {
+          // What came back could not be read. It is on disk as the state now; nothing may be written over it.
+          setStorageError('load');
+        }
+        setState(next);
+        return back.base;
+      } finally {
+        saveGen.current += 1;
+        switching.current = false;
+      }
+    },
+    [readNow],
+  );
+
+  const saveCloudBase = useCallback((json: string) => {
+    pendingBase.current = json;
+    setBaseTick((n) => n + 1);
+  }, []);
 
   // Not `toISODate()` at render time: nothing would re-render at midnight and
   // the whole app would keep working against yesterday.
@@ -298,18 +382,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return { ok: false, error: 'bad_json' };
         }
       },
+      mergeState: (fn) => update((s) => migrateState(fn(s))),
+      readNow,
+      switchAccount,
       setTip: (text) =>
         update((s) => ({ ...s, tips: [...s.tips.filter((t) => t.date !== today).slice(-30), { date: today, text, lang: s.profile.lang }] })),
       resetAll: () => {
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        pendingBase.current = null;
         setState(EMPTY_STATE);
         // A deliberate reset is the one time an unreadable store may be replaced.
         setStorageError(null);
-        AsyncStorage.removeItem(KEY).catch(() => {});
+        AsyncStorage.multiRemove([STATE_KEY, CLOUD_BASE_KEY]).catch(() => {});
       },
+      saveCloudBase,
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

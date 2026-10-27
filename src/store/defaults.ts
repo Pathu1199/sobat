@@ -50,8 +50,11 @@ export const DEFAULT_SETTINGS: Settings = {
   lowImpactOnly: false,
 };
 
+/** The newest shape of the stored state this build knows. A file written by a later one is left for that build to change. */
+export const STATE_VERSION = 6;
+
 export const EMPTY_STATE: AppState = {
-  version: 6,
+  version: STATE_VERSION,
   profile: DEFAULT_PROFILE,
   settings: DEFAULT_SETTINGS,
   meals: [],

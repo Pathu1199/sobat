@@ -9,6 +9,7 @@ import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useFeedback } from './feedback';
 import { cancel, notifyNow, scheduleDaily, scheduledIds } from './notify';
+import { useReminderGate } from './useScheduledReminders';
 
 export function nowMinutes(d: Date = new Date()): number {
   return d.getHours() * 60 + d.getMinutes();
@@ -31,6 +32,9 @@ export function useMinute(): number {
 
 const PREFIX = 'sobat-sched-';
 
+// Runs are chained so a sign-out's cancels never interleave with an earlier run's adds.
+let chain: Promise<void> = Promise.resolve();
+
 /**
  * Says something at the start of each block of the office day. While the app
  * is open, a toast and a notification come from the minute tick; on a phone
@@ -46,12 +50,13 @@ export function useWorkSchedule() {
   const last = useRef(minute);
   const lastRegistered = useRef<string[]>([]);
   const t = makeT(profile.lang);
+  const { known, active } = useReminderGate();
 
   useEffect(() => {
     const from = last.current;
     last.current = minute;
     // Across midnight the minute count drops; nothing starts at that moment anyway.
-    if (minute <= from) return;
+    if (minute <= from || !active) return;
     for (const b of startedBetween(schedule, app.today, from, minute)) {
       const title = t(`ntf_${b.kind}`);
       const kind: StoryKind = b.kind === 'break' ? 'break' : b.kind === 'end' ? 'walk' : b.kind === 'start' ? 'mantra' : 'meal';
@@ -85,19 +90,26 @@ export function useWorkSchedule() {
   // Native: the OS fires these even with the app closed. One per block, daily.
   // Slot prompts are planned a week ahead by useScheduledReminders, not here.
   useEffect(() => {
-    if (Platform.OS === 'web' || !profile.onboarded) return;
-    (async () => {
-      const blocks = schedule.enabled ? orderedBlocks(schedule) : [];
+    if (Platform.OS === 'web' || !known) return;
+    let stale = false;
+    chain = chain.then(async () => {
+      if (stale) return;
+      // A signed-out or reset device holds none.
+      const blocks = active && schedule.enabled ? orderedBlocks(schedule) : [];
       for (const b of blocks) {
         const m = toMinutes(b.start);
         await scheduleDaily(`${PREFIX}${b.id}`, Math.floor(m / 60), m % 60, t(`ntf_${b.kind}`), t(`ntf_${b.kind}_body`));
       }
       const wanted = blocks.map((b) => `${PREFIX}${b.id}`);
-      // Blocks removed in Settings must stop firing too, and so must the per-slot dailies older builds registered.
+      // Blocks removed in Settings must stop firing too, and so must everything after a sign-out or a reset
+      // and the per-slot dailies older builds registered: the OS's own list, since this run may follow a restart.
       for (const id of lastRegistered.current) if (!wanted.includes(id)) await cancel(id);
-      for (const id of await scheduledIds()) if (id.startsWith(`${PREFIX}slot-`)) await cancel(id);
+      for (const id of await scheduledIds()) if (id.startsWith(PREFIX) && !wanted.includes(id)) await cancel(id);
       lastRegistered.current = wanted;
-    })().catch(() => {});
+    }).catch(() => {});
+    return () => {
+      stale = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schedule, profile.onboarded, profile.lang]);
+  }, [schedule, known, active, profile.lang]);
 }

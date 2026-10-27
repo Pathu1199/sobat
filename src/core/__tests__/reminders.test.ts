@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { daysAway, daysBetween, lastLogDate, missedDays, plannedReminders } from '../reminders';
+import { DEFAULT_BREAK_SETTINGS } from '../breaks';
+import { dailyReminders, daysAway, daysBetween, lastLogDate, missedDays, plannedReminders } from '../reminders';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { Meal } from '../types';
 
@@ -97,5 +98,42 @@ describe('days away', () => {
     expect(missedDays('2026-10-12', '2026-10-12', [])).toBe(0);
     expect(daysAway([meal('2026-10-10')], '2026-10-12', [0])).toBe(1);
     expect(daysAway([meal('2026-10-10')], '2026-10-12', [])).toBe(2);
+  });
+});
+
+describe('dailyReminders', () => {
+  const day = { active: true, nudgesEnabled: true, routineEnabled: false, quietStartHour: 22, quietEndHour: 7, mantra: 'Steady.', breaks: DEFAULT_BREAK_SETTINGS, nowMs: 0, t };
+  const longs = (x: ReturnType<typeof dailyReminders>) => x.filter((r) => r.id.startsWith('sobat-long-break'));
+  const at = (r: { hour: number; minute: number }) => `${String(r.hour).padStart(2, '0')}:${String(r.minute).padStart(2, '0')}`;
+
+  it('a device that is signed out or reset keeps no daily reminders at all', () => {
+    expect(dailyReminders({ ...day, active: false })).toEqual([]);
+  });
+
+  it('the long-break reminder never falls in quiet hours: hourly from the end of the night to the start of the next', () => {
+    const r = longs(dailyReminders(day));
+    expect(r.map(at)).toEqual(['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00']);
+    expect(r[0]).toMatchObject({ title: 'brk_long', body: 'brk_long_hint' });
+    expect(new Set(r.map((x) => x.id)).size).toBe(r.length);
+  });
+
+  it('the app\'s own quiet hours hold it back too', () => {
+    const r = longs(dailyReminders({ ...day, quietStartHour: 20, quietEndHour: 9 }));
+    expect(r.map(at)[0]).toBe('09:00');
+    expect(r.every((x) => x.hour >= 9 && x.hour < 20)).toBe(true);
+  });
+
+  it('none while breaks are off, paused, or kept to a work schedule a daily reminder cannot follow', () => {
+    expect(longs(dailyReminders({ ...day, breaks: { ...DEFAULT_BREAK_SETTINGS, enabled: false } }))).toEqual([]);
+    expect(longs(dailyReminders({ ...day, breaks: { ...DEFAULT_BREAK_SETTINGS, long: { ...DEFAULT_BREAK_SETTINGS.long, enabled: false } } }))).toEqual([]);
+    expect(longs(dailyReminders({ ...day, nowMs: 1000, breaks: { ...DEFAULT_BREAK_SETTINGS, pausedUntilMs: 5000 } }))).toEqual([]);
+    expect(longs(dailyReminders({ ...day, breaks: { ...DEFAULT_BREAK_SETTINGS, schedule: { days: [1, 2, 3, 4, 5], startHour: 9, endHour: 18 } } }))).toEqual([]);
+  });
+
+  it('keeps the fixed day: check-in, the day\'s line, water, dinner unless the pattern prompts it, and the recap', () => {
+    const ids = (x: ReturnType<typeof dailyReminders>) => x.filter((r) => !r.id.startsWith('sobat-long-break')).map((r) => `${r.id} ${at(r)}`);
+    expect(ids(dailyReminders(day))).toEqual(['sobat-sleep-checkin 07:30', 'sobat-mantra 08:00', 'sobat-water 15:00', 'sobat-dinner 19:30', 'sobat-day-review 21:30']);
+    expect(ids(dailyReminders({ ...day, routineEnabled: true, mantra: '' }))).toEqual(['sobat-sleep-checkin 07:30', 'sobat-water 15:00', 'sobat-day-review 21:30']);
+    expect(dailyReminders({ ...day, nudgesEnabled: false })).toEqual([]);
   });
 });
