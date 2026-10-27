@@ -5,6 +5,7 @@ import { CaloriesLeft } from '../../components/CaloriesLeft';
 import { Celebration } from '../../components/Celebration';
 import { CoachLine } from '../../components/CoachLine';
 import { DayMenu } from '../../components/DayMenu';
+import { DayReview } from '../../components/DayReview';
 import { IntakeCard } from '../../components/IntakeCard';
 import { MantraCard } from '../../components/MantraCard';
 import { MealSheet } from '../../components/MealSheet';
@@ -22,7 +23,7 @@ import { skippedOn } from '../../core/menu';
 import { currentSlot, slotStates } from '../../core/pattern';
 import { pendingCount } from '../../core/queue';
 import { weekRecord } from '../../core/record';
-import { todayBlocks, type PairTile } from '../../core/todayLayout';
+import { dayReviewShown, todayBlocks, type PairTile } from '../../core/todayLayout';
 import type { Meal } from '../../core/types';
 import { isOffDay } from '../../core/week';
 import { stripSince, weekStrip } from '../../core/weekStrip';
@@ -40,7 +41,8 @@ import { Page } from '../../ui/TopBar';
  * on top picks the day (?date=, none for today); under the number come the
  * cards the person keeps on, in their order: by default the menu, one coach
  * line and the Water and Walk tiles. A past day is filled in, a future day is
- * planned, in the same place; nothing here logs into a date after today.
+ * planned, in the same place; nothing here logs into a date after today. In
+ * the evening the day's review follows, while its reminder is on.
  */
 export default function TodayScreen() {
   const app = useApp();
@@ -77,6 +79,9 @@ export default function TodayScreen() {
   const records = weekRecord({ monday, today, routine: state.routine, meals: state.meals, skips: state.slotSkips, offDays, menuOn: app.menuOn });
   const days = weekStrip({ monday, today, viewed, records, since });
 
+  // The evening review, while its reminder is on: the reminder at 21:30 opens Today, where it is.
+  const review = dayReviewShown({ on: state.settings.reminders.dayReview, mode, hour: app.hour, hasData: app.budget.consumed > 0 || state.sleep.some((s) => s.date === today) });
+
   const queued = pendingCount(state.photoQueue);
   const title = mode === 'today' ? t('tab_today') : viewed === addDays(today, -1) ? t('yesterday') : formatDayLabel(viewed, lang);
   const pairTile = (id: PairTile) =>
@@ -110,6 +115,7 @@ export default function TodayScreen() {
           </TileRow>
         );
       })}
+      {review ? <DayReview /> : null}
       <Small color={C.textFaint}>{t('medical_note')}</Small>
       <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
       {mode === 'today' ? <Celebration /> : null}

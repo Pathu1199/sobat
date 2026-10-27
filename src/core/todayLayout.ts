@@ -101,3 +101,13 @@ export function caloriesLeft(input: {
     protein: { g: mode === 'today' ? budget.proteinConsumed : mode === 'past' ? view.eatenProtein : view.plannedProtein, target: targets.proteinG },
   };
 }
+
+/**
+ * Whether Today shows the evening review ("Today in five lines"): on today
+ * only, from 20:00, while its reminder is switched on in Settings (the
+ * reminder at 21:30 opens Today, where the review is), and once the day has
+ * something to say (`hasData`: something eaten or last night's sleep logged).
+ */
+export function dayReviewShown(input: { on: boolean; mode: DayMode; hour: number; hasData: boolean }): boolean {
+  return input.on && input.mode === 'today' && input.hour >= 20 && input.hasData;
+}

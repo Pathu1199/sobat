@@ -685,7 +685,7 @@ const en: Dict = {
   copy_all_commands: 'Copy all commands',
   coach_ai_off_hint: 'Start Ollama on your PC to ask questions. The advice above is computed from your logs and needs no AI.',
   advanced: 'Advanced',
-  advanced_desc: 'Ollama address and models, break monitor details.',
+  advanced_desc: 'Ollama address and models.',
   show_tour: 'Show the tour',
   guide_title: 'How to use Sobat',
   login_title: 'Sign in to Sobat',
@@ -1102,7 +1102,7 @@ const en: Dict = {
   rem_planweek: 'Plan next week', rem_planweek_desc: 'Sunday at 18:00, unless next week is already saved.',
   rem_report: 'Weekly report', rem_report_desc: 'Monday at 9:00: last week\'s full days, average calories and weight change, on Progress.',
   rem_sleep: 'Morning check-in', rem_sleep_desc: 'At 7:30: how you slept.', rem_water: 'Water', rem_water_desc: 'Once, at 15:00.',
-  rem_review: 'Evening review', rem_review_desc: 'At 21:30: today in five lines.', rem_away: 'After days away', rem_away_desc: 'A short line after two to four days with nothing logged, then quiet.',
+  rem_review: 'Evening review', rem_review_desc: 'At 21:30, and on Today in the evening: today in five lines.', rem_away: 'After days away', rem_away_desc: 'A short line after two to four days with nothing logged, then quiet.',
   rem_web_note: 'In a browser and on the PC, reminders show while Sobat is open: the meal-time prompt and the nudges below. The others come on the phone.',
   rem_nudges: 'Nudges while Sobat is open',
   rem_nudges_desc: 'Water, posture and logging as often as set below, and the coach\'s tips when something needs doing now. With reminders when Sobat is closed switched on, water comes that way too.',
@@ -1110,6 +1110,11 @@ const en: Dict = {
   feat_mantra: 'The day\'s line', feat_mantra_desc: 'A short line each morning, at 8:00 and as a card you can add to Today.',
   feat_plates: 'What fits today', feat_plates_desc: 'Plates the app puts together from what is left of the day, on the Coach page.',
   tour_page: 'Page {n} of {m}',
+  review_ate: 'Ate {kcal} of {target} kcal, protein {protein} of {proteinTarget} g.', review_water: 'Water {ml} of {goal} ml.',
+  review_moved: 'Moved for {n} minutes.', review_no_workout: 'No workout today.', review_slept: 'Slept {time}, sleep score {score}.',
+  review_mood: 'Mood {n} out of 5.', review_mood_note: 'Mood {n} out of 5, wrote: {note}.',
+  review_screen: 'Screen time {time}, longest sitting {long}.', review_streak: '{n} full days in a row.',
+  brk_settings: 'Break settings',
 };
 
 const mr: Dict = {
@@ -1799,7 +1804,7 @@ const mr: Dict = {
   copy_all_commands: 'सगळ्या कमांड कॉपी',
   coach_ai_off_hint: 'प्रश्न विचारायला पीसीवर Ollama सुरू करा. वरचा सल्ला तुमच्या नोंदींवरून आहे, त्याला AI लागत नाही.',
   advanced: 'प्रगत',
-  advanced_desc: 'Ollama पत्ता आणि मॉडेल, ब्रेक मॉनिटरचे तपशील.',
+  advanced_desc: 'Ollama पत्ता आणि मॉडेल.',
   show_tour: 'टूर पुन्हा दाखवा',
   guide_title: 'सोबत कसे वापरावे',
   login_title: 'सोबतमध्ये साइन इन करा',
@@ -2216,7 +2221,7 @@ const mr: Dict = {
   rem_planweek: 'पुढच्या आठवड्याचं नियोजन', rem_planweek_desc: 'रविवारी संध्याकाळी 6 वाजता, पुढचा आठवडा जतन केला नसेल तर.',
   rem_report: 'आठवड्याचा अहवाल', rem_report_desc: 'सोमवारी सकाळी 9 वाजता: मागच्या आठवड्याचे पूर्ण दिवस, सरासरी कॅलरी आणि वजनातला बदल, प्रगती पानावर.',
   rem_sleep: 'सकाळची विचारपूस', rem_sleep_desc: 'सकाळी 7:30 वाजता: झोप कशी झाली.', rem_water: 'पाणी', rem_water_desc: 'एकदा, दुपारी 3 वाजता.',
-  rem_review: 'संध्याकाळचा आढावा', rem_review_desc: 'रात्री 9:30 वाजता: आजचा दिवस पाच ओळींत.', rem_away: 'काही दिवस नोंद नसल्यास', rem_away_desc: 'दोन ते चार दिवस काहीच नोंदलं नाही तर एक छोटी ओळ, मग शांत.',
+  rem_review: 'संध्याकाळचा आढावा', rem_review_desc: 'रात्री 9:30 वाजता, आणि संध्याकाळी आजच्या पानावर: आजचा दिवस पाच ओळींत.', rem_away: 'काही दिवस नोंद नसल्यास', rem_away_desc: 'दोन ते चार दिवस काहीच नोंदलं नाही तर एक छोटी ओळ, मग शांत.',
   rem_web_note: 'ब्राउझरमध्ये आणि PC वर Sobat उघडं असताना आठवणी दिसतात: जेवणाच्या वेळची आठवण आणि खालच्या सूचना. बाकीच्या फोनवर येतात.',
   rem_nudges: 'Sobat उघडं असताना सूचना',
   rem_nudges_desc: 'खाली ठरवलेल्या अंतराने पाणी, बसण्याची पद्धत आणि नोंद, आणि आत्ता काही करायचं असेल तेव्हा कोचच्या सूचना. "सोबत बंद असतानाही आठवणी" चालू असेल तर पाण्याची आठवण तिथूनही येते.',
@@ -2224,6 +2229,11 @@ const mr: Dict = {
   feat_mantra: 'आजची ओळ', feat_mantra_desc: 'रोज सकाळी एक छोटी ओळ, 8 वाजता आणि आजच्या पानावर जोडता येणारं कार्ड म्हणून.',
   feat_plates: 'आज काय बसतं', feat_plates_desc: 'दिवसाच्या उरलेल्या कॅलरींमधून ॲपने बनवलेली ताटं, कोचच्या पानावर.',
   tour_page: '{m} पैकी पान {n}',
+  review_ate: '{target} पैकी {kcal} kcal खाल्लं, प्रथिने {proteinTarget} पैकी {protein} ग्रॅम.', review_water: 'पाणी {goal} पैकी {ml} ml.',
+  review_moved: '{n} मिनिटे व्यायाम केला.', review_no_workout: 'आज व्यायाम नाही.', review_slept: '{time} झोप, झोपेचे गुण {score}.',
+  review_mood: 'मूड 5 पैकी {n}.', review_mood_note: 'मूड 5 पैकी {n}, लिहिलं: {note}.',
+  review_screen: 'स्क्रीन वेळ {time}, सर्वात जास्त सलग बसणे {long}.', review_streak: 'सलग {n} पूर्ण दिवस.',
+  brk_settings: 'ब्रेकची सेटिंग',
 };
 
 const hi: Dict = {
@@ -2907,7 +2917,7 @@ const hi: Dict = {
   copy_all_commands: 'सभी कमांड कॉपी',
   coach_ai_off_hint: 'सवाल पूछने के लिए पीसी पर Ollama शुरू करें. ऊपर की सलाह आपके लॉग से है, उसे AI नहीं चाहिए.',
   advanced: 'उन्नत',
-  advanced_desc: 'Ollama पता और मॉडल, ब्रेक मॉनिटर के विवरण.',
+  advanced_desc: 'Ollama पता और मॉडल.',
   show_tour: 'टूर फिर दिखाएँ',
   guide_title: 'सोबत कैसे इस्तेमाल करें',
   login_title: 'सोबत में साइन इन करें',
@@ -3328,7 +3338,7 @@ const hi: Dict = {
   rem_planweek: 'अगले हफ़्ते की योजना', rem_planweek_desc: 'रविवार शाम 6 बजे, अगर अगला हफ़्ता सहेजा न हो.',
   rem_report: 'हफ़्ते की रिपोर्ट', rem_report_desc: 'सोमवार सुबह 9 बजे: पिछले हफ़्ते के पूरे दिन, औसत कैलोरी और वज़न में बदलाव, प्रगति पेज पर.',
   rem_sleep: 'सुबह का हालचाल', rem_sleep_desc: 'सुबह 7:30 बजे: नींद कैसी रही.', rem_water: 'पानी', rem_water_desc: 'एक बार, दोपहर 3 बजे.',
-  rem_review: 'शाम की समीक्षा', rem_review_desc: 'रात 9:30 बजे: आज का दिन पाँच पंक्तियों में.', rem_away: 'कुछ दिन दर्ज न हो तो', rem_away_desc: 'दो से चार दिन कुछ दर्ज न हो तो एक छोटी पंक्ति, फिर चुप.',
+  rem_review: 'शाम की समीक्षा', rem_review_desc: 'रात 9:30 बजे, और शाम को आज के पन्ने पर: आज का दिन पाँच पंक्तियों में.', rem_away: 'कुछ दिन दर्ज न हो तो', rem_away_desc: 'दो से चार दिन कुछ दर्ज न हो तो एक छोटी पंक्ति, फिर चुप.',
   rem_web_note: 'ब्राउज़र में और PC पर Sobat खुला हो तब याद दिखती है: खाने के वक़्त की याद और नीचे के संकेत. बाकी फ़ोन पर आती हैं.',
   rem_nudges: 'Sobat खुला हो तब संकेत',
   rem_nudges_desc: 'नीचे तय अंतर पर पानी, बैठने का ढंग और दर्ज करना, और जब अभी कुछ करना हो तब कोच की सलाह. "सोबत बंद होने पर भी याद दिलाना" चालू हो तो पानी की याद वहाँ से भी आती है.',
@@ -3336,6 +3346,11 @@ const hi: Dict = {
   feat_mantra: 'आज की पंक्ति', feat_mantra_desc: 'हर सुबह एक छोटी पंक्ति, 8 बजे और आज के पन्ने पर जोड़ने लायक कार्ड के रूप में.',
   feat_plates: 'आज क्या फिट बैठता है', feat_plates_desc: 'दिन की बची कैलोरी से ऐप की बनाई थालियाँ, कोच के पन्ने पर.',
   tour_page: '{m} में से पेज {n}',
+  review_ate: '{target} में से {kcal} kcal खाया, प्रोटीन {proteinTarget} में से {protein} ग्राम.', review_water: 'पानी {goal} में से {ml} ml.',
+  review_moved: '{n} मिनट कसरत की.', review_no_workout: 'आज कसरत नहीं.', review_slept: '{time} नींद, नींद स्कोर {score}.',
+  review_mood: 'मूड 5 में से {n}.', review_mood_note: 'मूड 5 में से {n}, लिखा: {note}.',
+  review_screen: 'स्क्रीन समय {time}, सबसे लंबा लगातार बैठना {long}.', review_streak: 'लगातार {n} पूरे दिन.',
+  brk_settings: 'ब्रेक की सेटिंग',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

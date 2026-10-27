@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { dayReviewPrompt, factsFrom, systemPrompt } from '../ai/prompts';
-import { formatMinutes } from '../core/date';
 import { KCAL_FLOOR } from '../core/nutrition';
+import { dayReviewLines, dayReviewWritten, type DayFacts } from '../core/review';
 import { longestStretchMinutes, minutesOn } from '../core/usage';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
@@ -12,8 +12,11 @@ import { Btn, Card, Micro, P, Row } from '../ui/components';
 import { C } from '../ui/theme';
 
 /**
- * The end-of-day recap. Writing it also stores a one-line day note in memory,
- * which is what lets tomorrow's advice know how today went.
+ * The end-of-day recap, shown on Today in the evening while its reminder is
+ * on (`dayReviewShown`). The model writes it from the day's sentences; with no
+ * model to ask, the sentences themselves are the recap, in the person's
+ * language. Writing it also stores a one-line day note in memory, which is
+ * what lets tomorrow's advice know how today went.
  */
 export function DayReview() {
   const app = useApp();
@@ -23,33 +26,33 @@ export function DayReview() {
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState<string | null>(null);
 
-  const hour = app.hour;
-  const existing = app.state.memory.find((m) => m.type === 'episode' && m.date === app.today);
+  const written = dayReviewWritten(app.state.memory, app.today);
 
-  // Only worth offering once the day is mostly over and there is something to say.
-  const hasData = app.budget.consumed > 0 || app.state.sleep.some((s) => s.date === app.today);
-  if (hour < 20 || !hasData) return null;
-
-  function factLines(): string[] {
-    const out: string[] = [];
-    out.push(`Ate ${app.budget.consumed} of ${app.budget.target} kcal, protein ${app.budget.proteinConsumed} of ${app.budget.proteinTarget} g.`);
-    out.push(`Water ${app.waterToday} of ${app.state.settings.waterGoalMl} ml.`);
+  function dayFacts(): DayFacts {
     const w = app.state.workouts.find((x) => x.date === app.today);
-    out.push(w?.status === 'done' ? `Moved for ${w.minutes} minutes.` : 'No workout today.');
     const sleep = app.state.sleep.find((s) => s.date === app.today);
-    if (sleep) out.push(`Slept ${formatMinutes(sleep.minutes)}, score ${sleep.score}.`);
     const mood = app.state.moods.filter((m) => m.date === app.today).slice(-1)[0];
-    if (mood) out.push(`Mood ${mood.score} out of 5${mood.note ? `, wrote: ${mood.note}` : ''}.`);
-    const screen = minutesOn(app.state.usage, app.today);
-    if (screen > 0) out.push(`Screen time ${formatMinutes(screen)}, longest sitting ${formatMinutes(longestStretchMinutes(app.state.usage, app.today))}.`);
-    if (app.streakDays > 1) out.push(`${app.streakDays} days logged in a row.`);
-    return out;
+    return {
+      kcal: app.budget.consumed,
+      kcalTarget: app.budget.target,
+      protein: app.budget.proteinConsumed,
+      proteinTarget: app.budget.proteinTarget,
+      waterMl: app.waterToday,
+      waterGoalMl: app.state.settings.waterGoalMl,
+      movedMin: w?.status === 'done' ? w.minutes : null,
+      sleep: sleep ? { minutes: sleep.minutes, score: sleep.score } : null,
+      mood: mood ? { score: mood.score, note: mood.note } : null,
+      screenMin: minutesOn(app.state.usage, app.today),
+      sittingMin: longestStretchMinutes(app.state.usage, app.today),
+      streakDays: app.streakDays,
+    };
   }
 
   async function write() {
     setBusy(true);
     try {
-      const lines = factLines();
+      // The model is told the day in English and answers in the person's language.
+      const lines = dayReviewLines(dayFacts(), makeT('en'));
       const facts = factsFrom({
         budget: app.budget,
         weightKg: app.state.profile.weightKg,
@@ -68,8 +71,8 @@ export function DayReview() {
       // Kept as a day note so tomorrow has context, not just today's screen.
       app.rememberText(summaryLine(), 'episode', 'auto');
     } catch {
-      // Offline: fall back to a plain summary built from the numbers.
-      const plain = factLines().join(' ');
+      // No model to ask: the day's own sentences, in the person's language.
+      const plain = dayReviewLines(dayFacts(), t).join(' ');
       setText(plain);
       app.rememberText(summaryLine(), 'episode', 'auto');
     } finally {
@@ -101,9 +104,10 @@ export function DayReview() {
           <P>{text}</P>
           <Micro color={C.cyan}>{t('review_saved')}</Micro>
         </>
-      ) : existing ? (
+      ) : written ? (
         <>
-          <P dim>{existing.text}</P>
+          {/* The day note itself is kept in English for the coach; the person reads the day in their own language. */}
+          <P dim>{dayReviewLines(dayFacts(), t).join(' ')}</P>
           <Micro>{t('review_saved')}</Micro>
         </>
       ) : busy ? (

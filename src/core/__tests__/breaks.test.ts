@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { makeT } from '../../i18n';
 import {
   breaksAsSwitched,
   breakStats,
@@ -317,5 +318,16 @@ describe('breaksAsSwitched', () => {
     expect({ ...off, enabled: true }).toEqual(DEFAULT_BREAK_SETTINGS);
     const stopped = { ...DEFAULT_BREAK_SETTINGS, enabled: false };
     expect(breaksAsSwitched(stopped, true)).toBe(stopped);
+  });
+});
+
+describe('the break settings under Features', () => {
+  it('are named in English, Marathi and Hindi, and Advanced no longer says it holds them', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const words = makeT(lang);
+      expect(words('brk_settings'), lang).not.toBe('brk_settings');
+      expect(words('brk_settings'), lang).not.toMatch(/[\u0966-\u096F\u2014{}]/);
+    }
+    expect(makeT('en')('advanced_desc')).toBe('Ollama address and models.');
   });
 });

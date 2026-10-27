@@ -1,9 +1,11 @@
-import { lastNDates } from './date';
+import { formatMinutes, lastNDates } from './date';
+import type { MemoryItem } from './memory';
 import { sumTotals } from './nutrition';
 import type { Plan } from './plan';
 import type { AvoidRule } from './routine';
 import { avoidHits } from './routine';
 import type { ISODate, Meal, SleepLog, WaterLog, WeightLog, WorkoutLog } from './types';
+import { fill, numberText } from '../i18n';
 
 /**
  * Two weeks of a person's data, reduced to the handful of numbers that
@@ -107,4 +109,51 @@ export function wins(input: { today: ISODate; meals: Meal[]; water: WaterLog[]; 
   if (moved >= 2) out.push({ key: 'move_days', n: moved });
   if (input.weights.some((w) => dates.includes(w.date))) out.push({ key: 'weighed', n: 1 });
   return out;
+}
+
+/** The day the evening review recaps, in numbers. */
+export type DayFacts = {
+  kcal: number;
+  kcalTarget: number;
+  protein: number;
+  proteinTarget: number;
+  waterMl: number;
+  waterGoalMl: number;
+  /** Minutes of a workout done today; null for none. */
+  movedMin: number | null;
+  sleep: { minutes: number; score: number } | null;
+  mood: { score: number; note?: string } | null;
+  /** Minutes at the screen today, and the longest stretch sitting. */
+  screenMin: number;
+  sittingMin: number;
+  /** Full days in a row (the record's streak). */
+  streakDays: number;
+};
+
+/**
+ * The day in plain sentences: in English (`makeT('en')`) for the model that
+ * writes the evening review, and in the person's own language when no model
+ * can be asked and the sentences are the review. What did not happen is left
+ * out, but a day with no workout says so.
+ */
+export function dayReviewLines(f: DayFacts, t: (key: string) => string): string[] {
+  const out = [
+    fill(t('review_ate'), { kcal: numberText(f.kcal), target: numberText(f.kcalTarget), protein: Math.round(f.protein), proteinTarget: Math.round(f.proteinTarget) }),
+    fill(t('review_water'), { ml: numberText(f.waterMl), goal: numberText(f.waterGoalMl) }),
+    f.movedMin !== null ? fill(t('review_moved'), { n: f.movedMin }) : t('review_no_workout'),
+  ];
+  if (f.sleep) out.push(fill(t('review_slept'), { time: formatMinutes(f.sleep.minutes), score: f.sleep.score }));
+  if (f.mood) out.push(f.mood.note ? fill(t('review_mood_note'), { n: f.mood.score, note: f.mood.note }) : fill(t('review_mood'), { n: f.mood.score }));
+  if (f.screenMin > 0) out.push(fill(t('review_screen'), { time: formatMinutes(f.screenMin), long: formatMinutes(f.sittingMin) }));
+  if (f.streakDays > 1) out.push(fill(t('review_streak'), { n: f.streakDays }));
+  return out;
+}
+
+/**
+ * Whether the evening review was written on a date: its own day note (an
+ * episode the app saved, not one the person wrote, such as a gratitude line
+ * on Mind) is in memory.
+ */
+export function dayReviewWritten(memory: Pick<MemoryItem, 'type' | 'date' | 'source'>[], date: ISODate): boolean {
+  return memory.some((m) => m.type === 'episode' && m.date === date && m.source === 'auto');
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { caloriesLeft, todayBlocks } from '../todayLayout';
+import { caloriesLeft, dayReviewShown, todayBlocks } from '../todayLayout';
 
 const on = (id: string) => ({ id, on: true });
 const off = (id: string) => ({ id, on: false });
@@ -119,5 +119,23 @@ describe('caloriesLeft', () => {
   it('a day before the person started shows what was eaten, with no "left" and no alarm', () => {
     const before = caloriesLeft({ mode: 'past', targets, view: { ...view, eatenKcal: 2400, judged: false }, budget, suggested: false, offDay: false, dayEarned: 0 });
     expect(before).toMatchObject({ label: null, alarm: false, line: { key: 'today_eaten_of', kcal: 2400, goal: 1800 } });
+  });
+});
+
+describe('dayReviewShown', () => {
+  const evening = { on: true, mode: 'today' as const, hour: 21, hasData: true };
+
+  it('shows the evening review on Today from 20:00 while its reminder is on, once there is something to say', () => {
+    expect(dayReviewShown(evening)).toBe(true);
+    expect(dayReviewShown({ ...evening, hour: 20 })).toBe(true);
+    expect(dayReviewShown({ ...evening, hour: 23 })).toBe(true);
+  });
+
+  it('never while the reminder is off, before the evening, on another day, or with nothing logged today', () => {
+    expect(dayReviewShown({ ...evening, on: false })).toBe(false);
+    expect(dayReviewShown({ ...evening, hour: 19 })).toBe(false);
+    expect(dayReviewShown({ ...evening, mode: 'past' })).toBe(false);
+    expect(dayReviewShown({ ...evening, mode: 'future' })).toBe(false);
+    expect(dayReviewShown({ ...evening, hasData: false })).toBe(false);
   });
 });
