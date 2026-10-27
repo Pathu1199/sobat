@@ -123,6 +123,8 @@ export const S = {
   radiusSm: 15,
   radiusXs: 10,
   hairline: 1,
+  /** The smallest a control may be under a finger, in points. */
+  touch: 44,
   gutter: 16,
   gutterWide: 24,
   maxWide: 1360,

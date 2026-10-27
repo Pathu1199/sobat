@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from './components';
-import { C, F, S } from './theme';
+import { C, F, lh, S } from './theme';
 import { useBreakpoint } from './useBreakpoint';
 
 /** One compact bar per tab. Replaces the stock navigation header. */
@@ -38,11 +38,11 @@ export function TopBar({
         }}>
         {left}
         <View style={{ flex: 1, gap: 2 }}>
-          <Text numberOfLines={1} style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
+          <Text numberOfLines={1} accessibilityRole="header" style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' }}>
             {alt || title}
           </Text>
           {subtitle ? (
-            <Text numberOfLines={1} style={{ color: C.textDim, fontSize: F.small, fontWeight: '500' }}>
+            <Text numberOfLines={1} style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '400' }}>
               {subtitle}
             </Text>
           ) : null}

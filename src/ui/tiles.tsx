@@ -60,7 +60,13 @@ export function Tile({
       ) : null}
     </View>
   );
-  return onPress ? <PressScale onPress={onPress}>{body}</PressScale> : body;
+  return onPress ? (
+    <PressScale onPress={onPress} accessibilityLabel={[label, value, sub].filter(Boolean).join(', ')}>
+      {body}
+    </PressScale>
+  ) : (
+    body
+  );
 }
 
 /** Rows with a check circle. The decision card's actions. */
@@ -81,7 +87,7 @@ export function Checklist({
           onPress={() => onToggle(i.key)}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: i.done }}
-          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, opacity: pressed ? 0.7 : 1 })}>
+          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, minHeight: S.touch, opacity: pressed ? 0.7 : 1 })}>
           <View
             style={{
               width: 20,
@@ -93,7 +99,7 @@ export function Checklist({
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-            {i.done ? <Ionicons name="checkmark" size={13} color={C.white} /> : null}
+            {i.done ? <Ionicons name="checkmark" size={13} color={C.onAccent} /> : null}
           </View>
           <Text
             style={{
