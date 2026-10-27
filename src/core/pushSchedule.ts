@@ -76,3 +76,16 @@ export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string
     weigh: { weekday: state.settings.weighDay ?? 1, title: t('weigh_q'), body: t('weigh_hint') },
   };
 }
+
+/**
+ * What the relay's copy of this device's schedule needs now, while background
+ * reminders are on. A device someone is using sends its schedule when it
+ * changes; one that is signed out or reset has its copy removed, so the relay
+ * sends it nothing. Nothing is decided before the store and the session are
+ * known, so a store still loading never stops the person's reminders.
+ */
+export function pushStep(p: { configured: boolean; relayOn: boolean; known: boolean; active: boolean; payload: string; lastSent: string }): 'send' | 'stop' | 'none' {
+  if (!p.configured || !p.relayOn || !p.known) return 'none';
+  if (!p.active) return 'stop';
+  return p.payload && p.payload !== p.lastSent ? 'send' : 'none';
+}
