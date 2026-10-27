@@ -1049,6 +1049,8 @@ const en: Dict = {
   menu_ate_this_a11y: 'Ate {slot} as planned', menu_ate_other_a11y: 'Ate something else for {slot}', menu_skip_a11y: 'Mark {slot} as skipped',
   menu_change_a11y: 'Change {slot}', menu_add_a11y: 'Add food to {slot}', menu_unskip_a11y: 'Undo the skip of {slot}',
   menu_done_a11y: '{slot}: {foods}, {kcal} kcal', menu_open_meal: 'Opens the meal to change or remove it.',
+  today_planned_goal: 'Planned {planned} · Goal {goal}', today_suggested_goal: 'Suggested {planned} · Goal {goal}', today_eaten_of: 'Eaten {eaten} of {goal}',
+  today_protein: 'Protein {p} of {target} g', today_left_after_plan: 'kcal left after the plan', today_back: 'Back to today',
 };
 
 const mr: Dict = {
@@ -2102,6 +2104,8 @@ const mr: Dict = {
   menu_ate_this_a11y: '{slot} ठरवल्याप्रमाणे खाल्लं', menu_ate_other_a11y: '{slot} ला दुसरं काही खाल्लं', menu_skip_a11y: '{slot} वगळलं म्हणून नोंदवा',
   menu_change_a11y: '{slot} बदला', menu_add_a11y: '{slot} मध्ये पदार्थ जोडा', menu_unskip_a11y: '{slot} वगळणं मागे घ्या',
   menu_done_a11y: '{slot}: {foods}, {kcal} kcal', menu_open_meal: 'जेवण बदलायला किंवा काढायला उघडते.',
+  today_planned_goal: 'ठरवलं {planned} · लक्ष्य {goal}', today_suggested_goal: 'सुचवलेलं {planned} · लक्ष्य {goal}', today_eaten_of: '{goal} पैकी {eaten} खाल्लं',
+  today_protein: 'प्रथिने {target} पैकी {p} ग्रॅ', today_left_after_plan: 'नियोजनानंतर शिल्लक कॅलरी', today_back: 'आजवर परत',
 };
 
 const hi: Dict = {
@@ -3153,6 +3157,8 @@ const hi: Dict = {
   menu_ate_this_a11y: '{slot} प्लान के मुताबिक़ खाया', menu_ate_other_a11y: '{slot} में कुछ और खाया', menu_skip_a11y: '{slot} छोड़ा हुआ दर्ज करें',
   menu_change_a11y: '{slot} बदलें', menu_add_a11y: '{slot} में खाना जोड़ें', menu_unskip_a11y: '{slot} छोड़ना वापस लें',
   menu_done_a11y: '{slot}: {foods}, {kcal} kcal', menu_open_meal: 'खाना बदलने या हटाने के लिए खोलता है.',
+  today_planned_goal: 'तय {planned} · लक्ष्य {goal}', today_suggested_goal: 'सुझाया गया {planned} · लक्ष्य {goal}', today_eaten_of: '{goal} में से {eaten} खाया',
+  today_protein: 'प्रोटीन {target} में से {p} ग्राम', today_left_after_plan: 'प्लान के बाद बची कैलोरी', today_back: 'आज पर वापस',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
