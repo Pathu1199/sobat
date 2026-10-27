@@ -58,8 +58,9 @@ Made with Varad on 2026-10-27, one question at a time:
    or every week?" question.
 2. **Today's main job**: the calories left, and the day's menu to tick off.
    The ➕ button is for anything eaten that is not on the menu.
-3. **Today shows four things**: the week strip with calories left, the day's
-   menu, one coach line, and water + protein. Everything else leaves Today
+3. **Today shows four things**: the week strip with calories left (with
+   protein as a small line under it), the day's menu, one coach line, and
+   two square tiles, Water and Walk. Everything else leaves Today
    or can be added back through Customize.
 4. **Tabs**: Today · ➕ · Progress · Me. Today, ➕ and Me are locked. The user
    may add up to two extra tabs (Progress is one of them by default) from
@@ -87,6 +88,12 @@ Made with Varad on 2026-10-27, one question at a time:
     Android, the system stack on web).
 13. **Existing users get the new defaults once**, through the migration.
     Everything turned off can be turned back on.
+14. **Water and Walk are square tank tiles.**
+    - **Water** is counted in bottles, 500 ml by default; 750 ml or 1 L can
+      be chosen in Settings.
+    - **Walk** is counted in minutes, 10 per tap, toward 30 a day.
+    - **One tap adds**, and the tank fills smoothly, showing what is left.
+    - Undo lasts 5 seconds; there are no confirm dialogs.
 
 One decision follows from the others and is made here: **the eating pattern
 is always on.** A menu is a list of slots, so the app cannot have a menu
@@ -180,7 +187,10 @@ reminders: { mealPrompt: boolean; fillYesterday: boolean; planWeek: boolean; wee
 ```
 
 - `TabId` is one of `progress | coach | body | sleep | plan`.
-- `TodayCardId` is one of `coach | waterProtein | menu | weight | sleep | steps | climb | mantra`.
+- `TodayCardId` is one of `coach | waterWalk | menu | weight | sleep | steps | climb | mantra`.
+- `glassMl` is renamed `bottleMl`. The migration sets it to 500 when it was
+  the old default of 250 and keeps any other value. `walkGoalMin` is added,
+  default 30. `waterGoalMl` stays (3000).
 - A pure `normalizeTabs` drops unknown ids and duplicates and keeps at most
   two, so a bad value from sync can never hide the core tabs.
 
@@ -276,7 +286,8 @@ From top to bottom:
    outline for planned. Swiping goes to the previous or next week. Tapping
    a day views it.
 2. **Calories left**, as one big number. Under it, a plain line: "Planned X
-   · Goal Y". For a past day it shows "Eaten X of Y" instead.
+   · Goal Y". For a past day it shows "Eaten X of Y" instead. A second small
+   line shows "Protein 38 of 112 g".
 3. **The day's menu.** One row per slot.
    - **Done**: ticked, with food names and kcal, folded to one line. Tap to
      edit.
@@ -292,7 +303,40 @@ From top to bottom:
      menu, and the day's total against the target updates at once.
 4. **Coach line**, one sentence. It reads the pattern via `slotAt` (see
    Part 3).
-5. **Water and protein**: two small bars, with a + on water.
+5. **Water and Walk**: two square tiles side by side. See "The tank tiles"
+   below.
+
+### The tank tiles: `src/components/TankTile.tsx` (new)
+
+- **One component, two uses.**
+  - **Water**: blue at about 26% opacity, so text stays readable over it in
+    light and dark mode.
+  - **Walk**: teal.
+- **The tile is a square button.** Top left: the icon and the name. Middle:
+  the big amount ("1.5 L", "20 min"). Under it: "of 3.0 L · 3 bottles left"
+  or "of 30 min · 10 left". Bottom: a "+ 500 ml" or "+ 10 min" chip.
+- **The fill**:
+  - It rises from the bottom to `min(1, amount / goal)`, with a Reanimated
+    timing of about 900 ms on an ease-out curve.
+  - A gentle wave runs along the top edge of the water: a react-native-svg
+    path, translated in a loop.
+  - When "reduce motion" is on (`AccessibilityInfo.isReduceMotionEnabled`),
+    there is no wave and the fill changes instantly.
+- **A tap**:
+  - **Water** adds one `WaterLog` of `bottleMl` for the viewed date.
+  - **Walk** adds one `ActivityLog` (walking, 10 minutes, normal effort) for
+    the viewed date, so earned calories follow the same path as every other
+    activity.
+  - **Both** give a light haptic (expo-haptics) and show "Added 500 ml
+    water · Undo" under the tiles for 5 seconds. Undo removes that one
+    record.
+- **At the goal**: the tank stays full with a ✓, and the line says "Goal
+  reached today". Further taps are still recorded.
+- **Accessibility**: `accessibilityRole="button"`, with a label such as "Add
+  one bottle of water. 1.5 of 3 litres." The value updates after each tap.
+  Each tile is far bigger than 44 pt.
+- **A long press** opens a small sheet to change the bottle size, enter
+  another amount, or change the walk goal.
 
 Cards switched on in Customize render after these, in the user's order.
 `StartHereCard`, the tracker grid, `FitsCard`, `PlanTodayCard`, the
@@ -447,7 +491,7 @@ Each step is its own commit series and is tested before the next.
    migration v7, sync merge, `slotAt`.
 3. **Tab bar and Me.**
 4. **Today**: week strip, calories left, the day's menu with
-   past/today/future modes, coach line, water + protein.
+   past/today/future modes, coach line, the Water and Walk tank tiles.
 5. **The add sheet.**
 6. **Plan next week.**
 7. **Progress.**
@@ -473,6 +517,12 @@ Each step is its own commit series and is tested before the next.
     moved, defaults set once, logs untouched.
   - `merge3` with menus edited on two devices.
   - `slotAt` with a 21:30 dinner and two snack slots.
+  - Tank-tile maths, as a pure helper: amount to fill fraction (capped at
+    1), the "N bottles left" count (rounded up) for each bottle size, and
+    goal reached.
+  - A walk tap writes an `ActivityLog` that the earned-calories code
+    counts.
+  - The `glassMl` → `bottleMl` migration.
 - **On screen**: the web preview at 375 px in light and dark, in English
   and Marathi at text scale 1.25. Check each step's screen; take
   screenshots of Today (past, today, future), the add sheet, plan next
@@ -485,7 +535,7 @@ Each step is its own commit series and is tested before the next.
 - **New**:
   - `src/core/menu.ts`, `src/core/record.ts`
   - `src/components/AddSheet.tsx`, `src/components/WeekStrip.tsx`,
-    `src/components/DayMenu.tsx`
+    `src/components/DayMenu.tsx`, `src/components/TankTile.tsx`
   - `src/app/(tabs)/me.tsx`, `src/app/customize.tsx`
   - tests for each new core module
 - **Changed**:
