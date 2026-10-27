@@ -10,28 +10,16 @@
 
 Spec: `docs/superpowers/specs/2026-10-27-week-menu-redesign-design.md` ("Decisions", "Part 2: screens" → "Tab bar and Me", "Today", "The tank tiles", "Living tiles", "The add sheet"; "Testing"). Style rules: `docs/superpowers/plans/2026-10-27-week-menu-plan-2-style.md`. Data: `docs/superpowers/plans/2026-10-27-week-menu-plan-1-core.md`. Later decisions: `.superpowers/sdd/progress.md` from "## REDESIGN Plan 2".
 
-## Assumptions about Plan 1
+## Built Plan 1 interfaces
 
-This plan was written while Plan 1 Tasks 7 to 12 were being built. It uses Plan 1's interfaces exactly as that plan's "Interfaces → Produces" sections give them. Before dispatching this plan's Task 3, the controller checks each line below against the built code (`grep -n` in the named file) and, where the name or shape differs, corrects this plan's code to match:
+Plan 1 is built (HEAD `3ff9926`, its clean-ups A and B included). This plan uses these as they are in the code:
 
-1. **`Ctx.menuOn(date: ISODate): DayMenu`** (Plan 1 Task 8, `src/store/AppProvider.tsx`): the menu a date shows, stored or as it starts. Used by Today, the add sheet, the streak tile and the week strip.
-2. **`Ctx.editMenuLine(day: DayMenu, mealId: string, lineIdx: number, next: PlanLine | null): void`** and **`Ctx.editMenuMeal(day: DayMenu, meal: PlanMeal): void`** (Plan 1 Task 8). `next: null` removes the line. Used by the day's menu (− / + on past and future lines) and the add sheet in plan mode.
-3. **`Ctx.planFoods` is not in Plan 1's `Ctx`.** Plan 1 Task 8 added a `planFoods` memo inside `AppProvider` (`useMemo(() => allFoods(state.customFoods), [state.customFoods])` as built) and lists it in the value's dependency list. Task 3 of this plan exposes it as `Ctx.planFoods: FoodItem[]`. If Plan 1 already exposes it, skip that edit.
-4. **`Ctx.addMealFromPlan(date: ISODate, slotId: string, source?: MealSource): void`**, **`Ctx.confirmMeal(id: string): void`**, **`Ctx.confirmDay(date: ISODate): void`**, **`Ctx.fillDayFromPlan(date: ISODate): void`** (Plan 1 Task 12).
-5. **`Ctx.addSavedMeal(name: string, lines: PlanLine[]): void`** and **`Ctx.removeSavedMeal(id: string): void`** (Plan 1 Task 12); **`AppState.savedMeals: SavedMeal[]`** (Plan 1 Task 4, already in `types.ts`).
-6. **`Ctx.logWalk(date: ISODate, minutes: number): string`** returning the new activity's id (Plan 1 Task 12), and the existing **`Ctx.removeActivity(id)`** for undo.
-7. **`Ctx.streakDays`** is `recordStreak` over the menus as shown (Plan 1 Task 12). Plan 1's end-of-plan safety follow-up ("recordStreak must not count a day where every slot was skipped and nothing eaten") is assumed; `bestStreak` in this plan's Task 1 applies the same rule (such a day ends the run). If the follow-up chose "neither counts nor breaks" instead, change the one line marked in `bestStreak` (this plan's Task 1) to `continue` so the two agree.
-8. **`Ctx.removeMeal(id)`** marks the slot skipped when it removes a meal from the plan (`skipsAfterRemove`, Plan 1 Task 12), so deleting a filled-in meal from the meal sheet does not bring it straight back.
-9. **`src/core/record.ts`**: `dayRecord({ date, today, menu, routine, meals, skips, offDays }) → { state, fromPlan }` and `weekRecord({ monday, today, menuOn, routine, meals, skips, offDays }) → DayRecord[]` (Plan 1 Task 5, built at cd858dc).
-10. **`src/core/tiles.ts`** (Plan 1 Task 11): `waterTile(ml, goalMl, bottleMl) → { fraction, bottlesLeft, reached }`, `walkTile(minutes, goalMin) → { fraction, minutesLeft, reached }`, `sleepFraction(minutes, targetMinutes)`, `streakFraction(streak, best)`, `weightPoints(weights, width = 100, height = 42, count = 8)`, and the file's first line is `import type { WeightLog } from './types';`.
-11. **`src/core/activity.ts`** (Plan 1 Task 11): `WALK_ACTIVITY_ID = 'walk'` and `walkLog(...)`; `ActivityLog.activityId` holds `'walk'` for a walk.
-12. **`src/core/menu.ts`**: `menuSlots`, `mealFromLines({ id, date, slot, lines, foods, source, now })`, `skippedOn` (built at b8a9ecc / 414133f).
-13. **`src/core/pattern.ts`**: `slotStates({ routine, target, meals, nowMinutes, skippedSlots })` with `SlotState.meals`, `.allowance`, `.eaten`, `.skipped`, `.status`, and `currentSlot(states, nowMinutes)` treating a slot that holds only filled-in meals as open until a later slot holds a real meal (built at 5dd1dde plus the fix in the ledger's "OPEN from the fix" line).
-14. **`src/components/useCoach.ts`** keeps the signature `useCoach(minute: number): Advice[]` after Plan 1 Task 10 rewrites it, and `src/components/CoachStrip.tsx` keeps exporting `adviceText` and `useAdviceAction`.
-15. **`Settings`** has `bottleMl`, `walkGoalMin`, `tabs`, `todayCards`, `features.breaks` (Plan 1 Task 1, built), and **`Profile.onboardedOn?: ISODate`** (Plan 1's Task 6 fix, built).
-16. **`app.weekPlan` / `plan.tsx`** after Plan 1 Task 8: `plan.tsx` reads `app.weekPlan`. Task 18 of this plan edits only the stepper, link, day-chip and protein lines of `plan.tsx`, matched by text, so it does not depend on the lines Plan 1 changed.
+- **The store** (`src/store/AppProvider.tsx`, `Ctx`): `menuOn(date): DayMenu` (a date nobody wrote shows the app's suggestion fitted to the person's target), `weekMenus(monday)`, `isSuggestedMenu(day)`, `suggestionOn(date)`; `editMenuLine(day, mealId, lineIdx, next | null)` (`null` removes the line), `editMenuMeal(day, meal)`, `editMenuDay`, `addMenuFood`, `copyMenuDay`; `addMealFromPlan(date, slotId, source?)` and `fillDayFromPlan(date)`, which do nothing for a date after today; `confirmMeal(id)`, `confirmDay(date)`, `runAutoFill()`; `addSavedMeal(name, lines)`, `removeSavedMeal(id)`; `logWalk(date, minutes): string` with `removeActivity(id)` for undo; `streakDays` (`recordStreak`: a day settled only by skips ends the run, as `bestStreak` in Task 1 does); `addMeal(m)` (`withMealAdded`: the meal lands in its slot and lifts a skip there); `removeMeal(id)` (`withMealRemoved`: once the slot's moment to be filled in from the plan has passed, whatever the meal's source, a slot left empty is marked skipped so it is not filled straight back; before that moment nothing is marked); `updateMeal` (`editedMeal`: the stored meal's source decides, a filled-in meal edited becomes `plan`). `planFoods` is a memo, `useMemo(() => allFoods(state.customFoods), [state.customFoods])` with `allFoods` from `src/store/defaults.ts`, already in the value's dependency list but not in `Ctx`: Task 3 exposes it.
+- **The state**: `savedMeals`, `slotSkips`, `menus`; `openedDates` (this device only, never synced; nothing here reads it); `Profile.onboardedOn` (filling in from the plan ignores one after today); `Settings.bottleMl`, `walkGoalMin`, `tabs`, `todayCards`, `features`, `reminders` (a stored switch that is not true or false reads off; a missing or broken `mealPrompt` follows `nudgesEnabled`), `offDays`.
+- **The core**: `record.ts` `dayRecord`, `weekRecord`, `recordStreak({ limit? })`; `tiles.ts` `waterTile`, `walkTile`, `sleepFraction`, `streakFraction`, `weightPoints` (its first line is `import type { WeightLog } from './types';`, which Task 3 replaces); `activity.ts` `WALK_ACTIVITY_ID`, `walkLog`; `menu.ts` `menuSlots`, `mealFromLines` (null for a date after today), `skippedOn`, `settleAuto`; `pattern.ts` `slotStates`, `settledSlotIds` and `currentSlot` (a slot holding only a filled-in meal stays open until a later slot whose window has opened holds a real meal or is skipped); `coach.ts` reads the hour off `nowMinutes` (there is no `CoachInput.hour`) and `nextPlate.id` is required; `useCoach(nowMinutes): Advice[]`, and `CoachStrip` still exports `adviceText` and `useAdviceAction`.
+- **The plan screen**: `plan.tsx` still reads `app.weekPlan`; Task 18 edits only its stepper, link, day-chip and protein lines, matched by text (Plan 4 rewrites the screen on the per-date menus).
 
-Checked at HEAD `259fa7d` (Plan 1 Tasks 1-10 built): items 1, 2, 3, 9, 12, 13, 14, 15 and 16 match the code. Items 4-8, 10 and 11 are Plan 1 Tasks 11 and 12, not built yet.
+Every task below was applied to `3ff9926` and checked (see "Self-review").
 
 ## Decisions taken in this plan
 
@@ -403,7 +391,7 @@ export function bestStreak(input: {
     const date = addDays(input.today, -i);
     const meals = byDate.get(date) ?? [];
     const r = dayRecord({ date, today: input.today, menu: input.menuOn(date), routine: input.routine, meals, skips: input.skips, offDays: input.offDays });
-    // Skips alone: the run ends here (see "Assumptions about Plan 1", item 7).
+    // Skips alone: the run ends here, as it ends the streak (recordStreak).
     states.push(r.state === 'full' && meals.length === 0 ? 'partial' : r.state);
   }
   return bestRun(states);
@@ -854,7 +842,7 @@ In the value, after the line that begins `      foods: foodsForDiet(` (Plan 1 le
       planFoods,
 ```
 
-(`planFoods` is the memo Plan 1 Task 8 added, `const planFoods = useMemo(() => allFoods(state.customFoods), [state.customFoods]);`, already in the value's dependency list; see "Assumptions about Plan 1", item 3.)
+(`planFoods` is the memo Plan 1 added, `const planFoods = useMemo(() => allFoods(state.customFoods), [state.customFoods]);`, already in the value's dependency list; see "Built Plan 1 interfaces".)
 
 Replace
 
@@ -3778,7 +3766,7 @@ EOF
 - Consumes: Tasks 9-10 (`basket.ts`, `addRows`, `FoodRow`, `ToolsRow`), `findFoods`, `recentFoodIds`, `slotStates`, `currentSlot`, `skippedOn`, `slotLabel`, `Ctx.menuOn`, `Ctx.editMenuMeal`, `Ctx.planFoods`, `Ctx.addMeal`, `Ctx.budget`, `FoodDetailSheet`, `CustomFoodForm`, `IconButton`.
 - Produces: `type AddRequest = { date: ISODate; slotId?: string; lines?: PlanLine[]; mode?: 'log' | 'plan' }`, `useAddSheet(): { open(r: AddRequest): void }`, `AddSheetProvider({ children })`; i18n `add_plan_title`, `add_save_menu`, `add_menu_saved`, `add_replaces_plan`, `add_left_day`, `add_over_day`.
 
-The sheet lives in one provider in the tabs layout, so the ➕ in the bar, the sidebar's Add food, Today's menu (Tasks 15 and 17) and any old link to `/log` all open the same sheet. It opens on the day Today is showing and on the slot asked for, else today's current slot, else the day's first open slot; slot chips change it. The line under the chips says what saving does to the slot and the day; when the slot holds only the meal the app filled in from the plan, it says that meal will be replaced (the store's `settleAuto` drops it when a real meal lands in its slot), instead of showing an over-budget warning for calories that will not count. In plan mode (a future day's "Change", Task 15) Save writes the basket as that slot's planned lines. The fast ways in (eat as planned, the same as yesterday, saved meals) and "Save as my meal" come in Task 12.
+The sheet lives in one provider in the tabs layout, so the ➕ in the bar, the sidebar's Add food, Today's menu (Tasks 15 and 17) and any old link to `/log` all open the same sheet. It opens on the day Today is showing and on the slot asked for, else today's current slot, else the day's first open slot; slot chips change it. The line under the chips says what saving does to the slot and the day; when the slot holds only the meal the app filled in from the plan, it says that meal will be replaced (the store's `settleAuto` drops it when a real meal lands in its slot), instead of showing an over-budget warning for calories that will not count. In plan mode (a future day's "Change", Task 15) Save writes the basket as that slot's planned lines; opened on a date after today without a mode (the ➕ while Today shows next week), the sheet is in plan mode too, as the store logs nothing into the future (`addMealFromPlan` and `fillDayFromPlan` do nothing there, and `mealFromLines` gives no meal). The fast ways in (eat as planned, the same as yesterday, saved meals) and "Save as my meal" come in Task 12.
 
 `log.tsx`'s adding part is gone (the sheet replaces it); its water and weight boxes are the tiles now, and its list of the day's meals is Today's menu. The route stays, so links and reminders that open `/log?date=…&slot=…` keep working: it opens the sheet for that day and slot and shows Today behind it.
 
@@ -3881,7 +3869,8 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   const { state, today, targets } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
-  const mode = request.mode ?? 'log';
+  // Nothing is logged into the future (the store refuses it): opened on a later date, the sheet changes that date's menu.
+  const mode = request.mode ?? (request.date > today ? 'plan' : 'log');
   const date = request.date;
   const isToday = date === today;
   const foods = app.planFoods;
@@ -4269,7 +4258,7 @@ EOF
 - Consumes: `Ctx.addMealFromPlan`, `Ctx.addSavedMeal`, `Ctx.removeMeal`, `mealFromLines` (`menu.ts`), `itemsMeal`, `basketFromLines`, `linesFromBasket`, `formatQty` (Task 9), `lineInfo`, `foodName`, `itemName`, `state.savedMeals`.
 - Produces: `PlannedCard({ title, summary, kcal, lang, onAte, onChange })`, `OneTapRow({ icon, title, sub, label, onPress })`, `SaveAsOffer({ lang, onSave, onSkip })`; i18n `add_eat_planned`, `add_same_yesterday`, `add_log_saved`, `add_save_as_title`, `add_save_as_body`, `add_meal_name`, `add_meal_name_hint`, `add_not_now`, `add_saved_meal`, `menu_ate_planned`, `menu_change`.
 
-Eat as planned is offered while the slot has planned foods and no meal logged by hand; it logs through the store's `addMealFromPlan` (database calories, on the date shown) and replaces a filled-in copy. The same as yesterday logs yesterday's meals in that slot again, as a meal typed by hand. A saved meal logs in one tap with Undo; in plan mode it goes into the basket instead. After a logged meal of two or more foods, the sheet offers to save it under a name.
+Eat as planned is offered while the slot has planned foods and no meal logged by hand, on today or an earlier date only; it logs through the store's `addMealFromPlan` (database calories, on the date shown) and replaces a filled-in copy. Undo on a meal just logged takes it away through `removeMeal`; once that slot's moment to be filled in from the plan has passed, the store then marks the slot skipped (so the app does not fill it straight back), and the day's menu shows it skipped with its own Undo. The same as yesterday logs yesterday's meals in that slot again, as a meal typed by hand. A saved meal logs in one tap with Undo; in plan mode it goes into the basket instead. After a logged meal of two or more foods, the sheet offers to save it under a name.
 
 - [ ] **Step 1: The words, in `src/i18n/index.ts`**
 
@@ -4391,7 +4380,8 @@ with
 
 ```tsx
   // The fast ways in: the slot as planned (while nothing typed by hand is in it), the same slot yesterday, and saved meals.
-  const planned = mode === 'log' && !!slot && slot.lines.length > 0 && !(st?.meals.some((m) => m.source !== 'auto') ?? false);
+  // Never on a date after today: the store logs nothing into the future, and a toast must not say it did.
+  const planned = mode === 'log' && date <= today && !!slot && slot.lines.length > 0 && !(st?.meals.some((m) => m.source !== 'auto') ?? false);
   const yesterdayMeals = slot ? state.meals.filter((m) => m.date === addDays(date, -1) && (m.slotId === slot.id || (!m.slotId && m.type === slot.type))) : [];
   const saved = state.savedMeals;
   const rows = addRows({ mode, query: deferred, results: results.map((f) => f.id), basket, planned, yesterday: mode === 'log' && yesterdayMeals.length > 0, saved: saved.map((s) => s.id), recents });
@@ -5143,6 +5133,8 @@ Every row is one of six, from `dayView`:
 - **open** (a past day, or a slot today passed with nothing in it): each planned food with − / +, and **Ate this** / **Ate other** / **Skipped**.
 - **plan** (a future day): each planned food with − / +, which edit that date's menu, and **Change** (the add sheet in plan mode).
 
+A future day offers no logging: its rows are plan rows, "Fill this day from plan" and "Day looks right" are for past days (and today from 21:00), and its Change opens the add sheet in plan mode. The store refuses plan logging after today (`addMealFromPlan` and `fillDayFromPlan` do nothing there), so a button that logged would only show a toast for a meal that is not saved. A meal deleted from its sheet comes back with Undo through `addMeal`, which lifts the skip `removeMeal` may have marked (Task 17).
+
 Above the rows: on a past day the amber "N meals missing" and the record bar "2 of 3 meals"; on a future day the total against the goal and, when the day is too low (the safety rule), a warning with a way to the diet plan, where Balance lives. Below them: "Fill this day from plan" for a past day with nothing logged, and "Day looks right" from 21:00 (or on a past day) while meals filled in from the plan are unconfirmed.
 
 - [ ] **Step 1: The words, in `src/i18n/index.ts`**
@@ -5761,10 +5753,13 @@ EOF
 
 **Files:**
 - Modify (whole file): `src/app/(tabs)/index.tsx`
+- Modify: `src/components/MealSheet.tsx` (Undo on delete)
 
 **Interfaces:**
 - Consumes: Tasks 4, 5, 13-16, `Ctx.menuOn`, `weekRecord`, `skippedOn`, `slotStates`, `currentSlot`, `mondayOf`, `addDays`, `formatDayLabel`, `pendingCount`, `MealSheet`, `Celebration`, `IconButton`, `Page`, `Logo`.
 - Produces: Today at `/` and `/?date=YYYY-MM-DD`. `MealRow` (exported from the old file, used nowhere else) is gone.
+
+Deleting a meal now happens in `MealSheet` (a tap on a done row), so the Undo the old list's rows had moves there. The store's `removeMeal` marks the slot skipped once its moment to be filled in from the plan has passed, whatever the meal's source; Undo brings the meal back through `app.addMeal`, whose `withMealAdded` lifts that skip, and never by writing the meal back any other way. Nothing on Today logs into a date after today: a future day's menu is plan rows only, and the ➕ opens the add sheet in plan mode there (Task 11); the store refuses plan logging after today anyway.
 
 From top to bottom: the week strip with calories left (one block), then the cards in the person's order: the day's menu, the coach line (today only), the Water and Walk tiles (not on a future day), and any optional cards. Four blocks by default. The greeting, `StartHereCard`, `TrackerGrid`, `FitsCard`, `PlanTodayCard`, the mountain and the mantra no longer render by default, and the other cards listed under "Decisions taken in this plan" leave Today. The viewed date is `?date=` (none for today): tapping a day or moving a week sets it, the header's "Back to today" clears it, and the tab bar's ➕ reads it.
 
@@ -5874,7 +5869,32 @@ export default function TodayScreen() {
 }
 ```
 
-- [ ] **Step 2: Typecheck, lint, suite, greps**
+- [ ] **Step 2: Undo on a deleted meal (`src/components/MealSheet.tsx`)**
+
+Replace
+
+```tsx
+  function remove() {
+    app.removeMeal(current.id);
+    fb.haptic('light');
+    onClose();
+  }
+```
+
+with
+
+```tsx
+  function remove() {
+    // The meal as stored, so Undo puts back exactly what was there, through addMeal, which lifts the skip removeMeal may have marked.
+    const gone = app.state.meals.find((m) => m.id === current.id) ?? current;
+    app.removeMeal(current.id);
+    fb.haptic('light');
+    fb.notify(t('meal_removed'), { label: t('undo'), onPress: () => app.addMeal(gone) });
+    onClose();
+  }
+```
+
+- [ ] **Step 3: Typecheck, lint, suite, greps**
 
 Run: `npx tsc --noEmit && npx expo lint && npx vitest run`
 Expected: all clean; no new tests.
@@ -5888,12 +5908,12 @@ grep -nE "(label|title|placeholder|accessibilityLabel|accessibilityHint)=\"[A-Za
 
 Expected: all four print nothing.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add "src/app/(tabs)/index.tsx"
+git add "src/app/(tabs)/index.tsx" src/components/MealSheet.tsx
 git commit -m "$(cat <<'EOF'
-The new Today is four calm blocks: the week strip with calories left, the day's menu to tick off, one coach line, and the Water and Walk tiles; any day of any week can be opened from the strip to fill in a past day or plan a future one, and the cards the person switches on follow in their order, while the greeting, the start card, the tracker grid, the plates, the plan card, the mountain and the mantra no longer crowd it
+The new Today is four calm blocks: the week strip with calories left, the day's menu to tick off, one coach line, and the Water and Walk tiles; any day of any week can be opened from the strip to fill in a past day or plan a future one, and the cards the person switches on follow in their order, while the greeting, the start card, the tracker grid, the plates, the plan card, the mountain and the mantra no longer crowd it. A meal deleted from its sheet can be brought back with Undo
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 EOF
@@ -6149,7 +6169,7 @@ Save the screenshots in the scratchpad (`shots/plan3-*.png`) and write one line 
 
 ## Self-review
 
-**Checked before handing over:** every task was applied in order, from this document's own code blocks and replacement anchors, to a scratch copy of the repo at `259fa7d` (Plan 1 Tasks 1-10 built), with Plan 1 Task 11 (`tiles.ts`, `walkLog`) applied from Plan 1's document and Plan 1 Task 12's eight `Ctx` entries stubbed with its exact signatures. Every "replace this text" anchor matched. The result typechecks (`tsc --noEmit`), lints clean with the repo's ESLint config (React Compiler rules included), passes the whole suite with the 62 new tests, and `npx expo export -p web` renders every route statically with Reanimated in the bundle. The verification greps were run on that copy and print what each step says. Not run: the screens themselves (Task 19 is the controller's), and anything that depends on how Plan 1 Task 12 is finally written (see "Assumptions about Plan 1").
+**Checked before handing over:** every task was applied in order, from this document's own code blocks and replacement anchors, to a scratch copy of the repo at `3ff9926` (Plan 1 built, its clean-ups A and B included; nothing stubbed). Every "replace this text" anchor matched. The result typechecks (`tsc --noEmit`, also against the repo's generated typed routes), lints clean with the repo's ESLint config (React Compiler rules included), passes the whole suite with the 62 new tests (907 → 969), and `npx expo export -p web` renders every route statically with Reanimated in the bundle; Plan 4 applied on top of it passes the same checks. The verification greps were run on that copy and print what each step says. Not run: the screens themselves (Task 19 is the controller's).
 
 **Spec coverage (Plan 3 scope):**
 
