@@ -1,4 +1,4 @@
-import type { Budget } from './nutrition';
+import { KCAL_FLOOR, type Budget } from './nutrition';
 
 export type Situation =
   | 'over_budget'
@@ -16,6 +16,8 @@ export type DecisionInput = {
   waterGoalMl: number;
   movedToday: boolean;
   lateMealDays: number;
+  /** This person's daily floor. Without it, the lowest floor anyone has is used. */
+  kcalFloor?: number;
 };
 
 export type Decision = {
@@ -30,6 +32,7 @@ export type Decision = {
 };
 
 const MIN_MEAL_KCAL = 300;
+const LOWEST_FLOOR = Math.min(...Object.values(KCAL_FLOOR));
 
 /**
  * Pure rules. No AI. The model only turns this into friendly wording later,
@@ -45,6 +48,9 @@ export function decide(input: DecisionInput): Decision {
   ];
 
   const nextMealMax = b.mealsLeft > 0 ? Math.max(b.perMeal, MIN_MEAL_KCAL) : 0;
+  // A walk adds room to the day, so "over" is measured against target plus what was earned.
+  const allowance = b.target + b.earned;
+  const floor = input.kcalFloor ?? LOWEST_FLOOR;
 
   if (b.consumed === 0) {
     return {
@@ -57,7 +63,7 @@ export function decide(input: DecisionInput): Decision {
     };
   }
 
-  if (b.consumed > b.target * 1.2) {
+  if (b.consumed > allowance * 1.2) {
     return {
       situation: 'way_over',
       severity: 'act',
@@ -68,12 +74,25 @@ export function decide(input: DecisionInput): Decision {
     };
   }
 
-  if (b.remaining < 0 || (hour < 20 && b.consumed > b.target * 0.9 && b.mealsLeft > 0)) {
+  if (b.remaining < 0 || (hour < 20 && b.consumed > allowance * 0.9 && b.mealsLeft > 0)) {
     return {
       situation: 'over_budget',
       severity: 'act',
       facts,
       actionKeys: ['light_dinner', 'walk_20', 'water_2_glass', 'protein_first'],
+      nextMealMin: MIN_MEAL_KCAL,
+      nextMealMax: Math.max(MIN_MEAL_KCAL, Math.round(b.remaining)),
+    };
+  }
+
+  // Before late eating: a day that is still short of food must never be told
+  // "no more meals today", however late it is.
+  if (hour >= 20 && (b.remaining > allowance * 0.3 || b.consumed < floor)) {
+    return {
+      situation: 'under_eating',
+      severity: 'watch',
+      facts,
+      actionKeys: ['eat_something_light', 'protein_first'],
       nextMealMin: MIN_MEAL_KCAL,
       nextMealMax: Math.max(MIN_MEAL_KCAL, Math.round(b.remaining)),
     };
@@ -87,17 +106,6 @@ export function decide(input: DecisionInput): Decision {
       actionKeys: ['earlier_dinner', 'sleep_early', 'no_screen_bed'],
       nextMealMin: 0,
       nextMealMax: 0,
-    };
-  }
-
-  if (hour >= 20 && b.remaining > b.target * 0.3) {
-    return {
-      situation: 'under_eating',
-      severity: 'watch',
-      facts,
-      actionKeys: ['eat_something_light', 'protein_first'],
-      nextMealMin: MIN_MEAL_KCAL,
-      nextMealMax: Math.round(b.remaining),
     };
   }
 

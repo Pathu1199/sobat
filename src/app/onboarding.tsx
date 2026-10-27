@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
-import { dailyTargets, healthyWeightRange } from '../core/nutrition';
+import { dailyTargets, healthyWeightRange, isAdultBirthYear } from '../core/nutrition';
 import type { Activity, Lang, Profile, Sex } from '../core/types';
 import { LANG_NAMES, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -39,7 +39,8 @@ export default function Onboarding() {
 
   const targets = dailyTargets(draft);
   const range = healthyWeightRange(draft.heightCm);
-  const valid = draft.heightCm >= 120 && draft.heightCm <= 230 && draft.weightKg >= 30 && draft.weightKg <= 300 && draft.goalWeightKg >= 30;
+  // Four digits, age 18 to 100: '98' would otherwise be the year 98 and a negative BMR.
+  const valid = isAdultBirthYear(birthYear) && draft.heightCm >= 120 && draft.heightCm <= 230 && draft.weightKg >= 30 && draft.weightKg <= 300 && draft.goalWeightKg >= 30;
 
   function finish() {
     if (!valid) return;

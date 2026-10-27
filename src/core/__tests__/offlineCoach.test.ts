@@ -59,3 +59,46 @@ describe('answerOffline', () => {
     expect(a.options).toHaveLength(0);
   });
 });
+
+describe('fasting questions get a code-written answer', () => {
+  it('reads a fasting question in every language as its own intent', () => {
+    expect(parseQuestion('उपवासाने वजन कमी होते का?').intent).toBe('fasting');
+    expect(parseQuestion('उपवास से वज़न घटता है क्या?').intent).toBe('fasting');
+    expect(parseQuestion('Does fasting help weight loss?').intent).toBe('fasting');
+    expect(parseQuestion('upvas kela tar chalel ka').intent).toBe('fasting');
+    expect(parseQuestion('Should I skip dinner?').intent).toBe('fasting');
+  });
+
+  it('answers with the plan, never with fasting tips', () => {
+    const a = answerOffline('उपवासाने वजन कमी होते का?', ctx, t);
+    expect(a.text).toContain('[oc_fasting]');
+    expect(a.text).toContain('[oc_fasting_vrat]');
+    expect(a.text).not.toContain('[verdict_');
+    expect(a.options).toHaveLength(0);
+  });
+});
+
+describe('a hopeless message gets a gentle check-in, not a pep talk', () => {
+  it('reads giving up and hopelessness as their own intent', () => {
+    for (const q of ['I feel hopeless', 'I want to give up', 'I am giving up on this', 'what is the point, nothing works', 'मला सगळं सोडून द्यावंसं वाटतं', 'मी हरलो आहे', 'मैं हार मान रहा हूँ', 'कोई फ़ायदा नहीं, सब छोड़ देना चाहती हूँ', 'mi haarlo', 'sab chhod dena chahta hu', 'bahut nirash hu']) {
+      expect(parseQuestion(q).intent, q).toBe('low');
+    }
+  });
+
+  it('leaves everyday complaints to their own answers', () => {
+    expect(parseQuestion('I cannot do this workout, my knee hurts').intent).toBe('walk');
+    expect(parseQuestion('nothing works, why is my weight not dropping').intent).toBe('why_not_dropping');
+  });
+
+  it('keeps plain tiredness and boredom as motivation', () => {
+    expect(parseQuestion('I feel lazy today').intent).toBe('motivation');
+    expect(parseQuestion('कंटाळा आलाय').intent).toBe('motivation');
+  });
+
+  it('answers with the check-in and leaves the numbers out', () => {
+    const a = answerOffline('I want to give up', ctx, t);
+    expect(a.text).toContain('[oc_low]');
+    expect(a.text).toContain('[oc_low_do]');
+    expect(a.text).not.toContain('[oc_motivation]');
+  });
+});

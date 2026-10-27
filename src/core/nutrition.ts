@@ -18,9 +18,21 @@ export function ageFrom(birthYear: number, now: Date = new Date()): number {
   return Math.max(1, now.getFullYear() - birthYear);
 }
 
+/** The ages Sobat plans a deficit for. Outside them the target is maintenance. */
+export const ADULT_AGE = { min: 18, max: 100 };
+
+/** The birth year as typed at onboarding: four digits, giving an age Sobat plans for. */
+export function isAdultBirthYear(text: string, now: Date = new Date()): boolean {
+  const t = text.trim();
+  if (!/^[0-9]{4}$/.test(t)) return false;
+  const age = now.getFullYear() - Number(t);
+  return age >= ADULT_AGE.min && age <= ADULT_AGE.max;
+}
+
 /** Mifflin-St Jeor resting energy expenditure, kcal/day. */
 export function bmr(p: Pick<Profile, 'sex' | 'weightKg' | 'heightCm' | 'birthYear'>, now?: Date): number {
-  const age = ageFrom(p.birthYear, now);
+  // A two-digit year reads as an age near 2000; the formula is only meant for adults anyway.
+  const age = Math.min(Math.max(ageFrom(p.birthYear, now), ADULT_AGE.min), ADULT_AGE.max);
   const base = 10 * p.weightKg + 6.25 * p.heightCm - 5 * age;
   return Math.round(base + (p.sex === 'male' ? 5 : -161));
 }
@@ -52,23 +64,31 @@ export type Targets = {
   floored: boolean;
   bmi: number;
   band: ReturnType<typeof bmiBand>;
+  /** Why there is no deficit at all, when there is none: eat at maintenance. */
+  hold: null | 'at_goal' | 'underweight' | 'age';
 };
 
 /**
  * Daily targets. The deficit is capped at 1 kg/week and the result is clamped
- * to a calorie floor, so an aggressive goal silently becomes a safe one.
+ * to a calorie floor, so an aggressive goal silently becomes a safe one. A
+ * goal under the healthy range counts as the bottom of the range, and there
+ * is no deficit at all for someone already there, underweight, or outside the
+ * adult ages the maths is meant for.
  */
 export function dailyTargets(p: Profile, now?: Date): Targets {
   const maintenance = tdee(p, now);
-  const rate = Math.min(Math.max(p.rateKgPerWeek, 0), MAX_RATE_KG_PER_WEEK);
+  const value = bmi(p.weightKg, p.heightCm);
+  const age = ageFrom(p.birthYear, now);
+  const goal = Math.max(p.goalWeightKg > 0 ? p.goalWeightKg : p.weightKg, healthyWeightRange(p.heightCm).min);
+  const hold: Targets['hold'] =
+    age < ADULT_AGE.min || age > ADULT_AGE.max ? 'age' : value < 18.5 ? 'underweight' : p.weightKg <= goal ? 'at_goal' : null;
+  const rate = hold ? 0 : Math.min(Math.max(p.rateKgPerWeek, 0), MAX_RATE_KG_PER_WEEK);
   const wantedDeficit = Math.round((rate * KCAL_PER_KG_FAT) / 7);
   const floor = KCAL_FLOOR[p.sex];
   const raw = maintenance - wantedDeficit;
   const kcal = Math.max(raw, floor);
-  const goal = p.goalWeightKg > 0 ? p.goalWeightKg : p.weightKg;
   // 1.4 g per kg of goal weight keeps muscle while losing fat.
   const proteinG = Math.round(1.4 * Math.min(goal, p.weightKg));
-  const value = bmi(p.weightKg, p.heightCm);
   return {
     bmr: bmr(p, now),
     tdee: maintenance,
@@ -79,6 +99,7 @@ export function dailyTargets(p: Profile, now?: Date): Targets {
     floored: raw < floor,
     bmi: value,
     band: bmiBand(value),
+    hold,
   };
 }
 

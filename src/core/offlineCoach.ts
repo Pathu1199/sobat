@@ -1,5 +1,6 @@
 import type { Advice } from './coach';
 import type { DayPlan } from './dayPlan';
+import { asksAboutFasting, foldText } from './guardrails';
 import type { Budget } from './nutrition';
 import { planVerdict, type Plan } from './plan';
 import type { Journey } from './review';
@@ -28,6 +29,8 @@ export type Intent =
   | 'walk'
   | 'meal'
   | 'plan_day'
+  | 'fasting'
+  | 'low'
   | 'unknown';
 
 export type Parsed = { intent: Intent; kcal?: number; meal?: MealType };
@@ -41,15 +44,25 @@ const RX: [Intent, RegExp][] = [
   ['water', /\bwater\b|pani\b|paani|पाणी|पानी|hydrat/i],
   ['sleep', /sleep|insomnia|zop|झोप|नींद|neend|jhop/i],
   ['walk', /walk|steps|chal(ne|a|u)|चाल|कदम|पावल|exercise|workout|vyayam|व्यायाम|कसरत/i],
-  ['motivation', /motivat|kantala|कंटाळा|मन नाही|मन नहीं|lazy|tired|thak|थक|give up|sodun|hopeless|bore/i],
+  ['motivation', /motivat|kantala|कंटाळा|मन नाही|मन नहीं|lazy|tired|thak|थक|give up|sodun|bore/i],
   ['weigh', /weigh|scale|wajan|वजन|वज़न|kilo/i],
   ['plan_day', /full day|whole day|diet plan|meal plan|aaj ka plan|पूर्ण दिवस|पूरा दिन|दिवसभर|din bhar|time ?table/i],
   ['meal', /breakfast|nashta|नाश्ता|lunch|dupar|दुपार|जेवण|dinner|ratri|रात्री|रात का|snack|chaha|चहा|चाय|tea/i],
   ['eat_now', /eat|khau|khav|khaw|खाऊ|खाव|khana|खाना|खाय|suggest|option|hungry|bhook|भूक|कुछ|kahi/i],
 ];
 
+/**
+ * Hopelessness, not tiredness: these get a gentle check-in instead of the
+ * motivation reply, which answers "I want to give up" with a streak count.
+ * Matched on folded text, so a nukta or Devanagari digits change nothing.
+ */
+const LOW = /hopeless|\bgiv(?:e|ing) up(?:\s+(?:on\b|now|everything|already|again)|\s*[.!?,]|\s*$)|what'?s the point|what is the point|\bno point\b|\bpointless\b|i(?:'m| am) a failure|(?:can'?t|cannot) do this any ?more|\bi quit\b|want to quit|sick of (?:myself|trying)|hate myself|\bworthless\b|हताश|निराश|सोडून\s*द्या[वय]|(^|\s)हरल[ोेी]|उपयोग\s*नाही|नाउम्मीद|उम्मीद\s*नही|हार\s*मान|हार\s*ग[यई]|फायदा\s*नही|छोड\s*देना\s*चाह|सब\s*छोड\s*द|\bnirash|\bhaa?r\s*(?:gaya|gayi|gai|maan)|\bhaa?rl[oe]\b|\bsodun\s*dya[vy]|\bchhod\s*dena\s*chaht|\bsab\s*chhod|\bfayda\s*nahi|\bupyog\s*nahi|\bummeed\s*nahi/;
+
 export function parseQuestion(q: string): Parsed {
   const s = q.toLowerCase();
+  if (LOW.test(foldText(q))) return { intent: 'low' };
+  // Fasting and skipping meals are answered from the plan, whatever else the question mentions.
+  if (asksAboutFasting(q)) return { intent: 'fasting' };
   for (const [intent, rx] of RX) {
     const m = s.match(rx);
     if (!m) continue;
@@ -84,6 +97,12 @@ export type OfflineCtx = {
 };
 
 type T = (k: string) => string;
+
+/** The code-written answer to "does fasting help?": the same words with the PC on or off. */
+export function fastingReply(t: T, kcalTarget: number): string {
+  return [f(t('oc_fasting'), { kcal: kcalTarget }), t('oc_fasting_vrat')].join('\n\n');
+}
+
 function f(s: string, p: Record<string, string | number>): string {
   return s.replace(/\{(\w+)\}/g, (_, k) => String(p[k] ?? ''));
 }
@@ -162,6 +181,16 @@ export function answerOffline(question: string, ctx: OfflineCtx, t: T): { text: 
     case 'sleep': {
       lines.push(ctx.lastSleepMinutes !== null ? f(t('oc_sleep_last'), { h: Math.floor(ctx.lastSleepMinutes / 60), m: ctx.lastSleepMinutes % 60 }) : t('oc_sleep_none'));
       lines.push(t('oc_sleep_do'));
+      break;
+    }
+    case 'fasting': {
+      lines.push(fastingReply(t, ctx.kcalTarget));
+      break;
+    }
+    case 'low': {
+      // No numbers, no streak, no plan: a person who sounds hopeless is asked how they are.
+      lines.push(t('oc_low'));
+      lines.push(t('oc_low_do'));
       break;
     }
     case 'motivation': {
