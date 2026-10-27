@@ -4,6 +4,7 @@ import { formatDayLabel, formatDayMonth } from '../core/date';
 import type { Lang } from '../core/types';
 import { swipeStep, type StripDay } from '../core/weekStrip';
 import { makeT } from '../i18n';
+import { STRIP_DAY_HEIGHT, STRIP_DOT } from '../ui/stripGeometry';
 import { C, F, lh, S } from '../ui/theme';
 import { IconButton } from './TopBarActions';
 
@@ -11,9 +12,12 @@ import { IconButton } from './TopBarActions';
  * Monday to Sunday of the week being looked at, a dot under each day from
  * the record. Tapping a day shows it; the arrows above, or a sideways swipe,
  * move a week. The arrows sit in their own row, so each day keeps a full
- * seventh of the width, never under a finger's size. A day's words stay on
- * one line at every text size: the weekday's short name, the date, and the
- * dot; what the dot means is in the day's name for a screen reader.
+ * seventh of the width; on a phone too narrow for seven fingers side by side
+ * (320 points) the days grow no wider than that seventh, so the row never
+ * runs over, and each stays a finger and more tall (ui/stripGeometry.ts). A
+ * day's words stay on one line at every text size: the weekday's short name,
+ * the date, and the dot; what the dot means is in the day's name for a
+ * screen reader.
  */
 export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; lang: Lang; onSelect: (date: string) => void; onWeek: (by: -1 | 1) => void }) {
   const t = makeT(lang);
@@ -48,8 +52,8 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
             accessibilityLabel={`${formatDayLabel(d.date, lang)}, ${t(`strip_${d.mark}`)}${d.light ? `, ${t('strip_from_plan')}` : ''}`}
             style={({ pressed }) => ({
               flex: 1,
-              minHeight: 60,
-              minWidth: S.touch,
+              minWidth: 0,
+              minHeight: STRIP_DAY_HEIGHT,
               alignItems: 'center',
               justifyContent: 'center',
               gap: 3,
@@ -74,10 +78,13 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
   );
 }
 
-/** Teal for full, amber for missing, an outline for planned and today; nothing for an off day or a day before the start. Lighter while the day holds meals filled in from the plan. */
+/**
+ * Teal for full, amber for missing, an outline for planned and today; nothing for an off day or a day before the start. Lighter
+ * while the day holds meals filled in from the plan. Each colour stands out at 3:1 where the strip is drawn (STRIP_DOT).
+ */
 function Dot({ mark, light }: { mark: StripDay['mark']; light: boolean }) {
   if (mark === 'off' || mark === 'none') return <View style={{ width: 8, height: 8 }} />;
-  const fill = mark === 'full' ? C.accent : mark === 'missing' ? C.amber : 'transparent';
+  const fill = mark === 'full' ? C[STRIP_DOT.full] : mark === 'missing' ? C[STRIP_DOT.missing] : 'transparent';
   return (
     <View
       style={{
@@ -86,7 +93,7 @@ function Dot({ mark, light }: { mark: StripDay['mark']; light: boolean }) {
         borderRadius: 4,
         backgroundColor: fill,
         borderWidth: fill === 'transparent' ? 1.5 : 0,
-        borderColor: C.textFaint,
+        borderColor: C[STRIP_DOT.outline],
         opacity: light ? 0.45 : 1,
       }}
     />

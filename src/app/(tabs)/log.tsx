@@ -1,6 +1,6 @@
-import { useFocusEffect, useLocalSearchParams, useNavigation, useRoute } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRoute, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useAddSheet } from '../../components/AddSheet';
 import { isIsoDate } from '../../core/date';
 import { handOff, logLinkStep } from '../../core/logLink';
@@ -15,13 +15,16 @@ const handled = new WeakSet<object>();
  * /log (the coach line, a reminder, an older screen) opens that sheet for the
  * day and slot it names, with Today showing that day behind it. /log then
  * leaves the way back, so Back from Today goes where the person was before
- * the link; should Back bring /log into view again all the same (a browser's
- * own history can), the link is not handled twice: /log steps back past
- * itself, or hands over to Today with nothing behind it.
+ * the link: on a phone by taking itself off the tab bar's way back, on the
+ * web by a replace, as the browser's Back follows the addresses it recorded.
+ * Should Back bring /log into view again all the same, the link is not
+ * handled twice: /log steps back past itself, or hands over to Today with
+ * nothing behind it.
  */
 export default function LogRoute() {
   const app = useApp();
   const navigation = useNavigation();
+  const router = useRouter();
   const route = useRoute();
   const addSheet = useAddSheet();
   const { date, slot } = useLocalSearchParams<{ date?: string; slot?: string }>();
@@ -45,13 +48,23 @@ export default function LogRoute() {
           handled.add(link);
           addSheet.open({ date: day, slotId });
         }
-        // Today in front (for the link's day, when the sheet opens), and /log off the way back.
+        if (Platform.OS === 'web') {
+          // The browser's Back replays the addresses it recorded, not the tab bar's way back, so the replace takes /log
+          // out of the browser's history and Back cannot loop here. A reset would shorten the tab bar's way back,
+          // which the web's history follows by stepping the browser back.
+          router.replace(day === today ? '/' : { pathname: '/', params: { date: day } });
+          return;
+        }
+        // On a phone, Today in front (for the link's day, when the sheet opens), and /log off the tab bar's way back.
+        // This rests on the tab router's own state: handOff (core/logLink.ts) rewrites its internal `history`, a list
+        // of { type: 'route', key } entries (expo-router's build/react-navigation/routers/TabRouter.js, ~57.0); were
+        // that shape to change, /log would stay on the way back and the step back above is the safety net.
         // (The tab bar's own state, typed loosely by getState and strictly by reset, so it is cast back.)
         const tabs = navigation.getState();
         if (tabs) navigation.reset(handOff(tabs, key, 'index', step === 'open' ? (day === today ? {} : { date: day }) : undefined) as Parameters<typeof navigation.reset>[0]);
       }, 0);
       return () => clearTimeout(id);
-    }, [addSheet, navigation, link, key, day, slotId, today]),
+    }, [addSheet, navigation, router, link, key, day, slotId, today]),
   );
   return <View style={{ flex: 1, backgroundColor: C.bg }} />;
 }

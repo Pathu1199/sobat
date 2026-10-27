@@ -298,9 +298,9 @@ describe('meals from the plan', () => {
 
   it('logs nothing into the future: a date after today gives no meal, and filling it from the plan gives none', () => {
     expect(mealFromLines({ id: 'x', date: '2026-10-28', slot: lunch, lines: lunch.lines, foods, source: 'plan', now: NOW })).toBeNull();
-    expect(fillFromPlan({ now: NOW, menu: menu('2026-10-28', 2), meals: [], skips: [], foods })).toEqual([]);
+    expect(fillFromPlan({ now: NOW, menu: menu('2026-10-28', 2), meals: [], skips: [], foods, offDay: false })).toEqual([]);
     // Today, even before the slot's time, still logs.
-    expect(fillFromPlan({ now: NOW, menu: menu('2026-10-27', 2), meals: [], skips: [], foods }).map((m) => m.slotId)).toEqual(['lunch']);
+    expect(fillFromPlan({ now: NOW, menu: menu('2026-10-27', 2), meals: [], skips: [], foods, offDay: false }).map((m) => m.slotId)).toEqual(['lunch']);
   });
 
   it('a menu meal with no usable time is read at the usual time for its kind of meal, as a slot is', () => {
@@ -312,8 +312,15 @@ describe('meals from the plan', () => {
 
   it('"Fill this day from plan" logs every open slot of an older day as planned', () => {
     const old: DayMenu = { ...menu('2026-10-20', 2), meals: [...menu('2026-10-20', 2).meals.slice(0, 2), { id: 'dinner', type: 'dinner', time: '20:00', lines: [chapati(1)] }] };
-    const out = fillFromPlan({ now: NOW, menu: old, meals: [], skips: addSkip([], '2026-10-20', 'dinner'), foods });
+    const out = fillFromPlan({ now: NOW, menu: old, meals: [], skips: addSkip([], '2026-10-20', 'dinner'), foods, offDay: false });
     expect(out.map((m) => [m.slotId, m.source])).toEqual([['lunch', 'plan']]);
+  });
+
+  it('"Fill this day from plan" fills nothing on a free day or a day before the person started; the first day fills', () => {
+    const old = menu('2026-10-20', 2);
+    expect(fillFromPlan({ now: NOW, menu: old, meals: [], skips: [], foods, offDay: true })).toEqual([]);
+    expect(fillFromPlan({ now: NOW, menu: old, meals: [], skips: [], foods, offDay: false, startDate: '2026-10-21' })).toEqual([]);
+    expect(fillFromPlan({ now: NOW, menu: old, meals: [], skips: [], foods, offDay: false, startDate: '2026-10-20' }).map((m) => m.slotId)).toEqual(['lunch']);
   });
 });
 

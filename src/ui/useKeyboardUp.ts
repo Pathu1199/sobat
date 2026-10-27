@@ -6,8 +6,9 @@ import { Keyboard, Platform } from 'react-native';
  * move and Android once it has; a browser never says, so on the web this
  * stays false (the browser moves its own page for its keyboard). It listens
  * only while `active` (a sheet listens while it is open) and is false
- * otherwise; coming back, it reads the keyboard again, as it may have moved
- * while nothing listened.
+ * otherwise. Going inactive forgets the keyboard (a closed sheet keeps no
+ * "up" to show for a frame when it opens again); coming back, it reads the
+ * keyboard again, as it may have moved while nothing listened.
  */
 export function useKeyboardUp(active = true): boolean {
   const [up, setUp] = useState(() => active && Keyboard.isVisible());
@@ -21,6 +22,7 @@ export function useKeyboardUp(active = true): boolean {
       clearTimeout(read);
       show.remove();
       hide.remove();
+      setUp(false);
     };
   }, [active]);
   return active && up;

@@ -386,9 +386,23 @@ export function autoFill(input: {
   return out;
 }
 
-/** "Fill this day from plan": every open slot of an older day, the kind the app was never open on, logged as planned. Nothing for a date after today. */
-export function fillFromPlan(input: { now: Date; menu: DayMenu; meals: Meal[]; skips: SlotSkip[]; foods: FoodItem[] }): Meal[] {
+/**
+ * A date the record does not ask about: an off day, or a day before the
+ * person started (`startDate`). Nothing is missing on it and nothing is
+ * filled in from the plan for it; its meals can still be logged.
+ */
+export function outsideRecord(date: ISODate, offDay: boolean, startDate?: ISODate): boolean {
+  return offDay || (startDate !== undefined && date < startDate);
+}
+
+/**
+ * "Fill this day from plan": every open slot of an older day, the kind the
+ * app was never open on, logged as planned. Nothing for a date after today,
+ * an off day or a day before the person started (`outsideRecord`).
+ */
+export function fillFromPlan(input: { now: Date; menu: DayMenu; meals: Meal[]; skips: SlotSkip[]; foods: FoodItem[]; offDay: boolean; startDate?: ISODate }): Meal[] {
   const { menu } = input;
+  if (outsideRecord(menu.date, input.offDay, input.startDate)) return [];
   const out: Meal[] = [];
   for (const slot of openSlots(menu, input.meals, input.skips)) {
     const meal = mealFromLines({ id: `plan-${menu.date}-${slot.id}`, date: menu.date, slot, lines: slot.lines, foods: input.foods, source: 'plan', now: input.now });

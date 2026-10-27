@@ -49,6 +49,8 @@ import {
 } from '../core/menu';
 import { bestStreak, waterMlOn } from '../core/tileText';
 import { withWaterAdded, withWaterRemoved } from '../core/tiles';
+import { isOffDay } from '../core/week';
+import { stripSince } from '../core/weekStrip';
 import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
 import type { PlanDay, PlanMeal, WeekPlan } from '../core/weekPlan';
@@ -590,7 +592,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const now = new Date();
           const foods = allFoods(s.customFoods);
           const menu = viewMenu(date, s.menus, s.routine, today, foods, fitOn(s.profile, s.routine, today));
-          return fillFromPlan({ now, menu, meals: s.meals, skips: s.slotSkips, foods }).reduce((acc, m) => withMeal(acc, m, targets.kcal, now), s);
+          // Nothing on an off day or before the person started (the week strip's start), where no meal is missing.
+          const offDay = isOffDay(s.settings.offDays, date);
+          const startDate = stripSince(s.profile.onboardedOn, s.meals, today);
+          return fillFromPlan({ now, menu, meals: s.meals, skips: s.slotSkips, foods, offDay, startDate }).reduce((acc, m) => withMeal(acc, m, targets.kcal, now), s);
         }),
       runAutoFill: () => update(withAutoFillNow),
       addSavedMeal: (name, lines) =>

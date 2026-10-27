@@ -151,7 +151,7 @@ export default function ScanScreen() {
         {notFound ? (
           <Card>
             <Small color={C.amber}>{t('barcode_not_found')}</Small>
-            <CustomFoodForm onSaved={() => router.replace('/log')} onCancel={() => setNotFound(false)} />
+            <CustomFoodForm onSaved={() => router.dismissTo('/')} onCancel={() => setNotFound(false)} />
           </Card>
         ) : null}
         <Btn tone="ghost" label={t('cancel')} onPress={() => router.back()} />

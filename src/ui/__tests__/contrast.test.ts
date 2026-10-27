@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contrastRatio, luminance } from '../contrast';
+import { STRIP_DOT } from '../stripGeometry';
 import { PALETTES, type ThemeMode } from '../theme';
 
 const MODES: ThemeMode[] = ['light', 'dark'];
@@ -46,6 +47,14 @@ describe('palette', () => {
       expect(contrastRatio(P.accentText, P.accentSoft), 'accentText on accentSoft').toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(P.red, P.redSoft), 'red on redSoft').toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(P.amber, P.amberSoft), 'amber on amberSoft').toBeGreaterThanOrEqual(4.5);
+    });
+
+    it(`${mode}: the week strip's dots stand out at 3:1 on the card, the page and the chosen day's tint`, () => {
+      for (const [kind, token] of Object.entries(STRIP_DOT)) {
+        for (const bg of ['bg', 'card', 'cardAlt', 'accentDim'] as const) {
+          expect(contrastRatio(P[token], P[bg]), `${kind} dot (${token}) on ${bg}`).toBeGreaterThanOrEqual(3);
+        }
+      }
     });
 
     it(`${mode}: the week strip's chosen day, drawn on accentDim, sets its words in text, textDim or accentText, never textFaint`, () => {
