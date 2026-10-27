@@ -2,27 +2,29 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import foodsJson from '../data/foods.json';
 import exercisesJson from '../data/exercises.json';
-import { lastNDates, mondayOf, toISODate } from '../core/date';
+import { AppState as RNAppState } from 'react-native';
+import { mondayOf, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
 import { newId } from '../core/id';
 import { prunePhotos } from '../services/photoStore';
 import { useClock } from '../services/useClock';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
 import { parkedPhotoIds, switchStored } from '../core/accounts';
-import { burnedOn, eatBack } from '../core/activity';
-import { streak } from '../core/insights';
-import { isOffDay } from '../core/week';
+import { burnedOn, eatBack, walkLog } from '../core/activity';
 import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryType } from '../core/memory';
 import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
 import { slotStates } from '../core/pattern';
+import { recordStreak } from '../core/record';
 import {
   addMenuLine,
   alignMenus,
   applyWeekPlan,
   copyDay,
   editedMeal,
+  fillFromPlan,
   isSuggested,
+  mealFromLines,
   removeSkip,
   setMenuDay,
   setMenuLine,
@@ -31,7 +33,13 @@ import {
   viewMenu,
   viewWeek,
   weekPlanView,
+  withAutoFill,
+  withDayConfirmed,
   withMealAdded,
+  withMealConfirmed,
+  withMealRemoved,
+  withoutSavedMeal,
+  withSavedMeal,
   withSkipAdded,
   type DayMenu,
 } from '../core/menu';
@@ -39,7 +47,7 @@ import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from 
 import type { WorkSchedule } from '../core/schedule';
 import type { PlanMeal, WeekPlan } from '../core/weekPlan';
 import type { BreakKind, BreakSettings } from '../core/breaks';
-import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
+import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MealSource, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { EMPTY_STATE } from './defaults';
 import { migrateState } from './migrate';
 
@@ -122,6 +130,20 @@ type Ctx = {
   addMenuFood: (day: DayMenu, mealId: string, line: PlanLine) => void;
   editMenuMeal: (day: DayMenu, meal: PlanMeal) => void;
   copyMenuDay: (from: DayMenu, to: ISODate) => void;
+  /** "Ate as planned" for a slot on any date: its planned lines logged with database calories. */
+  addMealFromPlan: (date: ISODate, slotId: string, source?: MealSource) => void;
+  /** A meal the app filled in, confirmed as eaten. */
+  confirmMeal: (id: string) => void;
+  /** "Day looks right": every filled-in meal of the date confirmed. */
+  confirmDay: (date: ISODate) => void;
+  /** "Fill this day from plan": every open slot of an older day logged as planned. */
+  fillDayFromPlan: (date: ISODate) => void;
+  /** Fill in the planned meals that are due now; the store also does this on open, every minute and on coming back to the front. */
+  runAutoFill: () => void;
+  addSavedMeal: (name: string, lines: PlanLine[]) => void;
+  removeSavedMeal: (id: string) => void;
+  /** A walk from the walk tile: an activity log, so its calories are earned the usual way. Returns its id, for undo. */
+  logWalk: (date: ISODate, minutes: number) => string;
   addActivity: (a: ActivityLog) => void;
   removeActivity: (id: string) => void;
   burnedToday: number;
@@ -169,6 +191,11 @@ function withMenus(s: AppState, menus: DayMenu[]): AppState {
 /** Every meal goes into the state this way; `withMealAdded` says what that does. */
 function withMeal(s: AppState, m: Meal, target: number, now: Date): AppState {
   return { ...s, ...withMealAdded(s, m, target, now) };
+}
+
+/** The app's own run, now: today marked as a day the app was open and the planned meals that are due filled in. The same state when there is nothing to do. */
+function withAutoFillNow(s: AppState): AppState {
+  return withAutoFill(s, new Date(), allFoods(s.customFoods), dailyTargets(s.profile).kcal);
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -282,6 +309,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const update = useCallback((fn: (s: AppState) => AppState) => setState((s) => fn(s)), []);
   const planFoods = useMemo(() => allFoods(state.customFoods), [state.customFoods]);
 
+  // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run while it is going.
+  // A day settled only by skips never counts and ends the run.
+  const streakDays = useMemo(
+    () =>
+      recordStreak({
+        today,
+        routine: state.routine,
+        meals: state.meals,
+        skips: state.slotSkips,
+        offDays: state.settings.offDays ?? [],
+        menuOn: (d) => viewMenu(d, state.menus, state.routine, today, planFoods),
+      }),
+    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, state.menus, planFoods],
+  );
+
+  // Planned meals fill themselves 90 minutes after their slot, and today is noted as a day the app was open: checked once the
+  // store is loaded, then every minute (which also catches midnight) and whenever the app comes back to the front. Never while
+  // one account's data is being put aside.
+  useEffect(() => {
+    if (!ready) return;
+    const run = () => {
+      if (switching.current) return;
+      setState(withAutoFillNow);
+    };
+    const first = setTimeout(run, 0);
+    const timer = setInterval(run, 60000);
+    const sub = RNAppState.addEventListener('change', (st) => {
+      if (st === 'active') run();
+    });
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+      sub.remove();
+    };
+  }, [ready]);
+
   const value = useMemo<Ctx>(() => {
     const targets = dailyTargets(state.profile);
     const todayMeals = state.meals.filter((m) => m.date === today);
@@ -295,9 +358,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       patternStates.length > 0 ? patternStates.filter((x) => x.status === 'now' || x.status === 'missed' || x.status === 'later').length : undefined;
     const budget = calcBudget(targets, totals, hour, eatBack(burnedToday), mealsLeftOverride);
     const waterToday = state.water.filter((w) => w.date === today).reduce((a, w) => a + w.ml, 0);
-    const dates = lastNDates(60, today);
-    const mealDates = new Set(state.meals.map((m) => m.date));
-    const streakDays = streak(dates, (d) => mealDates.has(d) || isOffDay(state.settings.offDays, d));
     const screenMinutesToday = minutesOn(state.usage, today);
     // A tip is only today's if it was also written in the language now selected.
     const tipRecord = state.tips.find((t) => t.date === today && t.lang === state.profile.lang);
@@ -320,7 +380,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setProfile: (p) => update((s) => ({ ...s, profile: { ...s.profile, ...p } })),
       setSettings: (x) => update((s) => ({ ...s, settings: { ...s.settings, ...x } })),
       addMeal: (m) => update((s) => withMeal(s, m, targets.kcal, new Date())),
-      removeMeal: (id) => update((s) => ({ ...s, meals: s.meals.filter((m) => m.id !== id) })),
+      removeMeal: (id) =>
+        update((s) => {
+          // A meal from the plan taken away was not eaten that way: its slot is marked skipped, so it is not filled straight back.
+          const next = withMealRemoved(s, id);
+          return next.meals === s.meals ? s : { ...s, ...next };
+        }),
       updateMeal: (m) => update((s) => ({ ...s, meals: s.meals.map((x) => (x.id === m.id ? editedMeal(x, m) : x)) })),
       addWater: (ml) =>
         update((s) => ({ ...s, water: [...s.water, { id: newId(), at: new Date().toISOString(), date: toISODate(), ml }] })),
@@ -427,6 +492,47 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addMenuFood: (day, mealId, line) => update((s) => withMenus(s, addMenuLine(s.menus, day, mealId, line, new Date()))),
       editMenuMeal: (day, meal) => update((s) => withMenus(s, setMenuMeal(s.menus, day, meal, new Date()))),
       copyMenuDay: (from, to) => update((s) => withMenus(s, copyDay(from, to, s.menus, new Date()))),
+      addMealFromPlan: (date, slotId, source = 'plan') =>
+        update((s) => {
+          const now = new Date();
+          const foods = allFoods(s.customFoods);
+          const slot = viewMenu(date, s.menus, s.routine, today, foods).meals.find((m) => m.id === slotId);
+          const meal = slot ? mealFromLines({ id: newId(), date, slot, lines: slot.lines, foods, source, now }) : null;
+          return meal ? withMeal(s, meal, targets.kcal, now) : s;
+        }),
+      confirmMeal: (id) =>
+        update((s) => {
+          const meals = withMealConfirmed(s.meals, id);
+          return meals === s.meals ? s : { ...s, meals };
+        }),
+      confirmDay: (date) =>
+        update((s) => {
+          const meals = withDayConfirmed(s.meals, date);
+          return meals === s.meals ? s : { ...s, meals };
+        }),
+      fillDayFromPlan: (date) =>
+        update((s) => {
+          const now = new Date();
+          const foods = allFoods(s.customFoods);
+          const menu = viewMenu(date, s.menus, s.routine, today, foods);
+          return fillFromPlan({ now, menu, meals: s.meals, skips: s.slotSkips, foods }).reduce((acc, m) => withMeal(acc, m, targets.kcal, now), s);
+        }),
+      runAutoFill: () => update(withAutoFillNow),
+      addSavedMeal: (name, lines) =>
+        update((s) => {
+          const savedMeals = withSavedMeal(s.savedMeals, { id: newId(), name, lines });
+          return savedMeals === s.savedMeals ? s : { ...s, savedMeals };
+        }),
+      removeSavedMeal: (id) =>
+        update((s) => {
+          const savedMeals = withoutSavedMeal(s.savedMeals, id);
+          return savedMeals === s.savedMeals ? s : { ...s, savedMeals };
+        }),
+      logWalk: (date, minutes) => {
+        const id = newId();
+        update((s) => ({ ...s, activities: [...(s.activities ?? []), walkLog({ id, date, minutes, weightKg: s.profile.weightKg, now: new Date() })] }));
+        return id;
+      },
       addActivity: (a) => update((s) => ({ ...s, activities: [...(s.activities ?? []), a] })),
       removeActivity: (id) => update((s) => ({ ...s, activities: (s.activities ?? []).filter((x) => x.id !== id) })),
       burnedToday,
@@ -474,7 +580,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, streakDays]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }
