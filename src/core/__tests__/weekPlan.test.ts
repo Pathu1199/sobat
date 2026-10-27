@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { DEFAULT_ROUTINE, type Routine } from '../routine';
+import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, type Routine } from '../routine';
 import type { FoodItem } from '../types';
-import { alignWeekPlan, balanceDay, buildWeekPlan, copyToWeekdays, dayStatus, dayTotals, lineInfo, roleOf, setLine, swapsFor, type WeekPlan } from '../weekPlan';
+import { alignWeekPlan, balanceDay, buildWeekPlan, copyToWeekdays, dayStatus, dayTotals, lineInfo, planDayFor, roleOf, setLine, swapsFor, type WeekPlan } from '../weekPlan';
 
 const foods = foodsJson as FoodItem[];
 const byId = (id: string) => foods.find((f) => f.id === id)!;
@@ -66,6 +66,22 @@ describe('weekPlan', () => {
     const k = dayTotals(day, foods).kcal;
     expect(k).toBeGreaterThanOrEqual(1500);
     expect(dayStatus(k, 1524, 1500)).not.toBe('low');
+  });
+
+  it('lifts a day just under the safe minimum over it, even when the only step that does lands above the band', () => {
+    // A new person's Tuesday: every step toward a 1200 kcal day is bigger than the 3 kcal it is short.
+    const tuesday = planDayFor(NEUTRAL_ROUTINE, 2, foods);
+    const k = dayTotals(balanceDay(tuesday, foods, 1200, new Set(), 1200).day, foods).kcal;
+    expect(k).toBeGreaterThanOrEqual(1200);
+    expect(k).toBeLessThanOrEqual(1200 * 1.1);
+  });
+
+  it('never takes a day under the safe minimum on the way down', () => {
+    const plan = buildWeekPlan(DEFAULT_ROUTINE, foods);
+    const before = dayTotals(plan.days[1], foods).kcal;
+    const k = dayTotals(balanceDay(plan.days[1], foods, 1250, new Set(), 1250).day, foods).kcal;
+    expect(k).toBeLessThan(before);
+    expect(k).toBeGreaterThanOrEqual(1250);
   });
 
   it('brings a day that is too high down, and never below one bread', () => {

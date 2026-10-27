@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
 import { EMPTY_STATE } from '../../store/defaults';
-import { addDays } from '../date';
+import { addDays, weekDates } from '../date';
 import {
   addMenuLine,
   addSkip,
@@ -15,6 +15,7 @@ import {
   editedMeal,
   ensureWeek,
   fillFromPlan,
+  fitFor,
   hasPlan,
   isSuggested,
   mealFromLines,
@@ -41,12 +42,13 @@ import {
   withSavedMeal,
   withSkipAdded,
   type DayMenu,
+  type MenuFit,
 } from '../menu';
-import { kcalForGrams } from '../nutrition';
+import { dailyTargets, KCAL_FLOOR, kcalForGrams } from '../nutrition';
 import { forCloud, isPristine } from '../sync';
-import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, type PlanLine, type Routine, type RoutineSlot } from '../routine';
+import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, ruleForFood, type PlanLine, type Routine, type RoutineSlot } from '../routine';
 import type { FoodItem, Meal, MealSource, SlotSkip } from '../types';
-import { buildWeekPlan, lineInfo, planDayFor, type PlanMeal } from '../weekPlan';
+import { buildWeekPlan, dayTotals, lineInfo, planDayFor, type PlanMeal } from '../weekPlan';
 
 const foods = foodsJson as FoodItem[];
 const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
@@ -518,6 +520,105 @@ describe('a suggested day', () => {
     expect(isSuggested(viewMenu(WED, migrated, NEUTRAL_ROUTINE, '2026-10-27', foods), NEUTRAL_ROUTINE, foods)).toBe(false);
     // Thursday kept the plan the app had built.
     expect(isSuggested(viewMenu('2026-10-29', migrated, NEUTRAL_ROUTINE, '2026-10-27', foods), NEUTRAL_ROUTINE, foods)).toBe(true);
+  });
+});
+
+describe('the app\'s suggestion fits the person\'s day', () => {
+  const TODAY = '2026-10-27';
+  const WED = '2026-10-28';
+  // A new person: an 1800 kcal day, a 1200 kcal safe minimum, nothing avoided.
+  const fit: MenuFit = { target: 1800, floor: 1200, avoided: new Set() };
+  const kcal = (m: { meals: PlanMeal[] }) => dayTotals(m, foods).kcal;
+
+  it('balances a new person\'s day to within 5% of the target, never under the floor, where the pattern alone is not enough', () => {
+    // 5% either way is the band balanceDay stops in; a new person's four meals reach it on every weekday.
+    for (const date of weekDates(MON)) {
+      expect(kcal(viewMenu(date, [], NEUTRAL_ROUTINE, TODAY, foods))).toBeLessThan(1200);
+      const k = kcal(viewMenu(date, [], NEUTRAL_ROUTINE, TODAY, foods, fit));
+      expect(k).toBeGreaterThanOrEqual(1200);
+      expect(k).toBeGreaterThanOrEqual(1800 * 0.95);
+      expect(k).toBeLessThanOrEqual(1800 * 1.05);
+    }
+    // The week shows the same days.
+    const week = viewWeek(MON, [], NEUTRAL_ROUTINE, TODAY, foods, fit);
+    expect(week.map(kcal)).toEqual(weekDates(MON).map((d) => kcal(viewMenu(d, [], NEUTRAL_ROUTINE, TODAY, foods, fit))));
+    expect(week.every((m) => m.editedAt === NOT_EDITED)).toBe(true);
+  });
+
+  it('never leaves a person whose target is the floor under it, on any weekday', () => {
+    const floored: MenuFit = { target: 1200, floor: 1200, avoided: new Set() };
+    for (const date of weekDates(MON)) {
+      const k = kcal(viewMenu(date, [], NEUTRAL_ROUTINE, TODAY, foods, floored));
+      expect(k).toBeGreaterThanOrEqual(1200);
+      expect(k).toBeLessThanOrEqual(1200 * 1.1);
+    }
+  });
+
+  it('never changes a stored day, or a day carried forward from an earlier week', () => {
+    const stored = menu(WED, 2);
+    expect(viewMenu(WED, [stored], routine, TODAY, foods, fit)).toBe(stored);
+    expect(viewWeek(MON, [stored], routine, TODAY, foods, fit)[2]).toBe(stored);
+    expect(viewMenu(WED, [menu('2026-10-21', 3)], routine, TODAY, foods, fit).meals).toEqual(menu('2026-10-21', 3).meals);
+    expect(viewMenu(WED, [menu('2026-10-07', 4)], routine, TODAY, foods, fit).meals).toEqual(menu('2026-10-07', 4).meals);
+  });
+
+  it('reads the fitted day as the app\'s suggestion, and a day the person edited as theirs', () => {
+    const shown = viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods, fit);
+    expect(isSuggested(shown, NEUTRAL_ROUTINE, foods, fit)).toBe(true);
+    const edited = addMenuLine([], shown, 'snack', { foodId: 'banana', unit: 'medium', qty: 1 }, NOW);
+    expect(isSuggested(viewMenu(WED, edited, NEUTRAL_ROUTINE, TODAY, foods, fit), NEUTRAL_ROUTINE, foods, fit)).toBe(false);
+    // The pattern's own lines, under the target, are not what the app suggests any more.
+    expect(isSuggested(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods), NEUTRAL_ROUTINE, foods, fit)).toBe(false);
+  });
+
+  it('stays as balanced as it gets when the foods allowed cannot reach the floor, and still reads as the suggestion', () => {
+    const avoidAll: MenuFit = { target: 1800, floor: 1200, avoided: new Set(foods.map((f) => f.id)) };
+    const shown = viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods, avoidAll);
+    expect(kcal(shown)).toBeGreaterThan(kcal(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods)));
+    expect(kcal(shown)).toBeLessThan(1200);
+    // So the line under the safe minimum, with the way to Balance, still shows.
+    expect(isSuggested(shown, NEUTRAL_ROUTINE, foods, avoidAll)).toBe(true);
+  });
+
+  it('is what the app fills in: the fitted lines, with calories from the food database at their grams', () => {
+    const state = {
+      profile: { ...EMPTY_STATE.profile, onboarded: true },
+      menus: [] as DayMenu[],
+      routine: NEUTRAL_ROUTINE,
+      meals: [] as Meal[],
+      slotSkips: [] as SlotSkip[],
+      usage: [] as typeof EMPTY_STATE.usage,
+      openedDates: [] as string[],
+      settings: { ...EMPTY_STATE.settings, offDays: [] },
+    };
+    const now = new Date('2026-10-27T15:00:00');
+    const planned = viewMenu(TODAY, [], NEUTRAL_ROUTINE, TODAY, foods, fit);
+    const filled = dueAutoFills({ state, now, foods, fit });
+    expect(filled.map((m) => m.slotId)).toEqual(['breakfast', 'lunch']);
+    for (const m of filled) {
+      const lines = planned.meals.find((p) => p.id === m.slotId)!.lines;
+      const expected = lines.map((l) => {
+        const i = lineInfo(l, foods)!;
+        return [l.foodId, i.grams, kcalForGrams(i.food, i.grams).kcal];
+      });
+      expect(m.items.map((i) => [i.foodId, i.grams, i.kcal])).toEqual(expected);
+      expect(m.kcal).toBe(m.items.reduce((a, i) => a + i.kcal, 0));
+    }
+    // Lunch is the fitted one, not the pattern's own.
+    const raw = dueAutoFills({ state, now, foods });
+    expect(filled[1].kcal).toBeGreaterThan(raw[1].kcal);
+    // The app's own run fills in the same.
+    const run = withAutoFill({ ...EMPTY_STATE, ...state }, now, foods, 1800, fit);
+    expect(run.meals.map((m) => [m.id, m.kcal])).toEqual(filled.map((m) => [m.id, m.kcal]));
+  });
+
+  it('is fitted to the target and the floor Today shows, without the foods the person avoids', () => {
+    const profile = { ...EMPTY_STATE.profile, sex: 'female' as const };
+    const rice = foods.find((f) => f.id === 'steamed-rice')!;
+    const f = fitFor(profile, { ...NEUTRAL_ROUTINE, avoid: [ruleForFood(rice)] });
+    expect(f.target).toBe(dailyTargets(profile).kcal);
+    expect(f.floor).toBe(KCAL_FLOOR.female);
+    expect([...f.avoided]).toEqual(['steamed-rice']);
   });
 });
 

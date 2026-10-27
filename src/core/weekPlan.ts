@@ -303,7 +303,8 @@ export type Balanced = { day: PlanDay; changes: { key: string; params: Record<st
  * Nudges a day toward the target, one kitchen-sized step at a time: another
  * chapati or bhakri, a katori of curd, a fruit, a handful of chana; or the
  * other way, one roti fewer, rice off, bhel off. Protein-first when adding.
- * Stops inside ±5% or when nothing sensible is left to change. Each change
+ * Stops inside ±5% or when nothing sensible is left to change, and never
+ * short of the safe minimum while a step can still lift it there. Each change
  * names the meal by its type, which every screen can translate.
  */
 export function balanceDay(day: PlanDay, foods: FoodItem[], target: number, avoided: Set<string>, floor = 0): Balanced {
@@ -334,6 +335,9 @@ export function balanceDay(day: PlanDay, foods: FoodItem[], target: number, avoi
   const lo = Math.max(target * 0.95, floor);
   const hi = Math.max(target * 1.05, lo + 50);
   const off = (k: number) => (k < lo ? lo - k : k > hi ? k - hi : 0);
+  // Short of the safe minimum is worse than any overshoot, so it is judged first.
+  const short = (k: number) => Math.max(floor - k, 0);
+  const better = (a: number, b: number) => short(a) < short(b) || (short(a) === short(b) && off(a) < off(b));
   let cur = day;
   const changes: Balanced['changes'] = [];
   for (let guard = 0; guard < 14; guard++) {
@@ -345,8 +349,9 @@ export function balanceDay(day: PlanDay, foods: FoodItem[], target: number, avoi
       const next = s.apply(cur);
       if (!next) continue;
       const after = dayTotals(next, foods).kcal;
-      // Only a step that gets closer to the band counts; an add that overshoots by more than it fixed is skipped.
-      if (off(after) < off(kcal)) {
+      // Only a step that gets closer counts: an add that overshoots the band by more than it fixed is skipped, unless it
+      // lifts the day toward the safe minimum, and no step takes the day under it.
+      if (better(after, kcal)) {
         cur = next;
         changes.push({ key: s.key, params: s.params });
         moved = true;

@@ -23,6 +23,7 @@ import {
   copyDay,
   editedMeal,
   fillFromPlan,
+  fitFor,
   isSuggested,
   mealFromLines,
   removeSkip,
@@ -118,9 +119,9 @@ type Ctx = {
   weekPlan: WeekPlan;
   /** Write an edit made on `weekPlan` back to this week's dates. */
   setWeekPlan: (plan: WeekPlan) => void;
-  /** The menu a date shows: stored, or as it starts; from today on, following the slots. */
+  /** The menu a date shows: stored, or as it starts (a day nobody wrote fitted to the person's day); from today on, following the slots. */
   menuOn: (date: ISODate) => DayMenu;
-  /** A day holding just what the app builds from the pattern for its weekday: the app's suggestion, not a plan the person shaped. */
+  /** A day holding just what the app suggests for its weekday, fitted to the person's day: the app's suggestion, not a plan the person shaped. */
   isSuggestedMenu: (day: Pick<DayMenu, 'date' | 'meals'>) => boolean;
   /** The seven menus of the week starting on `monday`, Monday first. */
   weekMenus: (monday: ISODate) => DayMenu[];
@@ -193,9 +194,10 @@ function withMeal(s: AppState, m: Meal, target: number, now: Date): AppState {
   return { ...s, ...withMealAdded(s, m, target, now) };
 }
 
-/** The app's own run, now: today marked as a day the app was open and the planned meals that are due filled in. The same state when there is nothing to do. */
+/** The app's own run, now: today marked as a day the app was open and the planned meals that are due filled in, a day nobody wrote as it shows, fitted to the person's day. The same state when there is nothing to do. */
 function withAutoFillNow(s: AppState): AppState {
-  return withAutoFill(s, new Date(), allFoods(s.customFoods), dailyTargets(s.profile).kcal);
+  const fit = fitFor(s.profile, s.routine);
+  return withAutoFill(s, new Date(), allFoods(s.customFoods), fit.target, fit);
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -308,6 +310,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { date: today, hour } = useClock();
   const update = useCallback((fn: (s: AppState) => AppState) => setState((s) => fn(s)), []);
   const planFoods = useMemo(() => allFoods(state.customFoods), [state.customFoods]);
+  // A day nobody wrote shows the app's suggestion fitted to the person's target, never under the safe minimum, without the foods they avoid.
+  const fit = useMemo(() => fitFor(state.profile, state.routine), [state.profile, state.routine]);
 
   // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run while it is going.
   // A day settled only by skips never counts and ends the run.
@@ -319,9 +323,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         meals: state.meals,
         skips: state.slotSkips,
         offDays: state.settings.offDays ?? [],
-        menuOn: (d) => viewMenu(d, state.menus, state.routine, today, planFoods),
+        menuOn: (d) => viewMenu(d, state.menus, state.routine, today, planFoods, fit),
       }),
-    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, state.menus, planFoods],
+    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, state.menus, planFoods, fit],
   );
 
   // Planned meals fill themselves 90 minutes after their slot, and today is noted as a day the app was open: checked once the
@@ -361,7 +365,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const screenMinutesToday = minutesOn(state.usage, today);
     // A tip is only today's if it was also written in the language now selected.
     const tipRecord = state.tips.find((t) => t.date === today && t.lang === state.profile.lang);
-    const thisWeek = viewWeek(mondayOf(today), state.menus, state.routine, today, planFoods);
+    const thisWeek = viewWeek(mondayOf(today), state.menus, state.routine, today, planFoods, fit);
 
     return {
       ready,
@@ -481,12 +485,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       weekPlan: weekPlanView(thisWeek),
       setWeekPlan: (plan) =>
         update((s) => {
-          const week = viewWeek(mondayOf(today), s.menus, s.routine, today, allFoods(s.customFoods));
+          // The week as the screen showed it, fitted the same way, so only the days that changed are written.
+          const week = viewWeek(mondayOf(today), s.menus, s.routine, today, allFoods(s.customFoods), fitFor(s.profile, s.routine));
           return withMenus(s, applyWeekPlan(plan, week, s.menus, new Date()));
         }),
-      menuOn: (date) => viewMenu(date, state.menus, state.routine, today, planFoods),
-      isSuggestedMenu: (day) => isSuggested(day, state.routine, planFoods),
-      weekMenus: (monday) => viewWeek(monday, state.menus, state.routine, today, planFoods),
+      menuOn: (date) => viewMenu(date, state.menus, state.routine, today, planFoods, fit),
+      isSuggestedMenu: (day) => isSuggested(day, state.routine, planFoods, fit),
+      weekMenus: (monday) => viewWeek(monday, state.menus, state.routine, today, planFoods, fit),
       editMenuDay: (day, meals) => update((s) => withMenus(s, setMenuDay(s.menus, day, meals, new Date()))),
       editMenuLine: (day, mealId, lineIdx, next) => update((s) => withMenus(s, setMenuLine(s.menus, day, mealId, lineIdx, next, new Date()))),
       addMenuFood: (day, mealId, line) => update((s) => withMenus(s, addMenuLine(s.menus, day, mealId, line, new Date()))),
@@ -496,7 +501,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         update((s) => {
           const now = new Date();
           const foods = allFoods(s.customFoods);
-          const slot = viewMenu(date, s.menus, s.routine, today, foods).meals.find((m) => m.id === slotId);
+          const slot = viewMenu(date, s.menus, s.routine, today, foods, fitFor(s.profile, s.routine)).meals.find((m) => m.id === slotId);
           const meal = slot ? mealFromLines({ id: newId(), date, slot, lines: slot.lines, foods, source, now }) : null;
           return meal ? withMeal(s, meal, targets.kcal, now) : s;
         }),
@@ -514,7 +519,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         update((s) => {
           const now = new Date();
           const foods = allFoods(s.customFoods);
-          const menu = viewMenu(date, s.menus, s.routine, today, foods);
+          const menu = viewMenu(date, s.menus, s.routine, today, foods, fitFor(s.profile, s.routine));
           return fillFromPlan({ now, menu, meals: s.meals, skips: s.slotSkips, foods }).reduce((acc, m) => withMeal(acc, m, targets.kcal, now), s);
         }),
       runAutoFill: () => update(withAutoFillNow),
@@ -580,7 +585,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, streakDays]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, streakDays]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

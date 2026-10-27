@@ -1,11 +1,12 @@
 import { addDays, toISODate, weekDates } from './date';
 import { toMealItem } from './foods';
+import { dailyTargets, KCAL_FLOOR } from './nutrition';
 import { slotOf, withSlot, type SlotPoint } from './pattern';
-import { weekdayOf, type PlanLine, type Routine } from './routine';
+import { avoidedFoodIds, weekdayOf, type PlanLine, type Routine } from './routine';
 import { stable } from './sync';
-import type { AppState, FoodItem, ISODate, Meal, MealItem, MealSource, SavedMeal, SlotSkip } from './types';
+import type { AppState, FoodItem, ISODate, Meal, MealItem, MealSource, Profile, SavedMeal, SlotSkip } from './types';
 import { isOffDay } from './week';
-import { alignDay, lineInfo, planDayFor, type PlanDay, type PlanMeal, type WeekPlan } from './weekPlan';
+import { alignDay, balanceDay, lineInfo, planDayFor, type PlanDay, type PlanMeal, type WeekPlan } from './weekPlan';
 
 /**
  * The menu, date by date. Each date holds its own meals, one per slot of the
@@ -13,8 +14,9 @@ import { alignDay, lineInfo, planDayFor, type PlanDay, type PlanMeal, type WeekP
  * Wednesday never changes next Wednesday. A date nobody has written yet
  * starts as a copy of the same weekday a week earlier, so a week that is not
  * planned repeats the one before; with nothing earlier, it starts from the
- * pattern. The week is a view over seven dates, Monday to Sunday, never a
- * stored object. Pure functions; the store keeps the dates that were written.
+ * pattern, fitted to the person's day. The week is a view over seven dates,
+ * Monday to Sunday, never a stored object. Pure functions; the store keeps
+ * the dates that were written.
  */
 export type DayMenu = {
   date: ISODate;
@@ -35,23 +37,56 @@ function copyMeals(meals: PlanMeal[]): PlanMeal[] {
   return meals.map((m) => ({ ...m, lines: m.lines.map((l) => ({ ...l })) }));
 }
 
+/** What the app's own suggestion is fitted to: the person's day target, never under the safe minimum, with none of the foods they avoid. */
+export type MenuFit = { target: number; floor: number; avoided: Set<string> };
+
+/** The fit for this person: the target and the safe minimum Today shows, and the routine's avoid list, the one Balance uses. */
+export function fitFor(profile: Profile, routine: Routine): MenuFit {
+  return { target: dailyTargets(profile).kcal, floor: KCAL_FLOOR[profile.sex], avoided: avoidedFoodIds({ ...routine, enabled: true }) };
+}
+
+// The fitted day of each weekday, worked out once per fit, pattern and food list: the streak alone reads sixty dates.
+const fitted = new WeakMap<MenuFit, { routine: Routine; foods: FoodItem[]; days: Map<number, PlanDay> }>();
+
+/**
+ * What the app suggests for a weekday nobody wrote: the pattern's own lines
+ * for it and, given a fit, balanced to the person's day target and never
+ * under the safe minimum, or as near as the foods allowed get. Never changed
+ * in place: callers copy before they edit.
+ */
+export function suggestedDay(routine: Routine, weekday: number, foods: FoodItem[], fit?: MenuFit): PlanDay {
+  if (!fit) return planDayFor(routine, weekday, foods);
+  let memo = fitted.get(fit);
+  if (!memo || memo.routine !== routine || memo.foods !== foods) {
+    memo = { routine, foods, days: new Map() };
+    fitted.set(fit, memo);
+  }
+  let day = memo.days.get(weekday);
+  if (!day) {
+    day = balanceDay(planDayFor(routine, weekday, foods), foods, fit.target, fit.avoided, fit.floor).day;
+    memo.days.set(weekday, day);
+  }
+  return day;
+}
+
 /**
  * The menu a date starts as when nothing is stored for it: the same weekday a
- * week earlier; else the newest earlier menu of that weekday; else the
- * pattern's own lines for that weekday, the way the week plan was built.
+ * week earlier; else the newest earlier menu of that weekday; else the app's
+ * suggestion for that weekday, fitted to the person's day when a fit is
+ * given. A day carried forward is copied as it was, never fitted.
  */
-export function startingMenu(date: ISODate, menus: DayMenu[], routine: Routine, foods: FoodItem[]): DayMenu {
+export function startingMenu(date: ISODate, menus: DayMenu[], routine: Routine, foods: FoodItem[], fit?: MenuFit): DayMenu {
   const wd = weekdayOf(date);
   const source =
     menuFor(addDays(date, -7), menus) ??
     menus.filter((m) => m.date < date && weekdayOf(m.date) === wd).sort((a, b) => b.date.localeCompare(a.date))[0] ??
     null;
-  return { date, meals: source ? copyMeals(source.meals) : planDayFor(routine, wd, foods).meals, editedAt: NOT_EDITED };
+  return { date, meals: copyMeals(source ? source.meals : suggestedDay(routine, wd, foods, fit).meals), editedAt: NOT_EDITED };
 }
 
 /** The seven menus of the week starting on `monday`, Monday first: a stored one as it is, a missing one as it starts. Never overwrites a stored date. */
-export function ensureWeek(monday: ISODate, menus: DayMenu[], routine: Routine, foods: FoodItem[]): DayMenu[] {
-  return weekDates(monday).map((date) => menuFor(date, menus) ?? startingMenu(date, menus, routine, foods));
+export function ensureWeek(monday: ISODate, menus: DayMenu[], routine: Routine, foods: FoodItem[], fit?: MenuFit): DayMenu[] {
+  return weekDates(monday).map((date) => menuFor(date, menus) ?? startingMenu(date, menus, routine, foods, fit));
 }
 
 /**
@@ -79,13 +114,13 @@ export function alignMenus(menus: DayMenu[], routine: Routine, today: ISODate, f
 }
 
 /** The menu a date shows: the stored one or the one it starts as, following the slots from today on. */
-export function viewMenu(date: ISODate, menus: DayMenu[], routine: Routine, today: ISODate, foods: FoodItem[]): DayMenu {
-  return alignMenu(menuFor(date, menus) ?? startingMenu(date, menus, routine, foods), routine, today, foods);
+export function viewMenu(date: ISODate, menus: DayMenu[], routine: Routine, today: ISODate, foods: FoodItem[], fit?: MenuFit): DayMenu {
+  return alignMenu(menuFor(date, menus) ?? startingMenu(date, menus, routine, foods, fit), routine, today, foods);
 }
 
 /** The week starting on `monday` as it shows, Monday first. */
-export function viewWeek(monday: ISODate, menus: DayMenu[], routine: Routine, today: ISODate, foods: FoodItem[]): DayMenu[] {
-  return ensureWeek(monday, menus, routine, foods).map((m) => alignMenu(m, routine, today, foods));
+export function viewWeek(monday: ISODate, menus: DayMenu[], routine: Routine, today: ISODate, foods: FoodItem[], fit?: MenuFit): DayMenu[] {
+  return ensureWeek(monday, menus, routine, foods, fit).map((m) => alignMenu(m, routine, today, foods));
 }
 
 /**
@@ -98,14 +133,15 @@ export function hasPlan(day: { meals: PlanMeal[] }): boolean {
 }
 
 /**
- * A day that holds exactly what the app builds from the pattern for its
- * weekday: the app's suggestion, not a plan the person shaped. The stamp
- * cannot tell them apart (a day carried forward from last week and the
- * migrated old plan are unstamped too), so the meals are compared. A
- * suggestion under the target is not the person's plan being too low.
+ * A day that holds exactly what the app suggests for its weekday, fitted the
+ * same way when a fit is given: the app's suggestion, not a plan the person
+ * shaped. The stamp cannot tell them apart (a day carried forward from last
+ * week and the migrated old plan are unstamped too), so the meals are
+ * compared. A suggestion under the target is not the person's plan being too
+ * low.
  */
-export function isSuggested(day: { date: ISODate; meals: PlanMeal[] }, routine: Routine, foods: FoodItem[]): boolean {
-  return stable(day.meals) === stable(planDayFor(routine, weekdayOf(day.date), foods).meals);
+export function isSuggested(day: { date: ISODate; meals: PlanMeal[] }, routine: Routine, foods: FoodItem[], fit?: MenuFit): boolean {
+  return stable(day.meals) === stable(suggestedDay(routine, weekdayOf(day.date), foods, fit).meals);
 }
 
 /** Store one date's meals, stamped now, whatever they were before. */
@@ -461,14 +497,16 @@ export function withOpened(dates: ISODate[], today: ISODate): ISODate[] {
  * Nothing is filled on or before the day setup was finished: the meals before
  * it were never planned, and no meal prompt comes that day either. The app
  * counts as open on a date it recorded opening on, or one with usage buckets.
- * A meal already in the list (same id) is not returned again.
+ * A meal already in the list (same id) is not returned again. A date nobody
+ * wrote fills in the app's suggestion, fitted when a fit is given.
  */
 export function dueAutoFills(input: {
   state: Pick<AppState, 'profile' | 'menus' | 'routine' | 'meals' | 'slotSkips' | 'usage' | 'openedDates' | 'settings'>;
   now: Date;
   foods: FoodItem[];
+  fit?: MenuFit;
 }): Meal[] {
-  const { state, now, foods } = input;
+  const { state, now, foods, fit } = input;
   if (!state.profile.onboarded) return [];
   const today = toISODate(now);
   const openedDates = Array.from(new Set([...state.openedDates, ...state.usage.map((u) => u.date)]));
@@ -476,7 +514,7 @@ export function dueAutoFills(input: {
   const since = state.profile.onboardedOn;
   for (const date of [addDays(today, -1), today]) {
     if (since && date <= since) continue;
-    const menu = viewMenu(date, state.menus, state.routine, today, foods);
+    const menu = viewMenu(date, state.menus, state.routine, today, foods, fit);
     out.push(...autoFill({ date, now, menu, meals: state.meals, skips: state.slotSkips, openedDates, offDays: state.settings.offDays ?? [], foods }));
   }
   return out.filter((m) => !state.meals.some((x) => x.id === m.id));
@@ -488,11 +526,11 @@ export function dueAutoFills(input: {
  * the planned meals that are due are filled in, all in one change. Only for a
  * person who finished setup: a device holding nobody's data is left exactly
  * as it is, so sync still treats it as never used. The same state when there
- * is nothing to do.
+ * is nothing to do. `fit` fits the days nobody wrote, as they show.
  */
-export function withAutoFill(state: AppState, now: Date, foods: FoodItem[], target: number): AppState {
+export function withAutoFill(state: AppState, now: Date, foods: FoodItem[], target: number, fit?: MenuFit): AppState {
   if (!state.profile.onboarded) return state;
   const openedDates = withOpened(state.openedDates, toISODate(now));
   const opened = openedDates === state.openedDates ? state : { ...state, openedDates };
-  return dueAutoFills({ state: opened, now, foods }).reduce((acc, m) => ({ ...acc, ...withMealAdded(acc, m, target, now) }), opened);
+  return dueAutoFills({ state: opened, now, foods, fit }).reduce((acc, m) => ({ ...acc, ...withMealAdded(acc, m, target, now) }), opened);
 }
