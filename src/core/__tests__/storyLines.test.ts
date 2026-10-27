@@ -20,6 +20,12 @@ describe('storyLines', () => {
     expect(over).toContain('200 kcal over');
   });
 
+  it('speaks of water the way the coach counts it, never in glasses: the water advice it follows counts bottles', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      for (let seed = 0; seed < 8; seed++) expect(storyLine('water', lang, seed), `${lang} ${seed}`).not.toMatch(/glass|ग्लास|गिलास/);
+    }
+  });
+
   it('is the same for the same day and counter', () => {
     expect(storyLine('break', 'hi', storySeed('2026-10-08', 2))).toBe(storyLine('break', 'hi', storySeed('2026-10-08', 2)));
   });

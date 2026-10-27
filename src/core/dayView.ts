@@ -162,11 +162,12 @@ export function rowLines(lines: PlanLine[], foods: FoodItem[], lang: Lang): RowL
  * that day's menu (its record of what was planned): the slot's planned lines
  * until a tap, each step on the measure's grid, and − to nothing takes the
  * food out of the draft. "Ate this" logs the draft. A step on no line changes
- * nothing.
+ * nothing, and nor does one on a line that is no longer the food tapped (a
+ * quick second − after the first took its line out lands on the next food).
  */
-export function stepDraft(lines: PlanLine[], idx: number, by: 1 | -1): PlanLine[] {
+export function stepDraft(lines: PlanLine[], idx: number, foodId: string, by: 1 | -1): PlanLine[] {
   const line = lines[idx];
-  if (!line) return lines;
+  if (!line || line.foodId !== foodId) return lines;
   const next = steppedLine(line, by);
   return next ? lines.map((l, i) => (i === idx ? next : l)) : lines.filter((_, i) => i !== idx);
 }

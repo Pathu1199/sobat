@@ -168,6 +168,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
           advice,
           waterMl: app.waterToday,
           waterGoalMl: app.state.settings.waterGoalMl,
+          bottleMl: app.state.settings.bottleMl,
           streakDays: app.streakDays,
           lastSleepMinutes: lastSleep?.minutes ?? null,
           stepsToday: app.stepsToday,

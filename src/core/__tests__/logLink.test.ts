@@ -75,10 +75,15 @@ describe('webHandOff', () => {
     expect(webHandOff(tabs(['me-1', 'index-1', 'log-1']), 'log-1', 'index')).toBe('reset');
   });
 
-  it('with another page right behind /log, a replace, so the browser keeps that page and Today follows it', () => {
-    expect(webHandOff(tabs(['me-1', 'log-1']), 'log-1', 'index')).toBe('replace');
-    // Today seen earlier is not right behind /log: a reset would step the browser back past the page in between.
+  it('with Today nowhere on the way back, the reset: the same length, so the browser replaces /log with Today after the page before it', () => {
+    expect(webHandOff(tabs(['me-1', 'log-1']), 'log-1', 'index')).toBe('reset');
+    expect(keys(handOff(tabs(['me-1', 'log-1']), 'log-1', 'index'))).toEqual(['me-1', 'index-1']);
+  });
+
+  it('with Today further back, a replace, so the browser keeps the page in between and Today follows it', () => {
+    // A reset would take Today out from further back: one shorter, the browser would step back past the page in between.
     expect(webHandOff(tabs(['index-1', 'me-1', 'log-1']), 'log-1', 'index')).toBe('replace');
+    expect(keys(handOff(tabs(['index-1', 'me-1', 'log-1']), 'log-1', 'index'))).toHaveLength(2);
   });
 
   it('a navigator with no way back of its own, or no Today, is handed over with a replace', () => {

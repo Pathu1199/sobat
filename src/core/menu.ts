@@ -6,7 +6,7 @@ import { avoidedFoodIds, slotMinutes, slotTime, weekdayOf, type PlanLine, type R
 import { stable } from './sync';
 import type { AppState, FoodItem, ISODate, Meal, MealItem, MealSource, Profile, SavedMeal, SlotSkip } from './types';
 import { isOffDay } from './week';
-import { alignDay, balanceDay, lineInfo, planDayFor, type PlanDay, type PlanMeal, type WeekPlan } from './weekPlan';
+import { alignDay, balanceDay, lineInfo, mealTotals, planDayFor, type PlanDay, type PlanMeal, type WeekPlan } from './weekPlan';
 
 /**
  * The menu, date by date. Each date holds its own meals, one per slot of the
@@ -155,6 +155,16 @@ export function viewWeek(monday: ISODate, menus: DayMenu[], routine: Routine, to
  */
 export function hasPlan(day: { meals: PlanMeal[] }): boolean {
   return day.meals.some((m) => m.lines.length > 0);
+}
+
+/** The calories each slot of a menu plans, by slot id, from the database at the planned amounts; a slot with nothing planned is left out. */
+export function plannedKcalBySlot(day: { meals: PlanMeal[] }, foods: FoodItem[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const m of day.meals) {
+    const kcal = mealTotals(m, foods).kcal;
+    if (kcal > 0) out[m.id] = kcal;
+  }
+  return out;
 }
 
 /**

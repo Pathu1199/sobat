@@ -24,6 +24,7 @@ import {
   menuSlots,
   menusFromTemplate,
   NOT_EDITED,
+  plannedKcalBySlot,
   planMeal,
   removeSkip,
   setMenuDay,
@@ -53,7 +54,7 @@ import {
   type MenuFit,
 } from '../menu';
 import { removeUndoSteps, slotBefore, undoSteps, type UndoStep } from '../addSheet';
-import { steppedLine } from '../basket';
+import { steppedLine, stepFoodLine } from '../basket';
 import { dailyTargets, KCAL_FLOOR, kcalForGrams } from '../nutrition';
 import { dayRecord } from '../record';
 import { forCloud, isPristine } from '../sync';
@@ -239,6 +240,18 @@ describe("the store's menu edits", () => {
     const tap = (ms: DayMenu[], by: 1 | -1) => editedMenus(ms, wed, TODAY, step(by));
     expect(lunchQty(menuFor('2026-10-28', tap(tap([], 1), 1)))).toBe(4);
     expect(menuFor('2026-10-28', tap(tap([], -1), -1))!.meals[1].lines).toEqual([]);
+  });
+
+  it('step only the food a tap was on: a quick second − landing after the first took its line out never steps the food now in its place', () => {
+    const dal: PlanLine = { foodId: 'moong-dal', unit: 'katori', qty: 1 };
+    const two: DayMenu = { ...wed, meals: wed.meals.map((m) => (m.id === 'lunch' ? { ...m, lines: [chapati(1), dal] } : m)) };
+    const tap = (ms: DayMenu[], foodId: string, by: 1 | -1) => editedMenus(ms, two, TODAY, (m, d) => setMenuLine(m, d, 'lunch', 0, stepFoodLine(foodId, by), NOW));
+    const once = tap([], 'chapati', -1);
+    expect(menuFor('2026-10-28', once)!.meals[1].lines).toEqual([dal]);
+    // The second − was for the chapati too; the dal now at its place is left as it is, and nothing is written.
+    expect(tap(once, 'chapati', -1)).toBe(once);
+    // A tap on the dal itself still steps it.
+    expect(menuFor('2026-10-28', tap(once, 'moong-dal', 1))!.meals[1].lines).toEqual([{ ...dal, qty: 1.5 }]);
   });
 
   it('step a line on the measure\'s grid; − to nothing takes it out', () => {
@@ -851,6 +864,13 @@ describe('the plan screen\'s view of this week', () => {
     // Only the past day changed: nothing is written at all.
     const pastOnly = { days: plan.days.map((d, i) => (i === 1 ? five(d) : d)) };
     expect(applyWeekPlan(pastOnly, week, stored, '2026-10-27', NOW)).toBe(stored);
+  });
+});
+
+describe('the calories each slot plans', () => {
+  it('are by slot id, from the database at the planned amounts; a slot with nothing planned is left out', () => {
+    expect(plannedKcalBySlot(menu('2026-10-28', 2), foods)).toEqual({ lunch: lineInfo(chapati(2), foods)!.kcal });
+    expect(plannedKcalBySlot({ meals: [] }, foods)).toEqual({});
   });
 });
 

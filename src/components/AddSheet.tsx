@@ -11,6 +11,7 @@ import {
   plannedSummary,
   repeatItems,
   sheetMode,
+  slotAllowance,
   slotBefore,
   slotLine,
   startLines,
@@ -150,14 +151,15 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   };
 
   const totals = basketTotals(basket, foods);
-  // What saving does to the slot and the day. A slot holding only the meal filled in from the plan gets that meal
-  // replaced (the store drops it when a real meal lands there), so its calories are not counted against the basket.
+  // What saving does to the slot and the day. The slot holds what the menu plans for it, or its share with nothing planned.
+  // A slot holding only the meal filled in from the plan gets that meal replaced (the store drops it when a real meal lands
+  // there), so its calories are not counted against the basket.
   const st = slot ? states.find((s) => s.slot.id === slot.id) : undefined;
   const autoKcal = st ? st.meals.filter((m) => m.source === 'auto').reduce((a, m) => a + m.kcal, 0) : 0;
   const dayLeft = isToday ? app.budget.remaining : targets.kcal - dayMeals.reduce((a, m) => a + m.kcal, 0);
   const line =
     mode === 'log' && st && slot
-      ? slotLine({ preview: slotPreview({ allowance: st.allowance, eaten: st.eaten, autoKcal, basketKcal: totals.kcal, dayLeft }), autoKcal, slot: slotName(slot), isToday })
+      ? slotLine({ preview: slotPreview({ allowance: slotAllowance({ lines: slot.lines, foods, share: st.allowance }), eaten: st.eaten, autoKcal, basketKcal: totals.kcal, dayLeft }), autoKcal, slot: slotName(slot), isToday })
       : null;
   const lineText = line ? line.parts.map((p) => fill(t(p.key), p.params)).join(' · ') : '';
   const lineColor = line?.tone === 'over' ? C.red : line?.tone === 'warn' ? C.amber : C.textDim;

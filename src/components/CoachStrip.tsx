@@ -43,7 +43,7 @@ export function useAdviceAction() {
 
 export function adviceText(a: Advice, t: (k: string) => string): string {
   const params = { ...a.params, meal: typeof a.params.meal === 'string' ? t(a.params.meal).toLowerCase() : '' };
-  return fill(t(a.key), params);
+  return fill(t(a.words ?? a.key), params);
 }
 
 /**

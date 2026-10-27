@@ -3,6 +3,7 @@ import type { DayPlan, SlotPlan } from './dayPlan';
 import { asksAboutFasting, foldText } from './guardrails';
 import type { Budget } from './nutrition';
 import { planVerdict, type Plan } from './plan';
+import { waterTile } from './tiles';
 import type { Journey } from './review';
 import type { ChatOption, MealType } from './types';
 
@@ -85,6 +86,8 @@ export type OfflineCtx = {
   advice: Advice[];
   waterMl: number;
   waterGoalMl: number;
+  /** The person's bottle: water is counted in them, as a tap adds one. */
+  bottleMl: number;
   streakDays: number;
   lastSleepMinutes: number | null;
   stepsToday: number;
@@ -184,9 +187,9 @@ export function answerOffline(question: string, ctx: OfflineCtx, t: T): { text: 
       break;
     }
     case 'water': {
-      const glasses = Math.round(ctx.waterMl / 250);
-      const goal = Math.round(ctx.waterGoalMl / 250);
-      lines.push(f(t('oc_water'), { have: glasses, goal, togo: Math.max(0, goal - glasses) }));
+      // In the person's bottles: whole bottles drunk, the goal in bottles, and the bottles left as the water tile counts them.
+      const bottle = Math.max(1, ctx.bottleMl);
+      lines.push(f(t('oc_water'), { have: Math.floor(ctx.waterMl / bottle), goal: Math.ceil(ctx.waterGoalMl / bottle), togo: waterTile(ctx.waterMl, ctx.waterGoalMl, bottle).bottlesLeft }));
       lines.push(t('oc_water_do'));
       break;
     }

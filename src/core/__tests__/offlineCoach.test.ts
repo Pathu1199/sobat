@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { t as tr } from '../../i18n';
 import { answerOffline, OPTION_MIN_KCAL, parseQuestion, type OfflineCtx } from '../offlineCoach';
 
 describe('parseQuestion', () => {
@@ -31,6 +32,7 @@ const ctx: OfflineCtx = {
   advice: [],
   waterMl: 1000,
   waterGoalMl: 3000,
+  bottleMl: 500,
   streakDays: 4,
   lastSleepMinutes: 410,
   stepsToday: 2500,
@@ -157,5 +159,25 @@ describe('a hopeless message gets a gentle check-in, not a pep talk', () => {
     expect(a.text).toContain('[oc_low]');
     expect(a.text).toContain('[oc_low_do]');
     expect(a.text).not.toContain('[oc_motivation]');
+  });
+});
+
+describe('water, in bottles', () => {
+  const words = (k: string) => (k === 'oc_water' ? '{have} of {goal}, {togo} to go' : `[${k}]`);
+  const water = (c: Partial<OfflineCtx>) => answerOffline('how much water', { ...ctx, ...c }, words).text.split('\n')[0];
+
+  it('counts water in the person\'s own bottles, as a tap adds them: whole bottles drunk, the goal, and the bottles left as the tile counts them', () => {
+    expect(water({})).toBe('2 of 6, 4 to go');
+    expect(water({ bottleMl: 750 })).toBe('1 of 4, 3 to go');
+    expect(water({ bottleMl: 1000, waterMl: 3200 })).toBe('3 of 3, 0 to go');
+  });
+
+  it('says bottles, never glasses, in every language', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      for (const k of ['oc_water', 'oc_water_do']) expect(tr(lang, k), `${lang} ${k}`).not.toMatch(/glass|ग्लास|गिलास/);
+      expect(tr(lang, 'chk_water'), lang).not.toMatch(/glass|ग्लास|गिलास/);
+    }
+    expect(tr('en', 'oc_water')).toContain('bottles');
+    expect(tr('en', 'chk_water')).toContain('bottle');
   });
 });

@@ -48,6 +48,17 @@ export function steppedLine(line: PlanLine, by: 1 | -1): PlanLine | null {
 }
 
 /**
+ * One − or + on the food a tap was on, as the store steps a menu's line: the
+ * line as the menu holds it now, stepped while it is still that food, else
+ * left as it is. A quick second − can land after the first took its line
+ * out, when the line at that place is the next food; that one is never
+ * stepped.
+ */
+export function stepFoodLine(foodId: string, by: 1 | -1): (line: PlanLine) => PlanLine | null {
+  return (line) => (line.foodId === foodId ? steppedLine(line, by) : line);
+}
+
+/**
  * The food sheet's − / +: one step on the grid, but never under one step, and
  * − never makes a typed amount below a step (half a chapati) larger. When −
  * gives back the same count it can do nothing, and the button says so.

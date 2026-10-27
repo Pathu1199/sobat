@@ -140,6 +140,17 @@ export function menuSave(meals: PlanMeal[], drafts: Record<string, BasketLine[]>
   return changed ? next : null;
 }
 
+/**
+ * What a slot may hold, for "N left for Lunch": a slot the menu plans holds
+ * its planned calories, from the database, as the menu shows them; a slot
+ * with nothing planned (or only foods gone from the database) keeps its share
+ * of the day.
+ */
+export function slotAllowance(input: { lines: PlanLine[]; foods: FoodItem[]; share: number }): number {
+  const planned = input.lines.reduce((a, l) => a + (lineInfo(l, input.foods)?.kcal ?? 0), 0);
+  return planned > 0 ? planned : input.share;
+}
+
 export type SlotLinePart = { key: string; params: Record<string, string | number> };
 
 /**

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { adviceToSay, coachAdvice, type Advice, type CoachInput } from '../coach';
+import { expectedWaterByHour } from '../nudge';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, type Routine } from '../routine';
 import type { Budget } from '../nutrition';
 import type { Meal } from '../types';
@@ -23,6 +24,7 @@ const base: CoachInput = {
   weights: [{ date: '2026-10-04', kg: 95.8 }],
   steps: 4000,
   waterGoalMl: 3000,
+  bottleMl: 500,
   weighDay: 0,
   kcalTarget: 1700,
   streakDays: 2,
@@ -45,6 +47,41 @@ describe('coachAdvice', () => {
     expect(a.find((x) => x.key === 'coach_stop')).toBeTruthy();
     const water = a.find((x) => x.key === 'coach_water');
     expect(water?.urgency).toBe('now');
+  });
+
+  it('counts the water to catch up in bottles of the person\'s own size, as a tap on the advice adds one', () => {
+    const behind = expectedWaterByHour(19, 3000);
+    const at = (bottleMl: number, water: CoachInput['water'] = []) => coachAdvice({ ...base, ...clock(19, 30), water, bottleMl }).find((x) => x.key === 'coach_water')!;
+    expect(at(500).params.bottles).toBe(Math.ceil(behind / 500));
+    expect(at(1000).params.bottles).toBe(Math.ceil(behind / 1000));
+    expect(at(500).words).toBeUndefined();
+    // 600 ml behind in a litre bottle is one bottle, said as one; the advice keeps its name, so it is still said once a day.
+    const one = at(1000, [{ id: 'w', at: '', date: TODAY, ml: behind - 600 }]);
+    expect([one.key, one.params.bottles, one.words]).toEqual(['coach_water', 1, 'coach_water_one']);
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const many = fill(tr(lang, 'coach_water'), { bottles: 3 });
+      expect(many, lang).toContain('3');
+      expect(many, lang).not.toMatch(/glass|ग्लास|गिलास|\{/);
+      expect(tr(lang, 'coach_water_one'), lang).not.toMatch(/glass|ग्लास|गिलास|\{/);
+    }
+    expect(fill(tr('en', 'coach_water'), { bottles: 3 })).toContain('3 bottles');
+    expect(tr('en', 'coach_water_one')).toContain('one bottle');
+  });
+
+  it('follows today\'s menu: a slot with a plan is spoken of with its planned calories, a slot without one with the share as before', () => {
+    // Lunch skipped at 14:30: the snack is next.
+    const next = (plannedKcal?: Record<string, number>) => coachAdvice({ ...base, ...clock(14, 30), settledSlotIds: ['breakfast', 'lunch'], plannedKcal }).find((x) => x.key === 'coach_next_meal')!;
+    expect(next({ snack: 180, dinner: 520 }).params.kcal).toBe(180);
+    expect(next({ dinner: 520 }).params.kcal).toBe(500);
+    expect(next().params.kcal).toBe(500);
+    // The slot whose turn it is: its planned calories, and a tap that logs it from the menu, in place of a plate the menu does not hold.
+    const due = coachAdvice({ ...base, plannedKcal: { lunch: 640 } })[0];
+    expect([due.key, due.params.kcal, due.action]).toEqual(['coach_meal_due', 640, 'log']);
+    expect(coachAdvice(base)[0].key).toBe('coach_meal_plate');
+    // A late dinner too.
+    const late = (plannedKcal?: Record<string, number>) => coachAdvice({ ...base, ...clock(21, 30), settledSlotIds: ['breakfast', 'lunch', 'snack'], budget: budget(1000), nextPlate: null, plannedKcal }).find((x) => x.key === 'coach_late_dinner')!;
+    expect(late({ dinner: 520 }).params.kcal).toBe(520);
+    expect(late().params.kcal).toBe(500);
   });
 
   it('asks for the first log, a walk, the weigh-in and the morning check-in at the right hours', () => {

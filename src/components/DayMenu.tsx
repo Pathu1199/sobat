@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { slotBefore, undoSteps } from '../core/addSheet';
-import { amountText, steppedLine } from '../core/basket';
+import { amountText, stepFoodLine } from '../core/basket';
 import { draftKey, fillUndoSteps, offersDayConfirm, planNote, rowLines, rowOffers, stepDraft, type DayView, type MenuRow, type RowLine } from '../core/dayView';
 import { itemName } from '../core/foods';
 import type { DayMenu as Menu } from '../core/menu';
@@ -99,10 +99,11 @@ export function DayMenu({
     if (past) {
       // A past day: only the draft changes, never what that day planned.
       const key = draftKey(date, row.slotId);
-      setDrafts((d) => ({ ...d, [key]: stepDraft(d[key] ?? plannedLines(row), l.idx, by) }));
+      setDrafts((d) => ({ ...d, [key]: stepDraft(d[key] ?? plannedLines(row), l.idx, l.foodId, by) }));
     } else {
-      // Today and later: that date's menu, the step worked out from the line as the store holds it, so quick taps all count.
-      app.editMenuLine(menu, row.slotId, l.idx, (line) => steppedLine(line, by));
+      // Today and later: that date's menu, the step worked out from the line as the store holds it, so quick taps all count,
+      // and only while it is still the food tapped.
+      app.editMenuLine(menu, row.slotId, l.idx, stepFoodLine(l.foodId, by));
     }
     fb.haptic('light');
   }

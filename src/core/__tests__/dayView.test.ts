@@ -286,24 +286,32 @@ describe("a past day's − / +, a draft of what was eaten", () => {
 
   it('steps only the draft: the planned lines, and so that day\'s menu, stay as they were', () => {
     const day = menu(d);
-    const more = stepDraft(day.meals[1].lines, 0, 1);
+    const more = stepDraft(day.meals[1].lines, 0, 'chapati', 1);
     expect(more.map((l) => l.qty)).toEqual([3, 0.5]);
     expect(more[1]).toBe(day.meals[1].lines[1]);
     // The record of what was planned is untouched.
     expect(day).toEqual(menu(d));
-    expect(stepDraft(planned, 1, 1).map((l) => l.qty)).toEqual([2, 1]);
+    expect(stepDraft(planned, 1, 'moong-dal', 1).map((l) => l.qty)).toEqual([2, 1]);
   });
 
   it('− to nothing takes the food out of the draft only; a step on no line changes nothing', () => {
-    const less = stepDraft(stepDraft(planned, 0, -1), 0, -1);
+    const less = stepDraft(stepDraft(planned, 0, 'chapati', -1), 0, 'chapati', -1);
     expect(less).toEqual([{ foodId: 'moong-dal', unit: 'katori', qty: 0.5 }]);
-    expect(stepDraft(less, 0, -1)).toEqual([]);
-    expect(stepDraft(less, 3, 1)).toBe(less);
+    expect(stepDraft(less, 0, 'moong-dal', -1)).toEqual([]);
+    expect(stepDraft(less, 3, 'moong-dal', 1)).toBe(less);
     expect(planned.map((l) => l.qty)).toEqual([2, 0.5]);
   });
 
+  it('steps only the food a tap was on: a quick second − landing after the first took its line out leaves the next food as it is', () => {
+    const one = [{ foodId: 'chapati', unit: 'piece', qty: 1 }, planned[1]];
+    const once = stepDraft(one, 0, 'chapati', -1);
+    expect(once).toEqual([planned[1]]);
+    expect(stepDraft(once, 0, 'chapati', -1)).toBe(once);
+    expect(stepDraft(once, 0, 'moong-dal', 1).map((l) => l.qty)).toEqual([1]);
+  });
+
   it('shows the draft as the menu shows its lines: each food named, with its amount and calories from the database', () => {
-    const lines = rowLines(stepDraft(planned, 0, 1), foods, 'en');
+    const lines = rowLines(stepDraft(planned, 0, 'chapati', 1), foods, 'en');
     expect(lines.map((l) => [l.idx, l.foodId, l.qty])).toEqual([
       [0, 'chapati', 3],
       [1, 'moong-dal', 0.5],

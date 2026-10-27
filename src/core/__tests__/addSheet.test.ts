@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, plannedSummary, removeUndoSteps, repeatItems, sheetMode, slotBefore, slotLine, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
+import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, plannedSummary, removeUndoSteps, repeatItems, sheetMode, slotAllowance, slotBefore, slotLine, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
 import { addLine, basketFromLines, lineOf, setCount, slotPreview, type BasketLine } from '../basket';
 import { addSkip } from '../menu';
 import { kcalForGrams } from '../nutrition';
 import { slotStates } from '../pattern';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { FoodItem, Meal, MealItem } from '../types';
-import type { PlanMeal } from '../weekPlan';
+import { lineInfo, type PlanMeal } from '../weekPlan';
 
 const line = (foodId: string): BasketLine => ({ foodId, unit: 'katori', gramsPerUnit: 150, count: 1 });
 const base = { mode: 'log' as const, query: '', results: [] as string[], basket: [] as BasketLine[], planned: true, yesterday: true, saved: ['s1'], recents: ['poha', 'chapati'] };
@@ -122,6 +122,25 @@ describe('slotLine: the line under the slot chips', () => {
       tone: 'over',
     });
     expect(slotLine({ preview, autoKcal: 0, slot: 'Dinner', isToday: false }).parts[1]).toEqual({ key: 'add_over_day', params: { kcal: 50 } });
+  });
+});
+
+describe('slotAllowance: what the slot may hold, as the menu plans it', () => {
+  const lines = [
+    { foodId: 'chapati', unit: 'piece', qty: 2 },
+    { foodId: 'moong-dal', unit: 'katori', qty: 1 },
+  ];
+
+  it('a slot with a plan holds its planned calories, from the database; "N left" is that less what the slot already holds', () => {
+    const planned = lines.reduce((a, l) => a + lineInfo(l, foods)!.kcal, 0);
+    expect(slotAllowance({ lines, foods, share: 425 })).toBe(planned);
+    const preview = slotPreview({ allowance: slotAllowance({ lines, foods, share: 425 }), eaten: 100, autoKcal: 0, basketKcal: 50, dayLeft: 900 });
+    expect(slotLine({ preview, autoKcal: 0, slot: 'Lunch', isToday: true }).parts[0]).toEqual({ key: 'log_left_for', params: { kcal: planned - 150, slot: 'Lunch' } });
+  });
+
+  it('a slot with nothing planned, or only foods gone from the database, keeps its share of the day', () => {
+    expect(slotAllowance({ lines: [], foods, share: 425 })).toBe(425);
+    expect(slotAllowance({ lines: [{ foodId: 'gone', unit: 'piece', qty: 2 }], foods, share: 425 })).toBe(425);
   });
 });
 

@@ -142,7 +142,7 @@ type Ctx = {
    * taps both count. Every other date is left as it is, and a date before today is refused: its menu is that day's record.
    */
   editMenuDay: (day: DayMenu, meals: PlanMeal[]) => void;
-  /** `next` may be worked out from the line as the stored menu holds it (a − / + step: `steppedLine`). */
+  /** `next` may be worked out from the line as the stored menu holds it (a − / + step on the food tapped: `stepFoodLine`). */
   editMenuLine: (day: DayMenu, mealId: string, lineIdx: number, next: PlanLine | null | ((line: PlanLine) => PlanLine | null)) => void;
   addMenuFood: (day: DayMenu, mealId: string, line: PlanLine) => void;
   editMenuMeal: (day: DayMenu, meal: PlanMeal) => void;
