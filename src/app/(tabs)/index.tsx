@@ -155,9 +155,9 @@ export default function TodayScreen() {
               <View style={{ height: 6 }} />
               <Quote color={C.cyan}>{mantra.text}</Quote>
               {mantraWhy ? (
-                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 19, marginTop: 8, paddingLeft: 14 }}>{`${mantra.why}\n`}<Text style={{ color: C.textGhost }}>{t('mantra_source')}</Text></Text>
+                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 19, marginTop: 8, paddingLeft: 14 }}>{`${mantra.why}\n`}<Text style={{ color: C.textFaint }}>{t('mantra_source')}</Text></Text>
               ) : (
-                <Micro color={C.textGhost}>{`${t('mantra_why')} ›`}</Micro>
+                <Micro color={C.textFaint}>{`${t('mantra_why')} ›`}</Micro>
               )}
             </Pressable>
           ) : null}
@@ -199,7 +199,7 @@ export default function TodayScreen() {
       <TimingCard date={viewDate} />
       <Card>
         {dayMeals.length === 0 ? (
-          <Small color={C.textGhost}>{t('nothing_logged')}</Small>
+          <Small color={C.textFaint}>{t('nothing_logged')}</Small>
         ) : (
           dayMeals.map((m, i) => (
             <MealRow
@@ -258,7 +258,7 @@ export default function TodayScreen() {
           </>
           {rightColumn}
         </Cols>
-        <Small color={C.textGhost}>{t('medical_note')}</Small>
+        <Small color={C.textFaint}>{t('medical_note')}</Small>
         <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
         <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
         {isToday ? <Celebration /> : null}
@@ -288,7 +288,7 @@ export default function TodayScreen() {
         accessibilityRole="button"
         style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, opacity: pressed ? 0.7 : 1 })}>
         <Micro color={C.textDim}>{`${t('more_today')} · ${t('day_score')} ${score.total}`}</Micro>
-        <Ionicons name={more ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />
+        <Ionicons name={more ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />
       </Pressable>
       {more ? (
         <>
@@ -302,7 +302,7 @@ export default function TodayScreen() {
           {isToday ? <DayReview /> : null}
         </>
       ) : null}
-      <Small color={C.textGhost}>{t('medical_note')}</Small>
+      <Small color={C.textFaint}>{t('medical_note')}</Small>
       <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
       <SuggestSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
       {isToday ? <Celebration /> : null}
@@ -338,7 +338,7 @@ export function MealRow({ meal, first, lang, onPress, onDelete }: { meal: Meal; 
               </Pressable>
             </Row>
           ) : (
-            <Ionicons name="chevron-forward" size={15} color={C.textGhost} />
+            <Ionicons name="chevron-forward" size={15} color={C.textFaint} />
           )
         }
       />

@@ -118,7 +118,7 @@ export function FoodDetailSheet({
           <Macro icon="flame-outline" label={t('carbs')} value={n.carbs} />
           <Macro icon="water-outline" label={t('fat')} value={n.fat} />
         </View>
-        {f.source === 'estimate' ? <Small color={C.textGhost}>{t('estimated_values')}</Small> : null}
+        {f.source === 'estimate' ? <Small color={C.textFaint}>{t('estimated_values')}</Small> : null}
 
         <Btn label={initial ? t('done') : t('add_item')} onPress={() => onAdd({ food: f, unit: measure.unit, gramsPerUnit: measure.grams, count })} />
         <Pressable onPress={onClose} style={{ alignSelf: 'center', paddingVertical: 6 }}>

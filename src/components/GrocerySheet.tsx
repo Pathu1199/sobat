@@ -74,7 +74,7 @@ export function GrocerySheet({ open, onClose, plan }: { open: boolean; onClose: 
               })}
             </View>
           ))}
-          {total === 0 ? <Small color={C.textGhost}>{t('grocery_empty')}</Small> : null}
+          {total === 0 ? <Small color={C.textFaint}>{t('grocery_empty')}</Small> : null}
         </ScrollView>
         <View style={{ height: S.hairline }} />
       </View>

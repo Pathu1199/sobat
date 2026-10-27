@@ -57,7 +57,7 @@ function BlockRow({ block, first, onChange, onRemove }: { block: ScheduleBlock; 
         <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t(`blk_${block.kind}`)}</Text>
         {onRemove ? (
           <Pressable onPress={onRemove} hitSlop={10} accessibilityLabel={t('delete')}>
-            <Ionicons name="close" size={16} color={C.textGhost} />
+            <Ionicons name="close" size={16} color={C.textFaint} />
           </Pressable>
         ) : null}
       </Row>

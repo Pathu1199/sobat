@@ -36,7 +36,7 @@ export function StartHereCard() {
           <Pressable key={s.key} onPress={s.done ? undefined : s.go} disabled={s.done} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9, opacity: pressed ? 0.7 : 1 })}>
             <Ionicons name={s.done ? 'checkmark-circle' : s.icon} size={20} color={s.done ? C.green : C.accent} />
             <Text style={{ flex: 1, color: s.done ? C.textFaint : C.text, fontSize: F.body, textDecorationLine: s.done ? 'line-through' : 'none' }}>{t(`start_${s.key}`)}</Text>
-            {!s.done ? <Ionicons name="chevron-forward" size={15} color={C.textGhost} /> : null}
+            {!s.done ? <Ionicons name="chevron-forward" size={15} color={C.textFaint} /> : null}
           </Pressable>
         ))}
       </View>

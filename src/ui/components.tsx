@@ -205,7 +205,7 @@ export function Field({
         onChangeText={onChangeText}
         keyboardType={keyboardType}
         placeholder={placeholder}
-        placeholderTextColor={C.textGhost}
+        placeholderTextColor={C.textFaint}
         multiline={multiline}
         autoFocus={autoFocus}
         style={[st.input, multiline && { minHeight: 78, textAlignVertical: 'top' }]}
@@ -350,7 +350,7 @@ export function RingStat({ label, value, color }: { label: string; value: number
   return (
     <View style={{ alignItems: 'center', gap: 8, minWidth: 52 }}>
       <Ring value={value ?? 0} max={100} size={44} stroke={3} color={color} track={C.cardAlt}>
-        <Text style={{ color: value === null ? C.textGhost : C.text, fontSize: F.micro, fontWeight: '600' }}>
+        <Text style={{ color: value === null ? C.textFaint : C.text, fontSize: F.micro, fontWeight: '600' }}>
           {value === null ? '·' : `${value}%`}
         </Text>
       </Ring>
@@ -428,7 +428,7 @@ export function Divider() {
 export function Empty({ text }: { text: string }) {
   return (
     <View style={st.empty}>
-      <Text style={{ color: C.textGhost, fontSize: F.small }}>{text}</Text>
+      <Text style={{ color: C.textFaint, fontSize: F.small }}>{text}</Text>
     </View>
   );
 }

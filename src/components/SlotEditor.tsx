@@ -87,7 +87,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
       {slot.options.map((option, oi) => (
         <View key={oi} style={{ gap: 6, backgroundColor: C.cardAlt, borderRadius: 12, padding: 12 }}>
           {slot.options.length > 1 ? <Micro>{fill(t('routine_option'), { n: oi + 1 })}</Micro> : null}
-          {option.length === 0 ? <Small color={C.textGhost}>{t('routine_empty_option')}</Small> : null}
+          {option.length === 0 ? <Small color={C.textFaint}>{t('routine_empty_option')}</Small> : null}
           {option.map((line) => {
             const food = foods.find((f) => f.id === line.foodId);
             const portion = food?.portions.find((p) => p.unit === line.unit) ?? (food ? defaultPortion(food) : undefined);
@@ -99,7 +99,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
                     {portion ? <Micro>{portionLabel(portion, lang)}</Micro> : null}
                   </View>
                   <Pressable onPress={() => onChange(removeLine(slot, oi, line.foodId))} hitSlop={8} accessibilityLabel={t('delete')}>
-                    <Ionicons name="close" size={16} color={C.textGhost} />
+                    <Ionicons name="close" size={16} color={C.textFaint} />
                   </Pressable>
                 </Row>
                 <Row style={{ gap: 6, flexWrap: 'wrap' }}>

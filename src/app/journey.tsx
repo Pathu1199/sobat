@@ -80,7 +80,7 @@ export default function Journey() {
                 <Text style={{ fontSize: 22, opacity: b.earned ? 1 : 0.35 }}>{BADGE_ICON[b.key] ?? '🏅'}</Text>
                 <View style={{ flex: 1, gap: 4 }}>
                   <Text style={{ color: b.earned ? C.text : C.textDim, fontSize: F.small, fontWeight: '600' }}>{t(`badge_${b.key}`)}</Text>
-                  {b.earned ? <Micro color={C.green}>{t('badge_earned')}</Micro> : <Bar value={b.n} max={b.target} color={C.textGhost} height={3} />}
+                  {b.earned ? <Micro color={C.green}>{t('badge_earned')}</Micro> : <Bar value={b.n} max={b.target} color={C.textFaint} height={3} />}
                   {!b.earned ? <Micro color={C.textFaint}>{`${b.n}/${b.target}`}</Micro> : null}
                 </View>
               </Row>

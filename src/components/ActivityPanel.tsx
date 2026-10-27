@@ -67,7 +67,7 @@ export function ActivityPanel() {
             {burned > 0 ? <Small color={C.green}>{fill(t('act_today_line'), { kcal: burned, back: eatBack(burned) })}</Small> : <Small color={C.textFaint}>{t('act_today_none')}</Small>}
           </View>
         </Row>
-        <Micro color={C.textGhost}>{t('act_who_note')}</Micro>
+        <Micro color={C.textFaint}>{t('act_who_note')}</Micro>
       </Card>
 
       {/* The person's own activities, one tap each. */}

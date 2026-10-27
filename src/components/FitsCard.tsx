@@ -95,7 +95,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
             <Ionicons name="shuffle-outline" size={18} color={C.accent} />
           </Pressable>
           <Pressable onPress={() => setOpen((o) => !o)} accessibilityRole="button" hitSlop={8}>
-            <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />
+            <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />
           </Pressable>
         </Row>
       </Row>
@@ -139,7 +139,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
                     .filter((p) => p.alts?.length)
                     .map((p) => (
                       <Row key={`alt-${p.food.id}`} style={{ gap: 6, flexWrap: 'wrap' }}>
-                        <Micro color={C.textGhost}>{fill(t('fits_swap'), { food: foodName(p.food, lang) })}</Micro>
+                        <Micro color={C.textFaint}>{fill(t('fits_swap'), { food: foodName(p.food, lang) })}</Micro>
                         {p.alts!.map((a) => (
                           <Pressable key={a.food.id} onPress={() => log(s.type, a.food.id, a.grams, s.id)} accessibilityRole="button">
                             <Micro color={C.accent}>{`${foodName(a.food, lang)} (${a.kcal}${p.kcal - a.kcal > 0 ? `, −${p.kcal - a.kcal}` : ''})`}</Micro>
@@ -157,7 +157,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
           <Micro color={C.accent}>{allMeals ? `${t('fits_hide_rest')} ‹` : `${fill(t('fits_show_rest'), { n: plan.slots.length - 1 })} ›`}</Micro>
         </Pressable>
       ) : null}
-      {open ? <Micro color={C.textGhost}>{t('fits_hint')}</Micro> : null}
+      {open ? <Micro color={C.textFaint}>{t('fits_hint')}</Micro> : null}
     </Card>
   );
 }

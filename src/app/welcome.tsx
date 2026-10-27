@@ -67,7 +67,7 @@ export default function Welcome() {
               </Pressable>
             ) : null}
           </View>
-          {Platform.OS === 'web' ? <Text style={{ color: C.textGhost, fontSize: F.tiny, marginTop: 12, lineHeight: 17 }}>{t('w_download_note')}</Text> : null}
+          {Platform.OS === 'web' ? <Text style={{ color: C.textFaint, fontSize: F.tiny, marginTop: 12, lineHeight: 17 }}>{t('w_download_note')}</Text> : null}
         </View>
 
         <View
@@ -145,7 +145,7 @@ export default function Welcome() {
             style={{ backgroundColor: C.accent, paddingVertical: 15, paddingHorizontal: 34, borderRadius: 999 }}>
             <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
           </Pressable>
-          <Text style={[MICRO, { color: C.textGhost }]}>{`${t('made_by')} · ${t('w_footer')}`}</Text>
+          <Text style={[MICRO, { color: C.textFaint }]}>{`${t('made_by')} · ${t('w_footer')}`}</Text>
         </View>
       </View>
     </ScrollView>

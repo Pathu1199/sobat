@@ -55,7 +55,7 @@ export function SuggestSheet({ open, onClose }: { open: boolean; onClose: () => 
           <Pill label={t('suggest_all')} active={!onlyRecipes} onPress={() => setOnlyRecipes(false)} />
           <Pill label={t('suggest_with_recipe')} active={onlyRecipes} onPress={() => setOnlyRecipes(true)} />
         </View>
-        {list.length === 0 ? <Small color={C.textGhost}>{t('no_results')}</Small> : null}
+        {list.length === 0 ? <Small color={C.textFaint}>{t('no_results')}</Small> : null}
         {list.map((o, i) => {
           const rec = recipeFor(o.food.id);
           return (

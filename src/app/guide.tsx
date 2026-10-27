@@ -42,7 +42,7 @@ export default function GuideScreen() {
                   <Ionicons name={s.icon as keyof typeof Ionicons.glyphMap} size={16} color={on ? C.accent : C.textDim} />
                 </View>
                 <Text style={{ flex: 1, color: C.text, fontSize: F.body, fontWeight: '600' }}>{s.title}</Text>
-                <Ionicons name={on ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />
+                <Ionicons name={on ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />
               </Pressable>
               {on ? (
                 <View style={{ gap: 10, paddingLeft: 44, paddingBottom: 14 }}>
@@ -58,7 +58,7 @@ export default function GuideScreen() {
           );
         })}
       </Card>
-      <Small color={C.textGhost}>{t('medical_note')}</Small>
+      <Small color={C.textFaint}>{t('medical_note')}</Small>
     </Screen>
   );
 }

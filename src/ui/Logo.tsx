@@ -42,7 +42,7 @@ export function Wordmark({ size = 22, alt }: { size?: number; alt?: string }) {
         <Text style={{ color: C.text, fontSize: size, fontWeight: '700', letterSpacing: -0.6 }}>
           Sobat
         </Text>
-        {alt ? <Text style={{ color: C.textGhost, fontSize: 10, letterSpacing: 1.1, textTransform: 'uppercase', fontWeight: '500' }}>{alt}</Text> : null}
+        {alt ? <Text style={{ color: C.textFaint, fontSize: 10, letterSpacing: 1.1, textTransform: 'uppercase', fontWeight: '500' }}>{alt}</Text> : null}
       </View>
     </View>
   );

@@ -102,7 +102,7 @@ export default function SettingsScreen() {
                 {auth.isAdmin ? <Pill label={t('admin')} color={C.accent} textColor={C.white} /> : null}
               </Row>
               <Row style={{ gap: 8, alignItems: 'center' }}>
-                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: sync.status === 'synced' ? C.green : sync.status === 'error' || sync.status === 'blocked' ? C.red : sync.status === 'unconfigured' || sync.status === 'off' ? C.textGhost : C.amber }} />
+                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: sync.status === 'synced' ? C.green : sync.status === 'error' || sync.status === 'blocked' ? C.red : sync.status === 'unconfigured' || sync.status === 'off' ? C.textFaint : C.amber }} />
                 <View style={{ flex: 1 }}>
                   <Small color={C.textDim}>
                     {t(`sync_${sync.status}`)}
@@ -258,7 +258,7 @@ export default function SettingsScreen() {
                 />
               ) : null}
               {pushMsg ? <Small color={pushMsg === 'sent' ? C.green : C.amber}>{t(pushMsg === 'sent' ? 'push_test_sent' : 'push_test_failed')}</Small> : null}
-              <Small color={C.textGhost}>{t('push_privacy')}</Small>
+              <Small color={C.textFaint}>{t('push_privacy')}</Small>
             </>
           ) : null}
           <Divider />
@@ -344,15 +344,15 @@ export default function SettingsScreen() {
             </Row>
             <Small color={C.textFaint}>{t('advanced_desc')}</Small>
           </View>
-          <Ionicons name={advanced ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />
+          <Ionicons name={advanced ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />
         </Pressable>
         {advanced ? (
           <View style={{ gap: 20 }}>
           <View style={{ gap: 10 }}>
             <SectionHeader title={t('local_ai')} meta={aiOnline ? t('ai_on') : t('ai_off')} color={aiOnline ? C.green : undefined} />
-            <Card rail={aiOnline ? C.green : C.textGhost}>
+            <Card rail={aiOnline ? C.green : C.textFaint}>
               <Row style={{ gap: 10 }}>
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: aiOnline ? C.green : C.textGhost }} />
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: aiOnline ? C.green : C.textFaint }} />
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', flex: 1 }}>{aiOnline ? fill(t('local_ai_up'), { url: ai.url }) : t('local_ai_down')}</Text>
               </Row>
               <Small color={C.textDim}>{t('local_ai_body')}</Small>

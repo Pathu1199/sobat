@@ -75,7 +75,7 @@ export function CoachStrip({ onSuggest, onWeigh, max = 2 }: { onSuggest?: () => 
             <Ionicons name={ICON[a.kind]} size={18} color={tone(a)} />
           </View>
           <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: 22, fontWeight: a.urgency === 'now' ? '600' : '500' }}>{adviceText(a, t)}</Text>
-          {a.action !== 'none' ? <Ionicons name="chevron-forward" size={16} color={C.textGhost} /> : null}
+          {a.action !== 'none' ? <Ionicons name="chevron-forward" size={16} color={C.textFaint} /> : null}
         </Pressable>
       ))}
     </Card>

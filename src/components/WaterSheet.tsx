@@ -58,7 +58,7 @@ export function WaterSheet({ open, onClose }: { open: boolean; onClose: () => vo
       <Row style={{ justifyContent: 'space-between' }}>
         <Small color={C.textFaint}>{t('water_why')}</Small>
         <Pressable onPress={() => app.undoWater()} disabled={waterToday === 0} hitSlop={8}>
-          <Micro color={waterToday === 0 ? C.textGhost : C.accent}>{t('undo')}</Micro>
+          <Micro color={waterToday === 0 ? C.textFaint : C.accent}>{t('undo')}</Micro>
         </Pressable>
       </Row>
       {todays.length > 0 ? (

@@ -57,7 +57,7 @@ export function MountainCard() {
           <Micro color={C.textDim}>{t('journey_title')}</Micro>
           <Row style={{ gap: 6 }}>
             <Pill label={`⛰ ${t(`level_${g.level.key}`)}`} color={C.cardAlt} textColor={C.cyan} />
-            <Ionicons name="chevron-forward" size={14} color={C.textGhost} />
+            <Ionicons name="chevron-forward" size={14} color={C.textFaint} />
           </Row>
         </Row>
         <Mountain progress={g.progress} startLabel={`${g.plan.startKg} kg`} nowLabel={`${g.plan.currentKg} kg`} goalLabel={`${g.plan.goalKg} kg`} camps={g.camps} trail={g.trail} />

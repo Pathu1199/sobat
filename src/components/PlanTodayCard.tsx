@@ -55,7 +55,7 @@ export function PlanTodayCard() {
               <Micro color={C.textDim}>{t('diet_title')}</Micro>
               <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t('plan_make')}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={C.textGhost} />
+            <Ionicons name="chevron-forward" size={16} color={C.textFaint} />
           </Row>
         </Card>
       </Pressable>

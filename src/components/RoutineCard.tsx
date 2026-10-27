@@ -178,7 +178,7 @@ export function RoutineCard() {
                 <Pressable onPress={() => (quiet ? undefined : lines.length === 0 ? router.push({ pathname: '/log', params: { slot: slot.id } }) : setOpenSlot(s))} disabled={quiet} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, gap: 2, opacity: pressed && !quiet ? 0.7 : 1 })}>
                   <Row style={{ gap: 8 }}>
                     <Text style={{ color: quiet ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500', textDecorationLine: skipped ? 'line-through' : 'none' }}>{slotLabel(slot, lang)}</Text>
-                    <Micro color={s.status === 'now' ? C.amber : s.status === 'missed' ? C.red : C.textGhost}>{s.status === 'missed' ? t('slot_missed') : s.status === 'now' ? t('slot_now') : slotTime(slot)}</Micro>
+                    <Micro color={s.status === 'now' ? C.amber : s.status === 'missed' ? C.red : C.textFaint}>{s.status === 'missed' ? t('slot_missed') : s.status === 'now' ? t('slot_now') : slotTime(slot)}</Micro>
                   </Row>
                   <Text style={{ color: C.textFaint, fontSize: F.tiny }} numberOfLines={1}>
                     {done ? s.meals.flatMap((m) => m.items.map((it) => itemName(it, foods, lang))).join(', ') : lines.length === 0 ? t('pattern_log_other') : lines.map((l) => lineLabel(l, foods, lang)).join(' + ')}
@@ -419,7 +419,7 @@ function SpendSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
       <Divider />
       <Micro>{t('routine_spent_today')}</Micro>
       {todays.length === 0 ? (
-        <Small color={C.textGhost}>{t('routine_none_today')}</Small>
+        <Small color={C.textFaint}>{t('routine_none_today')}</Small>
       ) : (
         todays.map((s) => (
           <Row key={s.id} style={{ justifyContent: 'space-between' }}>
@@ -427,7 +427,7 @@ function SpendSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
             <Row style={{ gap: 12 }}>
               <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>{`₹${s.rupees}`}</Text>
               <Pressable onPress={() => app.removeSpend(s.id)} hitSlop={8} accessibilityLabel={t('delete')}>
-                <Ionicons name="close" size={16} color={C.textGhost} />
+                <Ionicons name="close" size={16} color={C.textFaint} />
               </Pressable>
             </Row>
           </Row>

@@ -78,7 +78,7 @@ function RowOfDots({ label, days, value, ok }: { label: string; days: WeekDay[];
         const empty = v === '·';
         return (
           <View key={d.date} style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={{ color: empty ? C.textGhost : ok(d) ? C.green : C.textDim, fontSize: F.tiny, fontWeight: ok(d) && !empty ? '600' : '400' }}>{v}</Text>
+            <Text style={{ color: empty ? C.textFaint : ok(d) ? C.green : C.textDim, fontSize: F.tiny, fontWeight: ok(d) && !empty ? '600' : '400' }}>{v}</Text>
           </View>
         );
       })}

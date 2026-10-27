@@ -51,7 +51,7 @@ export function NutrientCard() {
           );
         })}
       </View>
-      <Micro color={C.textGhost}>{t('nutrition_note')}</Micro>
+      <Micro color={C.textFaint}>{t('nutrition_note')}</Micro>
     </Card>
   );
 }

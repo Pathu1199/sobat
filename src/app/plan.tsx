@@ -329,7 +329,7 @@ export default function PlanScreen() {
                   {one ? `${unitName(one.unit)} · ${one.kcal} kcal` : ''}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={15} color={C.textGhost} />
+              <Ionicons name="chevron-forward" size={15} color={C.textFaint} />
             </Pressable>
           );
         })}

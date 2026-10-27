@@ -42,7 +42,7 @@ export function WeighInCard() {
       <Row style={{ justifyContent: 'flex-end' }}>
         <Btn small tone="ghost" label={t('weigh_later')} onPress={() => app.toggleAction('weigh_later')} />
       </Row>
-      <Micro color={C.textGhost}>{t('weigh_rule')}</Micro>
+      <Micro color={C.textFaint}>{t('weigh_rule')}</Micro>
     </Card>
   );
 }

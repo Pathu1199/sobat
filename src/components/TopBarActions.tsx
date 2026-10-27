@@ -34,7 +34,7 @@ export function TopBarActions({ streak }: { streak?: number }) {
       ) : null}
       {canUseAI ? (
         <Row style={{ gap: 5, marginHorizontal: 6 }} >
-          <View accessibilityLabel={online ? t('ai_on') : t('ai_off')} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: online ? C.green : C.textGhost }} />
+          <View accessibilityLabel={online ? t('ai_on') : t('ai_off')} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: online ? C.green : C.textFaint }} />
           {wide ? <StatusChip label={online ? t('ai_on') : t('ai_off')} color={online ? C.green : C.textFaint} /> : null}
         </Row>
       ) : null}

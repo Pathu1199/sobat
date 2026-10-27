@@ -79,10 +79,10 @@ export default function RoutineScreen() {
                   accessibilityRole="button"
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, opacity: pressed ? 0.7 : 1 })}>
                   <Text style={{ width: 44, color: C.textDim, fontSize: F.small, fontWeight: '600' }}>{t(`wd_${day}`)}</Text>
-                  <Text style={{ flex: 1, color: list.length > 0 ? C.text : C.textGhost, fontSize: F.body }}>
+                  <Text style={{ flex: 1, color: list.length > 0 ? C.text : C.textFaint, fontSize: F.body }}>
                     {list.length > 0 ? list.map((id) => nameOf(id, foods, lang)).join(' / ') : t('routine_free')}
                   </Text>
-                  <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />
+                  <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />
                 </Pressable>
                 {open ? (
                   <Row style={{ flexWrap: 'wrap', gap: 6, paddingBottom: 10 }}>
@@ -115,7 +115,7 @@ export default function RoutineScreen() {
                   title={slotLabel(s, lang) || t('routine_new_meal')}
                   sub={`${slotKcal.get(s.id) ?? 0} kcal · ${t(s.type)} · ${s.options.map((o) => o.map((l) => lineLabel(l, foods, lang)).join(' + ') || '…').join(' / ')}${s.withBhaji ? ` + ${t('routine_bhaji').toLowerCase()}` : ''}`}
                   onPress={() => setOpenSlot(open ? null : s.id)}
-                  trailing={<Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={15} color={C.textGhost} />}
+                  trailing={<Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />}
                 />
                 {open ? (
                   <SlotEditor
@@ -146,7 +146,7 @@ export default function RoutineScreen() {
       <View style={{ gap: 10 }}>
         <SectionHeader title={t('routine_avoid')} meta={`${routine.avoid.length}`} />
         <Card>
-          {routine.avoid.length === 0 ? <Small color={C.textGhost}>{t('routine_no_avoid')}</Small> : null}
+          {routine.avoid.length === 0 ? <Small color={C.textFaint}>{t('routine_no_avoid')}</Small> : null}
           {routine.avoid.map((r, i) => (
             <View key={r.id}>
               {i > 0 ? <Divider /> : null}
@@ -162,7 +162,7 @@ export default function RoutineScreen() {
                   onPress={() => app.setRoutine({ avoid: routine.avoid.filter((x) => x.id !== r.id) })}
                   hitSlop={10}
                   accessibilityLabel={t('delete')}>
-                  <Ionicons name="close" size={16} color={C.textGhost} />
+                  <Ionicons name="close" size={16} color={C.textFaint} />
                 </Pressable>
               </Row>
             </View>

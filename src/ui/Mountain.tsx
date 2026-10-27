@@ -76,7 +76,7 @@ export function Mountain({
             return (
               <React.Fragment key={c.p}>
                 <Line x1={q.x} y1={q.y} x2={q.x} y2={q.y - 14} stroke={C.textFaint} strokeWidth="1" />
-                <Path d={`M ${q.x} ${q.y - 14} L ${q.x + 9} ${q.y - 11} L ${q.x} ${q.y - 8} Z`} fill={p >= c.p ? C.green : C.textGhost} />
+                <Path d={`M ${q.x} ${q.y - 14} L ${q.x + 9} ${q.y - 11} L ${q.x} ${q.y - 8} Z`} fill={p >= c.p ? C.green : C.textFaint} />
                 <SvgText x={q.x + 2} y={q.y + 14} fill={C.textFaint} fontSize="8" fontWeight="600">
                   {c.label}
                 </SvgText>

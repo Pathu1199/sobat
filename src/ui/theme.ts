@@ -2,11 +2,10 @@
  * Design tokens. Everything visual comes from here, so a change to the palette
  * moves the whole app at once.
  *
- * A fresh health palette: a leaf green as the brand colour with a teal
- * partner (the hero gradient and the logo run between them), soft
- * off-white or deep slate behind, and cards that float on a soft shadow
- * rather than sit inside a hard outline. Numbers are bold; labels are
- * small, uppercase and quiet.
+ * A sober health palette: one teal accent for actions, ticks and the current
+ * item, soft off-white or deep slate behind, and flat cards on a hairline.
+ * Every colour that carries words reads at 4.5:1 or more on the surfaces it
+ * sits on (src/ui/__tests__/contrast.test.ts holds the palette to that).
  */
 const listeners = new Set<() => void>();
 
@@ -23,12 +22,15 @@ const DARK = {
 
   text: '#F1F6F5',
   textDim: '#A3B3B8',
-  textFaint: '#6F8288',
-  textGhost: '#465A61',
+  textFaint: '#7E9095',
 
   accent: '#2DD4A3',
   accentSoft: '#145243',
   accentDim: '#10302A',
+  /** The accent when it is the colour of words: links, the selected segment, a soft button's label. */
+  accentText: '#2DD4A3',
+  /** Dark ink for words and icons on an accent fill. White on this teal is 1.9:1; this is 10:1. */
+  onAccent: '#0B1014',
 
   cyan: '#38C6E8',
   cyanSoft: '#14566A',
@@ -36,9 +38,9 @@ const DARK = {
   violetSoft: '#463A86',
   green: '#3BD68B',
   amber: '#F5B941',
-  amberSoft: '#6E4A12',
+  amberSoft: '#5A3C0E',
   red: '#F2677A',
-  redSoft: '#5E2430',
+  redSoft: '#401922',
   pink: '#F06AA7',
 
   white: '#FFFFFF',
@@ -48,7 +50,7 @@ const DARK = {
   heroTo: '#1386B8',
 };
 
-/** The same roles in daylight: paper-white panels, ink text, the accents a shade deeper so they hold on white. */
+/** The same roles in daylight: paper-white panels, ink text, the status colours a shade deeper so their words hold 4.5:1 on white. */
 const LIGHT: typeof DARK = {
   bg: '#F2F6F7',
   bgAlt: '#FFFFFF',
@@ -60,23 +62,24 @@ const LIGHT: typeof DARK = {
 
   text: '#0E1B1F',
   textDim: '#45575D',
-  textFaint: '#76878C',
-  textGhost: '#A9B7BA',
+  textFaint: '#627075',
 
   accent: '#12A57F',
   accentSoft: '#CFF1E6',
   accentDim: '#E7F7F2',
+  accentText: '#0D755A',
+  onAccent: '#0E1B1F',
 
-  cyan: '#0B9CC2',
+  cyan: '#087794',
   cyanSoft: '#CDEEF6',
   violet: '#6E52E6',
   violetSoft: '#E6E0FD',
-  green: '#16A05E',
-  amber: '#C98A0B',
+  green: '#117E4A',
+  amber: '#8A5E07',
   amberSoft: '#FBEBC6',
-  red: '#D9445A',
+  red: '#BF2A40',
   redSoft: '#FBDDE2',
-  pink: '#D4478A',
+  pink: '#C82F78',
 
   white: '#FFFFFF',
   scrim: 'rgba(14, 27, 31, 0.45)',
@@ -176,7 +179,7 @@ export function readinessColor(l: 'green' | 'yellow' | 'red') {
 
 /** Green when the value is good, amber when it is not, quiet when unknown. */
 export function scoreColor(value: number | null) {
-  if (value === null) return C.textGhost;
+  if (value === null) return C.textFaint;
   if (value >= 80) return C.cyan;
   if (value >= 60) return C.accent;
   if (value >= 35) return C.amber;

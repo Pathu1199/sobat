@@ -68,7 +68,7 @@ export default function FoodsScreen() {
         {nutrient ? <Small color={C.textFaint}>{t(`nut_${nutrient}_why`)}</Small> : null}
       </View>
       <Card>
-        {list.length === 0 ? <Small color={C.textGhost}>{t('no_results')}</Small> : null}
+        {list.length === 0 ? <Small color={C.textFaint}>{t('no_results')}</Small> : null}
         {list.map((f, i) => {
           const p = defaultPortion(f);
           const kcal = p ? Math.round((f.kcal_100g * p.grams) / 100) : f.kcal_100g;
@@ -84,7 +84,7 @@ export default function FoodsScreen() {
                 value={String(kcal)}
                 valueUnit="kcal"
                 onPress={() => setDetail(f)}
-                trailing={<Ionicons name="chevron-forward" size={15} color={C.textGhost} />}
+                trailing={<Ionicons name="chevron-forward" size={15} color={C.textFaint} />}
               />
             </View>
           );

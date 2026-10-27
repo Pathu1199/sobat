@@ -97,7 +97,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
           <Ionicons
             name={doneToday.status === 'done' ? 'checkmark-circle' : 'remove-circle-outline'}
             size={17}
-            color={doneToday.status === 'done' ? C.accent : C.textGhost}
+            color={doneToday.status === 'done' ? C.accent : C.textFaint}
           />
           <Small color={doneToday.status === 'done' ? C.accent : C.textFaint}>
             {doneToday.status === 'done' ? `${t('done')} · ${doneToday.minutes} min` : t('skip_session')}
@@ -194,7 +194,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
               </Row>
             </View>
           ))}
-        {app.state.workouts.length === 0 ? <Small color={C.textGhost}>{t('no_data_yet')}</Small> : null}
+        {app.state.workouts.length === 0 ? <Small color={C.textFaint}>{t('no_data_yet')}</Small> : null}
       </Card>
     </View>
   );
@@ -211,7 +211,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
           <>
             {weekCard}
             {history}
-            <Small color={C.textGhost}>{t('medical_note')}</Small>
+            <Small color={C.textFaint}>{t('medical_note')}</Small>
           </>
         </Cols>
       </Page>
@@ -225,7 +225,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
       {moves}
       {weekCard}
       {history}
-      <Small color={C.textGhost}>{t('medical_note')}</Small>
+      <Small color={C.textFaint}>{t('medical_note')}</Small>
     </Page>
   );
 }

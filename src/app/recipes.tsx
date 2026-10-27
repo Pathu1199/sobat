@@ -44,7 +44,7 @@ export default function RecipesScreen() {
                 value={n ? String(n.kcal) : undefined}
                 valueUnit="kcal"
                 onPress={() => setOpen(r)}
-                trailing={<Ionicons name="chevron-forward" size={15} color={C.textGhost} />}
+                trailing={<Ionicons name="chevron-forward" size={15} color={C.textFaint} />}
               />
             </View>
           );

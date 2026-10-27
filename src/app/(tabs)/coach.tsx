@@ -358,9 +358,9 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
 
             <Micro color={aiLive ? C.green : C.textFaint}>{aiLive ? t('ai_coach_open') : t('offline_coach')}</Micro>
             {canUseAI && !aiOnline ? (
-              <Card rail={C.textGhost}>
+              <Card rail={C.textFaint}>
                 <Row style={{ gap: 10 }}>
-                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.textGhost }} />
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.textFaint }} />
                   <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', flex: 1 }}>{t('local_ai_down')}</Text>
                 </Row>
                 <Small color={C.textDim}>{t('coach_ai_off_hint')}</Small>
@@ -453,7 +453,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
-                <Ionicons name="arrow-up" size={19} color={busy || !input.trim() ? C.textGhost : C.white} />
+                <Ionicons name="arrow-up" size={19} color={busy || !input.trim() ? C.textFaint : C.white} />
               </Pressable>
             </View>
           </View>
@@ -471,7 +471,7 @@ function ChatInput({ value, onChangeText, placeholder, onSubmit }: { value: stri
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor={C.textGhost}
+      placeholderTextColor={C.textFaint}
       onSubmitEditing={onSubmit}
       returnKeyType="send"
       style={{

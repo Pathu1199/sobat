@@ -65,16 +65,16 @@ export default function Login() {
           {mode === 'up' ? (
             <View style={{ gap: 6 }}>
               <Micro>{t('login_name')}</Micro>
-              <TextInput value={name} onChangeText={setName} placeholder={t('login_name')} placeholderTextColor={C.textGhost} style={input} autoCapitalize="words" />
+              <TextInput value={name} onChangeText={setName} placeholder={t('login_name')} placeholderTextColor={C.textFaint} style={input} autoCapitalize="words" />
             </View>
           ) : null}
           <View style={{ gap: 6 }}>
             <Micro>{t('login_email')}</Micro>
-            <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={C.textGhost} style={input} autoCapitalize="none" keyboardType="email-address" autoComplete="email" textContentType="emailAddress" />
+            <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={C.textFaint} style={input} autoCapitalize="none" keyboardType="email-address" autoComplete="email" textContentType="emailAddress" />
           </View>
           <View style={{ gap: 6 }}>
             <Micro>{t('login_password')}</Micro>
-            <TextInput value={password} onChangeText={setPassword} placeholder="••••••" placeholderTextColor={C.textGhost} style={input} secureTextEntry autoComplete={mode === 'up' ? 'new-password' : 'current-password'} textContentType={mode === 'up' ? 'newPassword' : 'password'} onSubmitEditing={() => canGo && run(() => (mode === 'in' ? authApi.signIn(email, password) : authApi.signUp(email, password, name)))} />
+            <TextInput value={password} onChangeText={setPassword} placeholder="••••••" placeholderTextColor={C.textFaint} style={input} secureTextEntry autoComplete={mode === 'up' ? 'new-password' : 'current-password'} textContentType={mode === 'up' ? 'newPassword' : 'password'} onSubmitEditing={() => canGo && run(() => (mode === 'in' ? authApi.signIn(email, password) : authApi.signUp(email, password, name)))} />
           </View>
 
           {msg ? <Small color={msg.ok ? C.green : C.amber}>{t(msg.key)}</Small> : null}

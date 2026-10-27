@@ -121,7 +121,7 @@ export function BarChart({
       {labels && labels.length === data.length ? (
         <View style={{ flexDirection: 'row', paddingHorizontal: pad, marginTop: 4 }}>
           {labels.map((l, i) => (
-            <Text key={data[i].date} style={[MICRO, { color: C.textGhost, flex: 1, textAlign: 'center', fontSize: 9 }]} numberOfLines={1}>
+            <Text key={data[i].date} style={[MICRO, { color: C.textFaint, flex: 1, textAlign: 'center', fontSize: 9 }]} numberOfLines={1}>
               {l}
             </Text>
           ))}
@@ -166,7 +166,7 @@ export function ConsistencyStrip({ data, labels }: { data: { date: string; logge
       {labels && big ? (
         <View style={{ flexDirection: 'row', gap }}>
           {labels.map((l, i) => (
-            <Text key={i} style={[MICRO, { color: C.textGhost, flex: 1, textAlign: 'center' }]}>
+            <Text key={i} style={[MICRO, { color: C.textFaint, flex: 1, textAlign: 'center' }]}>
               {l}
             </Text>
           ))}

@@ -1,0 +1,56 @@
+import { describe, expect, it } from 'vitest';
+import { contrastRatio, luminance } from '../contrast';
+import { PALETTES, type ThemeMode } from '../theme';
+
+const MODES: ThemeMode[] = ['light', 'dark'];
+/** What words sit on. */
+const SURFACES = ['bg', 'card', 'cardAlt'] as const;
+/** Every token the app sets words in. */
+const WORDS = ['text', 'textDim', 'textFaint', 'accentText', 'red', 'amber', 'green', 'cyan', 'violet', 'pink'] as const;
+
+describe('contrastRatio', () => {
+  it('matches the WCAG reference values', () => {
+    expect(contrastRatio('#000000', '#FFFFFF')).toBeCloseTo(21, 5);
+    expect(contrastRatio('#FFFFFF', '#FFFFFF')).toBeCloseTo(1, 5);
+    expect(contrastRatio('#777777', '#FFFFFF')).toBeCloseTo(4.48, 2);
+  });
+
+  it('is the same whichever colour comes first', () => {
+    expect(contrastRatio('#12A57F', '#0E1B1F')).toBe(contrastRatio('#0E1B1F', '#12A57F'));
+  });
+
+  it('reads three-digit hex', () => {
+    expect(luminance('#fff')).toBeCloseTo(1, 5);
+    expect(luminance('#000')).toBe(0);
+  });
+});
+
+describe('palette', () => {
+  for (const mode of MODES) {
+    const P = PALETTES[mode];
+
+    it(`${mode}: every colour that carries words reads at 4.5:1 on every surface`, () => {
+      for (const fg of WORDS) {
+        for (const bg of SURFACES) {
+          expect(contrastRatio(P[fg], P[bg]), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    });
+
+    it(`${mode}: words on the accent use onAccent at 4.5:1`, () => {
+      expect(contrastRatio(P.onAccent, P.accent)).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it(`${mode}: soft buttons and status chips keep their words readable`, () => {
+      expect(contrastRatio(P.accentText, P.accentDim), 'accentText on accentDim').toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(P.accentText, P.accentSoft), 'accentText on accentSoft').toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(P.red, P.redSoft), 'red on redSoft').toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(P.amber, P.amberSoft), 'amber on amberSoft').toBeGreaterThanOrEqual(4.5);
+    });
+  }
+
+  it('has no ghost text colour left to reach for', () => {
+    expect(Object.keys(PALETTES.light)).not.toContain('textGhost');
+    expect(Object.keys(PALETTES.dark)).not.toContain('textGhost');
+  });
+});

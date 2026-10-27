@@ -89,7 +89,7 @@ export default function MemoryScreen() {
                     </View>
                     <View style={{ flex: 1, gap: 4 }}>
                       <Text style={{ color: m.source === 'user' ? C.text : C.textDim, fontSize: F.body, lineHeight: 20 }}>{m.text}</Text>
-                      <Micro color={m.source === 'auto' ? C.textGhost : C.textFaint}>
+                      <Micro color={C.textFaint}>
                         {`${m.source === 'user' ? t('memory_you') : t('memory_learned')} · ${m.date}`}
                       </Micro>
                     </View>
@@ -100,7 +100,7 @@ export default function MemoryScreen() {
                         </Pressable>
                       ) : null}
                       <Pressable onPress={() => app.forgetMemory(m.id)} hitSlop={10} accessibilityLabel={t('delete')}>
-                        <Ionicons name="close" size={16} color={C.textGhost} />
+                        <Ionicons name="close" size={16} color={C.textFaint} />
                       </Pressable>
                     </Row>
                   </Row>

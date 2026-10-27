@@ -371,7 +371,7 @@ export default function LogScreen() {
                   value={String(kcal)}
                   valueUnit="kcal"
                   onPress={() => setDetail(f)}
-                  trailing={<Ionicons name="chevron-forward" size={15} color={C.textGhost} />}
+                  trailing={<Ionicons name="chevron-forward" size={15} color={C.textFaint} />}
                 />
               </View>
             );
@@ -414,7 +414,7 @@ export default function LogScreen() {
                 valueUnit="kcal"
                 trailing={
                   <Pressable onPress={() => app.removeMeal(m.id)} hitSlop={8} accessibilityLabel={t('delete')}>
-                    <Ionicons name="trash-outline" size={16} color={C.textGhost} />
+                    <Ionicons name="trash-outline" size={16} color={C.textFaint} />
                   </Pressable>
                 }
               />

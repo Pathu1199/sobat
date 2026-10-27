@@ -160,7 +160,7 @@ export default function GrowthScreen({ embedded }: { embedded?: boolean } = {}) 
         {summary.weightSeries.length >= 2 ? (
           <LineChart data={summary.weightSeries} goal={app.state.profile.goalWeightKg} format={(v) => `${v.toFixed(1)} ${t('unit_kg')}`} dateLabel={dayLabel} />
         ) : (
-          <Small color={C.textGhost}>{t('log_more_days')}</Small>
+          <Small color={C.textFaint}>{t('log_more_days')}</Small>
         )}
       </Card>
     </View>
@@ -268,7 +268,7 @@ export default function GrowthScreen({ embedded }: { embedded?: boolean } = {}) 
       <SectionHeader title={t('patterns')} />
       <Card>
         {patterns.length === 0 ? (
-          <Small color={C.textGhost}>{t('no_patterns')}</Small>
+          <Small color={C.textFaint}>{t('no_patterns')}</Small>
         ) : (
           patterns.slice(0, 4).map((p) => <Small key={p.key}>{fill(t(`pattern_${p.key}`), p.params)}</Small>)
         )}
@@ -339,7 +339,7 @@ function MetricTile({ metric, label, lang, wide }: { metric: Metric; label: stri
   const unit = isTime ? '' : metric.unit;
   const pct = changePct(metric);
   const good = isImprovement(metric);
-  const deltaColor = good === null ? C.textGhost : good ? C.cyan : C.amber;
+  const deltaColor = good === null ? C.textFaint : good ? C.cyan : C.amber;
 
   return (
     <View

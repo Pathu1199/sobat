@@ -256,7 +256,7 @@ export default function PhotoScreen() {
                         <Micro>kcal</Micro>
                       </View>
                       <Pressable onPress={() => setDrafts((x) => x.filter((y) => y.key !== d.key))} hitSlop={8}>
-                        <Ionicons name="close" size={16} color={C.textGhost} />
+                        <Ionicons name="close" size={16} color={C.textFaint} />
                       </Pressable>
                     </Row>
 

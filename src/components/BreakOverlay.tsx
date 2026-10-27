@@ -136,11 +136,11 @@ export function BreakOverlay() {
 
       {moves.length > 0 ? (
         <View style={{ marginTop: 24, gap: 10, paddingHorizontal: 32, maxWidth: 520 }}>
-          <Text style={[MICRO, { color: C.textGhost, textAlign: 'center' }]}>{t('brk_try_these')}</Text>
+          <Text style={[MICRO, { color: C.textFaint, textAlign: 'center' }]}>{t('brk_try_these')}</Text>
           {moves.map((e) => (
             <Text key={e.id} style={{ color: C.textDim, fontSize: F.small, textAlign: 'center', lineHeight: 19 }}>
               {lang === 'mr' ? e.name_mr : lang === 'hi' ? e.name_hi : e.name_en}
-              <Text style={{ color: C.textGhost }}>
+              <Text style={{ color: C.textFaint }}>
                 {'  '}
                 {(lang === 'mr' ? e.instructions_mr : lang === 'hi' ? e.instructions_hi : e.instructions_en)[0]}
               </Text>
@@ -168,7 +168,7 @@ export function BreakOverlay() {
             {Number.isFinite(monitor.skipsLeft) ? <Micro>{fill(t('brk_skips_left'), { n: monitor.skipsLeft })}</Micro> : null}
           </View>
         ) : !over ? (
-          <Text style={{ color: C.textGhost, fontSize: F.small }}>{monitor.skipsLeft === 0 ? t('brk_no_skips') : ''}</Text>
+          <Text style={{ color: C.textFaint, fontSize: F.small }}>{monitor.skipsLeft === 0 ? t('brk_no_skips') : ''}</Text>
         ) : (
           <View />
         )}
@@ -187,7 +187,7 @@ export function BreakOverlay() {
         )}
       </View>
 
-      <Text style={[MICRO, { position: 'absolute', top: 30, right: 30, color: C.textGhost }]}>
+      <Text style={[MICRO, { position: 'absolute', top: 30, right: 30, color: C.textFaint }]}>
         {fill(t('brk_counter'), {
           kind: t(`brk_${kind}`),
           n: monitor.takenToday + 1,
