@@ -2045,7 +2045,7 @@ const mr: Dict = {
   tile_hint_breathe_stop: 'श्वासाचा सराव थांबवते.',
   tile_added_water: '{ml} ml पाणी नोंदवलं', tile_added_walk: '{min} मि चालणं नोंदवलं',
   tile_bottle_size: 'बाटलीचा आकार', tile_other_amount: 'दुसरं प्रमाण', tile_amount_ml: 'प्रमाण (ml)', tile_amount_min: 'मिनिटं',
-  tile_no_sleep: 'अजून झोपेची नोंद नाही', tile_no_weight: 'अजून वजन नाही',
+  tile_no_sleep: 'अजून झोपेची नोंद नाही', tile_no_weight: 'अजून वजन नोंदवलं नाही',
 };
 
 const hi: Dict = {
@@ -3068,7 +3068,7 @@ const hi: Dict = {
   tile_hint_breathe_stop: 'साँस का अभ्यास रोकता है.',
   tile_added_water: '{ml} ml पानी जोड़ा', tile_added_walk: '{min} मि टहलना जोड़ा',
   tile_bottle_size: 'बोतल का आकार', tile_other_amount: 'दूसरी मात्रा', tile_amount_ml: 'मात्रा (ml)', tile_amount_min: 'मिनट',
-  tile_no_sleep: 'अभी नींद दर्ज नहीं', tile_no_weight: 'अभी कोई वज़न नहीं',
+  tile_no_sleep: 'अभी नींद दर्ज नहीं', tile_no_weight: 'अभी वज़न दर्ज नहीं',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

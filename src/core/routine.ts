@@ -477,7 +477,19 @@ export const NEUTRAL_ROUTINE: Routine = {
  * stores) or it is not a clock time. A date's menu meal is read the same way.
  */
 export function slotTime(slot: Pick<RoutineSlot, 'type' | 'time'>): string {
-  return slot.time && /^([01]\d|2[0-3]):[0-5]\d$/.test(slot.time) ? slot.time : TYPE_TIME[slot.type];
+  return isClockTime(slot.time) ? slot.time : TYPE_TIME[slot.type];
+}
+
+function isClockTime(v: unknown): v is string {
+  return typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+}
+
+/**
+ * True when `slotTime` can place a stored meal in the day: its time is a
+ * clock time, or its type is one of the four meals, whose own time stands in.
+ */
+export function canPlace(m: { type?: unknown; time?: unknown }): boolean {
+  return isClockTime(m.time) || (typeof m.type === 'string' && Object.prototype.hasOwnProperty.call(TYPE_TIME, m.type));
 }
 
 export function slotMinutes(slot: Pick<RoutineSlot, 'type' | 'time'>): number {

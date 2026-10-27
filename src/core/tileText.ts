@@ -137,8 +137,8 @@ export function bestRun(steps: StreakStep[]): number {
  * The best run in the last `days` (the streak's own window unless told),
  * judged on the menus as they show and by the streak's own rule
  * (`streakStep`, with the person's safe minimum as `floor`): a full day eaten
- * under it neither counts nor ends a run, and a day of nothing but skips ends
- * it.
+ * under it neither counts nor ends a run, and a full day with nothing eaten
+ * ends it.
  */
 export function bestStreak(input: {
   today: ISODate;

@@ -327,8 +327,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // The target counts the person's age, so the fit is worked out again when the date changes, as Today's targets are.
   const fit = useMemo(() => fitOn(state.profile, state.routine, today), [state.profile, state.routine, today]);
 
-  // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run while it is going.
-  // A full day eaten under the safe minimum neither counts nor ends the run; a day of nothing but skips ends it.
+  // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run before then.
+  // A full day eaten under the safe minimum neither counts nor ends the run; a full day with nothing eaten (under 50 kcal) ends it, today too.
   const streakDays = useMemo(
     () =>
       recordStreak({

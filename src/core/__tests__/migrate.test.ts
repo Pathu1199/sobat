@@ -812,6 +812,16 @@ describe('records in an odd shape, from sync or an old file', () => {
     expect(migrateState(s, NOW)).toEqual(s);
   });
 
+  it('drops a menu meal the day cannot place: one with a type the app does not know and a time that is not a clock time', () => {
+    const lost = { date: '2026-11-08', editedAt: '', meals: [{ id: 'x', type: 'brunch', time: '25:99', lines: [] }] };
+    // A known meal type gives a time for a bad one, and a clock time places a type the app does not know.
+    const knownType = { date: '2026-11-09', editedAt: '', meals: [{ id: 'lunch', type: 'lunch', time: '25:99', lines: [line] }] };
+    const clockTime = { date: '2026-11-10', editedAt: '', meals: [{ id: 'x', type: 'brunch', time: '11:00', lines: [line] }] };
+    const s = migrateState({ ...v1, version: 7, menus: [goodMenu, lost, knownType, clockTime] }, NOW);
+    expect(s.menus).toEqual([goodMenu, knownType, clockTime]);
+    expect(migrateState({ ...v1, version: 7, menus: [{ ...lost, meals: [{ id: 'x', type: 'toString', time: '', lines: [] }] }] }, NOW).menus).toEqual([]);
+  });
+
   it('keeps every field of a well-formed record as it was, and a list that is not a list at all is an empty one', () => {
     const kept = { ...goodMenu, frozen: true };
     expect(migrateState({ ...v1, version: 7, menus: [kept] }, NOW).menus).toEqual([kept]);

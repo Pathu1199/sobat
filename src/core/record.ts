@@ -57,21 +57,27 @@ export type StreakStep = 'count' | 'hold' | 'break';
 /** How far back the streak and the best run on the streak tile look, in days: one window, so they never disagree. */
 export const STREAK_LOOKBACK_DAYS = 90;
 
+/** A day eaten under this many kcal ate nothing: warm water, black tea or coffee, and no meal. */
+export const NOTHING_EATEN_KCAL = 50;
+
 /**
  * What a day does to the streak, the one rule the streak and the best run
  * both follow, given the day's state, the meals eaten that day and the
  * person's safe minimum. A full day eaten at or above the minimum counts. A
  * full day with meals eaten under it (most meals skipped, a sick day) is an
  * honest record, never punished: it neither counts nor ends the run. A full
- * day with every slot skipped and nothing eaten ends the run, so skipping is
- * never rewarded or kept alive by the streak. An off day neither counts nor
+ * day with nothing eaten (under `NOTHING_EATEN_KCAL`: every slot skipped, or
+ * a drink in one and the rest skipped) ends the run, so skipping is never
+ * rewarded or kept alive by the streak. A total that is not a number (a
+ * damaged record) neither counts nor ends it. An off day neither counts nor
  * ends it; any other day ends it.
  */
 export function streakStep(state: DayRecordState, meals: Meal[], floor: number): StreakStep {
   if (state === 'off') return 'hold';
-  if (state !== 'full' || meals.length === 0) return 'break';
+  if (state !== 'full') return 'break';
   const kcal = eatenKcal(meals);
-  return kcal > 0 && kcal >= floor ? 'count' : 'hold';
+  if (kcal < NOTHING_EATEN_KCAL) return 'break';
+  return kcal >= floor ? 'count' : 'hold';
 }
 
 /** The meals of each date, so a look back over many days reads each date once. */
@@ -93,8 +99,9 @@ export function eatenKcal(meals: Meal[]): number {
 /**
  * Days in a row that count (`streakStep`), back from today. Today counts once
  * it is full, but a today not settled yet never breaks the run, so in the
- * morning the streak is yesterday's, not 0. `floor` is the person's safe
- * minimum. Looks back at most `limit` days, the streak window unless told.
+ * morning the streak is yesterday's, not 0. A today already full with nothing
+ * eaten ends the run at once. `floor` is the person's safe minimum. Looks
+ * back at most `limit` days, the streak window unless told.
  */
 export function recordStreak(input: RecordBase & { menuOn: (date: ISODate) => DayMenu | null; floor: number; limit?: number }): number {
   const byDate = mealsByDate(input.meals);
@@ -102,9 +109,10 @@ export function recordStreak(input: RecordBase & { menuOn: (date: ISODate) => Da
   for (let i = 0; i < (input.limit ?? STREAK_LOOKBACK_DAYS); i++) {
     const date = addDays(input.today, -i);
     const meals = byDate.get(date) ?? [];
-    const step = streakStep(dayRecord({ ...input, meals, date, menu: input.menuOn(date) }).state, meals, input.floor);
+    const state = dayRecord({ ...input, meals, date, menu: input.menuOn(date) }).state;
+    const step = streakStep(state, meals, input.floor);
     if (step === 'count') n++;
-    else if (step === 'break' && i > 0) break;
+    else if (step === 'break' && (i > 0 || state === 'full')) break;
   }
   return n;
 }

@@ -37,9 +37,8 @@ export function useDrawOn(key: string): SharedValue<number> {
 
 /**
  * 0 to 1 over `ms`, again and again, while `active`; always still at 0 under
- * reduce motion. It never jumps: when it stops, the sweep under way runs to
- * its end (1, the same picture as 0) and rests there, so the water's wave
- * keeps moving while the column finishes rising to the goal; when it starts
+ * reduce motion. It never jumps: when it stops, it runs out the sweep under
+ * way to its end (1, the same picture as 0) and rests there; when it starts
  * again it carries on from where it stands.
  */
 export function useLoop(active: boolean, ms: number): SharedValue<number> {

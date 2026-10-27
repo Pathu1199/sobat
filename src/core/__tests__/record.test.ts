@@ -169,9 +169,29 @@ describe('recordStreak', () => {
     expect(recordStreak({ ...base, skips, menuOn: menu, meals })).toBe(4);
   });
 
-  it('a today of nothing but skips neither counts nor breaks the run while it is going', () => {
+  it('a today settled by skips alone, nothing eaten, ends the run at once: it is a full day, so it need not wait for tomorrow', () => {
     const meals = [...fullDay('2026-10-24'), ...fullDay('2026-10-25'), ...fullDay('2026-10-26')];
-    expect(recordStreak({ ...base, skips: allSkipped(TODAY), menuOn: menu, meals })).toBe(3);
+    expect(recordStreak({ ...base, skips: allSkipped(TODAY), menuOn: menu, meals })).toBe(0);
+    // Warm water in the morning slot and the rest skipped is still nothing eaten.
+    const skips = addSkip(addSkip([], TODAY, 'lunch'), TODAY, 'dinner');
+    expect(recordStreak({ ...base, skips, menuOn: menu, meals: [...meals, meal(TODAY, 'morning', undefined, 0)] })).toBe(0);
+    // A today not settled yet still never ends it.
+    expect(recordStreak({ ...base, skips: addSkip([], TODAY, 'lunch'), menuOn: menu, meals })).toBe(3);
+  });
+
+  it('a full day with under 50 kcal eaten is nothing eaten and ends the run: warm water, black tea or coffee in one slot and every other slot skipped', () => {
+    const d = '2026-10-25';
+    const skips = addSkip(addSkip([], d, 'lunch'), d, 'dinner');
+    const before = fullDay('2026-10-24');
+    const after = fullDay('2026-10-26');
+    // Warm water: 0 kcal.
+    const water = [...before, meal(d, 'morning', undefined, 0), ...after];
+    expect(rec(d, water, { skips }).state).toBe('full');
+    expect(recordStreak({ ...base, skips, menuOn: menu, meals: water })).toBe(1);
+    // A cup of tea: 40 kcal.
+    expect(recordStreak({ ...base, skips, menuOn: menu, meals: [...before, meal(d, 'morning', undefined, 40), ...after] })).toBe(1);
+    // A real meal under the safe minimum holds: 600 kcal.
+    expect(recordStreak({ ...base, skips, menuOn: menu, meals: [...before, meal(d, 'morning'), ...after] })).toBe(2);
   });
 });
 
@@ -183,9 +203,16 @@ describe('streakStep', () => {
     expect(streakStep('full', ate(1200), 1200)).toBe('count');
     expect(streakStep('full', [...ate(600), meal(TODAY, 'dinner')], 1200)).toBe('count');
     expect(streakStep('full', ate(1199), 1200)).toBe('hold');
-    // Something eaten that adds up to nothing, or to a total that is not a number, never counts; it is still a meal eaten, so it holds.
-    expect(streakStep('full', ate(0), 0)).toBe('hold');
+    // Under 50 kcal is nothing eaten, a drink and no meal, and ends the run, whatever the minimum; 50 or more under the minimum holds.
+    expect(streakStep('full', ate(0), 0)).toBe('break');
+    expect(streakStep('full', ate(40), 1200)).toBe('break');
+    expect(streakStep('full', ate(49), 0)).toBe('break');
+    expect(streakStep('full', ate(50), 1200)).toBe('hold');
+    expect(streakStep('full', ate(50), 0)).toBe('count');
+    expect(streakStep('full', ate(600), 1200)).toBe('hold');
+    // A total that is not a number (a damaged record) never counts and never ends the run.
     expect(streakStep('full', ate(Number.NaN), 1200)).toBe('hold');
+    expect(streakStep('full', ate(Number.NaN), 0)).toBe('hold');
     // Every slot skipped and nothing eaten ends the run, whatever the minimum: skipping is never kept alive by the streak.
     expect(streakStep('full', [], 1200)).toBe('break');
     expect(streakStep('full', [], 0)).toBe('break');

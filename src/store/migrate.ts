@@ -3,7 +3,7 @@ import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../co
 import { mondayOf, toISODate } from '../core/date';
 import { addSkip, menusFromTemplate, settleAuto, type DayMenu } from '../core/menu';
 import { slotShare } from '../core/pattern';
-import { DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
+import { canPlace, DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
 import { forCloud, stable, type CloudState } from '../core/sync';
 import { normalizeTabs, normalizeTodayCards } from '../core/tabs';
 import type { AppState, FoodItem, ISODate, Meal, SavedMeal, SlotSkip } from '../core/types';
@@ -201,9 +201,9 @@ function isLines(v: unknown): v is unknown[] {
   return Array.isArray(v) && v.every(isRecord);
 }
 
-/** A meal of a date's menu as the app reads it: an id, a type and a time to place it in the day by, and a list of lines. */
+/** A meal of a date's menu as the app reads it: an id, a type and a time to place it in the day by (a clock time or a known meal type), and a list of lines. */
 function isMenuMeal(m: unknown): boolean {
-  return isRecord(m) && typeof m.id === 'string' && typeof m.type === 'string' && typeof m.time === 'string' && isLines(m.lines);
+  return isRecord(m) && typeof m.id === 'string' && typeof m.type === 'string' && typeof m.time === 'string' && canPlace(m) && isLines(m.lines);
 }
 
 /** A date's menu as the app reads it: a date, and meals each in the shape `isMenuMeal` reads. */

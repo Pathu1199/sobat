@@ -144,7 +144,7 @@ describe('streak', () => {
     expect(bestRun([])).toBe(0);
   });
 
-  it('looks back over the menus as shown; a day of nothing but skips ends the run, and one eaten under the safe minimum neither counts nor ends it', () => {
+  it('looks back over the menus as shown; a day with nothing eaten ends the run, and one eaten under the safe minimum neither counts nor ends it', () => {
     const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
     const routine: Routine = { ...DEFAULT_ROUTINE, enabled: true, slots: [slot('lunch', 'lunch', '13:00', 100)] };
     const menuOn = (date: string): DayMenu => ({ date, editedAt: '', meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] }] });
@@ -154,7 +154,9 @@ describe('streak', () => {
     expect(bestStreak(base)).toBe(3);
     // 23 October skipped: a complete record, but nothing eaten, so the run ends there, as it ends the streak: skipping is never rewarded.
     expect(bestStreak({ ...base, skips: addSkip([], '2026-10-23', 'lunch') })).toBe(3);
-    // Eaten, but 500 kcal: under the safe minimum, the same.
+    // A cup of tea, 40 kcal, is nothing eaten: the run ends there too.
+    expect(bestStreak({ ...base, meals: [...meals, ate('2026-10-23', 40)] })).toBe(3);
+    // Eaten, but 500 kcal: under the safe minimum, it neither counts nor ends the run.
     expect(bestStreak({ ...base, meals: [...meals, ate('2026-10-23', 500)] })).toBe(5);
     expect(bestStreak({ ...base, meals: [...meals, ate('2026-10-23')] })).toBe(6);
     // The best run and the streak follow one rule: a run that reaches yesterday is the streak.
