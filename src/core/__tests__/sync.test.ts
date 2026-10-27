@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_STATE } from '../../store/defaults';
-import { applyCloud, bindStart, encodeSavedBase, forCloud, fromNewerApp, isPristine, landMerge, merge3, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
+import { applyCloud, bindStart, encodeSavedBase, forCloud, fromNewerApp, isPristine, landMerge, merge3, RoundStop, syncRound, type AccountFile, type RoundIO, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
 import type { AppState, Meal } from '../types';
 
 const meal = (id: string, at: string, kcal = 300): Meal => ({
@@ -305,5 +305,123 @@ describe('a file written by a newer build', () => {
     expect(fromNewerApp({ ...plain, version: 6 }, 6)).toBe(false);
     expect(fromNewerApp({ ...plain, version: 5 }, 6)).toBe(false);
     expect(fromNewerApp({ ...plain, version: undefined as unknown as number }, 6)).toBe(false);
+  });
+});
+
+describe('a sync round', () => {
+  const v = (id: string, kcal: number) => meal(id, '2026-10-10T08:00:00.000Z', kcal);
+  const n = meal('n', '2026-10-10T12:00:00.000Z');
+
+  /** The relay: refuses a write built on a version that is not the newest, and lets another device write in before a given put. */
+  function relay(initial: CloudState | null, before: Record<number, CloudState> = {}) {
+    let file: AccountFile = { state: initial ? JSON.stringify(initial) : null, modifiedTime: initial ? 't0' : null };
+    let clock = 0;
+    let puts = 0;
+    const written = (s: CloudState) => {
+      file = { state: JSON.stringify(s), modifiedTime: `t${++clock}` };
+    };
+    return {
+      get: async () => file,
+      put: async (s: CloudState, base: string | null) => {
+        const elsewhere = before[puts++];
+        if (elsewhere) written(elsewhere);
+        if (base !== file.modifiedTime) return { ok: false as const, stale: file };
+        written(s);
+        return { ok: true as const, modifiedTime: file.modifiedTime as string };
+      },
+      file: () => (file.state ? (JSON.parse(file.state) as CloudState) : null),
+      setRaw: (state: string) => {
+        file = { state, modifiedTime: `t${++clock}` };
+      },
+    };
+  }
+
+  /** This device: the state as it is now, with merges landed on top of whatever was done meanwhile. */
+  function device(initial: AppState, r: ReturnType<typeof relay>, extra: Partial<RoundIO> = {}) {
+    let now = initial;
+    const io: RoundIO = {
+      readNow: async () => now,
+      land: (local, merged) => {
+        now = landMerge(now, local, merged);
+      },
+      get: r.get,
+      put: r.put,
+      live: () => true,
+      ...extra,
+    };
+    return { io, now: () => now, edit: (fn: (s: AppState) => AppState) => (now = fn(now)) };
+  }
+
+  it('a write refused twice is merged against the file it last saw, so an edit made elsewhere in between is not reverted', async () => {
+    const base = cloudOf(used([v('r', 50)]));
+    // Another device sets r to 100 before this device's first write, then to 999 before its second.
+    const r = relay(base, { 0: cloudOf(used([v('r', 100)])), 1: cloudOf(used([v('r', 999)])) });
+    const d = device(used([v('r', 50), n]), r);
+    const out = await syncRound({ pull: false, base, modifiedTime: 't0', supported: 6, io: d.io });
+    expect(r.file()?.meals.map((m) => [m.id, m.kcal])).toEqual([['r', 999], ['n', 300]]);
+    expect(d.now().meals.find((m) => m.id === 'r')?.kcal).toBe(999);
+    expect(out && sameCloud(out.base, r.file() as CloudState)).toBe(true);
+  });
+
+  it('an edit made on this device while the request is out stays on the device', async () => {
+    const base = cloudOf(used([v('a', 1)]));
+    const r = relay(cloudOf(used([v('a', 1), v('r', 2)])));
+    let d: ReturnType<typeof device> | null = null;
+    d = device(used([v('a', 1)]), r, {
+      get: async () => {
+        d?.edit((s) => ({ ...s, meals: [...s.meals, n] }));
+        return r.get();
+      },
+    });
+    await syncRound({ pull: true, base, modifiedTime: 'old', supported: 6, io: d.io });
+    expect(d.now().meals.map((m) => m.id)).toEqual(['a', 'r', 'n']);
+  });
+
+  it('a file written by a newer build is neither merged nor written over', async () => {
+    const newer = { ...cloudOf(used([v('a', 1)])), version: 7 };
+    const r = relay(newer);
+    const d = device(used([v('b', 1)]), r);
+    await expect(syncRound({ pull: true, base: null, modifiedTime: null, supported: 6, io: d.io })).rejects.toEqual(new RoundStop('update_app'));
+    expect(r.file()).toEqual(newer);
+    expect(d.now().meals.map((m) => m.id)).toEqual(['b']);
+  });
+
+  it('an account file that cannot be read is never written over, and nothing on the device changes', async () => {
+    for (const raw of ['{', JSON.stringify({}), JSON.stringify({ profile: {}, meals: 'x' }), JSON.stringify({ profile: {}, meals: [], water: {} })]) {
+      const r = relay(null);
+      r.setRaw(raw);
+      const d = device(used([v('b', 1)]), r);
+      await expect(syncRound({ pull: true, base: cloudOf(used([v('b', 1)])), modifiedTime: 't0', supported: 6, io: d.io })).rejects.toEqual(new RoundStop('unreadable'));
+      expect(d.now().meals.map((m) => m.id)).toEqual(['b']);
+    }
+  });
+
+  it('an answer that arrives after the account changed is dropped: nothing lands, nothing is written', async () => {
+    const r = relay(cloudOf(used([v('a', 1), v('r', 2)])));
+    let alive = true;
+    const d = device(used([v('a', 1)]), r, {
+      live: () => alive,
+      get: async () => {
+        alive = false;
+        return r.get();
+      },
+    });
+    await expect(syncRound({ pull: true, base: cloudOf(used([v('a', 1)])), modifiedTime: 'old', supported: 6, io: d.io })).rejects.toEqual(new RoundStop('abandoned'));
+    expect(d.now().meals.map((m) => m.id)).toEqual(['a']);
+  });
+
+  it('nothing changed on either side: no write, and nothing new to remember', async () => {
+    const base = cloudOf(used([v('a', 1)]));
+    const r = relay(base);
+    const d = device(used([v('a', 1)]), r);
+    expect(await syncRound({ pull: true, base, modifiedTime: 't0', supported: 6, io: d.io })).toBeNull();
+  });
+
+  it('gives up when the file keeps changing under it', async () => {
+    const base = cloudOf(used([v('a', 1)]));
+    // Three tries, four writes: each one beaten by another device.
+    const r = relay(base, { 0: cloudOf(used([v('a', 2)])), 1: cloudOf(used([v('a', 3)])), 2: cloudOf(used([v('a', 4)])), 3: cloudOf(used([v('a', 5)])) });
+    const d = device(used([v('a', 1), n]), r);
+    await expect(syncRound({ pull: false, base, modifiedTime: 't0', supported: 6, io: d.io })).rejects.toEqual(new RoundStop('kept_changing'));
   });
 });

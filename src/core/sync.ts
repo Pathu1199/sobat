@@ -209,6 +209,111 @@ export function landMerge(now: AppState, local: CloudState, merged: CloudState):
   return applyCloud(now, merge3(local, forCloud(now), merged));
 }
 
+/** The account file as the relay hands it over: its text, and which version that is. */
+export type AccountFile = { state: string | null; modifiedTime: string | null };
+export type WriteResult = { ok: true; modifiedTime: string } | { ok: false; stale: AccountFile };
+
+/** Why a round stopped without an answer to remember. */
+export class RoundStop extends Error {
+  constructor(public readonly reason: 'abandoned' | 'update_app' | 'unreadable' | 'kept_changing') {
+    super(reason);
+  }
+}
+
+export type RoundIO = {
+  /** This device's state as it is now, every change already made included. */
+  readNow: () => Promise<AppState>;
+  /** Put a merge worked out from `local` on the device. */
+  land: (local: CloudState, merged: CloudState) => void;
+  get: () => Promise<AccountFile>;
+  /** Write the file, built on version `baseModifiedTime`; refused if the file has moved past it. */
+  put: (state: CloudState, baseModifiedTime: string | null) => Promise<WriteResult>;
+  /** False once the account changed: whatever comes back then belongs to nobody here. */
+  live: () => boolean;
+};
+
+const isObject = (v: unknown): v is AnyRecord => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/**
+ * The account's file as a state, or null when there is no file yet. A file
+ * that is there but not a state is refused: merged, it would read as every
+ * record deleted elsewhere; written over, it would be gone.
+ */
+export function readAccountFile(text: string | null): CloudState | null {
+  if (!text) return null;
+  let v: unknown;
+  try {
+    v = JSON.parse(text);
+  } catch {
+    throw new RoundStop('unreadable');
+  }
+  if (!isObject(v) || !isObject(v.profile) || !Array.isArray(v.meals)) throw new RoundStop('unreadable');
+  if (COLLECTIONS.some(({ key }) => v[key] !== undefined && !Array.isArray(v[key]))) throw new RoundStop('unreadable');
+  return v as unknown as CloudState;
+}
+
+/**
+ * One round: push if there are changes, pull if asked, merge whatever the
+ * relay says is newer, land it on the device and write it back. Resolves with
+ * the file the account now holds, or null when nothing moved on either side.
+ *
+ * When a write is refused because another device wrote first, this device
+ * already holds the file it just merged, so that file, not the older base, is
+ * what the next try is merged against: otherwise an edit made elsewhere
+ * between the two tries would read as undone here.
+ */
+export async function syncRound(o: {
+  pull: boolean;
+  base: CloudState | null;
+  modifiedTime: string | null;
+  /** The newest state version this build understands. */
+  supported: number;
+  io: RoundIO;
+  tries?: number;
+}): Promise<{ base: CloudState; modifiedTime: string | null } | null> {
+  const { io } = o;
+  const check = () => {
+    if (!io.live()) throw new RoundStop('abandoned');
+  };
+  let base = o.base;
+  let baseTime = o.modifiedTime;
+  // A file already in hand, from a refused write.
+  let inHand: AccountFile | null = null;
+  for (let attempt = 0; attempt < (o.tries ?? 3); attempt++) {
+    if (base && fromNewerApp(base, o.supported)) throw new RoundStop('update_app');
+    const local = forCloud(await io.readNow());
+    check();
+    let remote = inHand;
+    if (!remote) {
+      const changed = base === null || !sameCloud(local, base);
+      if (changed && !o.pull && base !== null) {
+        // The common case: push on top of the version we know.
+        const res = await io.put(local, baseTime);
+        check();
+        if (res.ok) return { base: local, modifiedTime: res.modifiedTime };
+        remote = res.stale;
+      } else {
+        remote = await io.get();
+        check();
+        if (!changed && remote.modifiedTime === baseTime) return null;
+      }
+    }
+    const theirs = readAccountFile(remote.state);
+    if (theirs && fromNewerApp(theirs, o.supported)) throw new RoundStop('update_app');
+    const merged = theirs ? merge3(base, local, theirs) : local;
+    if (!sameCloud(merged, local)) io.land(local, merged);
+    // The account already has exactly this; nothing to write.
+    if (theirs && sameCloud(merged, theirs)) return { base: merged, modifiedTime: remote.modifiedTime };
+    const res = await io.put(merged, remote.modifiedTime);
+    check();
+    if (res.ok) return { base: merged, modifiedTime: res.modifiedTime };
+    base = theirs;
+    baseTime = remote.modifiedTime;
+    inHand = res.stale;
+  }
+  throw new RoundStop('kept_changing');
+}
+
 /**
  * The account file as this device last saw it, and which version that was:
  * the base every merge is worked out against. Kept on disk beside the state

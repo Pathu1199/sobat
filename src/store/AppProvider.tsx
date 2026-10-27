@@ -88,6 +88,8 @@ type Ctx = {
   importState: (json: string) => { ok: boolean; error?: string };
   /** Apply a change worked out away from the store (a sync round) to the state as it is when the change lands, migrated like an import. */
   mergeState: (fn: (s: AppState) => AppState) => void;
+  /** The state with every change already made applied, including one not rendered yet. */
+  readNow: () => Promise<AppState>;
   tipToday: string | null;
   screenMinutesToday: number;
   resetAll: () => void;
@@ -154,6 +156,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .catch(() => setStorageError('save'));
     }, 250);
   }, [state, ready, storageError, baseTick]);
+
+  // Read through the update queue, so it sees a reset or a merge the moment it was asked for.
+  const readNow = useCallback(
+    () =>
+      new Promise<AppState>((resolve) =>
+        setState((s) => {
+          resolve(s);
+          return s;
+        }),
+      ),
+    [],
+  );
 
   const saveCloudBase = useCallback((json: string) => {
     pendingBase.current = json;
@@ -321,6 +335,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       },
       mergeState: (fn) => update((s) => migrateState(fn(s))),
+      readNow,
       setTip: (text) =>
         update((s) => ({ ...s, tips: [...s.tips.filter((t) => t.date !== today).slice(-30), { date: today, text, lang: s.profile.lang }] })),
       resetAll: () => {
@@ -335,7 +350,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

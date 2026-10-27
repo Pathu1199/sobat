@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
-import { bindStart, encodeSavedBase, forCloud, fromNewerApp, landMerge, merge3, readSavedBase, sameCloud, signOutPlan, type CloudState } from '../core/sync';
+import { bindStart, encodeSavedBase, forCloud, landMerge, readSavedBase, RoundStop, sameCloud, signOutPlan, syncRound, type CloudState } from '../core/sync';
 import { CLOUD_BASE_KEY, useApp } from '../store/AppProvider';
-import { EMPTY_STATE, STATE_VERSION } from '../store/defaults';
-import { CloudError, cloudConfigured, deleteData, getData, putData, type RemoteFile } from './cloud';
+import { STATE_VERSION } from '../store/defaults';
+import { CloudError, cloudConfigured, deleteData, getData, putData } from './cloud';
 import { authApi, useAuth } from './useAuth';
 
 /**
@@ -46,26 +46,16 @@ export type CloudSync = {
 const OWNER_KEY = 'sobat.cloud.owner';
 const PUSH_DELAY_MS = 3000;
 const PULL_EVERY_MS = 5 * 60 * 1000;
-const MAX_ROUNDS = 3;
 
-/** Thrown when the account changed while a request was out: its answer belongs to nobody on this device any more. */
-const ABANDONED = new Error('abandoned');
+/** How a round that stopped is shown: the relay's own errors arrive as CloudErrors already. */
+const STOP_STATUS: Record<RoundStop['reason'], number> = { abandoned: 0, update_app: 426, unreadable: 422, kept_changing: 409 };
 
 const Ctx = createContext<CloudSync | null>(null);
-
-function parseRemote(file: RemoteFile): CloudState | null {
-  if (!file.state) return null;
-  try {
-    return JSON.parse(file.state) as CloudState;
-  } catch {
-    return null;
-  }
-}
 
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const app = useApp();
   const { user, ready } = useAuth();
-  const { state, ready: stateReady, storageError, mergeState, resetAll, saveCloudBase } = app;
+  const { state, ready: stateReady, storageError, mergeState, readNow, resetAll, saveCloudBase } = app;
 
   const configured = cloudConfigured();
   const [status, setStatus] = useState<SyncStatus>(configured ? 'off' : 'unconfigured');
@@ -112,60 +102,32 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   );
 
   /**
-   * One round: push if there are changes, pull if asked, merge whatever the
-   * relay says is newer, and remember the result as the new base. Throws on
-   * anything the relay could not do, and drops the answer if the account
-   * changed while the request was out.
+   * One round, worked out in core/sync.ts: push if there are changes, pull if
+   * asked, merge whatever the relay says is newer, and remember the result as
+   * the new base. Throws on anything the relay could not do, and drops the
+   * answer if the account changed while the request was out.
    */
   const round = useCallback(
     async (pull: boolean, token: string, uid: string, live: () => boolean) => {
       const extra = { name: stateRef.current.profile.name || user?.name || undefined, platform: Platform.OS };
-      for (let attempt = 0; attempt < MAX_ROUNDS; attempt++) {
-        if (base.current && fromNewerApp(base.current, STATE_VERSION)) throw new CloudError(426, 'update_app');
-        const local = forCloud(stateRef.current);
-        const changed = base.current === null || !sameCloud(local, base.current);
-        let remote: RemoteFile;
-
-        if (changed && !pull && base.current !== null) {
-          // The common case: push on top of the version we know.
-          const res = await putData(token, JSON.stringify(local), baseModifiedTime.current, extra);
-          if (!live()) throw ABANDONED;
-          if (res.ok) {
-            settle(uid, local, res.modifiedTime);
-            return;
-          }
-          remote = res.stale;
-        } else {
-          remote = await getData(token);
-          if (!live()) throw ABANDONED;
-        }
-
-        if (!changed && remote.modifiedTime === baseModifiedTime.current) return;
-
-        const theirs = parseRemote(remote);
-        if (theirs && fromNewerApp(theirs, STATE_VERSION)) throw new CloudError(426, 'update_app');
-        const merged = theirs ? merge3(base.current, local, theirs) : local;
-        if (!sameCloud(merged, local)) {
+      const out = await syncRound({
+        pull,
+        base: base.current,
+        modifiedTime: baseModifiedTime.current,
+        supported: STATE_VERSION,
+        io: {
+          readNow,
           // Onto the state as it is when this lands, not as it was when the request went out.
-          mergeState((now) => landMerge(now, local, merged));
-        }
-        if (theirs && sameCloud(merged, theirs)) {
-          // The account already has exactly this; nothing to write.
-          settle(uid, merged, remote.modifiedTime);
-          return;
-        }
-        const res = await putData(token, JSON.stringify(merged), remote.modifiedTime, extra);
-        if (!live()) throw ABANDONED;
-        if (res.ok) {
-          settle(uid, merged, res.modifiedTime);
-          return;
-        }
-        // Someone wrote again in the meantime; go round with their newest.
-        pull = true;
-      }
-      throw new CloudError(409, 'kept_changing');
+          land: (local, merged) => mergeState((now) => landMerge(now, local, merged)),
+          get: () => getData(token),
+          put: (file, at) => putData(token, JSON.stringify(file), at, extra),
+          live,
+        },
+      });
+      if (!live()) throw new RoundStop('abandoned');
+      if (out) settle(uid, out.base, out.modifiedTime);
     },
-    [mergeState, settle, user?.name],
+    [readNow, mergeState, settle, user?.name],
   );
 
   /** Run rounds until nothing is waiting. A call that lands mid-round queues one more. */
@@ -189,7 +151,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
           setStatus('syncing');
           try {
             const token = await authApi.idToken();
-            if (!live()) throw ABANDONED;
+            if (!live()) throw new RoundStop('abandoned');
             if (!token) throw new CloudError(401, 'not_signed_in');
             await round(pull, token, uid, live);
             setStatus('synced');
@@ -197,11 +159,11 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
             setLastSyncAt(new Date().toISOString());
           } catch (e) {
             // Whatever the new session asked for meanwhile is waiting in `again`, and starts with a pull.
-            if (e === ABANDONED) {
+            if (e instanceof RoundStop && e.reason === 'abandoned') {
               pull = true;
               continue;
             }
-            fail(e);
+            fail(e instanceof RoundStop ? new CloudError(STOP_STATUS[e.reason], e.reason) : e);
             break;
           }
           pull = false;
@@ -242,10 +204,9 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       boundUid.current = null;
       if (start.wipe) {
         // Someone else's leftovers must not be merged into this account. The
-        // reset reaches the state on the next render; the first sync must not
-        // read the old one before then.
+        // first round reads the state through the update queue, so it already
+        // sees the reset.
         resetAll();
-        stateRef.current = EMPTY_STATE;
       }
       if (start.tag) await AsyncStorage.setItem(OWNER_KEY, user.uid).catch(() => {});
       if (cancelled) return;
