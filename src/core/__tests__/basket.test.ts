@@ -24,6 +24,7 @@ import {
 } from '../basket';
 import { kcalForGrams } from '../nutrition';
 import type { FoodItem } from '../types';
+import { lineInfo } from '../weekPlan';
 
 const foods = foodsJson as unknown as FoodItem[];
 const food = (id: string) => foods.find((f) => f.id === id)!;
@@ -145,9 +146,19 @@ describe('the basket', () => {
     expect(linesFromBasket([{ foodId: 'poha', unit: 'spoon_big', gramsPerUnit: 15, count: 4 }], foods)).toEqual([{ foodId: 'poha', unit: 'katori', qty: 0.4 }]);
   });
 
-  it('a line is rounded where it is written, and one that rounds to nothing is not written', () => {
-    expect(linesFromBasket(setGrams(addLine([], lineOf(food('poha'))), 'poha', 100), foods)).toEqual([{ foodId: 'poha', unit: 'katori', qty: 0.67 }]);
+  it('a line is written with the grams as typed, and one that counts as nothing is not written', () => {
+    const lines = linesFromBasket(setGrams(addLine([], lineOf(food('poha'))), 'poha', 100), foods);
+    expect(lines).toEqual([{ foodId: 'poha', unit: 'katori', qty: 0.6667 }]);
+    // 100 g in a 150 g katori reads back as 100 g, on the menu and when the line is put back in the basket.
+    expect(lineInfo(lines[0], foods)?.grams).toBe(100);
+    expect(lineGrams(basketFromLines(lines, foods)[0])).toBe(100);
     expect(linesFromBasket([{ foodId: 'poha', unit: 'katori', gramsPerUnit: 150, count: 0.001 }], foods)).toEqual([]);
+  });
+
+  it('typed grams in a household measure keep their grams when written in the food\'s own measure', () => {
+    // 100 g typed against big spoons is 100 g of the katori, not 101 g.
+    const [line] = linesFromBasket([{ foodId: 'poha', unit: 'spoon_big', gramsPerUnit: 15, count: 100 / 15 }], foods);
+    expect(lineInfo(line, foods)?.grams).toBe(100);
   });
 });
 

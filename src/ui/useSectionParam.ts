@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { sectionFromLink } from '../core/bar';
+import { linkOf, sectionFromLink } from '../core/sections';
 
 /**
  * A tab with sections that a link can name with ?s= (the coach, Me, a
@@ -12,13 +12,15 @@ import { sectionFromLink } from '../core/bar';
 export function useSectionParam<T extends string>(sections: readonly T[]): [T, (s: T) => void] {
   // The screen's own navigation, so the clearing lands on this screen's route whatever is in front by then.
   const navigation = useNavigation<{ setParams: (params: { s?: string }) => void }>();
-  const { s } = useLocalSearchParams<{ s?: string }>();
-  const [section, setSection] = useState<T>(() => sectionFromLink(sections, s, undefined) ?? sections[0]);
-  const [seen, setSeen] = useState<unknown>(s);
+  const { s } = useLocalSearchParams<{ s?: string | string[] }>();
+  // One name or none: a repeated ?s= is a new array on every render and would never compare equal to the last.
+  const link = linkOf(s);
+  const [section, setSection] = useState<T>(() => sectionFromLink(sections, link, undefined) ?? sections[0]);
+  const [seen, setSeen] = useState<string | undefined>(link);
   // A new link wins over what was open: state that follows a changed value is adjusted while rendering.
-  if (s !== seen) {
-    setSeen(s);
-    const linked = sectionFromLink(sections, s, seen);
+  if (link !== seen) {
+    setSeen(link);
+    const linked = sectionFromLink(sections, link, seen);
     if (linked !== null) setSection(linked);
   }
   useEffect(() => {

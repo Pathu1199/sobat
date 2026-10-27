@@ -82,14 +82,3 @@ export function viewedDate(front: { name: string; params?: object } | undefined)
   const date = (front.params as { date?: unknown } | undefined)?.date;
   return isIsoDate(date) ? date : undefined;
 }
-
-/**
- * The section a ?s= link opens on a page with sections (Food, Body, Progress):
- * a link takes effect only when it changes from the last one seen, so a param
- * left in the address never pulls back a section picked by hand. Null when
- * nothing new is asked for or the name is not one of the sections.
- */
-export function sectionFromLink<T extends string>(sections: readonly T[], s: unknown, seen: unknown): T | null {
-  if (s === seen || typeof s !== 'string') return null;
-  return (sections as readonly string[]).includes(s) ? (s as T) : null;
-}

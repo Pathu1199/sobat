@@ -11,8 +11,8 @@ import type { PlanMeal } from './weekPlan';
  * always come from the database at those grams. Pure, so the stepper, the
  * grams box, the bottom bar, a saved meal and a day's menu all count the
  * same way. A count is kept exactly (typed grams stay the grams typed) and is
- * rounded only where it is shown (formatQty) and where a line is written
- * (linesFromBasket).
+ * rounded only where it is shown (formatQty), and where a line is written
+ * (linesFromBasket) only finely enough that it reads back as the same grams.
  */
 export type BasketLine = { foodId: string; unit: string; gramsPerUnit: number; count: number };
 
@@ -20,6 +20,8 @@ export type BasketLine = { foodId: string; unit: string; gramsPerUnit: number; c
 const WHOLE_UNITS = ['piece', 'slice', 'small', 'medium', 'large'];
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
+/** A written count: four places keep the grams of any amount up to 3 kg (100 g in a 150 g katori is 0.6667, read back as 100 g). */
+const round4 = (n: number) => Math.round(n * 10000) / 10000;
 
 /** How much one − or + changes a count: one for things counted whole, a half for the rest. */
 export function stepFor(unit: string): number {
@@ -170,7 +172,8 @@ export function basketFromLines(lines: PlanLine[], foods: FoodItem[]): BasketLin
  * The basket as planned lines, for a saved meal or a day's menu. A line in
  * one of the food's own measures stays in it; a household measure (a bowl, a
  * spoon) becomes the food's default measure at the same grams, because a
- * planned line is read in the food's own measures.
+ * planned line is read in the food's own measures. The amount is written
+ * finely enough that the line reads back as the grams in the basket.
  */
 export function linesFromBasket(basket: BasketLine[], foods: FoodItem[]): PlanLine[] {
   const lines: PlanLine[] = [];
@@ -178,13 +181,13 @@ export function linesFromBasket(basket: BasketLine[], foods: FoodItem[]): PlanLi
     const food = foods.find((f) => f.id === b.foodId);
     if (!food || b.count <= 0) continue;
     let line: PlanLine | null = null;
-    if (food.portions.some((p) => p.unit === b.unit)) line = { foodId: b.foodId, unit: b.unit, qty: round2(b.count) };
+    if (food.portions.some((p) => p.unit === b.unit)) line = { foodId: b.foodId, unit: b.unit, qty: round4(b.count) };
     else {
       const p = defaultPortion(food);
-      if (p && p.grams > 0) line = { foodId: b.foodId, unit: p.unit, qty: round2(lineGrams(b) / p.grams) };
+      if (p && p.grams > 0) line = { foodId: b.foodId, unit: p.unit, qty: round4(lineGrams(b) / p.grams) };
     }
-    // A line that rounds to nothing is not written.
-    if (line && line.qty > 0) lines.push(line);
+    // A line that counts as nothing is not written.
+    if (line && countsAsSomething(line.qty)) lines.push(line);
   }
   return lines;
 }

@@ -100,8 +100,13 @@ export default function PlanScreen() {
   }
   function balance() {
     const r = balanceDay(day, foods, targets.kcal, avoided, floor);
+    if (!r.changes.length) {
+      // Nothing changed, so nothing is written and nothing buzzes as if it were.
+      setNote(t('plan_nothing_to_change'));
+      return;
+    }
     save(setDay(plan, dayIdx, r.day));
-    setNote(r.changes.length ? r.changes.map((c) => fill(t(c.key), { meal: t(String(c.params.meal)).toLowerCase() })).join(' · ') : t('plan_nothing_to_change'));
+    setNote(r.changes.map((c) => fill(t(c.key), { meal: t(String(c.params.meal)).toLowerCase() })).join(' · '));
     fb.haptic('success');
   }
   function rebuild() {
@@ -335,10 +340,12 @@ export default function PlanScreen() {
         food={picked}
         onClose={() => setPicked(null)}
         onAdd={(c) => {
-          // Written the way every planned line is: in the food's own measure, the amount rounded only here.
+          // Written the way every planned line is: in the food's own measure, at the grams chosen.
           const [line] = linesFromBasket([{ foodId: c.food.id, unit: c.unit, gramsPerUnit: c.gramsPerUnit, count: c.count }], app.foods);
-          if (adding && line) save(addLine(plan, dayIdx, adding, line));
           setPicked(null);
+          // Nothing to write: back to the search, still adding, with no buzz as if it were saved.
+          if (!adding || !line) return;
+          save(addLine(plan, dayIdx, adding, line));
           setAdding(null);
           fb.haptic('light');
         }}

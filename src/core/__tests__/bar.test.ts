@@ -3,7 +3,7 @@
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { addSlot, barItems, hrefOf, meRows, routeAt, sectionFromLink, viewedDate } from '../bar';
+import { addSlot, barItems, hrefOf, meRows, routeAt, viewedDate } from '../bar';
 import { TAB_IDS } from '../tabs';
 
 /** The screens expo-router can open: the files under src/app and under src/app/(tabs), by name without the extension. */
@@ -97,21 +97,5 @@ describe('meRows', () => {
       const name = r.href.slice(1).split('?')[0];
       expect([...TAB_SCREENS, ...STACK_SCREENS]).toContain(name);
     }
-  });
-});
-
-describe('sectionFromLink: what a ?s= link opens', () => {
-  const SECTIONS = ['plan', 'foods', 'recipes', 'history'] as const;
-
-  it('opens the section only when the link changes, so a link left in the address never overrides a pick by hand', () => {
-    // A cold load of /food?s=history opens History from the start; the same param seen again changes nothing.
-    expect(sectionFromLink(SECTIONS, 'history', 'history')).toBeNull();
-    // A new link opens its section, even the one opened before once the param was cleared.
-    expect(sectionFromLink(SECTIONS, 'recipes', 'history')).toBe('recipes');
-    expect(sectionFromLink(SECTIONS, 'history', undefined)).toBe('history');
-    // Clearing the param, or a name that is not a section, changes nothing.
-    expect(sectionFromLink(SECTIONS, undefined, 'history')).toBeNull();
-    expect(sectionFromLink(SECTIONS, 'nonsense', undefined)).toBeNull();
-    expect(sectionFromLink(SECTIONS, ['plan'], undefined)).toBeNull();
   });
 });
