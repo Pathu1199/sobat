@@ -114,7 +114,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
                   onPress={() => log(s.type, p.food.id, p.grams, s.id)}
                   accessibilityRole="button"
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4, opacity: pressed ? 0.7 : 1 })}>
-                  <FoodThumb food={p.food} size={30} />
+                  <FoodThumb food={p.food} lang={lang} size={30} />
                   <Text style={{ flex: 1, color: C.text, fontSize: F.small }} numberOfLines={1}>
                     {foodName(p.food, lang)}
                     <Text style={{ color: C.textFaint }}>{`  ${p.grams} g`}</Text>

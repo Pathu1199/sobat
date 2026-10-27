@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { FoodDetailSheet, FoodThumb } from '../components/FoodDetailSheet';
 import { GrocerySheet } from '../components/GrocerySheet';
+import { linesFromBasket } from '../core/basket';
 import { mondayOf, weekDates } from '../core/date';
 import { foodName, searchFoods } from '../core/foods';
 import { newId } from '../core/id';
@@ -231,7 +232,7 @@ export default function PlanScreen() {
               return (
                 <View key={`${line.foodId}-${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 2 }}>
                   <Pressable onPress={() => setSwap({ mealId: meal.id, lineIdx: i })} accessibilityRole="button" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <FoodThumb food={info.food} size={34} />
+                    <FoodThumb food={info.food} lang={lang} size={34} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }} numberOfLines={1}>
                         {foodName(info.food, lang)}
@@ -289,7 +290,7 @@ export default function PlanScreen() {
                     fb.haptic('light');
                   }}
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, opacity: pressed ? 0.7 : 1 })}>
-                  <FoodThumb food={f} size={32} />
+                  <FoodThumb food={f} lang={lang} size={32} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }} numberOfLines={1}>{foodName(f, lang)}</Text>
                     <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${qtyText(s.line.qty)} ${unitName(info.unit)} · ${info.grams} g`}</Text>
@@ -317,7 +318,7 @@ export default function PlanScreen() {
           const one = lineInfo(lineFor(f), foods, lang);
           return (
             <Pressable key={f.id} onPress={() => setPicked(f)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, opacity: pressed ? 0.7 : 1 })}>
-              <FoodThumb food={f} size={30} />
+              <FoodThumb food={f} lang={lang} size={30} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }} numberOfLines={1}>{foodName(f, lang)}</Text>
                 <Text style={{ color: avoided.has(f.id) ? C.amber : C.textFaint, fontSize: F.small }} numberOfLines={1}>
@@ -334,7 +335,9 @@ export default function PlanScreen() {
         food={picked}
         onClose={() => setPicked(null)}
         onAdd={(c) => {
-          if (adding) save(addLine(plan, dayIdx, adding, { foodId: c.food.id, unit: c.unit, qty: c.count }));
+          // Written the way every planned line is: in the food's own measure, the amount rounded only here.
+          const [line] = linesFromBasket([{ foodId: c.food.id, unit: c.unit, gramsPerUnit: c.gramsPerUnit, count: c.count }], app.foods);
+          if (adding && line) save(addLine(plan, dayIdx, adding, line));
           setPicked(null);
           setAdding(null);
           fb.haptic('light');

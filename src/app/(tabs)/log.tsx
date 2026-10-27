@@ -9,6 +9,7 @@ import { SuggestSheet } from '../../components/SuggestSheet';
 import { swapText } from '../../components/RoutineCard';
 import { IconButton } from '../../components/TopBarActions';
 import { isIsoDate } from '../../core/bar';
+import { formatQty } from '../../core/basket';
 import { addDays, formatDayLabel, lastNDates, localHHMM } from '../../core/date';
 import { newId } from '../../core/id';
 import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, toMealItem, type DishStyle } from '../../core/foods';
@@ -308,10 +309,10 @@ export default function LogScreen() {
             <View key={b.food.id} style={{ gap: 8 }}>
               {idx > 0 ? <Divider /> : null}
               <Row style={{ gap: 12 }}>
-                <FoodThumb food={b.food} size={40} />
+                <FoodThumb food={b.food} lang={lang} size={40} />
                 <Pressable onPress={() => setDetail(b.food)} style={{ flex: 1, gap: 3 }} accessibilityRole="button" accessibilityLabel={t('edit')}>
                   <BiText en={b.food.name_en} alt={lang === 'en' ? undefined : b.food.name_mr} />
-                  <Micro>{`${b.count} × ${measureText} · ${item.grams} g · ${t('edit')} ›`}</Micro>
+                  <Micro>{`${formatQty(b.count)} × ${measureText} · ${item.grams} g · ${t('edit')} ›`}</Micro>
                 </Pressable>
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>
                   {item.kcal}
@@ -369,7 +370,7 @@ export default function LogScreen() {
               <View key={f.id}>
                 {i > 0 ? <Divider /> : null}
                 <ListRow
-                  icon={<FoodThumb food={f} size={40} />}
+                  icon={<FoodThumb food={f} lang={lang} size={40} />}
                   title={f.name_en}
                   alt={lang === 'en' ? undefined : f.name_mr}
                   sub={[styleOf(f) ? t(`style_${styleOf(f)}`) : null, p ? portionLabel(p, lang) : null].filter(Boolean).join(' · ')}

@@ -10,7 +10,9 @@ import type { PlanMeal } from './weekPlan';
  * food, so adding a food that is already there adds to its count. Calories
  * always come from the database at those grams. Pure, so the stepper, the
  * grams box, the bottom bar, a saved meal and a day's menu all count the
- * same way.
+ * same way. A count is kept exactly (typed grams stay the grams typed) and is
+ * rounded only where it is shown (formatQty) and where a line is written
+ * (linesFromBasket).
  */
 export type BasketLine = { foodId: string; unit: string; gramsPerUnit: number; count: number };
 
@@ -25,15 +27,53 @@ export function stepFor(unit: string): number {
 }
 
 /**
- * The count after one − or +, kept on the step (a typed 1.33 goes to 2 or to
- * 1); 0 means the line goes. Halfway between two steps it goes to the nearer
- * one its own way: 1½ chapatis go to 2 or 1, not to 3.
+ * The count after one − or +: the next point of the step grid that way, so an
+ * amount off the grid moves to the nearest step its way and never further
+ * (1.4 chapatis go to 1 or 2, 1.33 katoris to 1 or 1.5); 0 means the line
+ * goes.
  */
 export function stepCount(count: number, unit: string, by: 1 | -1): number {
   const step = stepFor(unit);
-  const steps = (count + by * step) / step;
-  const snapped = by > 0 ? Math.ceil(steps - 0.5) : Math.floor(steps + 0.5);
-  return Math.max(0, round2(snapped * step));
+  const k = round2(count) / step;
+  const n = by > 0 ? Math.floor(k + 1e-9) + 1 : Math.ceil(k - 1e-9) - 1;
+  return Math.max(0, round2(n * step));
+}
+
+/**
+ * The food sheet's − / +: one step on the grid, but never under one step, and
+ * − never makes a typed amount below a step (half a chapati) larger. When −
+ * gives back the same count it can do nothing, and the button says so.
+ */
+export function sheetStep(count: number, unit: string, by: 1 | -1): number {
+  const next = Math.max(stepFor(unit), stepCount(count, unit, by));
+  return by < 0 ? Math.min(count, next) : next;
+}
+
+const MAX_GRAMS = 3000;
+
+/** Grams as typed in the grams box: a plain number above 0 and up to 3 kg, or null ("12abc", "1e3", "", "0"). */
+export function parseGrams(text: string): number | null {
+  const v = text.trim();
+  if (!/^\d+(\.\d+)?$/.test(v)) return null;
+  const g = Number(v);
+  return g > 0 && g <= MAX_GRAMS ? g : null;
+}
+
+/** A count that rounds to 0 counts as nothing: written down it would be a line of nothing. */
+function countsAsSomething(count: number): boolean {
+  return round2(count) > 0;
+}
+
+/**
+ * The count typed grams make in a measure, not rounded, so the grams stay
+ * exactly as typed (100 g in a 150 g katori stays 100 g). Null when the text
+ * is not an amount or the amount would count as nothing.
+ */
+export function countFromGrams(text: string, gramsPerUnit: number): number | null {
+  const g = parseGrams(text);
+  if (g === null || !(gramsPerUnit > 0)) return null;
+  const count = g / gramsPerUnit;
+  return countsAsSomething(count) ? count : null;
 }
 
 /** A food's line at its own default measure. */
@@ -42,13 +82,16 @@ export function lineOf(food: FoodItem, count = 1): BasketLine {
   return { foodId: food.id, unit: p?.unit ?? 'bowl', gramsPerUnit: p?.grams ?? 150, count };
 }
 
-/** Add to the basket: a food already there gets the extra amount in its own measure; a new food gets a line. */
+/** Add to the basket: a food already there gets the extra amount in its own measure; a new food gets a line. A portion that weighs nothing adds nothing. */
 export function addLine(basket: BasketLine[], line: BasketLine): BasketLine[] {
+  if (!(line.count > 0) || !(line.gramsPerUnit > 0)) return basket;
   const at = basket.findIndex((b) => b.foodId === line.foodId);
-  if (at < 0) return line.count > 0 ? [...basket, line] : basket;
+  if (at < 0) return [...basket, line];
   const b = basket[at];
+  // A line kept in a measure of no weight cannot hold more of anything: the new line takes its place.
+  if (!(b.gramsPerUnit > 0)) return basket.map((x, i) => (i === at ? line : x));
   const more = b.unit === line.unit ? line.count : (line.count * line.gramsPerUnit) / b.gramsPerUnit;
-  return basket.map((x, i) => (i === at ? { ...x, count: round2(x.count + more) } : x));
+  return basket.map((x, i) => (i === at ? { ...x, count: x.count + more } : x));
 }
 
 /** A line as chosen in the food sheet ("Done" on a food already in the basket): it replaces that food's line. */
@@ -58,14 +101,20 @@ export function putLine(basket: BasketLine[], line: BasketLine): BasketLine[] {
 
 /** Set a food's count; 0 or less takes it out. */
 export function setCount(basket: BasketLine[], foodId: string, count: number): BasketLine[] {
-  return count > 0 ? basket.map((b) => (b.foodId === foodId ? { ...b, count: round2(count) } : b)) : basket.filter((b) => b.foodId !== foodId);
+  return count > 0 ? basket.map((b) => (b.foodId === foodId ? { ...b, count } : b)) : basket.filter((b) => b.foodId !== foodId);
 }
 
-/** Set a food's grams; its count follows, in its measure. 0 or less takes it out. */
+/**
+ * Set a food's grams; its count follows, in its measure, unrounded so the
+ * grams stay as typed. 0 or less takes it out; an amount that would count as
+ * nothing is refused and the line stays as it was.
+ */
 export function setGrams(basket: BasketLine[], foodId: string, grams: number): BasketLine[] {
   const b = basket.find((x) => x.foodId === foodId);
   if (!b) return basket;
-  return setCount(basket, foodId, b.gramsPerUnit > 0 ? grams / b.gramsPerUnit : 0);
+  if (!(grams > 0) || !(b.gramsPerUnit > 0)) return setCount(basket, foodId, 0);
+  const count = grams / b.gramsPerUnit;
+  return countsAsSomething(count) ? setCount(basket, foodId, count) : basket;
 }
 
 export function lineGrams(line: BasketLine): number {
@@ -112,12 +161,14 @@ export function linesFromBasket(basket: BasketLine[], foods: FoodItem[]): PlanLi
   for (const b of basket) {
     const food = foods.find((f) => f.id === b.foodId);
     if (!food || b.count <= 0) continue;
-    if (food.portions.some((p) => p.unit === b.unit)) {
-      lines.push({ foodId: b.foodId, unit: b.unit, qty: round2(b.count) });
-      continue;
+    let line: PlanLine | null = null;
+    if (food.portions.some((p) => p.unit === b.unit)) line = { foodId: b.foodId, unit: b.unit, qty: round2(b.count) };
+    else {
+      const p = defaultPortion(food);
+      if (p && p.grams > 0) line = { foodId: b.foodId, unit: p.unit, qty: round2(lineGrams(b) / p.grams) };
     }
-    const p = defaultPortion(food);
-    if (p && p.grams > 0) lines.push({ foodId: b.foodId, unit: p.unit, qty: round2(lineGrams(b) / p.grams) });
+    // A line that rounds to nothing is not written.
+    if (line && line.qty > 0) lines.push(line);
   }
   return lines;
 }

@@ -38,7 +38,7 @@ export default function RecipesScreen() {
             <View key={r.id}>
               {i > 0 ? <Divider /> : null}
               <ListRow
-                icon={<FoodThumb food={food} size={44} />}
+                icon={<FoodThumb food={food} lang={lang} size={44} />}
                 title={foodName(food, lang)}
                 sub={`${t(`recipe_${r.style}`)} · ${r.minutes} ${t('minutes')} · ${n ? `${Math.round(n.protein)} g ${t('protein').toLowerCase()}` : ''}`}
                 value={n ? String(n.kcal) : undefined}

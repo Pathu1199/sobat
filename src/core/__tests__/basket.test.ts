@@ -6,14 +6,17 @@ import {
   basketItems,
   basketMeal,
   basketTotals,
+  countFromGrams,
   formatQty,
   itemsMeal,
   lineGrams,
   lineOf,
   linesFromBasket,
+  parseGrams,
   putLine,
   setCount,
   setGrams,
+  sheetStep,
   slotPreview,
   stepCount,
   stepFor,
@@ -33,8 +36,29 @@ describe('steps', () => {
     expect(stepCount(1, 'piece', 1)).toBe(2);
     expect(stepCount(1, 'piece', -1)).toBe(0);
     expect(stepCount(1, 'katori', 1)).toBe(1.5);
-    expect(stepCount(1.33, 'katori', 1)).toBe(2);
+    expect(stepCount(1.33, 'katori', 1)).toBe(1.5);
     expect(stepCount(1.33, 'katori', -1)).toBe(1);
+  });
+
+  it('− and + move exactly one step on the grid, so − on 1.4 chapatis keeps the line', () => {
+    expect(stepCount(1.4, 'piece', -1)).toBe(1);
+    expect(stepCount(0.7, 'piece', -1)).toBe(0);
+    expect(stepCount(0.7, 'katori', -1)).toBe(0.5);
+    expect(stepCount(0.6, 'piece', 1)).toBe(1);
+    expect(stepCount(1.6, 'piece', 1)).toBe(2);
+    expect(stepCount(1.6, 'katori', 1)).toBe(2);
+    expect(stepCount(2, 'piece', -1)).toBe(1);
+  });
+
+  it('in the food sheet − never goes under one step nor makes a typed amount larger, and says when it can do nothing', () => {
+    expect(sheetStep(2, 'piece', -1)).toBe(1);
+    expect(sheetStep(1.4, 'piece', -1)).toBe(1);
+    expect(sheetStep(1, 'piece', -1)).toBe(1);
+    expect(sheetStep(0.3, 'piece', -1)).toBe(0.3);
+    expect(sheetStep(0.5, 'katori', -1)).toBe(0.5);
+    expect(sheetStep(0.6, 'piece', 1)).toBe(1);
+    expect(sheetStep(0, 'piece', 1)).toBe(1);
+    expect(sheetStep(0, 'katori', -1)).toBe(0);
   });
 
   it('an amount halfway between steps moves to the next step its way, never a step and a half', () => {
@@ -53,8 +77,18 @@ describe('the basket', () => {
     expect(once).toEqual([{ foodId: 'poha', unit: 'katori', gramsPerUnit: 150, count: 1 }]);
     expect(addLine(once, lineOf(food('poha')))[0].count).toBe(2);
     // A 200 g plate on top of a 150 g katori is 1.33 katoris more.
-    expect(addLine(once, { foodId: 'poha', unit: 'plate', gramsPerUnit: 200, count: 1 })[0].count).toBe(2.33);
+    const plate = addLine(once, { foodId: 'poha', unit: 'plate', gramsPerUnit: 200, count: 1 });
+    expect(plate[0].count).toBeCloseTo(2.33);
+    expect(lineGrams(plate[0])).toBe(350);
     expect(addLine(once, lineOf(food('chapati'), 2)).map((b) => b.foodId)).toEqual(['poha', 'chapati']);
+  });
+
+  it('a portion that weighs nothing adds nothing', () => {
+    expect(addLine([], { foodId: 'poha', unit: 'katori', gramsPerUnit: 0, count: 1 })).toEqual([]);
+    const once = addLine([], lineOf(food('poha')));
+    expect(addLine(once, { foodId: 'poha', unit: 'plate', gramsPerUnit: 0, count: 2 })).toEqual(once);
+    const weightless = [{ foodId: 'poha', unit: 'katori', gramsPerUnit: 0, count: 1 }];
+    expect(Number.isFinite(addLine(weightless, { foodId: 'poha', unit: 'plate', gramsPerUnit: 200, count: 1 })[0].count)).toBe(true);
   });
 
   it('the detail sheet replaces a line; a count or grams of 0 takes it out', () => {
@@ -62,9 +96,37 @@ describe('the basket', () => {
     expect(putLine(b, { foodId: 'poha', unit: 'plate', gramsPerUnit: 200, count: 1 })).toEqual([{ foodId: 'poha', unit: 'plate', gramsPerUnit: 200, count: 1 }]);
     expect(setCount(b, 'poha', 0)).toEqual([]);
     const typed = setGrams(b, 'poha', 200);
-    expect(typed[0].count).toBe(1.33);
+    expect(typed[0].count).toBeCloseTo(1.33);
     expect(lineGrams(typed[0])).toBe(200);
     expect(setGrams(b, 'poha', 0)).toEqual([]);
+  });
+
+  it('typed grams are kept exactly: 100 g in a 150 g katori is 100 g, not 101 g', () => {
+    const b = addLine([], lineOf(food('poha')));
+    const typed = setGrams(b, 'poha', 100);
+    expect(lineGrams(typed[0])).toBe(100);
+    expect(basketItems(typed, foods)[0].grams).toBe(100);
+    // Adding more on top keeps the typed grams too.
+    expect(lineGrams(addLine(typed, lineOf(food('poha')))[0])).toBe(250);
+    // A typed amount that would count as nothing is refused, and the line stays as it was.
+    expect(setGrams(b, 'poha', 0.4)).toEqual(b);
+  });
+
+  it('the grams box takes a plain number of grams and nothing else', () => {
+    expect(parseGrams('100')).toBe(100);
+    expect(parseGrams(' 80 ')).toBe(80);
+    expect(parseGrams('12.5')).toBe(12.5);
+    expect(parseGrams('12abc')).toBeNull();
+    expect(parseGrams('1e3')).toBeNull();
+    expect(parseGrams('')).toBeNull();
+    expect(parseGrams('0')).toBeNull();
+    expect(parseGrams('-5')).toBeNull();
+    expect(parseGrams('3001')).toBeNull();
+    expect(countFromGrams('100', 150)).toBeCloseTo(0.6667, 4);
+    expect(Math.round(150 * countFromGrams('100', 150)!)).toBe(100);
+    expect(countFromGrams('1', 220)).toBeNull();
+    expect(countFromGrams('12abc', 150)).toBeNull();
+    expect(countFromGrams('100', 0)).toBeNull();
   });
 
   it('counts calories from the database at the grams, and the items and protein for the bar', () => {
@@ -80,6 +142,11 @@ describe('the basket', () => {
     expect(linesFromBasket(b, foods)).toEqual([{ foodId: 'chapati', unit: 'piece', qty: 2 }]);
     // Four big spoons of poha (60 g) is 0.4 of its 150 g katori.
     expect(linesFromBasket([{ foodId: 'poha', unit: 'spoon_big', gramsPerUnit: 15, count: 4 }], foods)).toEqual([{ foodId: 'poha', unit: 'katori', qty: 0.4 }]);
+  });
+
+  it('a line is rounded where it is written, and one that rounds to nothing is not written', () => {
+    expect(linesFromBasket(setGrams(addLine([], lineOf(food('poha'))), 'poha', 100), foods)).toEqual([{ foodId: 'poha', unit: 'katori', qty: 0.67 }]);
+    expect(linesFromBasket([{ foodId: 'poha', unit: 'katori', gramsPerUnit: 150, count: 0.001 }], foods)).toEqual([]);
   });
 });
 

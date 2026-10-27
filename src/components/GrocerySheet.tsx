@@ -63,7 +63,7 @@ export function GrocerySheet({ open, onClose, plan }: { open: boolean; onClose: 
                     <View style={{ width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: on ? C.accent : C.borderStrong, backgroundColor: on ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
                       {on ? <Ionicons name="checkmark" size={16} color={C.onAccent} /> : null}
                     </View>
-                    <FoodThumb food={l.food} size={34} />
+                    <FoodThumb food={l.food} lang={lang} size={34} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', textDecorationLine: on ? 'line-through' : 'none' }}>{foodName(l.food, lang)}</Text>
                       <Text style={{ color: C.textFaint, fontSize: F.small }}>{fill(t('grocery_times'), { n: l.times })}</Text>

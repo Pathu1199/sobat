@@ -37,7 +37,7 @@ export function RecipeSheet({ recipe, onClose }: { recipe: Recipe | null; onClos
   return (
     <Sheet open title={food ? foodName(food, lang) : recipe.id} onClose={onClose}>
       <Row style={{ gap: 14, alignItems: 'flex-start' }}>
-        {food ? <FoodThumb food={food} size={88} /> : null}
+        {food ? <FoodThumb food={food} lang={lang} size={88} /> : null}
         <View style={{ flex: 1, gap: 6 }}>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             <Pill label={t(`recipe_${recipe.style}`)} color={C.cardAlt} textColor={recipe.style === 'no_oil' ? C.green : C.cyan} />

@@ -63,7 +63,7 @@ export function SuggestSheet({ open, onClose }: { open: boolean; onClose: () => 
             <View key={o.food.id}>
               {i > 0 ? <Divider /> : null}
               <ListRow
-                icon={<FoodThumb food={o.food} size={40} />}
+                icon={<FoodThumb food={o.food} lang={lang} size={40} />}
                 title={foodName(o.food, lang)}
                 sub={`${o.grams} g · ${o.protein} g ${t('protein').toLowerCase()}${rec ? ` · ${t(`recipe_${rec.style}`)}` : ''}`}
                 value={String(o.kcal)}
