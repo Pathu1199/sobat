@@ -15,8 +15,8 @@ import { isOffDay } from '../core/week';
 import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryType } from '../core/memory';
 import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
-import { slotStates, withSlot } from '../core/pattern';
-import { addSkip, removeSkip, settleAuto, skippedOn } from '../core/menu';
+import { slotStates } from '../core/pattern';
+import { editedMeal, removeSkip, skippedOn, withMealAdded, withSkipAdded } from '../core/menu';
 import { pruneSpend, spentOn, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
@@ -123,18 +123,9 @@ export function useApp(): Ctx {
   return c;
 }
 
-/**
- * Every meal goes into the state this way: into the slot it is eaten in when
- * it names none (a photo, a recipe, the coach), a slot that gets a meal on a
- * date is no longer marked skipped that date, and a meal the app filled in
- * there from the plan gives way to it.
- */
+/** Every meal goes into the state this way; `withMealAdded` says what that does. */
 function withMeal(s: AppState, m: Meal, target: number, now: Date): AppState {
-  const today = toISODate(now);
-  // The pattern is always on, so every meal finds its slot.
-  const meal = withSlot(m, { routine: s.routine, target, meals: s.meals.filter((x) => x.date === today), skippedSlots: skippedOn(s.slotSkips, today), now });
-  const slotSkips = meal.slotId ? removeSkip(s.slotSkips, meal.date, meal.slotId) : s.slotSkips;
-  return { ...s, meals: settleAuto([...s.meals, meal], slotSkips), slotSkips };
+  return { ...s, ...withMealAdded(s, m, target, now) };
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -285,7 +276,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSettings: (x) => update((s) => ({ ...s, settings: { ...s.settings, ...x } })),
       addMeal: (m) => update((s) => withMeal(s, m, targets.kcal, new Date())),
       removeMeal: (id) => update((s) => ({ ...s, meals: s.meals.filter((m) => m.id !== id) })),
-      updateMeal: (m) => update((s) => ({ ...s, meals: s.meals.map((x) => (x.id === m.id ? m : x)) })),
+      updateMeal: (m) => update((s) => ({ ...s, meals: s.meals.map((x) => (x.id === m.id ? editedMeal(x, m) : x)) })),
       addWater: (ml) =>
         update((s) => ({ ...s, water: [...s.water, { id: newId(), at: new Date().toISOString(), date: toISODate(), ml }] })),
       undoWater: () =>
@@ -360,9 +351,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       skippedToday,
       skipSlot: (date, slotId) =>
         update((s) => {
-          const slotSkips = addSkip(s.slotSkips, date, slotId);
-          // A skipped slot was not eaten: the meal the app filled in there goes.
-          return slotSkips === s.slotSkips ? s : { ...s, slotSkips, meals: settleAuto(s.meals, slotSkips) };
+          const next = withSkipAdded(s, date, slotId);
+          return next.slotSkips === s.slotSkips ? s : { ...s, ...next };
         }),
       unskipSlot: (date, slotId) =>
         update((s) => {

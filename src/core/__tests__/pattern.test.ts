@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { allowance, currentSlot, DEFAULT_SHARE, pattern, slotOf, slotShare, slotStates, withSlot } from '../pattern';
-import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
+import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { Meal } from '../types';
 
 export const slot = (id: string, type: RoutineSlot['type'], time: string, share?: number): RoutineSlot => ({
@@ -114,6 +114,53 @@ describe('currentSlot', () => {
     expect(currentSlot(at14([filled]), 14 * 60)?.slot.id).toBe('lunch');
     expect(currentSlot(at14([filled, meal('lunch', '13:10', 400)]), 14 * 60)?.slot.id).toBe('dinner');
     expect(currentSlot(at14([{ ...filled, source: 'plan' }]), 14 * 60)?.slot.id).toBe('dinner');
+  });
+
+  describe('a slot holding only a meal the app filled in', () => {
+    const auto = (type: Meal['type'], hhmm: string, slotId: string): Meal => ({ ...meal(type, hhmm, 500, slotId), id: `auto-${slotId}`, source: 'auto' });
+    const typed = (type: Meal['type'], hhmm: string, slotId: string): Meal => ({ ...meal(type, hhmm, 400, slotId), source: 'manual' });
+    const day = (r: Routine, meals: Meal[], m: number, skippedSlots: string[] = []) => slotStates({ routine: r, target: 1600, meals, nowMinutes: m, skippedSlots });
+
+    it('takes a real lunch eaten at 15:00, as before', () => {
+      const states = day(routine, [typed('breakfast', '08:40', 'morning'), auto('lunch', '13:00', 'lunch')], 15 * 60);
+      expect(currentSlot(states, 15 * 60)?.slot.id).toBe('lunch');
+    });
+
+    it('is closed once a later slot holds a real meal: a snack after a hand-logged dinner does not take the planned lunch', () => {
+      const states = day(routine, [typed('breakfast', '08:40', 'morning'), auto('lunch', '13:00', 'lunch'), typed('dinner', '19:40', 'dinner')], 21 * 60);
+      const picked = currentSlot(states, 21 * 60)?.slot.id;
+      expect(picked).not.toBe('lunch');
+      // Every slot is settled, so the nearest by time.
+      expect(picked).toBe('dinner');
+    });
+
+    it('on the four meals of the day: a snack and a lunch filled in, dinner logged by hand, an item at 21:30 goes to dinner', () => {
+      const meals = [typed('breakfast', '08:40', 'breakfast'), auto('lunch', '13:00', 'lunch'), auto('snack', '16:00', 'snack'), typed('dinner', '20:40', 'dinner')];
+      const picked = currentSlot(day(NEUTRAL_ROUTINE, meals, 21 * 60 + 30), 21 * 60 + 30)?.slot.id;
+      expect(picked).not.toBe('snack');
+      expect(picked).toBe('dinner');
+    });
+
+    it('is closed once a later slot is skipped: dinner skipped and the snack filled in, an item at 21:30 goes to dinner', () => {
+      const meals = [typed('breakfast', '08:40', 'breakfast'), typed('lunch', '13:10', 'lunch'), auto('snack', '16:00', 'snack')];
+      expect(currentSlot(day(NEUTRAL_ROUTINE, meals, 21 * 60 + 30, ['dinner']), 21 * 60 + 30)?.slot.id).toBe('dinner');
+      const now = new Date('2026-10-12T21:30:00');
+      const late = withSlot(meal('snack', '21:30', 200), { routine: NEUTRAL_ROUTINE, target: 1600, meals, skippedSlots: ['dinner'], now });
+      expect(late).toMatchObject({ slotId: 'dinner', type: 'dinner' });
+    });
+
+    it('with nothing real anywhere after it, stays open: at 22:00 with lunch, snack and dinner all filled in, the item is dinner', () => {
+      const meals = [typed('breakfast', '08:40', 'breakfast'), auto('lunch', '13:00', 'lunch'), auto('snack', '16:00', 'snack'), auto('dinner', '20:30', 'dinner')];
+      expect(currentSlot(day(NEUTRAL_ROUTINE, meals, 22 * 60), 22 * 60)?.slot.id).toBe('dinner');
+    });
+
+    it('is never open when the slot itself is skipped, though its leftover meal reads as done', () => {
+      const states = day(routine, [typed('breakfast', '08:40', 'morning'), auto('lunch', '13:00', 'lunch')], 14 * 60, ['lunch']);
+      expect(states[1]).toMatchObject({ status: 'done', skipped: true });
+      expect(currentSlot(states, 14 * 60)?.slot.id).toBe('dinner');
+      const now = new Date('2026-10-12T14:00:00');
+      expect(withSlot(meal('snack', '14:00', 200), { routine, target: 1600, meals: states.flatMap((s) => s.meals), skippedSlots: ['lunch'], now })).toMatchObject({ slotId: 'dinner' });
+    });
   });
 
   it('with the latest opened slot done and nothing after it, is the latest earlier slot still open', () => {

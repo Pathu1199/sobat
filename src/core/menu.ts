@@ -1,6 +1,6 @@
 import { addDays, toISODate, weekDates } from './date';
 import { toMealItem } from './foods';
-import { slotOf, type SlotPoint } from './pattern';
+import { slotOf, withSlot, type SlotPoint } from './pattern';
 import { weekdayOf, type PlanLine, type Routine } from './routine';
 import { stable } from './sync';
 import type { FoodItem, ISODate, Meal, MealItem, MealSource, SavedMeal, SlotSkip } from './types';
@@ -311,6 +311,40 @@ export function settleAuto(meals: Meal[], skips: SlotSkip[]): Meal[] {
   for (const m of meals) if (m.source !== 'auto' && m.slotId) settled.add(skipId(m.date, m.slotId));
   const kept = meals.filter((m) => !(m.source === 'auto' && m.slotId && settled.has(skipId(m.date, m.slotId))));
   return kept.length === meals.length ? meals : kept;
+}
+
+/**
+ * A meal after the person edits it. Correcting a meal the app filled in
+ * confirms it: it now reads as eaten as planned, so a later meal in its slot
+ * or another device's meals arriving never take the correction away. Any
+ * other meal keeps its source.
+ */
+export function editedMeal(prev: Meal, next: Meal): Meal {
+  return prev.source === 'auto' ? { ...next, source: 'plan' } : next;
+}
+
+/** The parts of the state a meal or a skip changes. */
+export type MealsAndSkips = { meals: Meal[]; slotSkips: SlotSkip[] };
+
+/**
+ * Every meal goes into the state this way: into the slot it is eaten in when
+ * it names none (a photo, a recipe, the coach), a slot that gets a meal on a
+ * date is no longer marked skipped that date, and a meal the app filled in
+ * there from the plan gives way to it.
+ */
+export function withMealAdded(state: MealsAndSkips & { routine: Routine }, m: Meal, target: number, now: Date): MealsAndSkips {
+  const today = toISODate(now);
+  // The pattern is always on, so every meal finds its slot.
+  const meal = withSlot(m, { routine: state.routine, target, meals: state.meals.filter((x) => x.date === today), skippedSlots: skippedOn(state.slotSkips, today), now });
+  const slotSkips = meal.slotId ? removeSkip(state.slotSkips, meal.date, meal.slotId) : state.slotSkips;
+  return { meals: settleAuto([...state.meals, meal], slotSkips), slotSkips };
+}
+
+/** A slot marked skipped on a date: it was not eaten, so the meal the app filled in there goes. The same lists when it was already skipped. */
+export function withSkipAdded(state: MealsAndSkips, date: ISODate, slotId: string): MealsAndSkips {
+  const slotSkips = addSkip(state.slotSkips, date, slotId);
+  if (slotSkips === state.slotSkips) return { meals: state.meals, slotSkips };
+  return { meals: settleAuto(state.meals, slotSkips), slotSkips };
 }
 
 /** Add or replace a saved meal. One without a name or without a line is not saved. */

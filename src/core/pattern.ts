@@ -87,6 +87,8 @@ export type SlotState = {
   /** allowance minus eaten; negative when over. */
   left: number;
   status: SlotStatus;
+  /** Marked skipped on the day, whatever it holds; `status` reads done when a meal is still in it. */
+  skipped: boolean;
   meals: Meal[];
 };
 
@@ -110,16 +112,23 @@ export function slotStates(input: {
     const meals = byId.get(p.id) ?? [];
     const eaten = meals.reduce((a, m) => a + m.kcal, 0);
     const allow = allowance(input.target, p);
+    const skipped = input.skippedSlots.includes(p.id);
     return {
       slot: p,
       allowance: allow,
       planned: input.planned?.[p.id] ?? 0,
       eaten,
       left: allow - eaten,
-      status: slotStatus(p.slot, input.nowMinutes, meals.length > 0, input.skippedSlots.includes(p.id)),
+      status: slotStatus(p.slot, input.nowMinutes, meals.length > 0, skipped),
+      skipped,
       meals,
     };
   });
+}
+
+/** A slot that holds meals, every one of them filled in by the app from the plan and not yet confirmed. */
+export function onlyFilledIn(s: SlotState): boolean {
+  return s.meals.length > 0 && s.meals.every((m) => m.source === 'auto');
 }
 
 /**
@@ -131,22 +140,27 @@ export function slotStates(input: {
  * after it left, the latest earlier slot still open. Before any window has
  * opened, the first open slot of the day; when the day is done, the
  * nearest by time. A slot holding only a meal the app filled in from the plan
- * is still open here, though it counts as eaten: a real meal eaten in it
- * replaces that copy. Null only with no slots.
+ * is still open here, though it counts as eaten, so a real meal eaten in it
+ * replaces that copy; but only while no later slot holds a real meal or is
+ * skipped: once the day has moved past it, a meal eaten late is not taken
+ * for the planned one. A skipped slot is never open, whatever it holds.
+ * Null only with no slots.
  */
 export function currentSlot(states: SlotState[], nowMinutes: number): SlotState | null {
   if (states.length === 0) return null;
-  const filledIn = (s: SlotState) => s.meals.length > 0 && s.meals.every((m) => m.source === 'auto');
-  const open = (s: SlotState) => s.status !== 'skipped' && (s.status !== 'done' || filledIn(s));
+  // A slot with a real meal or a skip settles every filled-in slot before it.
+  const settled = (s: SlotState) => s.skipped || s.meals.some((m) => m.source !== 'auto');
+  const lastSettled = states.reduce((at, s, i) => (settled(s) ? i : at), -1);
+  const open = (s: SlotState, i: number) => !s.skipped && (s.status !== 'done' || (onlyFilledIn(s) && i > lastSettled));
   // States are in time order, so the opened ones are a prefix; -1 when none has opened yet.
   let last = -1;
   states.forEach((s, i) => {
     if (nowMinutes >= s.slot.minutes - SLOT_EARLY_MIN) last = i;
   });
-  if (last >= 0 && open(states[last])) return states[last];
-  const next = states.slice(last + 1).find(open);
+  if (last >= 0 && open(states[last], last)) return states[last];
+  const next = states.find((s, i) => i > last && open(s, i));
   if (next) return next;
-  const missed = states.slice(0, Math.max(0, last)).filter(open).pop();
+  const missed = states.filter((s, i) => i < last && open(s, i)).pop();
   if (missed) return missed;
   return states.reduce((best, s) => (gap(s.slot.minutes, nowMinutes) < gap(best.slot.minutes, nowMinutes) ? s : best));
 }

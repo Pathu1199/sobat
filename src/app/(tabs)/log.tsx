@@ -13,7 +13,7 @@ import { newId } from '../../core/id';
 import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, toMealItem, type DishStyle } from '../../core/foods';
 import { skippedOn } from '../../core/menu';
 import { MEAL_WINDOWS, mealTypeForHour, sumTotals } from '../../core/nutrition';
-import { currentSlot, slotStates } from '../../core/pattern';
+import { currentSlot, onlyFilledIn, slotStates } from '../../core/pattern';
 import { avoidHits, slotLabel, slotTime } from '../../core/routine';
 import type { FoodItem, MealItem, MealType } from '../../core/types';
 import { fill, makeT } from '../../i18n';
@@ -278,13 +278,15 @@ export default function LogScreen() {
     </View>
   );
 
-  const slotLeft = chosen ? chosen.left - basketKcal : 0;
-  const dayLeft = (isToday ? app.budget.remaining : app.targets.kcal - dayKcal) - basketKcal;
+  // A slot holding only the meal the app filled in gives that meal up when this one is saved, so the sums leave it out.
+  const replacedKcal = chosen && onlyFilledIn(chosen) ? chosen.eaten : 0;
+  const slotLeft = chosen ? chosen.left + replacedKcal - basketKcal : 0;
+  const dayLeft = (isToday ? app.budget.remaining : app.targets.kcal - dayKcal) + replacedKcal - basketKcal;
   const budgetLine =
     chosen ? (
       <Text style={{ color: dayLeft < 0 ? C.red : slotLeft < 0 ? C.amber : C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>
         {[
-          `${chosenLabel}: ${chosen.eaten + basketKcal} / ${chosen.allowance}`,
+          `${chosenLabel}: ${chosen.eaten - replacedKcal + basketKcal} / ${chosen.allowance}`,
           slotLeft >= 0 ? fill(t('log_left_for'), { kcal: slotLeft, slot: chosenLabel }) : fill(t('log_over_for'), { kcal: -slotLeft, slot: chosenLabel }),
           dayLeft >= 0 ? fill(t('log_left_today'), { kcal: dayLeft }) : fill(t('log_over_today'), { kcal: -dayLeft }),
         ].join(' · ')}

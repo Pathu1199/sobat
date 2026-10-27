@@ -8,6 +8,7 @@ import {
   autoFill,
   autoMealId,
   copyDay,
+  editedMeal,
   ensureWeek,
   fillFromPlan,
   mealFromLines,
@@ -22,9 +23,11 @@ import {
   viewMenu,
   viewWeek,
   withDayConfirmed,
+  withMealAdded,
   withMealConfirmed,
   withoutSavedMeal,
   withSavedMeal,
+  withSkipAdded,
   type DayMenu,
 } from '../menu';
 import { kcalForGrams } from '../nutrition';
@@ -294,6 +297,80 @@ describe('a real meal replaces the filled-in one', () => {
     expect(settleAuto(empty, [])).toBe(empty);
     const once = settleAuto([filled('lunch'), ate('m1', 'lunch', 'manual'), filled('dinner')], []);
     expect(settleAuto(once, [])).toBe(once);
+  });
+
+  it('a confirmed meal and a hand-typed one in the same slot and date both stay while a filled-in one there goes', () => {
+    const confirmed: Meal = { ...filled('lunch'), source: 'plan' };
+    const real = ate('m1', 'lunch', 'manual');
+    const stray: Meal = { ...filled('lunch'), id: 'auto-stray' };
+    expect(settleAuto([confirmed, real, stray, filled('dinner')], [])).toEqual([confirmed, real, filled('dinner')]);
+  });
+});
+
+describe('editing a meal', () => {
+  const base: Meal = { id: 'a', at: '2026-10-27T07:30:00.000Z', date: '2026-10-27', type: 'lunch', slotId: 'lunch', items: [], kcal: 600, protein: 20 };
+  const edit = (m: Meal): Meal => ({ ...m, kcal: 450, protein: 15 });
+
+  it('a filled-in meal the person corrects is confirmed, so a later meal or a sync never takes it away', () => {
+    const prev: Meal = { ...base, source: 'auto' };
+    expect(editedMeal(prev, edit(prev))).toEqual({ ...edit(prev), source: 'plan' });
+  });
+
+  it('any other meal keeps its source, and comes back as it was given', () => {
+    for (const source of ['manual', 'plan', undefined] as const) {
+      const prev: Meal = { ...base, source };
+      const next = edit(prev);
+      expect(editedMeal(prev, next)).toBe(next);
+      expect(editedMeal(prev, next).source).toBe(source);
+    }
+  });
+});
+
+describe('adding a meal to the state', () => {
+  const d = '2026-10-27';
+  const at = (hhmm: string, date = d) => new Date(`${date}T${hhmm}:00`);
+  const real = (id: string, slotId: string | undefined, hhmm: string, date = d): Meal => ({ id, at: at(hhmm, date).toISOString(), date, type: 'snack', slotId, items: [], kcal: 300, protein: 10, source: 'manual' });
+  const filled = (slotId: string, date = d): Meal => ({ id: autoMealId(date, slotId), at: at('13:00', date).toISOString(), date, type: 'lunch', slotId, items: [], kcal: 600, protein: 20, source: 'auto' });
+  const state = (meals: Meal[], slotSkips: SlotSkip[] = []) => ({ routine, meals, slotSkips });
+
+  it('a slot marked skipped is no longer skipped once a meal is eaten in it', () => {
+    const out = withMealAdded(state([], addSkip([], d, 'lunch')), real('m1', 'lunch', '13:30'), 1600, at('13:30'));
+    expect(out.slotSkips).toEqual([]);
+    expect(out.meals.map((m) => m.id)).toEqual(['m1']);
+  });
+
+  it('a meal on a past date clears the skip of its own date only, and another slot\'s skip stays', () => {
+    const skips = addSkip(addSkip(addSkip([], '2026-10-26', 'lunch'), d, 'lunch'), '2026-10-26', 'dinner');
+    const out = withMealAdded(state([], skips), real('m1', 'lunch', '13:30', '2026-10-26'), 1600, at('10:00'));
+    expect(out.slotSkips.map((s) => s.id)).toEqual(['2026-10-27:lunch', '2026-10-26:dinner']);
+    const other = addSkip([], d, 'dinner');
+    expect(withMealAdded(state([], other), real('m2', 'lunch', '13:30'), 1600, at('13:30')).slotSkips).toBe(other);
+  });
+
+  it('a meal that names no slot gets the one it is eaten in; one that names its slot keeps it', () => {
+    const now = at('13:30');
+    expect(withMealAdded(state([]), real('m1', undefined, '13:30'), 1600, now).meals[0]).toMatchObject({ slotId: 'lunch', type: 'lunch' });
+    expect(withMealAdded(state([]), real('m2', 'dinner', '13:30'), 1600, now).meals[0]).toMatchObject({ slotId: 'dinner', type: 'snack' });
+  });
+
+  it('the meal the app filled in that slot goes, whether the new meal names the slot or is routed there', () => {
+    const named = withMealAdded(state([filled('lunch'), filled('lunch', '2026-10-26')]), real('m1', 'lunch', '15:00'), 1600, at('15:00'));
+    expect(named.meals.map((m) => m.id)).toEqual(['auto-2026-10-26-lunch', 'm1']);
+    const routed = withMealAdded(state([filled('lunch')]), real('m2', undefined, '15:00'), 1600, at('15:00'));
+    expect(routed.meals.map((m) => [m.id, m.slotId])).toEqual([['m2', 'lunch']]);
+  });
+});
+
+describe('skipping a slot', () => {
+  it('drops the meal the app filled in that slot on that date, and nothing else; skipping again changes nothing', () => {
+    const filled = (slotId: string, date: string): Meal => ({ id: autoMealId(date, slotId), at: `${date}T07:30:00.000Z`, date, type: 'lunch', slotId, items: [], kcal: 600, protein: 20, source: 'auto' });
+    const before = { meals: [filled('lunch', '2026-10-27'), filled('dinner', '2026-10-27'), filled('lunch', '2026-10-26')], slotSkips: [] as SlotSkip[] };
+    const out = withSkipAdded(before, '2026-10-27', 'lunch');
+    expect(out.slotSkips).toEqual([{ id: '2026-10-27:lunch', date: '2026-10-27', slotId: 'lunch' }]);
+    expect(out.meals.map((m) => m.id)).toEqual(['auto-2026-10-27-dinner', 'auto-2026-10-26-lunch']);
+    const again = withSkipAdded(out, '2026-10-27', 'lunch');
+    expect(again.slotSkips).toBe(out.slotSkips);
+    expect(again.meals).toBe(out.meals);
   });
 });
 
