@@ -10,12 +10,15 @@ import {
   daysAway,
   lastLogDate,
   missedDays,
+  PENDING_LIMIT,
+  pendingFit,
   plannedReminders,
   promptOutcome,
   reportMonday,
   reportText,
   tapPlan,
   tapRoute,
+  weeklyReport,
   weekReport,
   type ReminderInput,
 } from '../reminders';
@@ -79,11 +82,17 @@ describe('plannedReminders: the meal-time prompt', () => {
   });
 
   it('a slot planned empty gets no prompt; one whose plan is not known gets the plain question, without the button', () => {
-    const empty = plannedReminders({ ...base, plannedKcal: { ...plannedKcal, '2026-10-12:dinner': 0 } }).filter((x) => x.date === '2026-10-12');
+    const empty = plannedReminders({ ...base, plannedKcal: { ...plannedKcal, '2026-10-12:dinner': null } }).filter((x) => x.date === '2026-10-12');
     expect(empty.map((x) => x.id)).toEqual(['slot:lunch:2026-10-12']);
     const plain = plannedReminders({ ...base, plannedKcal: {} })[0];
     expect(plain).toMatchObject({ id: 'slot:lunch:2026-10-12', title: 'lunch?', body: 'slot_prompt' });
     expect(plain.category).toBeUndefined();
+  });
+
+  it('a slot is planned by its lines, as the record reads it: lines that add up to no calories (black tea) still get the prompt', () => {
+    const tea = plannedReminders({ ...base, plannedKcal: { ...plannedKcal, '2026-10-12:dinner': 0 } }).filter((x) => x.date === '2026-10-12');
+    expect(tea.map((x) => x.id)).toEqual(['slot:lunch:2026-10-12', 'slot:dinner:2026-10-12']);
+    expect(tea[1]).toMatchObject({ title: 'dinner · 0 kcal', body: 'prompt_body', category: 'meal' });
   });
 
   it('writes a big plan with its thousands', () => {
@@ -218,6 +227,15 @@ describe('plannedReminders: fill in yesterday', () => {
     const r = plannedReminders({ ...on, nowMinutes: 0, quietEndHour: 10, records: { '2026-10-11': 'partial', '2026-10-12': 'full' } });
     expect(r.map((x) => x.time)).toEqual(['10:00']);
   });
+
+  it('asks to look at yesterday, not that meals are missing: the meals the app fills in from the plan may have completed it by nine', () => {
+    expect(makeT('en')('rem_fill_body')).toBe('Take a look at yesterday: confirm what was filled in from the plan and add anything missing.');
+    for (const lang of ['mr', 'hi'] as const) {
+      const words = makeT(lang)('rem_fill_body');
+      expect(words, lang).not.toBe(makeT('en')('rem_fill_body'));
+      expect(words, lang).not.toMatch(/[\u0966-\u096F\u2014{}]/);
+    }
+  });
 });
 
 describe('plannedReminders: plan next week and the weekly report', () => {
@@ -233,6 +251,11 @@ describe('plannedReminders: plan next week and the weekly report', () => {
     expect(plannedReminders({ ...quiet, today: '2026-10-13', report: { monday: '2026-10-19', text: '5 of 7 full' } })).toEqual([
       { id: 'report:2026-10-19', date: '2026-10-19', time: '09:00', title: 'rem_report_title', body: '5 of 7 full', data: { kind: 'report', date: '2026-10-19' } },
     ]);
+  });
+
+  it('a report worked out on a Monday after nine is planned for next Monday, a week ahead', () => {
+    const r = plannedReminders({ ...quiet, today: '2026-10-12', nowMinutes: 10 * 60, report: { monday: '2026-10-19', text: 'rem_report_ready' } });
+    expect(r.map((x) => [x.id, x.time])).toEqual([['report:2026-10-19', '09:00']]);
   });
 });
 
@@ -309,6 +332,45 @@ describe('weekReport: the week before a Monday, by the rules Progress uses', () 
     expect(weekReport({ ...input, meals: [{ date: '2026-10-19', kcal: 900 }], weights: weights.filter((w) => w.date < '2026-10-12') })).toBeNull();
   });
 
+  // The report as it is planned at an open: its words are fixed then, and the phone shows them on Monday without asking again.
+  const plan = { since: input.since, recordOn, meals, weights, goal: 1850, t };
+
+  it('worked out on Sunday 14:00, before the week has ended, carries no numbers: Progress will count the days logged after it', () => {
+    expect(weeklyReport({ ...plan, today: '2026-10-18', nowMinutes: 14 * 60 })).toEqual({ monday: '2026-10-19', text: 'rem_report_ready' });
+    expect(weeklyReport({ ...plan, today: '2026-10-14', nowMinutes: 9 * 60 })).toEqual({ monday: '2026-10-19', text: 'rem_report_ready' });
+  });
+
+  it('worked out on the Monday before nine, once the week has ended, carries the numbers, judged on that Monday', () => {
+    const r = weeklyReport({ ...plan, today: '2026-10-19', nowMinutes: 8 * 60 });
+    expect(r).toEqual({ monday: '2026-10-19', text: reportText(weekReport({ ...input, today: '2026-10-19' })!, t) });
+    expect(r!.text).toMatch(/^3 of 6 full · average 1,383, goal 1,850/);
+    // Through nine o'clock's own minute, and the moment follows the end of quiet hours.
+    expect(weeklyReport({ ...plan, today: '2026-10-19', nowMinutes: 9 * 60 })!.text).toBe(r!.text);
+    expect(weeklyReport({ ...plan, today: '2026-10-19', nowMinutes: 10 * 60, atMinutes: 11 * 60 })!.text).toBe(r!.text);
+  });
+
+  it('worked out on a Monday after nine, plans next Monday\'s, without numbers', () => {
+    expect(weeklyReport({ ...plan, today: '2026-10-19', nowMinutes: 10 * 60 })).toEqual({ monday: '2026-10-26', text: 'rem_report_ready' });
+  });
+
+  it('sends none for a week with nothing in it, or when every part of it would be left out', () => {
+    expect(weeklyReport({ ...plan, today: '2026-10-19', nowMinutes: 10 * 60, meals: meals.filter((m) => m.date < '2026-10-19') })).toBeNull();
+    // Days before the start cannot be full, no day is complete, and one weigh-in shows no change: nothing to say.
+    const nothing = { ...plan, since: '2026-10-19', recordOn: () => ({ state: 'partial', fromPlan: false, nothingEaten: false }) as DayRecord, weights: [{ date: '2026-10-18', kg: 78.6 }] };
+    expect(reportText(weekReport({ ...input, ...nothing, today: '2026-10-19' })!, t)).toBe('');
+    expect(weeklyReport({ ...nothing, today: '2026-10-19', nowMinutes: 8 * 60 })).toBeNull();
+    expect(weeklyReport({ ...nothing, today: '2026-10-18', nowMinutes: 14 * 60 })).toBeNull();
+  });
+
+  it('says the week is ready in English, Marathi and Hindi, with no number in it', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const words = makeT(lang)('rem_report_ready');
+      expect(words, lang).not.toBe('rem_report_ready');
+      expect(words, lang).not.toMatch(/[0-9\u0966-\u096F\u2014{}]/);
+    }
+    expect(makeT('en')('rem_report_ready')).toBe('Your week is ready. See how it went on Progress.');
+  });
+
   it('goes out on the coming Monday: today until nine has passed', () => {
     expect(reportMonday('2026-10-19', 8 * 60)).toBe('2026-10-19');
     expect(reportMonday('2026-10-19', 9 * 60)).toBe('2026-10-19');
@@ -354,6 +416,17 @@ describe('a tap on a notification', () => {
     expect(tapRoute({}, '2026-10-12')).toBe('/');
   });
 
+  it('a daily reminder opens its own page: the check-in, Today for water, the review and a break, and the day\'s line where it is shown', () => {
+    expect(tapRoute({ kind: 'sleep' }, '2026-10-12')).toBe('/sleep');
+    expect(tapRoute({ kind: 'water' }, '2026-10-12')).toBe('/');
+    expect(tapRoute({ kind: 'review' }, '2026-10-12')).toBe('/');
+    expect(tapRoute({ kind: 'break' }, '2026-10-12')).toBe('/');
+    // The day's line opens Today while its card is on Today, and Mind otherwise.
+    expect(tapRoute({ kind: 'mantra' }, '2026-10-12', { mantraOnToday: true })).toBe('/');
+    expect(tapRoute({ kind: 'mantra' }, '2026-10-12', { mantraOnToday: false })).toBe('/mind');
+    expect(tapRoute({ kind: 'mantra' }, '2026-10-12')).toBe('/mind');
+  });
+
   // A meal-time prompt for lunch on 12 October, tapped on its button or its body.
   const prompt = { kind: 'slot', date: '2026-10-12', slotId: 'lunch' };
   const tap = (action: 'open' | 'ate', o: { data?: Record<string, unknown>; today?: string; meals?: Meal[]; skips?: { id: string; date: string; slotId: string }[] } = {}) =>
@@ -374,6 +447,15 @@ describe('a tap on a notification', () => {
 
   it('never logs the meal twice: once the meal it logged is there, the same tap does nothing', () => {
     expect(tap('ate', { meals: [lunch('plan')] }).ate?.outcome).toEqual({ kind: 'none' });
+  });
+
+  it('a tap on a daily reminder goes through the same plan: its page, and nothing logged', () => {
+    const daily = (data: Record<string, unknown>, mantraOnToday?: boolean) =>
+      tapPlan({ action: 'open', data, today: '2026-10-12', menuOn: (date) => ({ ...menu, date }), meals: [], skips: [], mantraOnToday });
+    expect(daily({ kind: 'sleep' })).toEqual({ route: '/sleep', ate: null });
+    expect(daily({ kind: 'water' })).toEqual({ route: '/', ate: null });
+    expect(daily({ kind: 'mantra' }, true)).toEqual({ route: '/', ate: null });
+    expect(daily({ kind: 'mantra' }, false)).toEqual({ route: '/mind', ate: null });
   });
 
   it('logs nothing into a day still to come, nor from a notification whose data is damaged or not a meal-time prompt', () => {
@@ -451,8 +533,55 @@ describe('dailyReminders', () => {
     expect(ids(dailyReminders({ ...day, sleepCheckin: false, water: true, dayReview: false, mantra: '' }))).toEqual(['sobat-water 15:00']);
   });
 
+  it('each one carries what a tap opens: the check-in, the day\'s line, water, the review and the long breaks', () => {
+    const all = dailyReminders(day);
+    const kinds = Object.fromEntries(all.filter((r) => !r.id.startsWith('sobat-long-break')).map((r) => [r.id, r.data]));
+    expect(kinds).toEqual({ 'sobat-sleep-checkin': { kind: 'sleep' }, 'sobat-mantra': { kind: 'mantra' }, 'sobat-water': { kind: 'water' }, 'sobat-day-review': { kind: 'review' } });
+    expect(longs(all).every((r) => r.data.kind === 'break')).toBe(true);
+  });
+
   it('never holds the old dinner reminder: the pattern is always on and its dinner slot asks; the id stays known so a device that holds it cancels it', () => {
     for (const quietStartHour of [20, 22, 23]) expect(dailyReminders({ ...day, quietStartHour }).some((r) => r.id === DAILY_IDS.dinner)).toBe(false);
     expect(Object.values(DAILY_IDS)).toContain('sobat-dinner');
+  });
+});
+
+describe('the phone\'s cap on pending notifications', () => {
+  const day = { active: true, sleepCheckin: true, water: true, dayReview: true, quietStartHour: 0, quietEndHour: 0, mantra: 'Steady.', nowMs: 0, t };
+  // Every fifteen minutes round the clock, with no quiet hours: 95 long breaks, more than the phone keeps on its own.
+  const often = { ...DEFAULT_BREAK_SETTINGS, quietStartHour: 0, quietEndHour: 0, long: { ...DEFAULT_BREAK_SETTINGS.long, everyMinutes: 15 } };
+  const isLong = (r: { id: string }) => r.id.startsWith('sobat-long-break');
+
+  it('is 64, as iOS keeps no more than that for an app and drops the rest without a word', () => {
+    expect(PENDING_LIMIT).toBe(64);
+  });
+
+  it('keeps the planned reminders first, then the daily ones and the office day, and leaves the long breaks what is left', () => {
+    expect(pendingFit(30, 6)).toEqual({ planned: 30, daily: 28 });
+    expect(pendingFit(0, 0)).toEqual({ planned: 0, daily: 64 });
+    expect(pendingFit(70, 6)).toEqual({ planned: 64, daily: 0 });
+    expect(pendingFit(60, 6)).toEqual({ planned: 60, daily: 0 });
+  });
+
+  it('cuts the long breaks to the room left, after the check-in, the line, water and the review, earliest first', () => {
+    const full = dailyReminders({ ...day, breaks: often });
+    expect(full.filter(isLong).length).toBeGreaterThan(PENDING_LIMIT);
+    const r = dailyReminders({ ...day, breaks: often, room: 10 });
+    expect(r).toHaveLength(10);
+    expect(r.slice(0, 4).map((x) => x.id)).toEqual(['sobat-sleep-checkin', 'sobat-mantra', 'sobat-water', 'sobat-day-review']);
+    expect(r.slice(4).map((x) => x.id)).toEqual(full.filter(isLong).slice(0, 6).map((x) => x.id));
+    expect(dailyReminders({ ...day, breaks: often, room: 2 }).map((x) => x.id)).toEqual(['sobat-sleep-checkin', 'sobat-mantra']);
+    expect(dailyReminders({ ...day, breaks: often, room: 0 })).toEqual([]);
+  });
+
+  it('never goes over 64 in all: a busy week of meal prompts, the office day and breaks every fifteen minutes', () => {
+    const six: Routine = { ...routine, slots: ['07:00', '09:00', '11:00', '13:00', '16:00', '19:30'].map((time, i) => slot(`s${i}`, 'snack', time, 10)) };
+    const planned = plannedReminders({ ...base, nowMinutes: 0, routine: six, plannedKcal: {}, fillYesterday: true, records: { '2026-10-11': 'partial', '2026-10-12': 'partial' }, report: { monday: '2026-10-19', text: 'x' } });
+    const office = 6;
+    const fit = pendingFit(planned.length, office);
+    const daily = dailyReminders({ ...day, breaks: often, room: fit.daily });
+    expect(fit.planned).toBe(planned.length);
+    expect(fit.planned + office + daily.length).toBe(PENDING_LIMIT);
+    expect(daily.filter((r) => !isLong(r))).toHaveLength(4);
   });
 });

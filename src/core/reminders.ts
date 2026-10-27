@@ -53,8 +53,13 @@ export type ReminderInput = {
   doneSlotIds: string[];
   /** Slots skipped ahead, on any day: none of them is prompted. */
   skips?: SlotSkip[];
-  /** Calories planned for each slot, by `${date}:${slotId}`. A slot planned empty (0) gets no prompt; one not in here gets the plain question. */
-  plannedKcal: Record<string, number>;
+  /**
+   * Calories planned for each slot, by `${date}:${slotId}`; null for a slot
+   * planned empty (no lines), which gets no prompt. A slot is planned by its
+   * lines, as the record reads it, so lines that add up to no calories (black
+   * tea) are still asked about. One not in here gets the plain question.
+   */
+  plannedKcal: Record<string, number | null>;
   /** The last day with a meal logged, today included; null when nothing was ever logged. */
   lastLogDate: ISODate | null;
   offDays: number[];
@@ -62,7 +67,15 @@ export type ReminderInput = {
   quietEndHour: number;
   lang: Lang;
   t: (key: string) => string;
-  /** `settings.reminders.fillYesterday`. */
+  /**
+   * `settings.reminders.fillYesterday`. It is worked out at an open, from the
+   * record as that open reads it, and the phone shows it later without asking
+   * again: so it covers only yesterday and today as this open sees them. A
+   * day after this open, which the app may never be opened on, gets none (the
+   * lines after days away speak for an absence), and on a day the app was
+   * opened the meals it fills in from the plan may complete yesterday before
+   * nine: its words ask to look and confirm, never that meals are missing.
+   */
   fillYesterday: boolean;
   /** The record of yesterday and today by date. Only a day partly filled in or empty gets a "fill in"; one not in here gets none. */
   records: Record<ISODate, DayRecordState>;
@@ -70,10 +83,28 @@ export type ReminderInput = {
   planWeek: boolean;
   /** Mondays of the weeks already looked over and saved on the plan screen. */
   reviewedWeeks: ISODate[];
-  /** The weekly report for the Monday it goes out; null while it is off or there is nothing to say. */
+  /** The weekly report for the Monday it goes out (`weeklyReport`); null while it is off or there is nothing to say. */
   report: { monday: ISODate; text: string } | null;
 };
 
+/** iOS keeps at most 64 pending notifications for an app and drops the rest without a word. */
+export const PENDING_LIMIT = 64;
+
+/**
+ * What fits under the phone's cap, in the order they matter: the meal-time
+ * prompts and the other planned reminders first (the soonest of them, as
+ * `plannedReminders` sorts them), then the office day's blocks and the daily
+ * reminders; the long breaks get what is left (`dailyReminders` with `room`).
+ * `planned` is how many of the planned list to hold, `daily` the room for the
+ * daily ones.
+ */
+export function pendingFit(planned: number, office: number, limit = PENDING_LIMIT): { planned: number; daily: number } {
+  const kept = Math.min(planned, limit);
+  return { planned: kept, daily: Math.max(0, limit - kept - office) };
+}
+
+/** Days planned ahead, today included: a week and a day, so a report worked out on a Monday after its moment is next Monday's. */
+const PLAN_DAYS = 8;
 /** Days of slot prompts, today included: a week away is not fifty prompts, and the phone's cap on pending notifications stays far off. */
 export const SLOT_DAYS = 3;
 /** Mornings with a "fill in yesterday": today's and tomorrow's. */
@@ -97,7 +128,7 @@ function hhmm(minutes: number): string {
 }
 
 export function plannedReminders(input: ReminderInput): Reminder[] {
-  const days = input.days ?? 7;
+  const days = input.days ?? PLAN_DAYS;
   const out: Reminder[] = [];
   const quiet = (minutes: number) => inQuietHours(Math.floor(minutes / 60), input.quietStartHour, input.quietEndHour);
   const slots = input.mealPrompt ? pattern(input.routine) : [];
@@ -116,7 +147,7 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
       if ((k === 0 && input.doneSlotIds.includes(p.id)) || skipped.includes(p.id)) continue;
       const kcal = input.plannedKcal[`${date}:${p.id}`];
       // Nothing planned there: nothing to ask about.
-      if (kcal === 0) continue;
+      if (kcal === null) continue;
       const label = slotLabel(p.slot, input.lang);
       const planned = kcal !== undefined;
       out.push({
@@ -217,12 +248,49 @@ export function reportMonday(today: ISODate, nowMinutes: number, atMinutes = MOR
   return addDays(today, (8 - wd) % 7 || 7);
 }
 
-/** Where a tap on a notification goes: Today on the day it is about, the plan screen at next week, or Progress for the report. */
-export function tapRoute(data: Record<string, unknown>, today: ISODate): string {
+/**
+ * The weekly report as an open can plan it. Its words are fixed when it is
+ * planned and the phone shows them on Monday without asking again, so it
+ * never states numbers Progress would contradict: only a report worked out
+ * once the week has ended (on the Monday itself, before its moment) carries
+ * them, judged on that Monday; one worked out earlier says only that the
+ * week is ready to see on Progress, since days logged after this open would
+ * change them. None for a week with nothing in it, or when every part of it
+ * would be left out.
+ */
+export function weeklyReport(input: {
+  today: ISODate;
+  nowMinutes: number;
+  /** The report's moment: nine, or when quiet hours end. */
+  atMinutes?: number;
+  since: ISODate;
+  recordOn: (date: ISODate) => DayRecord;
+  meals: Pick<Meal, 'date' | 'kcal'>[];
+  weights: WeightLog[];
+  goal: number;
+  t: (key: string) => string;
+}): { monday: ISODate; text: string } | null {
+  const monday = reportMonday(input.today, input.nowMinutes, input.atMinutes);
+  const ended = input.today === monday;
+  const r = weekReport({ monday, today: ended ? monday : input.today, since: input.since, recordOn: input.recordOn, meals: input.meals, weights: input.weights, goal: input.goal });
+  const text = r ? reportText(r, input.t) : '';
+  if (!text) return null;
+  return { monday, text: ended ? text : input.t('rem_report_ready') };
+}
+
+/**
+ * Where a tap on a notification goes: Today on the day it is about, the plan
+ * screen at next week, or Progress for the report; for a daily one, the
+ * check-in for the morning check-in, the day's line where it is shown (Today
+ * while its card is on Today, Mind otherwise), and Today for the rest.
+ */
+export function tapRoute(data: Record<string, unknown>, today: ISODate, opts: { mantraOnToday?: boolean } = {}): string {
   const date = isIsoDate(data.date) ? data.date : null;
   if (data.kind === 'slot' || data.kind === 'fill') return date && date !== today ? `/?date=${date}` : '/';
   if (data.kind === 'planweek') return date ? `/plan?date=${date}` : '/plan';
   if (data.kind === 'report') return '/progress';
+  if (data.kind === 'sleep') return '/sleep';
+  if (data.kind === 'mantra') return opts.mantraOnToday ? '/' : '/mind';
   return '/';
 }
 
@@ -260,16 +328,25 @@ export type TapPlan = {
  * nothing once it is settled, so a tap that arrives twice never logs twice;
  * and nothing is logged into a day still to come.
  */
-export function tapPlan(input: { action: 'open' | 'ate'; data: Record<string, unknown>; today: ISODate; menuOn: (date: ISODate) => DayMenu; meals: Meal[]; skips: SlotSkip[] }): TapPlan {
+export function tapPlan(input: {
+  action: 'open' | 'ate';
+  data: Record<string, unknown>;
+  today: ISODate;
+  menuOn: (date: ISODate) => DayMenu;
+  meals: Meal[];
+  skips: SlotSkip[];
+  /** The day's line has its card on Today (and is switched on): its tap opens Today rather than Mind. */
+  mantraOnToday?: boolean;
+}): TapPlan {
   const { data } = input;
-  const route = tapRoute(data, input.today);
+  const route = tapRoute(data, input.today, { mantraOnToday: input.mantraOnToday });
   if (input.action !== 'ate' || data.kind !== 'slot' || !isIsoDate(data.date) || typeof data.slotId !== 'string' || data.date > input.today) return { route, ate: null };
   const outcome = promptOutcome({ menu: input.menuOn(data.date), meals: input.meals, skips: input.skips, slotId: data.slotId });
   return { route, ate: { date: data.date, slotId: data.slotId, outcome } };
 }
 
-/** A reminder the OS repeats every day at one clock time, app closed or not. */
-export type DailyReminder = { id: string; hour: number; minute: number; title: string; body: string };
+/** A reminder the OS repeats every day at one clock time, app closed or not. `data.kind` says what a tap on it opens (`tapRoute`). */
+export type DailyReminder = { id: string; hour: number; minute: number; title: string; body: string; data: { kind: 'sleep' | 'mantra' | 'water' | 'review' | 'break' } };
 
 export type DailyInput = {
   /** False on a device that is signed out or reset: reminders belong to a person. */
@@ -286,6 +363,8 @@ export type DailyInput = {
   breaks: BreakSettings;
   nowMs: number;
   t: (key: string) => string;
+  /** Room left under the phone's cap (`pendingFit`): the fixed ones first, then the long breaks, earliest first. No cap when missing. */
+  room?: number;
 };
 
 /** `dinner` is no longer registered (the pattern is always on and its dinner slot asks); it stays here so a device that still holds it has it cancelled. */
@@ -299,14 +378,16 @@ export function dailyReminders(input: DailyInput): DailyReminder[] {
   const { t } = input;
   const out: DailyReminder[] = [];
   // Morning check-in, while last night is still fresh.
-  if (input.sleepCheckin) out.push({ id: DAILY_IDS.sleep, hour: 7, minute: 30, title: t('sleep_checkin'), body: t('bed_time') });
+  if (input.sleepCheckin) out.push({ id: DAILY_IDS.sleep, hour: 7, minute: 30, title: t('sleep_checkin'), body: t('bed_time'), data: { kind: 'sleep' } });
   // The day's line, at eight. Re-registered daily so it is that day's line.
-  if (input.mantra) out.push({ id: DAILY_IDS.mantra, hour: 8, minute: 0, title: t('mantra_title'), body: input.mantra });
+  if (input.mantra) out.push({ id: DAILY_IDS.mantra, hour: 8, minute: 0, title: t('mantra_title'), body: input.mantra, data: { kind: 'mantra' } });
   // A single mid-afternoon water prompt; the in-app engine handles the rest.
-  if (input.water) out.push({ id: DAILY_IDS.water, hour: 15, minute: 0, title: t('add_water'), body: t('act_drink_water') });
+  if (input.water) out.push({ id: DAILY_IDS.water, hour: 15, minute: 0, title: t('add_water'), body: t('act_drink_water'), data: { kind: 'water' } });
   // The day recap, just before things wind down.
-  if (input.dayReview) out.push({ id: DAILY_IDS.review, hour: 21, minute: 30, title: t('day_review'), body: t('write_review') });
-  return [...out, ...longBreaks(input)];
+  if (input.dayReview) out.push({ id: DAILY_IDS.review, hour: 21, minute: 30, title: t('day_review'), body: t('write_review'), data: { kind: 'review' } });
+  const room = Math.max(0, input.room ?? Infinity);
+  const fixed = out.slice(0, room);
+  return [...fixed, ...longBreaks(input).slice(0, room - fixed.length)];
 }
 
 /**
@@ -327,7 +408,7 @@ function longBreaks(input: DailyInput): DailyReminder[] {
     const at = m % 1440;
     const hour = Math.floor(at / 60);
     if (inQuietHours(hour, br.quietStartHour, br.quietEndHour) || inQuietHours(hour, input.quietStartHour, input.quietEndHour)) continue;
-    out.push({ id: `${LONG_BREAK_ID}@${hhmm(at)}`, hour, minute: at % 60, title: input.t('brk_long'), body: input.t('brk_long_hint') });
+    out.push({ id: `${LONG_BREAK_ID}@${hhmm(at)}`, hour, minute: at % 60, title: input.t('brk_long'), body: input.t('brk_long_hint'), data: { kind: 'break' } });
   }
   return out;
 }

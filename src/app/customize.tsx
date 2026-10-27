@@ -9,7 +9,7 @@ import type { TabId, TodayCardId } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
-import { useAnnounce } from '../ui/announce';
+import { sayOnPhone, useAnnounce } from '../ui/announce';
 import { Btn, Card, Divider, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
 import { C, F, lh, S } from '../ui/theme';
 
@@ -23,8 +23,8 @@ type IconName = keyof typeof Ionicons.glyphMap;
  * The day's line is offered while it is switched on in Settings. Reset puts
  * the default back, with Undo. Holding a tab on the bar or in the sidebar,
  * and Me's Customize row, open it. A screen reader hears the replace question
- * as it opens and each card's new place after a move, and the focus stays on
- * the moved card's button.
+ * as it opens and each card's new place after a move (on the phone once the
+ * focus is back), and the focus stays on the moved card's button.
  */
 export default function CustomizeScreen() {
   const app = useApp();
@@ -42,16 +42,21 @@ export default function CustomizeScreen() {
   const { announce, region } = useAnnounce();
   // Each card's up and down buttons, so the focus can go back to the one moved.
   const moveButtons = useRef(new Map<string, View>());
-  const [moved, setMoved] = useState<{ id: TodayCardId; focus: 'up' | 'down' } | null>(null);
+  const [moved, setMoved] = useState<{ id: TodayCardId; focus: 'up' | 'down'; line: string } | null>(null);
   const tabName = (id: TabId) => t(extraItem(id).labelKey);
   const cardName = (id: TodayCardId) => t(`cust_card_${id}`);
 
   // After a move the card's button may have been taken out of the page and put back: the focus goes back to it.
+  // On the phone the new place is said after that, here: TalkBack drops a line said before the focus moves.
   useEffect(() => {
-    const button = moved ? moveButtons.current.get(`${moved.id}:${moved.focus}`) : undefined;
-    if (!button) return;
-    if (Platform.OS === 'web') (button as unknown as { focus?: () => void }).focus?.();
-    else AccessibilityInfo.sendAccessibilityEvent(button, 'focus');
+    if (!moved) return;
+    const button = moveButtons.current.get(`${moved.id}:${moved.focus}`);
+    if (Platform.OS === 'web') {
+      (button as unknown as { focus?: () => void } | undefined)?.focus?.();
+      return;
+    }
+    if (button) AccessibilityInfo.sendAccessibilityEvent(button, 'focus');
+    sayOnPhone(moved.line);
   }, [moved]);
 
   function tapTab(id: TabId) {
@@ -83,8 +88,10 @@ export default function CustomizeScreen() {
     setCards(next);
     const place = afterMove(next, id, by, mantraOn);
     if (!place) return;
-    setMoved({ id, focus: place.focus });
-    announce(fill(t('cust_moved'), { card: cardName(id), n: place.n, m: place.m }));
+    const line = fill(t('cust_moved'), { card: cardName(id), n: place.n, m: place.m });
+    setMoved({ id, focus: place.focus, line });
+    // The web reads its region as the words appear; the phone says it once the focus has moved (the effect above).
+    if (Platform.OS === 'web') announce(line);
   }
 
   function reset() {

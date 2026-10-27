@@ -1093,10 +1093,10 @@ const en: Dict = {
   chapter_stale: 'Last weigh-in {date}. If your weight has changed since, weigh in first.',
   chapter_confirm: 'Start from today', chapter_started: 'A new chapter starts today',
   prompt_title: '{slot} · {kcal} kcal', prompt_body: 'Eaten as planned? Tap the button, or open Sobat to change it.',
-  rem_fill_title: 'Fill in yesterday', rem_fill_body: 'Some of yesterday\'s meals are missing. It takes a minute.',
+  rem_fill_title: 'Fill in yesterday', rem_fill_body: 'Take a look at yesterday: confirm what was filled in from the plan and add anything missing.',
   rem_planweek_title: 'Plan next week', rem_planweek_body: 'Look over next week\'s menu and save it.',
   rem_report_title: 'Your week', rem_report_full: '{n} of {m} days complete', rem_report_avg: 'average {avg} kcal a day, goal {goal}',
-  rem_report_weight: 'weight {kg} kg in {weeks} weeks',
+  rem_report_weight: 'weight {kg} kg in {weeks} weeks', rem_report_ready: 'Your week is ready. See how it went on Progress.',
   prompt_logged: 'Logged as planned', prompt_already: 'Already on the record',
 };
 
@@ -2195,10 +2195,10 @@ const mr: Dict = {
   chapter_stale: 'शेवटचं वजन {date}. तेव्हापासून वजन बदललं असेल तर आधी वजन नोंदवा.',
   chapter_confirm: 'आजपासून सुरू करा', chapter_started: 'आजपासून नवा अध्याय सुरू',
   prompt_title: '{slot} · {kcal} kcal', prompt_body: 'ठरल्याप्रमाणे खाल्लं? बटण दाबा, किंवा बदलण्यासाठी Sobat उघडा.',
-  rem_fill_title: 'कालचं भरा', rem_fill_body: 'कालची काही जेवणं नोंदवायची राहिली आहेत. एक मिनिट लागेल.',
+  rem_fill_title: 'कालचं भरा', rem_fill_body: 'कालचा दिवस एकदा पाहा: नियोजनावरून भरलेलं पक्कं करा आणि राहिलेलं जोडा.',
   rem_planweek_title: 'पुढच्या आठवड्याचं नियोजन', rem_planweek_body: 'पुढच्या आठवड्याचा मेन्यू पाहा आणि जतन करा.',
   rem_report_title: 'तुमचा आठवडा', rem_report_full: '{m} पैकी {n} दिवस पूर्ण', rem_report_avg: 'रोज सरासरी {avg} kcal, लक्ष्य {goal}',
-  rem_report_weight: 'वजन {weeks} आठवड्यांत {kg} किलो',
+  rem_report_weight: 'वजन {weeks} आठवड्यांत {kg} किलो', rem_report_ready: 'तुमचा आठवडा तयार आहे. तो कसा गेला ते प्रगती पानावर पाहा.',
   prompt_logged: 'ठरल्याप्रमाणे नोंदलं', prompt_already: 'आधीच नोंदलेलं आहे',
 };
 
@@ -3295,10 +3295,10 @@ const hi: Dict = {
   chapter_stale: 'आख़िरी वज़न {date}. अगर तब से वज़न बदला है, तो पहले वज़न दर्ज करें.',
   chapter_confirm: 'आज से शुरू करें', chapter_started: 'आज से नया अध्याय शुरू',
   prompt_title: '{slot} · {kcal} kcal', prompt_body: 'तय के मुताबिक खाया? बटन दबाएँ, या बदलने के लिए Sobat खोलें.',
-  rem_fill_title: 'कल का भरें', rem_fill_body: 'कल के कुछ खाने दर्ज होने बाकी हैं. एक मिनट लगेगा.',
+  rem_fill_title: 'कल का भरें', rem_fill_body: 'कल का दिन एक बार देखें: प्लान से भरा हुआ पक्का करें और जो बाकी है जोड़ें.',
   rem_planweek_title: 'अगले हफ़्ते की योजना', rem_planweek_body: 'अगले हफ़्ते का मेन्यू देखें और सहेजें.',
   rem_report_title: 'आपका हफ़्ता', rem_report_full: '{m} में से {n} दिन पूरे', rem_report_avg: 'रोज़ औसत {avg} kcal, लक्ष्य {goal}',
-  rem_report_weight: 'वज़न {weeks} हफ़्तों में {kg} किलो',
+  rem_report_weight: 'वज़न {weeks} हफ़्तों में {kg} किलो', rem_report_ready: 'आपका हफ़्ता तैयार है. कैसा रहा, प्रगति पेज पर देखें.',
   prompt_logged: 'तय के मुताबिक दर्ज किया', prompt_already: 'पहले से दर्ज है',
 };
 

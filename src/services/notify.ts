@@ -170,14 +170,14 @@ async function deliver(title: string, body: string): Promise<void> {
   await n.scheduleNotificationAsync({ content: { title, body }, trigger: null });
 }
 
-/** A daily reminder at a fixed clock time, e.g. the morning sleep check-in. */
-export async function scheduleDaily(id: string, hour: number, minute: number, title: string, body: string): Promise<void> {
+/** A daily reminder at a fixed clock time, e.g. the morning sleep check-in. `data` rides along for a tap. */
+export async function scheduleDaily(id: string, hour: number, minute: number, title: string, body: string, data?: Record<string, string>): Promise<void> {
   const n = loadNative();
   if (!n) return;
   await cancel(id);
   await n.scheduleNotificationAsync({
     identifier: id,
-    content: { title, body },
+    content: { title, body, ...(data ? { data } : {}) },
     trigger: { type: n.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: 'sobat' },
   });
 }

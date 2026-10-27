@@ -4,7 +4,8 @@ import type { BreakSettings } from '../core/breaks';
 import { addDays } from '../core/date';
 import { settledSlotIds, slotStates } from '../core/pattern';
 import type { DayRecordState } from '../core/record';
-import { DAILY_IDS, dailyReminders, LONG_BREAK_ID, lastLogDate, MORNING_HOUR, plannedReminders, reportMonday, reportText, SLOT_DAYS, weekReport, type Reminder } from '../core/reminders';
+import { DAILY_IDS, dailyReminders, LONG_BREAK_ID, lastLogDate, MORNING_HOUR, pendingFit, plannedReminders, SLOT_DAYS, weeklyReport, type Reminder } from '../core/reminders';
+import { orderedBlocks } from '../core/schedule';
 import { stripSince } from '../core/weekStrip';
 import { mealTotals } from '../core/weekPlan';
 import { makeT } from '../i18n';
@@ -31,6 +32,8 @@ const osId = (r: Reminder) => `${PLANNED}${r.id}@${signature(r)}`;
 // Runs are chained so two never interleave their cancels and adds.
 let chain: Promise<void> = Promise.resolve();
 let dailyChain: Promise<void> = Promise.resolve();
+// The daily list last registered in full, so a run that would register the same list again does nothing.
+let dailyHeld = '';
 
 /**
  * Whether this device may hold reminders, and whether that is known yet.
@@ -50,10 +53,13 @@ export function useReminderGate(): { known: boolean; active: boolean } {
 /**
  * Registers the reminders that must fire while the app is closed, each kind
  * by its own switch in Settings (core/reminders.ts says what and when). The
- * daily ones are re-registered on change; the meal-time prompts and the other
- * planned ones are reconciled against what the OS still holds, so a logged
- * slot's prompt is cancelled and a quiet week stays covered. The web and the
- * PC keep their in-app prompts instead.
+ * daily ones are re-registered when their list changes; the meal-time prompts
+ * and the other planned ones are reconciled against what the OS still holds,
+ * so a logged slot's prompt is cancelled and a quiet week stays covered. All
+ * of them, with the office day's blocks, stay under the phone's cap of 64
+ * pending notifications (`pendingFit`): the planned ones first, the long
+ * breaks cut to what is left. The web and the PC keep their in-app prompts
+ * instead.
  */
 export function useScheduledReminders() {
   const app = useApp();
@@ -71,40 +77,8 @@ export function useScheduledReminders() {
   const recordOn = useRecordOn();
   const { known, active } = useReminderGate();
   const { sleepCheckin, water, dayReview } = reminders;
-
-  // The daily ones: whatever the plan does not hold is cancelled, so a sign-out
-  // or a reset clears them and the repeating long break older builds left goes too.
-  useEffect(() => {
-    if (Platform.OS === 'web' || !known) return;
-    const want = dailyReminders({
-      active,
-      sleepCheckin,
-      water,
-      dayReview,
-      quietStartHour,
-      quietEndHour,
-      mantra: mantraText,
-      breaks: JSON.parse(breaksJson) as BreakSettings,
-      nowMs: Date.now(),
-      t: makeT(lang),
-    });
-    let stale = false;
-    dailyChain = dailyChain
-      .then(async () => {
-        if (stale) return;
-        await setupAndroidChannel();
-        const ids = new Set(want.map((r) => r.id));
-        for (const id of [...Object.values(DAILY_IDS), LONG_BREAK_ID]) if (!ids.has(id)) await cancel(id);
-        for (const id of await scheduledIds()) if (id.startsWith(LONG_BREAK_ID) && !ids.has(id)) await cancel(id);
-        for (const r of want) await scheduleDaily(r.id, r.hour, r.minute, r.title, r.body);
-      })
-      .catch(() => {
-        // Permission refused or the OS declined. The app still works.
-      });
-    return () => {
-      stale = true;
-    };
-  }, [known, active, sleepCheckin, water, dayReview, quietStartHour, quietEndHour, lang, breaksJson, mantraText]);
+  // The office day's blocks, registered daily by useWorkSchedule: they count against the phone's cap too.
+  const officeCount = active && app.state.schedule.enabled ? orderedBlocks(app.state.schedule).length : 0;
 
   // "Ate as planned" on the meal-time prompt, in the person's language; registered before the prompts fire, kept current on a language change.
   useEffect(() => {
@@ -123,12 +97,12 @@ export function useScheduledReminders() {
   }, [routine, app.state.meals, today, app.targets.kcal, minute, app.skippedToday]);
   const lastLog = useMemo(() => lastLogDate(app.state.meals, today), [app.state.meals, today]);
 
-  // Each slot's planned calories on the days that get prompts, as one string for the same reason.
+  // Each slot's planned calories on the days that get prompts, null for a slot with no lines (planned by its lines, as the record reads it), as one string for the same reason.
   const plannedJson = useMemo(() => {
-    const out: Record<string, number> = {};
+    const out: Record<string, number | null> = {};
     for (let k = 0; k < SLOT_DAYS; k++) {
       const date = addDays(today, k);
-      for (const m of menuOn(date).meals) out[`${date}:${m.id}`] = mealTotals(m, planFoods).kcal;
+      for (const m of menuOn(date).meals) out[`${date}:${m.id}`] = m.lines.length > 0 ? mealTotals(m, planFoods).kcal : null;
     }
     return JSON.stringify(out);
   }, [menuOn, planFoods, today]);
@@ -139,14 +113,13 @@ export function useScheduledReminders() {
     return JSON.stringify({ [yesterday]: recordOn(yesterday).state, [today]: recordOn(today).state });
   }, [recordOn, today]);
 
-  // The coming Monday's report as things stand, by Progress's rules; every open works it out again.
+  // The coming Monday's report as this open can say it (numbers only once the week has ended), by Progress's rules; every open works it out again.
   const morning = Math.max(MORNING_HOUR, quietEndHour) * 60;
   const reportJson = useMemo(() => {
     if (!reminders.weeklyReport) return '';
-    const monday = reportMonday(today, minute, morning);
     const since = stripSince(onboardedOn, app.state.meals, today);
-    const r = weekReport({ monday, today, since, recordOn, meals: app.state.meals, weights: app.state.weights, goal: app.targets.kcal });
-    return r ? JSON.stringify({ monday, text: reportText(r, makeT(lang)) }) : '';
+    const r = weeklyReport({ today, nowMinutes: minute, atMinutes: morning, since, recordOn, meals: app.state.meals, weights: app.state.weights, goal: app.targets.kcal, t: makeT(lang) });
+    return r ? JSON.stringify(r) : '';
   }, [reminders.weeklyReport, today, minute, morning, onboardedOn, recordOn, app.state.meals, app.state.weights, app.targets.kcal, lang]);
 
   const anyOn = reminders.mealPrompt || reminders.away || reminders.fillYesterday || reminders.planWeek || reminders.weeklyReport;
@@ -161,7 +134,7 @@ export function useScheduledReminders() {
       onboardedOn,
       doneSlotIds: doneKey ? doneKey.split(',') : [],
       skips: app.state.slotSkips,
-      plannedKcal: JSON.parse(plannedJson) as Record<string, number>,
+      plannedKcal: JSON.parse(plannedJson) as Record<string, number | null>,
       lastLogDate: lastLog,
       offDays: offDays ?? [],
       quietStartHour,
@@ -197,8 +170,50 @@ export function useScheduledReminders() {
     reviewedWeeks,
     reportJson,
   ]);
+  // Under the phone's cap: the soonest planned ones, then room for the daily ones.
+  const fit = pendingFit(wanted.length, officeCount);
   // By value: the list is worked out again every minute, and only a real change is taken to the OS.
-  const wantedJson = JSON.stringify(wanted);
+  const wantedJson = JSON.stringify(wanted.slice(0, fit.planned));
+  const room = fit.daily;
+
+  // The daily ones: whatever the plan does not hold is cancelled, so a sign-out
+  // or a reset clears them and the repeating long break older builds left goes too.
+  useEffect(() => {
+    if (Platform.OS === 'web' || !known) return;
+    const want = dailyReminders({
+      active,
+      sleepCheckin,
+      water,
+      dayReview,
+      quietStartHour,
+      quietEndHour,
+      mantra: mantraText,
+      breaks: JSON.parse(breaksJson) as BreakSettings,
+      nowMs: Date.now(),
+      t: makeT(lang),
+      room,
+    });
+    const json = JSON.stringify(want);
+    let stale = false;
+    dailyChain = dailyChain
+      .then(async () => {
+        // The same list as the last one registered in full: the OS holds it already.
+        if (stale || json === dailyHeld) return;
+        await setupAndroidChannel();
+        const ids = new Set(want.map((r) => r.id));
+        for (const id of [...Object.values(DAILY_IDS), LONG_BREAK_ID]) if (!ids.has(id)) await cancel(id);
+        for (const id of await scheduledIds()) if (id.startsWith(LONG_BREAK_ID) && !ids.has(id)) await cancel(id);
+        for (const r of want) await scheduleDaily(r.id, r.hour, r.minute, r.title, r.body, r.data);
+        dailyHeld = json;
+      })
+      .catch(() => {
+        // Permission refused or the OS declined. The app still works, and the next run tries again.
+        dailyHeld = '';
+      });
+    return () => {
+      stale = true;
+    };
+  }, [known, active, sleepCheckin, water, dayReview, quietStartHour, quietEndHour, lang, breaksJson, mantraText, room]);
 
   // Runs once the store and the session are known, whoever is there: after a sign-out or a reset `wanted` is
   // empty and the planned week is cancelled. Never on a store that failed to load, whose empty state is not the person's.

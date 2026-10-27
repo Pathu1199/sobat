@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { slotBefore, undoSteps } from '../core/addSheet';
+import { cardsShown } from '../core/customize';
 import { tapPlan } from '../core/reminders';
 import { runUndo } from '../core/undo';
 import { makeT } from '../i18n';
@@ -17,11 +18,13 @@ const handled = new Set<string>();
 /**
  * Acts on a tap on a notification. The body opens the page it is about:
  * Today on that day for a meal-time prompt or "fill in yesterday", next
- * week's plan, or Progress for the report. "Ate as planned" logs that date's
- * slot from its plan through the store (database calories, with an Undo), or
- * confirms the meal the app filled in meanwhile, or does nothing for a slot
- * already settled; it says which, takes the notification off the tray, and
- * opens Today on that day (`tapPlan`). A day still to come gets nothing
+ * week's plan, or Progress for the report; a daily one opens its own page
+ * (the check-in, the day's line where it is shown, Today for the rest).
+ * "Ate as planned" logs that date's slot from its plan through the store
+ * (database calories, with an Undo), or confirms the meal the app filled in
+ * meanwhile, or does nothing for a slot already settled; it says which,
+ * takes the notification off the tray, and opens Today on that day
+ * (`tapPlan`). A day still to come gets nothing
  * logged. A tap that launched the app is read once the store and the session
  * are known; later ones come through the listener; each is acted on once.
  * Never on a device that holds nobody's data, and not on the web, which keeps
@@ -47,7 +50,9 @@ export function useNotificationResponses() {
       handled.add(r.key);
       const { app: a, fb: f } = latest.current;
       const t = makeT(a.state.profile.lang);
-      const plan = tapPlan({ action: r.action, data: r.data, today: a.today, menuOn: a.menuOn, meals: a.state.meals, skips: a.state.slotSkips });
+      const { todayCards, features } = a.state.settings;
+      const mantraOnToday = cardsShown(todayCards, features.mantra).on.some((c) => c.id === 'mantra');
+      const plan = tapPlan({ action: r.action, data: r.data, today: a.today, menuOn: a.menuOn, meals: a.state.meals, skips: a.state.slotSkips, mantraOnToday });
       if (plan.ate) {
         const { date, slotId, outcome } = plan.ate;
         if (outcome.kind === 'log') {
