@@ -1,5 +1,6 @@
 import { Redirect, Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Platform, useColorScheme, View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
@@ -48,6 +49,7 @@ function Themed({ children }: { children: React.ReactNode }) {
   const mode: ThemeMode = state.settings.appearance === 'system' ? (system === 'light' ? 'light' : 'dark') : state.settings.appearance;
   // Swap the palette before paint, then remount the tree so every component reads the new colours.
   const scale = state.settings.textScale || 1;
+  const lang = state.profile.lang;
   const [applied, setApplied] = useState<string>(`${themeMode()}-1`);
   useLayoutEffect(() => {
     applyTheme(mode);
@@ -57,10 +59,19 @@ function Themed({ children }: { children: React.ReactNode }) {
     setApplied(`${mode}-${scale}`);
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       document.documentElement.style.background = C.bg;
+      document.documentElement.style.colorScheme = mode;
       document.body.style.background = C.bg;
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', C.bg);
+      // Both theme-color tags (light and dark) take the chosen look, so the setting beats the phone's when they differ.
+      document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', C.bg));
+    } else {
+      // The root view behind the app, seen in screen transitions and behind the keyboard, takes the same colour.
+      SystemUI.setBackgroundColorAsync(C.bg).catch(() => {});
     }
   }, [mode, scale]);
+  // The page's language follows the profile, so screen readers and the browser read Marathi and Hindi as such.
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') document.documentElement.lang = lang;
+  }, [lang]);
   return <View key={applied} style={{ flex: 1, backgroundColor: C.bg }}>{children}</View>;
 }
 
@@ -98,7 +109,8 @@ function AppShell() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <StatusBar style={C.bg === '#F4F5F9' ? 'dark' : 'light'} />
+      {/* Dark icons on a light page, light icons on a dark one. AppShell remounts with the theme, so this is read fresh. */}
+      <StatusBar style={themeMode() === 'light' ? 'dark' : 'light'} />
       <Stack
         screenOptions={{
             headerStyle: { backgroundColor: C.bgAlt },

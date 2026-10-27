@@ -7,12 +7,13 @@ import { useApp } from '../store/AppProvider';
 import { Bar, Btn, Card, Divider, Empty, Field, Micro, Pill, Row, Screen, SectionHeader } from '../ui/components';
 import { C, F, lh } from '../ui/theme';
 
-const GROUPS: { type: MemoryType; icon: keyof typeof Ionicons.glyphMap; color: string }[] = [
-  { type: 'fact', icon: 'person-outline', color: C.accent },
-  { type: 'preference', icon: 'heart-outline', color: C.violet },
-  { type: 'goal', icon: 'flag-outline', color: C.cyan },
-  { type: 'correction', icon: 'create-outline', color: C.amber },
-  { type: 'episode', icon: 'calendar-outline', color: C.textFaint },
+// Colour names, not values: the palette changes with the theme, so the list reads C at render.
+const GROUPS: { type: MemoryType; icon: keyof typeof Ionicons.glyphMap; color: keyof typeof C }[] = [
+  { type: 'fact', icon: 'person-outline', color: 'accentText' },
+  { type: 'preference', icon: 'heart-outline', color: 'violet' },
+  { type: 'goal', icon: 'flag-outline', color: 'cyan' },
+  { type: 'correction', icon: 'create-outline', color: 'amber' },
+  { type: 'episode', icon: 'calendar-outline', color: 'textFaint' },
 ];
 
 const EXAMPLES: Record<string, string[]> = {
@@ -85,7 +86,7 @@ export default function MemoryScreen() {
                         justifyContent: 'center',
                         marginTop: 2,
                       }}>
-                      <Ionicons name={g.icon} size={14} color={g.color} />
+                      <Ionicons name={g.icon} size={14} color={C[g.color]} />
                     </View>
                     <View style={{ flex: 1, gap: 4 }}>
                       <Text style={{ color: m.source === 'user' ? C.text : C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>{m.text}</Text>

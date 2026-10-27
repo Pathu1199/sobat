@@ -9,7 +9,7 @@
       "sobat",
       "com.varad.sobat"
     ],
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0E1017",
@@ -37,15 +37,19 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0A0B10",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 120
+          "backgroundColor": "#F2F6F7",
+          "image": "./assets/images/android-icon-foreground.png",
+          "imageWidth": 192,
+          "dark": {
+            "backgroundColor": "#0B1014",
+            "image": "./assets/images/android-icon-foreground.png"
+          }
         }
       ],
       [
         "expo-notifications",
         {
-          "color": "#5B86F5",
+          "color": "#12A57F",
           "defaultChannel": "sobat"
         }
       ],
@@ -71,11 +75,7 @@
       "reactCompiler": true
     },
     "description": "Roz thoda, fit sada. Local-first health companion: calories, food photos, sleep, joint-safe fitness and gentle reminders. Runs on Android and Windows, uses your own Ollama for AI.",
-    "primaryColor": "#5B86F5",
-    "androidStatusBar": {
-      "barStyle": "light-content",
-      "backgroundColor": "#111F1C"
-    },
+    "primaryColor": "#12A57F",
     "extra": {
       "firebase": {
         "apiKey": "AIzaSyB3Q628mgS6-s_vSOsmAEEsNmu9gJXwBGs",

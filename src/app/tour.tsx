@@ -10,10 +10,11 @@ import { Btn } from '../ui/components';
 import { Logo } from '../ui/Logo';
 import { C, F, lh, M, MICRO } from '../ui/theme';
 
-const PAGES: { icon: keyof typeof Ionicons.glyphMap; color: string }[] = [
-  { icon: 'pie-chart-outline', color: C.accent },
-  { icon: 'restaurant-outline', color: C.cyan },
-  { icon: 'scale-outline', color: C.green },
+// Colour names, not values: the palette changes with the theme, so each page reads C at render.
+const PAGES: { icon: keyof typeof Ionicons.glyphMap; color: keyof typeof C }[] = [
+  { icon: 'pie-chart-outline', color: 'accentText' },
+  { icon: 'restaurant-outline', color: 'cyan' },
+  { icon: 'scale-outline', color: 'green' },
 ];
 
 /**
@@ -49,6 +50,7 @@ export default function TourScreen() {
   }
 
   const p = PAGES[page];
+  const tint = C[p.color];
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top + 16, paddingBottom: Math.max(insets.bottom, 16) + 8, paddingHorizontal: 24 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -60,9 +62,9 @@ export default function TourScreen() {
 
       <Animated.View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 22, opacity: fade, maxWidth: 520, alignSelf: 'center', width: '100%' }}>
         <View style={{ width: 96, height: 96, borderRadius: 28, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name={p.icon} size={40} color={p.color} />
+          <Ionicons name={p.icon} size={40} color={tint} />
         </View>
-        <Text style={[MICRO, { color: p.color }]}>{`${page + 1} / ${PAGES.length}`}</Text>
+        <Text style={[MICRO, { color: tint }]}>{`${page + 1} / ${PAGES.length}`}</Text>
         <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500', textAlign: 'center', lineHeight: lh(F.title) }}>{t(`tour_${page + 1}_t`)}</Text>
         <Text style={{ color: C.textDim, fontSize: F.title, lineHeight: lh(F.title), textAlign: 'center' }}>{t(`tour_${page + 1}_b`)}</Text>
       </Animated.View>
