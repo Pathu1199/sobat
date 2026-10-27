@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_STATE } from '../../store/defaults';
-import { applyCloud, bindStart, encodeSavedBase, forCloud, fromNewerApp, isPristine, landMerge, merge3, RoundStop, syncRound, type AccountFile, type RoundIO, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
+import { applyCloud, bindStart, encodeSavedBase, forCloud, fromNewerApp, inAccount, isPristine, landMerge, merge3, RoundStop, syncRound, type AccountFile, type RoundIO, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
 import type { AppState, Meal } from '../types';
 
 const meal = (id: string, at: string, kcal = 300): Meal => ({
@@ -178,19 +178,40 @@ describe('three-way merge of single values', () => {
 });
 
 describe('signing out', () => {
+  const ok = { configured: true, upToDate: true, force: false, loaded: true };
+
   it('with sync not set up nothing is in any account, so it asks first and never wipes the device', () => {
-    expect(signOutPlan({ configured: false, upToDate: false, force: false })).toBe('ask');
-    expect(signOutPlan({ configured: false, upToDate: true, force: false })).toBe('ask');
-    expect(signOutPlan({ configured: false, upToDate: false, force: true })).toBe('keep');
+    expect(signOutPlan({ ...ok, configured: false, upToDate: false })).toBe('ask');
+    expect(signOutPlan({ ...ok, configured: false })).toBe('ask');
+    expect(signOutPlan({ ...ok, configured: false, upToDate: false, force: true })).toBe('keep');
   });
 
   it('everything in the account: the device is handed back empty', () => {
-    expect(signOutPlan({ configured: true, upToDate: true, force: false })).toBe('wipe');
+    expect(signOutPlan(ok)).toBe('wipe');
   });
 
   it('changes still waiting: asks, and signing out anyway keeps them on the device', () => {
-    expect(signOutPlan({ configured: true, upToDate: false, force: false })).toBe('ask');
-    expect(signOutPlan({ configured: true, upToDate: false, force: true })).toBe('keep');
+    expect(signOutPlan({ ...ok, upToDate: false })).toBe('ask');
+    expect(signOutPlan({ ...ok, upToDate: false, force: true })).toBe('keep');
+  });
+
+  it('a store that could not be read is never wiped: what is on disk may be in no account', () => {
+    expect(signOutPlan({ ...ok, loaded: false })).toBe('ask');
+    expect(signOutPlan({ ...ok, loaded: false, force: true })).toBe('keep');
+  });
+});
+
+describe('what is in the account', () => {
+  const synced = used([meal('a', '2026-10-10T08:00:00.000Z')]);
+
+  it('only what the account was last seen holding: an edit made since is not in it, whatever the status line says', () => {
+    expect(inAccount(cloudOf(synced), synced)).toBe(true);
+    expect(inAccount(cloudOf(synced), { ...synced, settings: { ...synced.settings, waterGoalMl: 1234 } })).toBe(false);
+    expect(inAccount(null, synced)).toBe(false);
+  });
+
+  it('this device\'s own caches and machine settings are not the account\'s business', () => {
+    expect(inAccount(cloudOf(synced), { ...synced, chat: [{ id: 'c', role: 'user', text: 'hi', at: '' }], settings: { ...synced.settings, textScale: 1.3 } })).toBe(true);
   });
 });
 

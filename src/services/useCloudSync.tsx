@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
-import { bindStart, encodeSavedBase, forCloud, landMerge, readSavedBase, RoundStop, sameCloud, signOutPlan, syncRound, type CloudState } from '../core/sync';
+import { bindStart, encodeSavedBase, forCloud, inAccount, landMerge, readSavedBase, RoundStop, sameCloud, signOutPlan, syncRound, type CloudState } from '../core/sync';
 import { CLOUD_BASE_KEY, OWNER_KEY, useApp } from '../store/AppProvider';
-import { STATE_VERSION } from '../store/defaults';
+import { EMPTY_STATE, STATE_VERSION } from '../store/defaults';
 import { CloudError, cloudConfigured, deleteData, getData, putData } from './cloud';
 import { authApi, useAuth } from './useAuth';
 
@@ -71,6 +71,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const epoch = useRef(0);
   // Binds run one after another: two at once could each put the device's data aside.
   const binding = useRef<Promise<void>>(Promise.resolve());
+  // Set from a sign-out until the session is gone, so the account leaving is not bound again meanwhile.
+  const signingOut = useRef(false);
   const inFlight = useRef(false);
   const again = useRef(false);
   const stateRef = useRef(state);
@@ -154,7 +156,10 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
             if (!live()) throw new RoundStop('abandoned');
             if (!token) throw new CloudError(401, 'not_signed_in');
             await round(pull, token, uid, live);
-            setStatus('synced');
+            // An edit made while the round was out is not in the account yet; its push is already queued.
+            const now = await readNow();
+            if (!live()) throw new RoundStop('abandoned');
+            setStatus(inAccount(base.current, now) ? 'synced' : 'pending');
             setError(null);
             setLastSyncAt(new Date().toISOString());
           } catch (e) {
@@ -172,7 +177,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         inFlight.current = false;
       }
     },
-    [configured, round, fail],
+    [configured, round, readNow, fail],
   );
 
   // Bind to the account. Another account's data on the device is put aside
@@ -183,6 +188,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!ready || !stateReady) return;
     if (!user) {
+      signingOut.current = false;
       epoch.current += 1;
       boundUid.current = null;
       base.current = null;
@@ -193,12 +199,12 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       if (configured) setStatus('off');
       return;
     }
-    if (boundUid.current === user.uid) return;
+    if (boundUid.current === user.uid || signingOut.current) return;
     const uid = user.uid;
     let cancelled = false;
     binding.current = binding.current
       .then(async () => {
-        if (cancelled || boundUid.current === uid) return;
+        if (cancelled || boundUid.current === uid || signingOut.current) return;
         const [owner, saved] = await Promise.all([AsyncStorage.getItem(OWNER_KEY).catch(() => null), AsyncStorage.getItem(CLOUD_BASE_KEY).catch(() => null)]);
         if (cancelled) return;
         // The base is loaded before the first merge: without it, deletions and edits made elsewhere since the last run would be undone.
@@ -270,13 +276,26 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const syncNow = useCallback(() => sync({ pull: true }), [sync]);
 
   const eraseEverywhere = useCallback(async () => {
+    // Nothing still out may land on the emptied device or write the file back: dropped now, and again once it is gone.
+    epoch.current += 1;
+    if (pushTimer.current) clearTimeout(pushTimer.current);
     try {
       const token = await authApi.idToken();
-      if (token && configured) await deleteData(token);
-      base.current = null;
-      baseModifiedTime.current = null;
-      await AsyncStorage.removeItem(OWNER_KEY).catch(() => {});
+      const erased = configured && token !== null;
+      if (erased) await deleteData(token);
+      epoch.current += 1;
       resetAll();
+      if (erased && boundUid.current) {
+        // The account holds nothing now, and neither does the device: the next change is written as a new file.
+        base.current = forCloud(EMPTY_STATE);
+        baseModifiedTime.current = null;
+        setStatus('synced');
+        setError(null);
+      } else {
+        base.current = null;
+        baseModifiedTime.current = null;
+      }
+      // The device stays this account's: the owner tag is kept.
       return true;
     } catch (e) {
       fail(e);
@@ -286,11 +305,15 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(
     async (force = false): Promise<'ok' | 'unsynced'> => {
-      const plan = signOutPlan({ configured, upToDate, force });
+      // Not the status alone: it can be a moment behind an edit.
+      const allIn = status === 'synced' && inAccount(base.current, await readNow());
+      const plan = signOutPlan({ configured, upToDate: allIn, force, loaded: storageError !== 'load' });
       if (plan === 'ask') return 'unsynced';
       const uid = user?.uid ?? null;
+      signingOut.current = true;
       epoch.current += 1;
       boundUid.current = null;
+      if (pushTimer.current) clearTimeout(pushTimer.current);
       if (plan === 'wipe') {
         // Everything is in the account: hand the device back empty.
         await AsyncStorage.removeItem(OWNER_KEY).catch(() => {});
@@ -300,10 +323,13 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         // owner, so the same account gets it back and any other account starts clean.
         await AsyncStorage.setItem(OWNER_KEY, uid).catch(() => {});
       }
-      await authApi.signOut().catch(() => {});
+      await authApi.signOut().catch(() => {
+        // Still signed in: binding may resume.
+        signingOut.current = false;
+      });
       return 'ok';
     },
-    [configured, upToDate, user?.uid, resetAll],
+    [configured, status, storageError, readNow, user?.uid, resetAll],
   );
 
   const value: CloudSync = { status, error, lastSyncAt, upToDate, syncNow, eraseEverywhere, signOut };

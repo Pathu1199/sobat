@@ -362,13 +362,23 @@ export function bindStart(o: { uid: string; owner: string | null; saved: SavedBa
 }
 
 /**
+ * Whether the account holds everything on this device that it should: the
+ * file it was last seen holding is exactly the device's record. A status that
+ * says "synced" can be a moment behind an edit; this cannot.
+ */
+export function inAccount(base: CloudState | null, now: AppState): boolean {
+  return base !== null && sameCloud(forCloud(now), base);
+}
+
+/**
  * What signing out does to this device. It is only handed back empty when
  * the account is known to hold everything; with sync not set up there is no
- * account copy at all, so the device's copy is the only one. Otherwise the
- * person is asked first, and if they sign out anyway the data stays on the
- * device for the same account to pick up again.
+ * account copy at all, so the device's copy is the only one, and a store that
+ * could not be read may hold what no account has. Otherwise the person is
+ * asked first, and if they sign out anyway the data stays on the device for
+ * the same account to pick up again.
  */
-export function signOutPlan(o: { configured: boolean; upToDate: boolean; force: boolean }): 'wipe' | 'keep' | 'ask' {
-  if (o.configured && o.upToDate) return 'wipe';
+export function signOutPlan(o: { configured: boolean; upToDate: boolean; force: boolean; loaded: boolean }): 'wipe' | 'keep' | 'ask' {
+  if (o.configured && o.upToDate && o.loaded) return 'wipe';
   return o.force ? 'keep' : 'ask';
 }
