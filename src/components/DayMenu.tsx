@@ -43,13 +43,32 @@ function Chip({ label, a11y, onPress }: { label: string; a11y?: string; onPress:
  * this logs, never that day's menu (its record of what was planned). An
  * empty day fills from the plan in one tap, with Undo. A future day is the
  * plan itself and logs nothing: − / + and Change edit that date's menu, and
- * the total against the goal updates at once.
+ * the total against the goal updates at once. On the plan screen a planned
+ * food's name also opens other foods to put in its place, and Balance sits
+ * at the foot of the menu; elsewhere a day planned too low links to the plan
+ * screen at its date.
  * Meals the app filled in carry a "from plan" chip until they are confirmed,
  * one by one or with "Day looks right" (a past day, or today from 21:00). A
  * free day and a day before the person started are not judged. Every log
  * from here has an Undo that puts the slot back as it was, its skip too.
  */
-export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view: DayView; menu: Menu; onOpenMeal: (m: Meal) => void }) {
+export function DayMenu({
+  date,
+  view,
+  menu,
+  onOpenMeal,
+  onLinePress,
+  onBalance,
+}: {
+  date: ISODate;
+  view: DayView;
+  menu: Menu;
+  onOpenMeal: (m: Meal) => void;
+  /** Plan mode on the plan screen: a tap on a planned food's name, to pick another food in its place. */
+  onLinePress?: (row: MenuRow, line: RowLine) => void;
+  /** Plan mode on the plan screen: Balance, at the foot of the menu. Without it, a day too low links to the plan screen at its date. */
+  onBalance?: () => void;
+}) {
   const app = useApp();
   const fb = useFeedback();
   const router = useRouter();
@@ -120,17 +139,34 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
     </View>
   );
 
-  const stepperLine = (row: MenuRow, l: RowLine) => (
-    <View key={l.idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <View style={{ flex: 1, minWidth: 0 }}>
+  const stepperLine = (row: MenuRow, l: RowLine) => {
+    const words = (
+      <>
         <Text numberOfLines={2} style={strong}>
           {l.name}
         </Text>
         <Text numberOfLines={1} style={small}>{`${amountText(l.qty, l.measure)} · ${l.kcal} kcal`}</Text>
+      </>
+    );
+    return (
+      <View key={l.idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {/* On the plan screen a planned food's name opens other foods to put in its place; the box is a finger tall on every platform. */}
+        {onLinePress && row.state === 'plan' ? (
+          <Pressable
+            onPress={() => onLinePress(row, l)}
+            accessibilityRole="button"
+            accessibilityLabel={fill(t('planweek_instead_a11y'), { food: l.name })}
+            style={({ pressed }) => ({ flex: 1, minWidth: 0, minHeight: S.touch, flexDirection: 'row', alignItems: 'center', gap: 6, opacity: pressed ? 0.7 : 1 })}>
+            <View style={{ flex: 1, minWidth: 0 }}>{words}</View>
+            <Ionicons name="chevron-forward" size={F.small} color={C.textFaint} />
+          </Pressable>
+        ) : (
+          <View style={{ flex: 1, minWidth: 0 }}>{words}</View>
+        )}
+        <QtyStepper value={l.qtyText} onMinus={() => stepLine(row, l, -1)} onPlus={() => stepLine(row, l, 1)} minusLabel={fill(t('qty_less'), { food: l.name })} plusLabel={fill(t('qty_more'), { food: l.name })} />
       </View>
-      <QtyStepper value={l.qtyText} onMinus={() => stepLine(row, l, -1)} onPlus={() => stepLine(row, l, 1)} minusLabel={fill(t('qty_less'), { food: l.name })} plusLabel={fill(t('qty_more'), { food: l.name })} />
-    </View>
-  );
+    );
+  };
 
   /** The row's buttons, as core/dayView.ts `rowOffers` gives them. */
   function offers(row: MenuRow) {
@@ -278,7 +314,8 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
 
   const floor = KCAL_FLOOR[state.profile.sex];
   const note = view.mode === 'future' ? planNote({ kcal: view.plannedKcal, target: targets.kcal, floor, suggested: app.isSuggestedMenu(menu), hasPlan: view.required > 0 }) : null;
-  const openPlan = <Chip label={t('menu_open_plan')} onPress={() => router.push('/food?s=plan')} />;
+  // The plan screen gives Balance at the foot of the menu; elsewhere a day too low links to the plan screen, opened on that date.
+  const openPlan = onBalance ? null : <Chip label={t('menu_open_plan')} onPress={() => router.push({ pathname: '/plan', params: { date } })} />;
 
   return (
     <Card>
@@ -312,6 +349,8 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
           {renderRow(row)}
         </View>
       ))}
+      {/* Soft, as "Looks good, save week" is the plan screen's one primary action. */}
+      {onBalance && view.mode === 'future' && view.required > 0 ? <Btn tone="soft" label={t('plan_balance')} onPress={onBalance} /> : null}
       {view.canFill ? <Btn tone="soft" label={t('menu_fill_day')} onPress={fillDay} /> : null}
       {offersDayConfirm(view, hour) ? (
         <Btn

@@ -47,15 +47,17 @@ export function planWeekRows(input: {
   floor: number;
   offDays: number[];
   foods: FoodItem[];
-  /** A day the app built from the pattern and nobody changed. */
+  /** A day the app built from the pattern and nobody changed. Asked only of today and later days. */
   suggested: (d: DayMenu) => boolean;
 }): PlanRow[] {
   return input.week.map((d) => {
     const totals = dayTotals({ meals: d.meals }, input.foods);
+    const past = d.date < input.today;
     let status: PlanRowStatus;
     if (isOffDay(input.offDays, d.date)) status = 'off';
     else if (!hasPlan(d)) status = 'empty';
-    else if (input.suggested(d) && totals.kcal >= input.floor) status = 'suggested';
+    // A day already lived is history: what it held is weighed like any plan, never called the app's suggestion.
+    else if (!past && input.suggested(d) && totals.kcal >= input.floor) status = 'suggested';
     else {
       const s = dayStatus(totals.kcal, input.target, input.floor);
       status = s === 'over' ? 'high' : s === 'low' ? 'low' : 'on';
@@ -67,7 +69,7 @@ export function planWeekRows(input: {
       protein: totals.protein,
       mainFoodId: mainDish(d, input.foods),
       status,
-      past: d.date < input.today,
+      past,
     };
   });
 }

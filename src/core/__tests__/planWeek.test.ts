@@ -39,6 +39,11 @@ describe('planWeekRows', () => {
     expect(rows.map((r) => r.weekday)).toEqual([1, 2, 3, 4, 5, 6, 0]);
   });
 
+  it('never calls a day already past suggested: what it held is weighed like any plan', () => {
+    const two = planWeekRows({ week: [day('2026-10-27', thali), day('2026-10-28', thali)], today: TODAY, target, floor: 300, offDays: [], foods, suggested: () => true });
+    expect(two.map((r) => r.status)).toEqual(['on', 'suggested']);
+  });
+
   it('a suggestion under the safe minimum is low all the same', () => {
     const tiny = planWeekRows({ week: [day('2026-10-29', [{ foodId: 'chapati', unit: 'piece', qty: 1 }])], today: TODAY, target: 1800, floor: 1500, offDays: [], foods, suggested: () => true });
     expect(tiny[0].status).toBe('low');

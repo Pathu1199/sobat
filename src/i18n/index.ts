@@ -1054,6 +1054,11 @@ const en: Dict = {
   meal_line_remove: 'Remove {name}',
   menu_record_one: '{n} of 1 meal',
   plan_change_unit: 'Change the measure, now {unit}',
+  planweek_save: 'Looks good, save week', planweek_reviewed: 'This week is saved', planweek_saved: 'Week saved',
+  planweek_average: 'Average {avg} kcal a day, goal {goal}', planweek_on: 'On target', planweek_high: 'High', planweek_low: 'Low',
+  planweek_off: 'Free day', planweek_suggested: 'Suggested', planweek_empty: 'Nothing planned',
+  planweek_row_a11y: '{day}: {dish}, {kcal} kcal, {status}', planweek_row_none_a11y: '{day}: {status}', planweek_instead_a11y: 'Pick another food instead of {food}',
+  planweek_past_note: 'This day has passed. What was eaten is filled in on Today.', planweek_open_today: 'Open on Today',
 };
 
 const mr: Dict = {
@@ -2112,6 +2117,11 @@ const mr: Dict = {
   meal_line_remove: '{name} काढा',
   menu_record_one: '1 जेवणापैकी {n}',
   plan_change_unit: 'माप बदला, आत्ता {unit}',
+  planweek_save: 'बरोबर आहे, आठवडा जतन करा', planweek_reviewed: 'हा आठवडा जतन केला', planweek_saved: 'आठवडा जतन केला',
+  planweek_average: 'रोज सरासरी {avg} kcal, लक्ष्य {goal}', planweek_on: 'लक्ष्यावर', planweek_high: 'जास्त', planweek_low: 'कमी',
+  planweek_off: 'मोकळा दिवस', planweek_suggested: 'सुचवलेलं', planweek_empty: 'काही ठरवलेलं नाही',
+  planweek_row_a11y: '{day}: {dish}, {kcal} kcal, {status}', planweek_row_none_a11y: '{day}: {status}', planweek_instead_a11y: '{food} ऐवजी दुसरं निवडा',
+  planweek_past_note: 'हा दिवस गेला. काय खाल्लं ते आजच्या पानावर भरा.', planweek_open_today: 'आजच्या पानावर उघडा',
 };
 
 const hi: Dict = {
@@ -3168,6 +3178,11 @@ const hi: Dict = {
   meal_line_remove: '{name} हटाएँ',
   menu_record_one: '1 खाने में से {n}',
   plan_change_unit: 'माप बदलें, अभी {unit}',
+  planweek_save: 'ठीक है, हफ़्ता सहेजें', planweek_reviewed: 'यह हफ़्ता सहेजा गया', planweek_saved: 'हफ़्ता सहेजा',
+  planweek_average: 'रोज़ औसत {avg} kcal, लक्ष्य {goal}', planweek_on: 'लक्ष्य पर', planweek_high: 'ज़्यादा', planweek_low: 'कम',
+  planweek_off: 'छुट्टी का दिन', planweek_suggested: 'सुझाया हुआ', planweek_empty: 'कुछ तय नहीं',
+  planweek_row_a11y: '{day}: {dish}, {kcal} kcal, {status}', planweek_row_none_a11y: '{day}: {status}', planweek_instead_a11y: '{food} की जगह कुछ और चुनें',
+  planweek_past_note: 'यह दिन बीत गया. क्या खाया, वह आज वाले पन्ने पर भरें.', planweek_open_today: 'आज वाले पन्ने पर खोलें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

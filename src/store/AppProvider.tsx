@@ -125,9 +125,9 @@ type Ctx = {
   skipSlot: (date: ISODate, slotId: string) => void;
   unskipSlot: (date: ISODate, slotId: string) => void;
   setRoutine: (r: Partial<Routine>) => void;
-  /** This week's menus in the old one-week shape (index 0 = Sunday), for the plan screen until it is rebuilt. */
+  /** This week's menus in the old one-week shape (index 0 = Sunday), for the grocery list. */
   weekPlan: WeekPlan;
-  /** Write an edit made on `weekPlan` back to this week's dates. */
+  /** Write an edit made on `weekPlan` back to this week's dates from today on; a date before today is never written. */
   setWeekPlan: (plan: WeekPlan) => void;
   /** The menu a date shows: stored, or as it starts (a day nobody wrote fitted to the person's day); from today on, following the slots. */
   menuOn: (date: ISODate) => DayMenu;
@@ -146,6 +146,7 @@ type Ctx = {
   editMenuLine: (day: DayMenu, mealId: string, lineIdx: number, next: PlanLine | null | ((line: PlanLine) => PlanLine | null)) => void;
   addMenuFood: (day: DayMenu, mealId: string, line: PlanLine) => void;
   editMenuMeal: (day: DayMenu, meal: PlanMeal) => void;
+  /** One date's meals copied onto another date; a date before today is refused. */
   copyMenuDay: (from: DayMenu, to: ISODate) => void;
   /**
    * "Ate as planned" for a slot on any date up to today: its planned lines, or the lines given (a past day's draft), logged with
@@ -564,7 +565,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         update((s) => {
           // The week as the screen showed it, fitted the same way, so only the days that changed are written.
           const week = viewWeek(mondayOf(today), s.menus, s.routine, today, allFoods(s.customFoods), fitOn(s.profile, s.routine, today));
-          return withMenus(s, applyWeekPlan(plan, week, s.menus, new Date()));
+          return withMenus(s, applyWeekPlan(plan, week, s.menus, today, new Date()));
         }),
       menuOn,
       isSuggestedMenu: (day) => isSuggested(day, state.routine, planFoods, fit),
@@ -574,7 +575,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       editMenuLine: (day, mealId, lineIdx, next) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => setMenuLine(ms, d, mealId, lineIdx, next, new Date())))),
       addMenuFood: (day, mealId, line) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => addMenuLine(ms, d, mealId, line, new Date())))),
       editMenuMeal: (day, meal) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => setMenuMeal(ms, d, meal, new Date())))),
-      copyMenuDay: (from, to) => update((s) => withMenus(s, copyDay(from, to, s.menus, new Date()))),
+      copyMenuDay: (from, to) => update((s) => withMenus(s, copyDay(from, to, s.menus, today, new Date()))),
       addMealFromPlan: (date, slotId, source = 'plan', lines) => {
         const id = newId();
         const now = new Date();

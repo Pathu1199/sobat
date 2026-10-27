@@ -1,364 +1,299 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
-import { FoodDetailSheet, FoodThumb } from '../components/FoodDetailSheet';
+import { Pressable, Text, View } from 'react-native';
+import { AddSheetProvider } from '../components/AddSheet';
+import { DayMenu } from '../components/DayMenu';
+import { FoodThumb } from '../components/FoodDetailSheet';
 import { GrocerySheet } from '../components/GrocerySheet';
-import { linesFromBasket } from '../core/basket';
-import { mondayOf, weekDates } from '../core/date';
-import { foodName, searchFoods } from '../core/foods';
-import { newId } from '../core/id';
+import { IconButton } from '../components/TopBarActions';
+import { amountText, formatQty } from '../core/basket';
+import { addDays, formatDayLabel, formatDayMonth, isIsoDate, mondayOf } from '../core/date';
+import { dayView } from '../core/dayView';
+import { foodName } from '../core/foods';
+import { weekPlanView, type DayMenu as Menu } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
-import { avoidedFoodIds, planItems, type PlanLine, slotLabel, weekdayOf } from '../core/routine';
-import type { FoodItem } from '../core/types';
-import {
-  addLine,
-  balanceDay,
-  copyToWeekdays,
-  dayStatus,
-  dayTotals,
-  lineFor,
-  lineInfo,
-  mealTotals,
-  setDay,
-  setLine,
-  swapsFor,
-  type PlanMeal,
-  type WeekPlan,
-} from '../core/weekPlan';
+import { defaultPlanWeek, planWeekRows, weekAverage, withReviewedWeek, type PlanRow } from '../core/planWeek';
+import { avoidedFoodIds, slotLabel } from '../core/routine';
+import { isOffDay } from '../core/week';
+import { balanceDay, lineInfo, swapsFor } from '../core/weekPlan';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
-import { Bar, Btn, Card, Field, Micro, Pill, Row, Screen, Small, Toggle } from '../ui/components';
-import { QtyStepper } from '../ui/QtyStepper';
+import { Btn, Card, Divider, Micro, Row, Screen, Small, Toggle } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
 import { C, F, lh, S } from '../ui/theme';
 
-/** Monday first, the way a working week is read. Values are Date.getDay() indexes. */
-const ORDER = [1, 2, 3, 4, 5, 6, 0];
-
-const ADD_CATS = ['all', 'veg', 'vegetable', 'fruit', 'dryfruit', 'dal', 'grain', 'dairy', 'snack', 'beverage', 'sweet'];
-
-function qtyText(q: number): string {
-  const whole = Math.floor(q);
-  const half = q - whole >= 0.5;
-  if (whole === 0 && half) return '½';
-  return half ? `${whole}½` : String(whole);
+/** `/plan` is a page of its own, outside the tabs, so it brings the add sheet that the day's menu opens; inside the tabs this one is simply the nearer. */
+export default function PlanScreen() {
+  return (
+    <AddSheetProvider>
+      <PlanWeek />
+    </AddSheetProvider>
+  );
 }
 
 /**
- * The week's diet, written down in advance and edited line by line. Every
- * change shows the day against the target at once, and a day that comes out
- * too low says so plainly and offers to fix it.
+ * Plan next week. The week's dates with arrows between weeks; one row per day
+ * with its main dish, its total and a status, and the week's average against
+ * the goal under them. A tapped day opens under the week in the same
+ * plan-mode menu as Today's future days, with Balance at its foot, other
+ * foods behind each food's name and the free-day switch; a day already past
+ * is history here, read only, with a way to open it on Today. Every edit
+ * changes that date only, through the store's editMenu actions, which refuse
+ * a date before today. "Looks good, save week" only marks the week as looked
+ * over: the menus are stored as they are edited.
  */
-export default function PlanScreen() {
+function PlanWeek() {
   const app = useApp();
   const fb = useFeedback();
-  const { state, foods, targets, today } = app;
+  const router = useRouter();
+  const { state, targets, today } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
-  const router = useRouter();
-  const mealName = (meal: PlanMeal) => {
-    const s = state.routine.slots.find((x) => x.id === meal.id);
-    return (s && slotLabel(s, lang)) || t(meal.type);
-  };
-  const avoided = useMemo(() => avoidedFoodIds(state.routine), [state.routine]);
+  // Every planned line is shown and counted with any food it names; Balance and the foods offered instead stay within the person's diet.
+  const foods = app.planFoods;
   const floor = KCAL_FLOOR[state.profile.sex];
+  const avoided = useMemo(() => avoidedFoodIds(state.routine), [state.routine]);
+  const { date } = useLocalSearchParams<{ date?: string }>();
+  const linked = isIsoDate(date) ? date : null;
 
-  // This week's menus, Sunday first as this screen has always read them; an edit is written to its own date.
-  const plan: WeekPlan = app.weekPlan;
-
-  const [dayIdx, setDayIdx] = useState(() => weekdayOf(today));
-  const [swap, setSwap] = useState<{ mealId: string; lineIdx: number } | null>(null);
-  const [adding, setAdding] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
-  const [picked, setPicked] = useState<FoodItem | null>(null);
+  // A link with a date opens its week and that day; otherwise this week from Monday to Friday, next week at the weekend.
+  const [monday, setMonday] = useState(() => (linked ? mondayOf(linked) : defaultPlanWeek(today)));
+  const [open, setOpen] = useState<string | null>(linked);
+  const [swap, setSwap] = useState<{ slotId: string; idx: number } | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [grocery, setGrocery] = useState(false);
 
-  const day = plan.days[dayIdx];
+  const week = app.weekMenus(monday);
   const offDays = state.settings.offDays ?? [];
-  const isFree = offDays.includes(dayIdx);
-  const toggleFree = () => app.setSettings({ offDays: isFree ? offDays.filter((d) => d !== dayIdx) : [...offDays, dayIdx].sort() });
-  const totals = dayTotals(day, foods);
-  const status = dayStatus(totals.kcal, targets.kcal, floor);
-  const isToday = dayIdx === weekdayOf(today);
-  const todayMeals = state.meals.filter((m) => m.date === today);
+  // The app's own suggestion is named as one only from today on (planWeekRows asks nothing of a day already past).
+  const rows = planWeekRows({ week, today, target: targets.kcal, floor, offDays, foods, suggested: (d) => app.isSuggestedMenu(d) });
+  const average = weekAverage(rows, targets.kcal);
+  const reviewed = (state.settings.reviewedWeeks ?? []).includes(monday);
+  // A week wholly past holds nothing left to plan, so it is not marked as looked over either.
+  const plannable = rows.some((r) => !r.past);
+  const day = open ? (week.find((d) => d.date === open) ?? null) : null;
+  const dayRow = day ? (rows.find((r) => r.date === day.date) ?? null) : null;
+  const view = day ? dayView({ date: day.date, today, menu: day, meals: [], skippedIds: [], currentId: null, foods, lang, planOnly: true, offDay: isOffDay(offDays, day.date) }) : null;
 
-  function save(next: WeekPlan) {
-    app.setWeekPlan(next);
+  const strong = { color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' } as const;
+  const small = { color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) } as const;
+  const slotName = (id: string, type: string) => {
+    const s = state.routine.slots.find((x) => x.id === id);
+    return (s && slotLabel(s, lang)) || t(type);
+  };
+  const statusWord = (r: PlanRow) => t(`planweek_${r.status}`);
+  const unitName = (u: string) => (t(`unit_${u}`) === `unit_${u}` ? u : t(`unit_${u}`));
+
+  function moveWeek(by: -1 | 1) {
+    setMonday((m) => addDays(m, 7 * by));
+    setOpen(null);
+    setNote(null);
   }
-  function changeQty(mealId: string, i: number, line: PlanLine, by: number) {
-    const step = line.unit === 'piece' || line.unit === 'medium' || line.unit === 'slice' ? 1 : 0.5;
-    save(setLine(plan, dayIdx, mealId, i, { ...line, qty: Math.max(0, Math.round((line.qty + by * step) * 2) / 2) }));
+
+  function saveWeek() {
+    app.setSettings({ reviewedWeeks: withReviewedWeek(state.settings.reviewedWeeks, monday) });
+    fb.haptic('success');
+    fb.notify(t('planweek_saved'));
   }
-  function cycleUnit(mealId: string, i: number, line: PlanLine) {
-    const food = foods.find((f) => f.id === line.foodId);
-    if (!food || food.portions.length < 2) return;
-    const at = food.portions.findIndex((p) => p.unit === line.unit);
-    const nextUnit = food.portions[(at + 1) % food.portions.length].unit;
-    save(setLine(plan, dayIdx, mealId, i, { ...line, unit: nextUnit }));
-  }
-  function balance() {
-    const r = balanceDay(day, foods, targets.kcal, avoided, floor);
+
+  function balance(d: Menu) {
+    const r = balanceDay({ meals: d.meals }, app.foods, targets.kcal, avoided, floor);
     if (!r.changes.length) {
       // Nothing changed, so nothing is written and nothing buzzes as if it were.
       setNote(t('plan_nothing_to_change'));
       return;
     }
-    save(setDay(plan, dayIdx, r.day));
+    app.editMenuDay(d, r.day.meals);
     setNote(r.changes.map((c) => fill(t(c.key), { meal: t(String(c.params.meal)).toLowerCase() })).join(' · '));
     fb.haptic('success');
   }
-  function rebuild() {
-    // The app's suggestion for this date, fitted to the person's day: what the day shows when nobody has written it.
-    const date = weekDates(mondayOf(today)).find((d) => weekdayOf(d) === dayIdx)!;
-    save(setDay(plan, dayIdx, app.suggestionOn(date)));
-    setNote(t('plan_rebuilt'));
-  }
-  function copyWeekdays() {
-    save(copyToWeekdays(plan, dayIdx));
-    fb.notify(t('plan_copied'));
-  }
-  function logMeal(meal: PlanMeal) {
-    const items = planItems(meal.lines, foods);
-    if (!items.length) return;
-    const [h, m] = meal.time.split(':').map(Number);
-    const at = new Date();
-    if (Number.isFinite(h)) at.setHours(h, Number.isFinite(m) ? m : 0, 0, 0);
-    const kcal = items.reduce((a, i) => a + i.kcal, 0);
-    app.addMeal({ id: newId(), at: at.toISOString(), date: today, type: meal.type, slotId: meal.id, items, kcal, protein: Math.round(items.reduce((a, i) => a + i.protein, 0)) });
-    fb.haptic('success');
-    fb.notify(fill(t('toast_meal_saved'), { kcal }));
-  }
-  const logged = (meal: PlanMeal) => {
-    const ids = new Set(meal.lines.map((l) => l.foodId));
-    return todayMeals.some((m) => m.type === meal.type && m.items.some((it) => it.foodId && ids.has(it.foodId)));
-  };
 
-  const unitName = (u: string) => (t(`unit_${u}`) === `unit_${u}` ? u : t(`unit_${u}`));
-  const statusColor = status === 'low' ? C.red : status === 'under' ? C.amber : status === 'over' ? C.amber : C.green;
-  const gap = Math.abs(targets.kcal - totals.kcal);
-  const swapLine = swap ? day.meals.find((m) => m.id === swap.mealId)?.lines[swap.lineIdx] : undefined;
+  function toggleOff(d: string) {
+    // Free days are weekdays in the settings: the same weekday is free every week, as the switch says.
+    const wd = new Date(`${d}T12:00:00`).getDay();
+    app.setSettings({ offDays: offDays.includes(wd) ? offDays.filter((x) => x !== wd) : [...offDays, wd].sort((a, b) => a - b) });
+  }
+
+  const swapMeal = day && swap ? day.meals.find((m) => m.id === swap.slotId) : undefined;
+  const swapLine = swapMeal && swap ? swapMeal.lines[swap.idx] : undefined;
   const swapInfo = swapLine ? lineInfo(swapLine, foods, lang) : null;
-  // Every food is offered; a category narrows the list, and avoided foods are marked, not hidden.
-  const [addCat, setAddCat] = useState<string>('all');
-  const results = useMemo(() => {
-    if (!adding) return [];
-    const pool = addCat === 'all' ? foods : foods.filter((f) => f.category === addCat);
-    return query.trim() ? searchFoods(pool, query, 40) : pool.slice().sort((a, b) => foodName(a, lang).localeCompare(foodName(b, lang)));
-  }, [adding, foods, query, addCat, lang]);
 
   return (
     <Screen>
-      {/* Days, Monday first, each with its total so a low day stands out before it is opened. */}
-      <Row style={{ gap: 4 }}>
-        {ORDER.map((d) => {
-          const k = dayTotals(plan.days[d], foods).kcal;
-          const st = dayStatus(k, targets.kcal, floor);
-          const active = d === dayIdx;
-          return (
-            <Pressable
-              key={d}
-              onPress={() => {
-                setDayIdx(d);
-                setNote(null);
-              }}
-              accessibilityRole="button"
-              aria-selected={active}
-              accessibilityLabel={offDays.includes(d) ? `${t(`wd_${d}`)}, ${t('free_day')}` : `${t(`wd_${d}`)}, ${k} kcal`}
-              style={{ flex: 1, minHeight: S.touch, alignItems: 'center', justifyContent: 'center', paddingVertical: 6, borderRadius: S.radiusSm, backgroundColor: active ? C.accent : C.card, borderWidth: S.hairline, borderColor: d === weekdayOf(today) ? C.accent : C.border }}>
-              <Text numberOfLines={1} style={{ color: active ? C.onAccent : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{t(`wd_${d}`)}</Text>
-              {/* An off day is a leaf, not the word: the word overflowed a seventh of a phone at large text. */}
-              {offDays.includes(d) ? (
-                <Ionicons name="leaf-outline" size={F.small} color={active ? C.onAccent : C.textFaint} />
-              ) : (
-                <Text numberOfLines={1} style={{ color: active ? C.onAccent : st === 'low' ? C.red : st === 'on' ? C.green : C.textFaint, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{k}</Text>
-              )}
-            </Pressable>
-          );
-        })}
-      </Row>
-      <Pressable onPress={() => router.push('/food?s=routine')} accessibilityRole="button" accessibilityLabel={t('plan_follows_pattern')} style={{ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start' }}>
-        <Micro color={C.accentText}>{`${t('plan_follows_pattern')} ›`}</Micro>
-      </Pressable>
-
-      <Pressable
-        onPress={() => setGrocery(true)}
-        accessibilityRole="button"
-        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, borderRadius: S.radius, backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, opacity: pressed ? 0.8 : 1 })}>
-        <Ionicons name="basket-outline" size={22} color={C.accent} />
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t('grocery_title')}</Text>
-          <Text style={{ color: C.textFaint, fontSize: F.small }}>{t('grocery_sub')}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={C.textFaint} />
-      </Pressable>
-      <GrocerySheet open={grocery} onClose={() => setGrocery(false)} plan={plan} />
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <IconButton name="chevron-back" label={t('strip_prev_week')} onPress={() => moveWeek(-1)} />
+        <Text numberOfLines={1} style={[strong, { flex: 1, textAlign: 'center' }]}>
+          {`${formatDayMonth(week[0].date, lang)} – ${formatDayMonth(week[6].date, lang)}`}
+        </Text>
+        <IconButton name="chevron-forward" label={t('strip_next_week')} onPress={() => moveWeek(1)} />
+      </View>
 
       <Card>
-        <Toggle title={t('plan_free_toggle')} desc={t('plan_free_desc')} on={isFree} onToggle={toggleFree} />
+        <View>
+          {rows.map((r, i) => {
+            const planned = r.status !== 'off' && r.status !== 'empty';
+            const dish = planned && r.mainFoodId ? foods.find((f) => f.id === r.mainFoodId) : undefined;
+            const tone = r.status === 'low' ? C.red : r.status === 'high' ? C.amber : r.status === 'on' ? C.accentText : C.textDim;
+            const selected = r.date === open;
+            const dayLabel = formatDayLabel(r.date, lang);
+            return (
+              <View key={r.date}>
+                {i > 0 ? <Divider /> : null}
+                <Pressable
+                  onPress={() => {
+                    setOpen(selected ? null : r.date);
+                    setNote(null);
+                  }}
+                  accessibilityRole="button"
+                  aria-selected={selected}
+                  accessibilityLabel={
+                    dish
+                      ? fill(t('planweek_row_a11y'), { day: dayLabel, dish: foodName(dish, lang), kcal: r.kcal, status: statusWord(r) })
+                      : fill(t('planweek_row_none_a11y'), { day: dayLabel, status: statusWord(r) })
+                  }
+                  style={({ pressed }) => ({
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 10,
+                    minHeight: 56,
+                    paddingHorizontal: 6,
+                    borderRadius: S.radiusSm,
+                    backgroundColor: selected ? C.accentDim : 'transparent',
+                    opacity: pressed ? 0.7 : 1,
+                  })}>
+                  <View style={{ width: 52 }}>
+                    <Text numberOfLines={1} style={{ color: r.date === today ? C.accentText : C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
+                      {t(`wd_${r.weekday}`)}
+                    </Text>
+                    <Text style={strong}>{String(Number(r.date.slice(8)))}</Text>
+                  </View>
+                  {dish ? <FoodThumb food={dish} lang={lang} size={32} /> : r.status === 'off' ? <Ionicons name="leaf-outline" size={20} color={C.textDim} /> : null}
+                  <Text numberOfLines={1} style={{ flex: 1, color: dish ? C.text : C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>
+                    {dish ? foodName(dish, lang) : statusWord(r)}
+                  </Text>
+                  {dish ? (
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={[small, { color: C.text, fontWeight: '500' }]}>{`${r.kcal} kcal`}</Text>
+                      <Row style={{ gap: 4 }}>
+                        {r.status === 'on' ? <Ionicons name="checkmark-circle" size={F.small} color={C.accentText} /> : null}
+                        <Text style={[small, { color: tone }]}>{statusWord(r)}</Text>
+                      </Row>
+                    </View>
+                  ) : null}
+                </Pressable>
+              </View>
+            );
+          })}
+        </View>
+        {average ? (
+          <Small color={Math.abs(average.diff) <= targets.kcal * 0.05 ? C.textDim : C.amber}>{fill(t('planweek_average'), { avg: average.avg, goal: targets.kcal })}</Small>
+        ) : null}
       </Card>
 
-      {isFree ? (
-        <Card rail={C.cyan}>
-          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{`🌿 ${t('free_day')}`}</Text>
-          <Small color={C.textDim}>{t('free_day_body')}</Small>
-        </Card>
+      {day && dayRow && view ? (
+        dayRow.past ? (
+          // A day already past: what it planned, read only. What was eaten that day is filled in on Today.
+          <Card>
+            <Text style={strong}>{formatDayLabel(day.date, lang)}</Text>
+            {view.rows.map((r) => (
+              <View key={r.slotId} style={{ gap: 2 }}>
+                <Text style={strong}>{`${slotName(r.slotId, r.type)} · ${r.plannedKcal} kcal`}</Text>
+                <Text style={small}>{r.lines.map((l) => `${l.name}, ${amountText(l.qty, l.measure)}`).join(' · ') || t('menu_nothing_planned')}</Text>
+              </View>
+            ))}
+            <Text style={small}>{t('planweek_past_note')}</Text>
+            <Btn small tone="soft" label={t('planweek_open_today')} onPress={() => router.navigate({ pathname: '/', params: { date: day.date } })} />
+          </Card>
+        ) : (
+          <View style={{ gap: S.gap }}>
+            <Card>
+              <Text style={strong}>{formatDayLabel(day.date, lang)}</Text>
+              <Toggle title={t('plan_free_toggle')} desc={t('plan_free_desc')} on={dayRow.status === 'off'} onToggle={() => toggleOff(day.date)} />
+            </Card>
+            {dayRow.status === 'off' ? null : (
+              <>
+                <DayMenu date={day.date} view={view} menu={day} onOpenMeal={() => {}} onLinePress={(row, l) => setSwap({ slotId: row.slotId, idx: l.idx })} onBalance={() => balance(day)} />
+                {note ? <Small color={C.textDim}>{note}</Small> : null}
+              </>
+            )}
+          </View>
+        )
       ) : null}
 
-      {isFree ? null : (
-      <Card rail={statusColor}>
-        <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <View style={{ gap: 2 }}>
-            <Micro>{isToday ? t('plan_today') : t(`wd_${dayIdx}`)}</Micro>
-            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
-              {totals.kcal}
-              <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${targets.kcal} kcal`}</Text>
-            </Text>
+      <View style={{ gap: 8 }}>
+        {!plannable ? null : reviewed ? (
+          <Row style={{ gap: 6, minHeight: S.touch, justifyContent: 'center' }}>
+            <Ionicons name="checkmark-circle" size={18} color={C.accentText} />
+            <Text style={[strong, { color: C.accentText }]}>{t('planweek_reviewed')}</Text>
+          </Row>
+        ) : (
+          <Btn label={t('planweek_save')} onPress={saveWeek} />
+        )}
+        <Pressable
+          onPress={() => setGrocery(true)}
+          accessibilityRole="button"
+          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, borderRadius: S.radius, backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, opacity: pressed ? 0.8 : 1 })}>
+          <Ionicons name="basket-outline" size={22} color={C.accentText} />
+          <View style={{ flex: 1 }}>
+            <Text style={strong}>{t('grocery_title')}</Text>
+            <Text style={small}>{t('grocery_sub')}</Text>
           </View>
-        </Row>
-        <Bar value={totals.kcal} max={targets.kcal} color={statusColor} />
-        {/* On its own line: beside the total it ran into the edge in Marathi at large text. */}
-        <Small color={totals.protein < targets.proteinG * 0.7 ? C.amber : C.textDim}>{fill(t('plan_protein'), { p: totals.protein, target: targets.proteinG })}</Small>
-        <Text style={{ color: statusColor, fontSize: F.body, fontWeight: '500', lineHeight: lh(F.body) }}>{fill(t(status === 'low' && totals.kcal >= targets.kcal * 0.85 ? 'plan_status_floor' : `plan_status_${status}`), { gap, floor })}</Text>
-        {note ? <Small color={C.textDim}>{note}</Small> : null}
-        <Row style={{ gap: 8, flexWrap: 'wrap' }}>
-          <Btn small tone={status === 'on' ? 'soft' : 'primary'} label={t('plan_balance')} icon={<Ionicons name="scale-outline" size={14} color={status === 'on' ? C.text : C.onAccent} />} onPress={balance} style={{ flexGrow: 1 }} />
-          {dayIdx >= 1 && dayIdx <= 5 ? <Btn small tone="soft" label={t('plan_copy_weekdays')} icon={<Ionicons name="copy-outline" size={14} color={C.text} />} onPress={copyWeekdays} style={{ flexGrow: 1 }} /> : null}
-          <Btn small tone="ghost" label={t('plan_rebuild')} icon={<Ionicons name="refresh" size={14} color={C.text} />} onPress={rebuild} style={{ flexGrow: 1 }} />
-        </Row>
-      </Card>
-      )}
+          <Ionicons name="chevron-forward" size={18} color={C.textFaint} />
+        </Pressable>
+        <Pressable onPress={() => router.push('/food?s=routine')} accessibilityRole="button" accessibilityLabel={t('plan_follows_pattern')} style={{ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start' }}>
+          <Micro color={C.accentText}>{`${t('plan_follows_pattern')} ›`}</Micro>
+        </Pressable>
+      </View>
 
-      {(isFree ? [] : day.meals).map((meal) => {
-        const mt = mealTotals(meal, foods);
-        const done = isToday && logged(meal);
-        return (
-          <Card key={meal.id} rail={done ? C.green : undefined}>
-            <Row style={{ justifyContent: 'space-between' }}>
-              <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{`${mealName(meal)} · ${meal.time}`}</Text>
-              <Micro>{`${mt.kcal} kcal · ${mt.protein} g`}</Micro>
-            </Row>
-            {meal.lines.map((line, i) => {
-              const info = lineInfo(line, foods, lang);
-              if (!info) return null;
-              return (
-                <View key={`${line.foodId}-${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 2 }}>
-                  <Pressable onPress={() => setSwap({ mealId: meal.id, lineIdx: i })} accessibilityRole="button" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <FoodThumb food={info.food} lang={lang} size={34} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }} numberOfLines={1}>
-                        {foodName(info.food, lang)}
-                      </Text>
-                      <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${info.kcal} kcal · ${t('plan_tap_to_change')}`}</Text>
-                    </View>
-                  </Pressable>
-                  <View style={{ alignItems: 'center' }}>
-                    <QtyStepper
-                      value={qtyText(line.qty)}
-                      onMinus={() => changeQty(meal.id, i, line, -1)}
-                      onPlus={() => changeQty(meal.id, i, line, 1)}
-                      minusLabel={fill(t('qty_less'), { food: foodName(info.food, lang) })}
-                      plusLabel={fill(t('qty_more'), { food: foodName(info.food, lang) })}
-                    />
-                    <Pressable onPress={() => cycleUnit(meal.id, i, line)} accessibilityRole="button" accessibilityLabel={fill(t('plan_change_unit'), { unit: unitName(info.unit) })} style={{ minHeight: S.touch, justifyContent: 'center', paddingHorizontal: 6 }}>
-                      <Text style={{ color: C.accentText, fontSize: F.small, lineHeight: lh(F.small) }} numberOfLines={1}>{`${unitName(info.unit)} · ${info.grams} g`}</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              );
-            })}
-            <Row style={{ gap: 8 }}>
-              <Btn small tone="ghost" label={t('plan_add_food')} icon={<Ionicons name="add" size={14} color={C.text} />} onPress={() => { setAdding(meal.id); setQuery(''); }} style={{ flex: 1 }} />
-              {isToday ? (
-                done ? (
-                  <Row style={{ flex: 1, justifyContent: 'center', gap: 6 }}>
-                    <Ionicons name="checkmark-circle" size={16} color={C.green} />
-                    <Small color={C.green}>{t('plan_logged')}</Small>
-                  </Row>
-                ) : (
-                  <Btn small tone="soft" label={t('plan_log_meal')} icon={<Ionicons name="checkmark" size={14} color={C.text} />} onPress={() => logMeal(meal)} style={{ flex: 1 }} />
-                )
-              ) : null}
-            </Row>
-          </Card>
-        );
-      })}
-      {isFree ? null : <Small color={C.textFaint}>{t('plan_footer')}</Small>}
+      <GrocerySheet open={grocery} onClose={() => setGrocery(false)} plan={weekPlanView(week)} />
 
-      {/* Swap one line for another of the same kind, or remove it. */}
+      {/* Another food of the same kind in this one's place, or this one taken out. */}
       <Sheet open={!!swapInfo} title={swapInfo ? fill(t('plan_swap_title'), { food: foodName(swapInfo.food, lang) }) : ''} onClose={() => setSwap(null)}>
-        {swapInfo && swap && swapLine ? (
+        {swapInfo && swap && swapLine && day ? (
           <View style={{ gap: 6 }}>
-            <Small color={C.textDim}>{fill(t('plan_swap_now'), { qty: qtyText(swapLine.qty), unit: `${unitName(swapInfo.unit)} · ${swapInfo.grams} g`, kcal: swapInfo.kcal })}</Small>
-            {swapsFor(swapLine, foods, avoided).map((s) => {
-              const f = foods.find((x) => x.id === s.line.foodId)!;
-              const info = lineInfo(s.line, foods, lang)!;
+            <Small color={C.textDim}>{fill(t('plan_swap_now'), { qty: formatQty(swapLine.qty), unit: `${unitName(swapInfo.unit)} · ${swapInfo.grams} g`, kcal: swapInfo.kcal })}</Small>
+            {swapsFor(swapLine, app.foods, avoided).map((s) => {
+              const f = foods.find((x) => x.id === s.line.foodId);
+              const info = lineInfo(s.line, foods, lang);
+              if (!f || !info) return null;
               return (
                 <Pressable
                   key={s.line.foodId}
                   onPress={() => {
-                    save(setLine(plan, dayIdx, swap.mealId, swap.lineIdx, s.line));
+                    app.editMenuLine(day, swap.slotId, swap.idx, s.line);
                     setSwap(null);
                     fb.haptic('light');
                   }}
-                  style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, opacity: pressed ? 0.7 : 1 })}>
+                  accessibilityRole="button"
+                  style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: S.touch, opacity: pressed ? 0.7 : 1 })}>
                   <FoodThumb food={f} lang={lang} size={32} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }} numberOfLines={1}>{foodName(f, lang)}</Text>
-                    <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${qtyText(s.line.qty)} ${unitName(info.unit)} · ${info.grams} g`}</Text>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text numberOfLines={1} style={strong}>
+                      {foodName(f, lang)}
+                    </Text>
+                    <Text numberOfLines={1} style={small}>{`${formatQty(s.line.qty)} ${unitName(info.unit)} · ${info.grams} g`}</Text>
                   </View>
-                  <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{s.kcal}</Text>
-                  <Text style={{ color: s.diff > 0 ? C.amber : s.diff < 0 ? C.green : C.textFaint, fontSize: F.small, width: 44, textAlign: 'right' }}>{s.diff === 0 ? '±0' : s.diff > 0 ? `+${s.diff}` : `${s.diff}`}</Text>
+                  <Text style={[small, { color: C.text, fontWeight: '500' }]}>{s.kcal}</Text>
+                  <Text style={[small, { color: s.diff > 0 ? C.amber : s.diff < 0 ? C.green : C.textDim, width: 44, textAlign: 'right' }]}>
+                    {s.diff === 0 ? '±0' : s.diff > 0 ? `+${s.diff}` : `${s.diff}`}
+                  </Text>
                 </Pressable>
               );
             })}
-            <Btn small tone="danger" label={t('plan_remove')} icon={<Ionicons name="trash-outline" size={14} color={C.red} />} onPress={() => { save(setLine(plan, dayIdx, swap.mealId, swap.lineIdx, null)); setSwap(null); }} />
+            <Btn
+              small
+              tone="danger"
+              label={t('plan_remove')}
+              onPress={() => {
+                app.editMenuLine(day, swap.slotId, swap.idx, null);
+                setSwap(null);
+              }}
+            />
           </View>
         ) : null}
       </Sheet>
-
-      {/* Add any food: search, then the detail sheet asks how much. */}
-      <Sheet open={!!adding && !picked} title={t('plan_add_food')} onClose={() => setAdding(null)}>
-        <Field value={query} onChangeText={setQuery} placeholder={t('plan_search')} autoFocus />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-          {ADD_CATS.map((c) => (
-            <Pill key={c} label={t(`cat_${c}`)} active={addCat === c} onPress={() => setAddCat(c)} />
-          ))}
-        </ScrollView>
-        <Micro>{fill(t('plan_add_count'), { n: results.length })}</Micro>
-        {results.map((f) => {
-          const one = lineInfo(lineFor(f), foods, lang);
-          return (
-            <Pressable key={f.id} onPress={() => setPicked(f)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, opacity: pressed ? 0.7 : 1 })}>
-              <FoodThumb food={f} lang={lang} size={30} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }} numberOfLines={1}>{foodName(f, lang)}</Text>
-                <Text style={{ color: avoided.has(f.id) ? C.amber : C.textFaint, fontSize: F.small }} numberOfLines={1}>
-                  {avoided.has(f.id) ? `${t('plan_on_avoid')} · ` : ''}
-                  {one ? `${unitName(one.unit)} · ${one.kcal} kcal` : ''}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={15} color={C.textFaint} />
-            </Pressable>
-          );
-        })}
-      </Sheet>
-      <FoodDetailSheet
-        food={picked}
-        onClose={() => setPicked(null)}
-        onAdd={(c) => {
-          // Written the way every planned line is: in the food's own measure, at the grams chosen.
-          const [line] = linesFromBasket([{ foodId: c.food.id, unit: c.unit, gramsPerUnit: c.gramsPerUnit, count: c.count }], app.foods);
-          setPicked(null);
-          // Nothing to write: back to the search, still adding, with no buzz as if it were saved.
-          if (!adding || !line) return;
-          save(addLine(plan, dayIdx, adding, line));
-          setAdding(null);
-          fb.haptic('light');
-        }}
-      />
     </Screen>
   );
 }
