@@ -110,6 +110,8 @@ export function buildIndex(foods: FoodItem[]) {
     threshold: 0.4,
     ignoreLocation: true,
     minMatchCharLength: 2,
+    // The add sheet drops far-fetched matches by this score (findFoods); the other searches ignore it.
+    includeScore: true,
   });
   cached = { list: foods, fuse };
   return cached;
@@ -183,4 +185,29 @@ export function suggestMeals(
     if (n.kcal <= kcalMax && n.kcal >= minKcal) out.push({ food: f, grams: p.grams, kcal: n.kcal, protein: n.protein });
   }
   return out.sort((a, b) => b.protein - a.protein).slice(0, 12);
+}
+
+/** How close a match must be for the add sheet, 0 exact to 1 anything. "poha" against chikoo (by its alias "sapota") scores about 0.59. */
+export const MATCH_CUTOFF = 0.5;
+
+/** The add sheet's search: the closest matches first, without the far-fetched ones. A blank search finds nothing. */
+export function findFoods(foods: FoodItem[], query: string, limit = 30): FoodItem[] {
+  const q = query.trim();
+  if (!q) return [];
+  if (!cached || cached.list !== foods) buildIndex(foods);
+  return cached!.fuse
+    .search(q, { limit })
+    .filter((r) => (r.score ?? 1) < MATCH_CUTOFF)
+    .map((r) => r.item);
+}
+
+/**
+ * A logged item's name in the person's language: the food's own name when it
+ * is in the database; otherwise what was logged, Marathi for Marathi and
+ * English for the rest (a logged item has no Hindi name of its own).
+ */
+export function itemName(item: Pick<MealItem, 'foodId' | 'name_en' | 'name_mr'>, foods: FoodItem[], lang: Lang): string {
+  const f = item.foodId ? foods.find((x) => x.id === item.foodId) : undefined;
+  if (f) return foodName(f, lang);
+  return lang === 'mr' ? item.name_mr || item.name_en : item.name_en;
 }

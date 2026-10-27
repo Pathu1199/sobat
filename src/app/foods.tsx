@@ -3,7 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { FoodDetailSheet, FoodThumb, type Chosen } from '../components/FoodDetailSheet';
-import { defaultPortion, portionLabel, searchFoods, styleOf, toMealItem } from '../core/foods';
+import { defaultPortion, foodName, portionLabel, searchFoods, styleOf, toMealItem } from '../core/foods';
 import { isSourceOf, NUTRIENT_TAGS, type NutrientTag } from '../core/nutrients';
 import { newId } from '../core/id';
 import { mealTypeForHour } from '../core/nutrition';
@@ -79,7 +79,7 @@ export default function FoodsScreen() {
               <ListRow
                 icon={<FoodThumb food={f} size={44} />}
                 title={f.name_en}
-                alt={lang === 'en' ? undefined : f.name_mr}
+                alt={lang === 'en' ? undefined : foodName(f, lang)}
                 sub={[style ? t(`style_${style}`) : null, p ? portionLabel(p, lang) : null, `${Math.round(f.protein_100g * ((p?.grams ?? 100) / 100))} g ${t('protein').toLowerCase()}`, `${Math.round(f.fat_100g * ((p?.grams ?? 100) / 100))} g ${t('fat').toLowerCase()}`].filter(Boolean).join(' · ')}
                 value={String(kcal)}
                 valueUnit="kcal"

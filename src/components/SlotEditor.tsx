@@ -126,7 +126,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
             <View style={{ gap: 4 }}>
               <Field value={query} onChangeText={setQuery} placeholder={t('search_food')} autoFocus />
               {results.map((f) => (
-                <ListRow key={f.id} title={f.name_en} alt={lang === 'en' ? undefined : f.name_mr} onPress={() => add(f)} trailing={<Ionicons name="add" size={17} color={C.accent} />} />
+                <ListRow key={f.id} title={f.name_en} alt={lang === 'en' ? undefined : foodName(f, lang)} onPress={() => add(f)} trailing={<Ionicons name="add" size={17} color={C.accent} />} />
               ))}
             </View>
           ) : (

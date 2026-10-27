@@ -11,7 +11,7 @@ import { adviceText, CoachStrip } from '../../components/CoachStrip';
 import { IconButton, TopBarActions } from '../../components/TopBarActions';
 import { formatMinutes, toISODate } from '../../core/date';
 import { newId } from '../../core/id';
-import { foodName, suggestMeals, toMealItem } from '../../core/foods';
+import { foodName, itemName, suggestMeals, toMealItem } from '../../core/foods';
 import { HELPLINES, isCrisisText } from '../../core/guardrails';
 import { intakeFact, lowIntake } from '../../core/intake';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
@@ -72,7 +72,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
           {lastOptions.map((o) => (
             <Pressable key={o.foodId} onPress={() => logOption(o)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
               <Row style={{ justifyContent: 'space-between', paddingVertical: 4 }}>
-                <BiText en={o.name_en} alt={lang === 'en' ? undefined : o.name_mr} size={F.small} />
+                <BiText en={o.name_en} alt={lang === 'en' ? undefined : itemName(o, app.foods, lang)} size={F.small} />
                 <Small>{`${o.kcal} kcal`}</Small>
               </Row>
             </Pressable>
@@ -409,7 +409,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
                             opacity: pressed ? 0.7 : 1,
                           })}>
                           <View style={{ flex: 1, gap: 3 }}>
-                            <BiText en={o.name_en} alt={lang === 'en' ? undefined : o.name_mr} size={F.body} />
+                            <BiText en={o.name_en} alt={lang === 'en' ? undefined : itemName(o, app.foods, lang)} size={F.body} />
                             <Micro>{`${o.grams} g`}</Micro>
                           </View>
                           <View style={{ alignItems: 'flex-end', gap: 2 }}>

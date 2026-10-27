@@ -176,7 +176,7 @@ export default function RoutineScreen() {
             <ListRow
               key={f.id}
               title={f.name_en}
-              alt={lang === 'en' ? undefined : f.name_mr}
+              alt={lang === 'en' ? undefined : foodName(f, lang)}
               onPress={() => {
                 app.setRoutine({ avoid: [...routine.avoid, ruleForFood(f)] });
                 setQuery('');

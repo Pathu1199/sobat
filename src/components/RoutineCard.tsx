@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { foodName, searchFoods } from '../core/foods';
+import { foodName, itemName, searchFoods } from '../core/foods';
 import { newId } from '../core/id';
 import { hasPlan } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
@@ -24,7 +24,7 @@ import {
   type RoutineSlot,
   type SpendCategory,
 } from '../core/routine';
-import type { FoodItem, Lang, MealItem } from '../core/types';
+import type { FoodItem, Lang } from '../core/types';
 import { dayStatus, dayTotals, mealTotals } from '../core/weekPlan';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
@@ -42,12 +42,6 @@ export function lineLabel(line: PlanLine, foods: FoodItem[], lang: Lang): string
   const food = foods.find((f) => f.id === line.foodId);
   const name = food ? foodName(food, lang) : line.foodId;
   return line.qty === 1 ? name : `${name} × ${line.qty}`;
-}
-
-/** A logged line's name in the chosen language: the database name where there is one, else its own. */
-function itemName(it: Pick<MealItem, 'foodId' | 'name_en' | 'name_mr'>, foods: FoodItem[], lang: Lang): string {
-  const f = it.foodId ? foods.find((x) => x.id === it.foodId) : undefined;
-  return f ? foodName(f, lang) : lang === 'en' ? it.name_en : it.name_mr || it.name_en;
 }
 
 function foodLabel(id: string, foods: FoodItem[], lang: Lang): string {
@@ -348,7 +342,7 @@ function SlotSheet({ state: s, planLines, bhaji, onClose }: { state: SlotState |
               <Field value={otherQuery} onChangeText={setOtherQuery} placeholder={t('search_food')} autoFocus />
               {otherResults.map((f) => (
                 <Pressable key={f.id} onPress={() => { setOtherId(f.id); setOtherOpen(false); setOtherQuery(''); }} style={({ pressed }) => ({ paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}>
-                  <BiText en={f.name_en} alt={lang === 'en' ? undefined : f.name_mr} size={F.body} />
+                  <BiText en={f.name_en} alt={lang === 'en' ? undefined : foodName(f, lang)} size={F.body} />
                 </Pressable>
               ))}
             </View>
@@ -371,7 +365,7 @@ function SlotSheet({ state: s, planLines, bhaji, onClose }: { state: SlotState |
             {i > 0 ? <Divider /> : null}
             <Row style={{ justifyContent: 'space-between', paddingVertical: 9 }}>
               <View style={{ flex: 1, gap: 2 }}>
-                <BiText en={it.name_en} alt={lang === 'en' ? undefined : it.name_mr} size={F.body} />
+                <BiText en={it.name_en} alt={lang === 'en' ? undefined : itemName(it, foods, lang)} size={F.body} />
                 <Micro>{`${it.grams} g · ${Math.round(it.protein)} g ${t('protein').toLowerCase()}`}</Micro>
               </View>
               <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>

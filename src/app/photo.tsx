@@ -6,7 +6,7 @@ import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { FOOD_PHOTO_SCHEMA, foodPhotoPrompt } from '../ai/prompts';
 import { toISODate } from '../core/date';
 import { newId } from '../core/id';
-import { defaultPortion, resolveByName, searchFoods, toMealItem } from '../core/foods';
+import { defaultPortion, foodName, resolveByName, searchFoods, toMealItem } from '../core/foods';
 import { mealTypeForHour } from '../core/nutrition';
 import { pattern, slotOf } from '../core/pattern';
 import { pendingCount } from '../core/queue';
@@ -242,7 +242,7 @@ export default function PhotoScreen() {
               {drafts.map((d, idx) => {
                 const item = items[idx];
                 const displayEn = d.food ? d.food.name_en : d.rawName;
-                const displayMr = d.food ? d.food.name_mr : d.nameMrGuess;
+                const displayMr = d.food ? foodName(d.food, lang) : d.nameMrGuess;
                 return (
                   <View key={d.key} style={{ gap: 9 }}>
                     {idx > 0 ? <Divider /> : null}
@@ -283,7 +283,7 @@ export default function PhotoScreen() {
                         {searchFoods(app.foods, search || d.rawName, 6).map((f) => (
                           <Pressable key={f.id} onPress={() => swap(d.key, f)}>
                             <Row style={{ justifyContent: 'space-between', paddingVertical: 7 }}>
-                              <BiText en={f.name_en} alt={lang === 'en' ? undefined : f.name_mr} size={F.small} />
+                              <BiText en={f.name_en} alt={lang === 'en' ? undefined : foodName(f, lang)} size={F.small} />
                               <Micro>{`${f.kcal_100g} /100g`}</Micro>
                             </Row>
                           </Pressable>

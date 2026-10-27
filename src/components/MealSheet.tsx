@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { localHHMM } from '../core/date';
-import { defaultPortion, scaleMealItem, toMealItem } from '../core/foods';
+import { defaultPortion, itemName, scaleMealItem, toMealItem } from '../core/foods';
 import type { Meal, MealItem } from '../core/types';
 import { makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
@@ -79,7 +79,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
             {idx > 0 ? <Divider /> : null}
             <Row style={{ justifyContent: 'space-between' }}>
               <View style={{ flex: 1, gap: 3 }}>
-                <BiText en={it.name_en} alt={lang === 'en' ? undefined : it.name_mr} />
+                <BiText en={it.name_en} alt={lang === 'en' ? undefined : itemName(it, app.foods, lang)} />
                 <Micro>{`${it.grams} g${it.estimated ? ` · ${t('estimated')}` : ''}`}</Micro>
               </View>
               <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>

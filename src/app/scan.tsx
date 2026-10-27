@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 import { CustomFoodForm } from '../components/CustomFoodForm';
+import { foodName } from '../core/foods';
 import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem } from '../core/types';
 import { makeT } from '../i18n';
@@ -114,7 +115,7 @@ export default function ScanScreen() {
       <Screen>
         <Card tone={C.accent}>
           <Micro color={C.cyan}>{t('barcode_found')}</Micro>
-          <BiText en={found.name_en} alt={lang === 'en' ? undefined : found.name_mr} size={F.title} weight="500" />
+          <BiText en={found.name_en} alt={lang === 'en' ? undefined : foodName(found, lang)} size={F.title} weight="500" />
           <Divider />
           <Row style={{ justifyContent: 'space-between' }}>
             <Micro>{per.label_en}</Micro>

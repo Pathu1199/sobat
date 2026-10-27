@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { foodIcon, foodsForDiet, isCountable, MEASURES, measuresFor, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
+import { findFoods, foodIcon, foodsForDiet, isCountable, itemName, MEASURES, measuresFor, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
 import type { FoodItem, Meal, MealItem } from '../types';
 import { isSourceOf, nutrientSourcesEaten } from '../nutrients';
 import { RECIPES } from '../../data/recipes';
@@ -156,3 +156,37 @@ describe('everyday names in English letters', () => {
   });
 });
 
+
+describe('findFoods, the add sheet search', () => {
+  const ALL = foodsJson as unknown as FoodItem[];
+  const ids = (q: string) => findFoods(ALL, q).map((f) => f.id);
+
+  it('keeps only close matches: "poha" finds poha and not chikoo', () => {
+    expect(ids('poha')).toEqual(['poha']);
+    expect(ids('pohe')).toEqual(['poha']);
+    expect(ids('पोहे')).toEqual(['poha']);
+    expect(ids('chiku')).toContain('chikoo');
+    expect(ids('chiku')).not.toContain('lichi');
+    expect(ids('kaju')).toEqual(['cashews', 'kaju-katli']);
+  });
+
+  it('still finds the names people type, and nothing for a blank search', () => {
+    expect(ids('badam')).toContain('almonds');
+    expect(ids('akrod')).toContain('walnuts');
+    expect(ids('flower batata')).toContain('aloo-gobi');
+    expect(ids('lal math')).toContain('lal-math-bhaji');
+    expect(ids('   ')).toEqual([]);
+  });
+});
+
+describe('itemName', () => {
+  const ALL = foodsJson as unknown as FoodItem[];
+
+  it('names a logged item in the chosen language: Hindi from the database, English when there is none, never the Marathi name for Hindi', () => {
+    const chapati = ALL.find((f) => f.id === 'chapati')!;
+    expect(itemName({ foodId: 'chapati', name_en: 'Chapati', name_mr: 'चपाती' }, ALL, 'hi')).toBe(chapati.name_hi);
+    expect(itemName({ name_en: 'Home dal', name_mr: 'घरचं वरण' }, ALL, 'hi')).toBe('Home dal');
+    expect(itemName({ name_en: 'Home dal', name_mr: 'घरचं वरण' }, ALL, 'mr')).toBe('घरचं वरण');
+    expect(itemName({ name_en: 'Home dal', name_mr: 'घरचं वरण' }, ALL, 'en')).toBe('Home dal');
+  });
+});
