@@ -253,6 +253,11 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
     const weights = Array.isArray(raw.weights) ? ([...(raw.weights as AppState['weights'])].sort((a, b) => a.date.localeCompare(b.date))) : [];
     profile.startWeightKg = weights[0]?.kg ?? profile.weightKg;
   }
+  // A new chapter's day and the first start are optional: an older store has neither and reads as before. One that is not a
+  // date, or not a weight, came from a damaged file and is left out, so the streak and the climb count as if no chapter began.
+  if (profile.chapterStart !== undefined && !isIsoDate(profile.chapterStart)) delete profile.chapterStart;
+  const first = profile.firstStartWeightKg;
+  if (first !== undefined && !(typeof first === 'number' && Number.isFinite(first) && first > 0)) delete profile.firstStartWeightKg;
   // Version 7: the app fills planned meals in by itself. The days lived before this load had nothing filled in, so none is
   // filled now: an update must not log meals nobody saw planned onto a day already lived.
   if (fromVersion < 7 && profile.onboarded && !profile.autoFillFrom) profile.autoFillFrom = movedOn;

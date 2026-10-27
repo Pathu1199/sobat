@@ -67,6 +67,25 @@ describe('game', () => {
     expect(same.key).toBe(c.key);
   });
 
+  it('a new chapter started this week counts the challenge from its first day', () => {
+    // Every day of the week so far meets every challenge (Sunday to Wednesday), whichever one this week has.
+    const days = [0, 1, 2, 3];
+    const busy: GameInput = {
+      ...base,
+      water: days.map((n) => ({ id: `w${n}`, at: '', date: d(n), ml: 3000 })),
+      steps: days.map((n) => ({ date: d(n), count: 8000 })),
+      sleep: days.map((n) => ({ date: d(n), bed: '23:00', wake: '06:30', quality: 4, wakeups: 0, energy: 4, minutes: 450, score: 80 })),
+    };
+    const all = weeklyChallenge(busy);
+    expect(all.n).toBe(4);
+    const fresh = weeklyChallenge({ ...busy, since: TODAY });
+    expect(fresh.key).toBe(all.key);
+    expect(fresh.weekStart).toBe(all.weekStart);
+    expect(fresh.n).toBe(1);
+    expect(weeklyChallenge({ ...busy, since: d(1) }).n).toBe(2);
+    expect(weeklyChallenge({ ...busy, since: d(30) })).toEqual(all);
+  });
+
   it('lays the weigh-ins along the climb', () => {
     const trail = climbTrail(base.weights, 98, 88);
     expect(trail.map((t) => t.p)).toEqual([0, 0.08, 0.14, 0.2]);

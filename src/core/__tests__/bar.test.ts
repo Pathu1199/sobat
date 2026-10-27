@@ -81,8 +81,8 @@ describe('viewedDate: the day ➕ adds to', () => {
 
 describe('meRows', () => {
   it('lists the pages in a plain order, with Progress while it is not a tab', () => {
-    expect(meRows([]).map((r) => r.key)).toEqual(['coach', 'progress', 'body', 'plan', 'saved', 'grocery', 'recipes', 'customize', 'settings', 'guide']);
-    expect(meRows(['progress']).map((r) => r.key)).toEqual(['coach', 'body', 'plan', 'saved', 'grocery', 'recipes', 'customize', 'settings', 'guide']);
+    expect(meRows([]).map((r) => r.key)).toEqual(['coach', 'progress', 'body', 'plan', 'saved', 'grocery', 'recipes', 'customize', 'chapter', 'settings', 'guide']);
+    expect(meRows(['progress']).map((r) => r.key)).toEqual(['coach', 'body', 'plan', 'saved', 'grocery', 'recipes', 'customize', 'chapter', 'settings', 'guide']);
   });
 
   it('has a Customize row before Settings, to the tabs and the cards on Today', () => {
@@ -91,6 +91,10 @@ describe('meRows', () => {
 
   it('every row goes somewhere: a page, or a sheet', () => {
     for (const r of meRows([])) expect(Boolean(r.href) !== Boolean(r.sheet)).toBe(true);
+  });
+
+  it('has a "Start a new chapter" row that opens its sheet on Me, never a page', () => {
+    expect(meRows([]).find((r) => r.key === 'chapter')).toEqual({ key: 'chapter', icon: 'flag-outline', labelKey: 'me_chapter', subKey: 'me_chapter_sub', sheet: 'chapter' });
   });
 
   it('the grocery list opens as a sheet, and Recipes is its own row to the recipes on Food', () => {

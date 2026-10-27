@@ -172,9 +172,46 @@ describe('three-way merge of single values', () => {
   it('a setting changed elsewhere arrives; one changed here is kept', () => {
     const local = cloudOf(used([], { settings: { ...EMPTY_STATE.settings, waterGoalMl: 3000, bottleMl: 750 } }));
     const remote = cloudOf(used([], { settings: { ...EMPTY_STATE.settings, waterGoalMl: 2500 } }));
-    // Settings is one value: the side that changed it wins whole.
+    // Field by field: this device's bottle size and the other side's water goal both stay.
     expect(merge3(base, local, remote).settings.bottleMl).toBe(750);
+    expect(merge3(base, local, remote).settings.waterGoalMl).toBe(2500);
     expect(merge3(base, cloudOf(used([])), remote).settings.waterGoalMl).toBe(2500);
+  });
+
+  it('a new chapter here and a language picked there both stay', () => {
+    const b = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, startWeightKg: 92 } }));
+    const local = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, startWeightKg: 84, chapterStart: '2026-10-28', firstStartWeightKg: 92 } }));
+    const remote = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, startWeightKg: 92, lang: 'mr' } }));
+    const out = merge3(b, local, remote).profile;
+    expect([out.startWeightKg, out.chapterStart, out.firstStartWeightKg, out.lang]).toEqual([84, '2026-10-28', 92, 'mr']);
+    // Merged on the other device, the same.
+    const there = merge3(b, remote, local).profile;
+    expect([there.startWeightKg, there.chapterStart, there.firstStartWeightKg, there.lang]).toEqual([84, '2026-10-28', 92, 'mr']);
+  });
+
+  it('two devices editing different fields of the profile both keep their edit, wherever the merge runs', () => {
+    const b = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, weightKg: 90, goalWeightKg: 75, name: 'V' } }));
+    const phone = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, weightKg: 89.4, goalWeightKg: 75, name: 'V' } }));
+    const pc = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, weightKg: 90, goalWeightKg: 72, name: 'Varad' } }));
+    for (const out of [merge3(b, phone, pc).profile, merge3(b, pc, phone).profile]) {
+      expect([out.weightKg, out.goalWeightKg, out.name]).toEqual([89.4, 72, 'Varad']);
+    }
+  });
+
+  it('a field taken out on one side stays out, and a field changed on both keeps this device\'s', () => {
+    const b = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, chapterStart: '2026-10-01', weightKg: 90 } }));
+    const local = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, weightKg: 89 } }));
+    const remote = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, chapterStart: '2026-10-01', weightKg: 88, lang: 'hi' } }));
+    const out = merge3(b, local, remote).profile;
+    expect(out.chapterStart).toBeUndefined();
+    expect([out.weightKg, out.lang]).toEqual([89, 'hi']);
+  });
+
+  it('with no base the device\'s profile and settings are kept whole, as before', () => {
+    const local = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, weightKg: 89 }, settings: { ...EMPTY_STATE.settings, bottleMl: 750 } }));
+    const remote = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, weightKg: 88, lang: 'hi' }, settings: { ...EMPTY_STATE.settings, waterGoalMl: 2500 } }));
+    const out = merge3(null, local, remote);
+    expect([out.profile.weightKg, out.profile.lang, out.settings.bottleMl, out.settings.waterGoalMl]).toEqual([89, EMPTY_STATE.profile.lang, 750, EMPTY_STATE.settings.waterGoalMl]);
   });
 
   it('profile edited here beats the account\'s older copy', () => {

@@ -46,8 +46,8 @@ export function addSlot(items: BarItem[]): { index: number; count: number } {
   return { index: items.findIndex((i) => i.route === null), count: items.length };
 }
 
-/** A sheet a Me row opens over Me instead of a page: the saved meals, or this week's grocery list. */
-export type MeSheet = 'savedMeals' | 'grocery';
+/** A sheet a Me row opens over Me instead of a page: the saved meals, this week's grocery list, or "Start a new chapter". */
+export type MeSheet = 'savedMeals' | 'grocery' | 'chapter';
 export type MeRow = { key: string; icon: string; labelKey: string; subKey?: string; href?: string; sheet?: MeSheet };
 
 /** Me's plain list. Rows are data: a new one is one entry here. */
@@ -60,6 +60,7 @@ export function meRows(tabs: unknown): MeRow[] {
     { key: 'grocery', icon: 'basket-outline', labelKey: 'grocery_title', sheet: 'grocery' },
     { key: 'recipes', icon: 'restaurant-outline', labelKey: 'recipes', href: '/food?s=recipes' },
     { key: 'customize', icon: 'options-outline', labelKey: 'me_customize', subKey: 'me_customize_sub', href: '/customize' },
+    { key: 'chapter', icon: 'flag-outline', labelKey: 'me_chapter', subKey: 'me_chapter_sub', sheet: 'chapter' },
     { key: 'settings', icon: 'settings-outline', labelKey: 'settings', href: '/settings' },
     { key: 'guide', icon: 'help-circle-outline', labelKey: 'hdr_guide', href: '/guide' },
   ];

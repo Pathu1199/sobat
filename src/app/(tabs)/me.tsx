@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { View } from 'react-native';
+import { ChapterSheet } from '../../components/ChapterSheet';
 import { GrocerySheet } from '../../components/GrocerySheet';
 import { SavedMealsSheet } from '../../components/SavedMealsSheet';
 import { meRows, type MeSheet } from '../../core/bar';
@@ -14,7 +15,7 @@ import { Page } from '../../ui/TopBar';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-/** Me: a plain list of everything that is not on the bar, each one tap from its page. */
+/** Me: a plain list of everything that is not on the bar, each one tap from its page or its sheet. */
 export default function MeScreen() {
   const app = useApp();
   const router = useRouter();
@@ -42,6 +43,8 @@ export default function MeScreen() {
       <SavedMealsSheet open={sheet === 'savedMeals'} onClose={() => setSheet(null)} />
       {/* This week's plan as a shopping list, the same sheet the diet plan opens. */}
       <GrocerySheet open={sheet === 'grocery'} onClose={() => setSheet(null)} plan={app.weekPlan} monday={mondayOf(app.today)} />
+      {/* Start a new chapter: one sheet in plain words, on Me. */}
+      <ChapterSheet open={sheet === 'chapter'} onClose={() => setSheet(null)} />
     </Page>
   );
 }

@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { shownPlan } from '../core/chapter';
 import { formatDayMonthYear } from '../core/date';
-import { planFrom } from '../core/plan';
 import { oneDecimal, shortDecimal, shownWeight, signedKg } from '../core/tileText';
 import { weightPoints } from '../core/tiles';
 import { fill, makeT } from '../i18n';
@@ -31,7 +31,7 @@ export function WeightTrendCard() {
   const lang = state.profile.lang;
   const t = makeT(lang);
   const trend = useMemo(() => shownWeight(state.weights, today), [state.weights, today]);
-  const plan = useMemo(() => planFrom(state.profile, state.weights, targets, today), [state.profile, state.weights, targets, today]);
+  const plan = useMemo(() => shownPlan(state.profile, state.weights, targets, today), [state.profile, state.weights, targets, today]);
   const line = useMemo(
     () => (state.weights.length >= 2 ? toPath(weightPoints(state.weights, SPARK_W, SPARK_H - 2 * INSET, SPARK_COUNT).map((p) => ({ x: p.x, y: p.y + INSET }))) : ''),
     [state.weights],

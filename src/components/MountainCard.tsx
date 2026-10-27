@@ -2,42 +2,43 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { badges, climbTrail, level, weeklyChallenge, xp, type GameInput } from '../core/game';
-import { motivationKey, planFrom } from '../core/plan';
+import { gameView } from '../core/chapter';
+import { motivationKey } from '../core/plan';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Bar, Card, Micro, Pill, Row, Small } from '../ui/components';
 import { Mountain } from '../ui/Mountain';
 import { C, F } from '../ui/theme';
 
-/** Everything the game needs, from the store. Shared with the Journey screen. The streak is the record's, as the streak tile shows it. */
+/**
+ * Everything the game needs, from the store (`gameView`). Shared with the
+ * Journey screen and Progress. Lost, To go and the climb are the chapter's, at
+ * the weight Progress shows; the streak is the record's, as the streak tile
+ * shows it; points and badges are the whole journey's.
+ */
 export function useGame() {
   const { state, targets, today, streakDays, bestStreakDays } = useApp();
-  return useMemo(() => {
-    const plan = planFrom(state.profile, state.weights, targets, today);
-    const input: GameInput = {
-      today,
-      meals: state.meals,
-      water: state.water,
-      weights: state.weights,
-      sleep: state.sleep,
-      steps: state.steps,
-      workouts: state.workouts,
-      kcalTarget: targets.kcal,
-      waterGoalMl: state.settings.waterGoalMl,
-      startKg: plan.startKg,
-      goalKg: plan.goalKg,
-      offDays: state.settings.offDays,
-      streakDays,
-      bestStreakDays,
-      celebrated: state.celebrated,
-    };
-    const total = Math.max(0, plan.startKg - plan.goalKg);
-    const progress = total > 0 ? Math.min(1, Math.max(0, plan.lostKg / total)) : plan.toGoKg <= 0 ? 1 : 0;
-    const camps = total > 0 ? [0.25, 0.5, 0.75].map((p) => ({ p, label: `${Math.round((plan.startKg - total * p) * 10) / 10}` })) : [];
-    const points = xp(input);
-    return { plan, input, progress, camps, trail: climbTrail(state.weights, plan.startKg, plan.goalKg).map((t) => t.p), points, level: level(points), badges: badges(input), challenge: weeklyChallenge(input, state.settings.weighDay) };
-  }, [state.profile, state.weights, state.meals, state.water, state.sleep, state.steps, state.workouts, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, state.celebrated, streakDays, bestStreakDays, targets, today]);
+  return useMemo(
+    () =>
+      gameView({
+        state: {
+          profile: state.profile,
+          weights: state.weights,
+          meals: state.meals,
+          water: state.water,
+          sleep: state.sleep,
+          steps: state.steps,
+          workouts: state.workouts,
+          celebrated: state.celebrated,
+          settings: { waterGoalMl: state.settings.waterGoalMl, weighDay: state.settings.weighDay, offDays: state.settings.offDays },
+        },
+        targets,
+        today,
+        streakDays,
+        bestStreakDays,
+      }),
+    [state.profile, state.weights, state.meals, state.water, state.sleep, state.steps, state.workouts, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, state.celebrated, streakDays, bestStreakDays, targets, today],
+  );
 }
 
 /**

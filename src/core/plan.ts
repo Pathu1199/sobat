@@ -56,10 +56,11 @@ function eta(toGo: number, rate: number | null, today: ISODate): { weeks: number
   return { weeks: Math.ceil(days / 7), date: addDays(today, days) };
 }
 
-export function planFrom(profile: Profile, weights: WeightLog[], targets: Targets, today: ISODate): Plan {
+/** `nowKg`, when given, is the weight to read the plan at (the weight a screen shows); else the latest weigh-in. */
+export function planFrom(profile: Profile, weights: WeightLog[], targets: Targets, today: ISODate, nowKg?: number): Plan {
   const sorted = [...weights].sort((a, b) => a.date.localeCompare(b.date));
   const startKg = profile.startWeightKg ?? sorted[0]?.kg ?? profile.weightKg;
-  const currentKg = sorted[sorted.length - 1]?.kg ?? profile.weightKg;
+  const currentKg = nowKg ?? sorted[sorted.length - 1]?.kg ?? profile.weightKg;
   const goalKg = profile.goalWeightKg > 0 ? profile.goalWeightKg : currentKg;
   const lostKg = r1(startKg - currentKg);
   const toGoKg = r1(Math.max(0, currentKg - goalKg));

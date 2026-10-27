@@ -14,7 +14,8 @@ import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryT
 import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
 import { slotStates } from '../core/pattern';
-import { recordStreak } from '../core/record';
+import { recordStreak, STREAK_LOOKBACK_DAYS } from '../core/record';
+import { chapterDays } from '../core/chapter';
 import {
   addMenuLine,
   alignMenus,
@@ -81,8 +82,9 @@ type Ctx = {
   targets: Targets;
   budget: Budget;
   waterToday: number;
+  /** Full record days in a row, looking back no further than a new chapter's first day. */
   streakDays: number;
-  /** The longest run of full days in the streak's window, by the streak's own rule: the streak tile's "Best". */
+  /** The longest run of full days in the streak's window (from a new chapter's first day at most), by the streak's own rule: the streak tile's "Best". */
   bestStreakDays: number;
   setProfile: (p: Partial<Profile>) => void;
   setSettings: (s: Partial<Settings>) => void;
@@ -347,6 +349,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // change, so a memo that reads it (the streak, the best run) is not worked out again for a bottle of water.
   const menuOn = useCallback((date: ISODate) => viewMenu(date, state.menus, state.routine, today, planFoods, fit), [state.menus, state.routine, today, planFoods, fit]);
 
+  // A new chapter starts the streak again: the streak and the best run look back no further than the chapter's first day.
+  const streakWindow = chapterDays(state.profile.chapterStart, today, STREAK_LOOKBACK_DAYS);
   // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run before then.
   // A full day eaten under the safe minimum neither counts nor ends the run; a full day with nothing eaten (under 50 kcal) ends it, today too.
   const streakDays = useMemo(
@@ -359,8 +363,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         offDays: state.settings.offDays ?? [],
         floor: fit.floor,
         menuOn,
+        limit: streakWindow,
       }),
-    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, fit.floor, menuOn],
+    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, fit.floor, menuOn, streakWindow],
   );
   // The best run in the same window, on the same inputs and by the same rule, worked out once here for every tile that shows it.
   const bestStreakDays = useMemo(
@@ -373,8 +378,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         offDays: state.settings.offDays ?? [],
         floor: fit.floor,
         menuOn,
+        days: streakWindow,
       }),
-    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, fit.floor, menuOn],
+    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, fit.floor, menuOn, streakWindow],
   );
 
   // Planned meals fill themselves 90 minutes after their slot, and today is noted as a day the app was open: checked once the

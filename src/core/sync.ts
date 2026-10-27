@@ -59,8 +59,26 @@ export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => strin
   { key: 'savedMeals', idOf: (r) => String(r.id) },
 ];
 
-/** Everything else in the file: one value each, merged whole. */
+/** Everything else in the file: one value each, merged whole, but for the profile and the settings, merged field by field (`BY_FIELD`). */
 export const SINGLETONS = ['version', 'profile', 'settings', 'breakSettings', 'routine', 'schedule', 'weekPlan', 'celebrated', 'groceryTicks'] as const;
+
+/**
+ * Single objects merged field by field, each field one value: merged whole, a
+ * chapter started on the phone would lose to a language picked on the PC in
+ * the same round. Inside a field the rule is the one for any single value.
+ */
+const BY_FIELD = new Set<string>(['profile', 'settings']);
+
+/** Each field picked on its own against the base: this device's change wins, else the other side's; a field taken out on one side stays out. */
+function mergeFields(b: AnyRecord, l: AnyRecord, r: AnyRecord): AnyRecord {
+  const out: AnyRecord = {};
+  for (const f of new Set([...Object.keys(l), ...Object.keys(r)])) {
+    const bv = stable(b[f]);
+    const v = stable(l[f]) !== bv ? l[f] : stable(r[f]) !== bv ? r[f] : l[f];
+    if (v !== undefined) out[f] = v;
+  }
+  return out;
+}
 
 /** JSON with keys in a fixed order, so two equal values always read the same. */
 export function stable(v: unknown): string {
@@ -195,9 +213,12 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
     const bv = stable(b[key]);
     const lv = local[key];
     const rv = remote[key];
+    const bk = b[key];
     if (base === null) {
       // Unknown history: keep what this device has, fall back to the account's.
       out[key] = lv !== undefined && lv !== null ? lv : rv;
+    } else if (BY_FIELD.has(key) && isObject(lv) && isObject(rv) && isObject(bk)) {
+      out[key] = mergeFields(bk, lv, rv);
     } else if (stable(lv) !== bv) {
       out[key] = lv;
     } else if (stable(rv) !== bv) {

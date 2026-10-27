@@ -23,6 +23,8 @@ export type GameInput = {
   startKg: number;
   goalKg: number;
   offDays?: number[];
+  /** The first day of a new chapter: the weekly challenge counts from it. */
+  since?: ISODate;
   /** Days in a row by the record, as the store works them out (`recordStreak`). */
   streakDays: number;
   /** The best run in the streak's window, by the same rule (`bestStreak`); never less than `streakDays`. */
@@ -114,7 +116,7 @@ export const CHALLENGES = ['log_all_7', 'water_5', 'steps_4', 'no_heavy', 'sleep
 export type ChallengeKey = (typeof CHALLENGES)[number];
 export type Challenge = { key: ChallengeKey; n: number; target: number; done: boolean; progress: number; daysLeft: number; weekStart: ISODate };
 
-/** One challenge a week, the same one all week, a different one next week. Progress counts the current week. */
+/** One challenge a week, the same one all week, a different one next week. Progress counts the current week, from a new chapter's first day when one started this week. */
 export function weeklyChallenge(input: GameInput, weekStartDay = 0): Challenge {
   const d = new Date(input.today + 'T12:00:00');
   const back = (d.getDay() - weekStartDay + 7) % 7;
@@ -123,7 +125,10 @@ export function weeklyChallenge(input: GameInput, weekStartDay = 0): Challenge {
   const weekIndex = Math.floor(start.getTime() / (7 * 86400000));
   const key = CHALLENGES[weekIndex % CHALLENGES.length];
   const week = weekSummary({ ...input, today: input.today });
-  const inWeek = week.days.filter((x) => x.date >= start.toISOString().slice(0, 10));
+  const weekStart = start.toISOString().slice(0, 10);
+  // A chapter started this week starts the challenge again: the days before it do not count.
+  const from = input.since && input.since > weekStart ? input.since : weekStart;
+  const inWeek = week.days.filter((x) => x.date >= from);
   let n = 0;
   let target = 7;
   if (key === 'log_all_7') {
@@ -142,7 +147,7 @@ export function weeklyChallenge(input: GameInput, weekStartDay = 0): Challenge {
     n = inWeek.filter((x) => (x.sleepMinutes ?? 0) >= 420).length;
     target = 5;
   }
-  return { key, n, target, done: n >= target, progress: Math.min(1, n / target), daysLeft: 6 - back, weekStart: start.toISOString().slice(0, 10) };
+  return { key, n, target, done: n >= target, progress: Math.min(1, n / target), daysLeft: 6 - back, weekStart };
 }
 
 /** Where each weigh-in sits on the climb, 0 at the start weight and 1 at the goal. */

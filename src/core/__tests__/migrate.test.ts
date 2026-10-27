@@ -775,9 +775,10 @@ describe('the day a store moved to this version', () => {
     expect(s.now().profile.goalWeightKg).toBe(75);
     expect(s.now().profile.autoFillFrom).toBe('2026-10-27');
     expect(s.written[0].profile.goalWeightKg).toBe(75);
-    // Stamped on the round's day instead, this device's whole profile would read as changed here and win.
+    // Stamped on the round's day instead, the stamp reads as changed here; merged whole, this device's whole profile would
+    // win. The profile merges field by field, so only the stamp does and the goal changed there is still kept.
     const stale = await syncWith(remote, { local, base: base6 as unknown as CloudState, modifiedTime: 't0' });
-    expect(stale.now().profile.goalWeightKg).toBe(80);
+    expect(stale.now().profile.goalWeightKg).toBe(75);
   });
 
   it('an account file reaching a device that was never used carries the stamp of the round', async () => {
@@ -843,5 +844,23 @@ describe('records in an odd shape, from sync or an old file', () => {
   it('turns a skip key from an older build into a skip as before, beside the well-formed skips kept', () => {
     const s = migrateState({ ...v1, version: 6, slotSkips: [skip, { id: 'x' }], actionsDone: [{ date: '2026-10-28', key: 'skip_dinner' }] }, NOW);
     expect(s.slotSkips.map((x) => x.id)).toEqual(['2026-10-27:lunch', '2026-10-28:dinner']);
+  });
+});
+
+describe('a new chapter in the profile', () => {
+  it('an older store has none and reads unchanged; a chapter already started is kept as it was', () => {
+    const old = migrateState({ ...v1, version: 7 }, NOW);
+    expect(old.profile).not.toHaveProperty('chapterStart');
+    expect(old.profile).not.toHaveProperty('firstStartWeightKg');
+    const started = migrateState({ ...v1, version: 7, profile: { ...v1.profile, startWeightKg: 92, chapterStart: '2026-10-20', firstStartWeightKg: 98.7 } }, NOW);
+    expect(started.profile).toMatchObject({ startWeightKg: 92, chapterStart: '2026-10-20', firstStartWeightKg: 98.7 });
+    expect(migrateState(started, NOW)).toEqual(started);
+  });
+
+  it('a chapter day that is not a date, or a first start that is not a weight, from a damaged file, is left out', () => {
+    const s = migrateState({ ...v1, version: 7, profile: { ...v1.profile, chapterStart: 'soon', firstStartWeightKg: 'heavy' } }, NOW);
+    expect(s.profile).not.toHaveProperty('chapterStart');
+    expect(s.profile).not.toHaveProperty('firstStartWeightKg');
+    expect(migrateState({ ...v1, version: 7, profile: { ...v1.profile, chapterStart: '2026-02-30', firstStartWeightKg: -4 } }, NOW).profile).not.toHaveProperty('chapterStart');
   });
 });
