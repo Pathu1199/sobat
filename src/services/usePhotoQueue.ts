@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import { FOOD_PHOTO_SCHEMA, foodPhotoPrompt } from '../ai/prompts';
 import { toISODate } from '../core/date';
 import { defaultPortion, resolveByName, toMealItem } from '../core/foods';
-import { EATEN_NOW_MS, slotAt } from '../core/pattern';
+import { skippedOn } from '../core/menu';
+import { slotForMealAt } from '../core/pattern';
 import { MAX_ATTEMPTS, nextToProcess } from '../core/queue';
 import type { MealItem } from '../core/types';
 import { loadPhoto, removePhoto } from './photoStore';
@@ -79,16 +80,17 @@ export function usePhotoQueue() {
         }
 
         const at = new Date(photo.at || Date.now());
-        // The slot whose turn it was when the photo was taken, by the person's own pattern.
-        // One taken just now is left to find its slot the way any meal eaten now does.
-        const slot = slotAt(store.state.routine, at.getHours() * 60 + at.getMinutes());
-        const justNow = Math.abs(Date.now() - at.getTime()) <= EATEN_NOW_MS;
+        const date = photo.date || toISODate(at);
+        // The slot a meal eaten when the photo was taken would have found then: by the
+        // person's own pattern, with what was already eaten or skipped that day by then.
+        const s = store.state;
+        const slot = slotForMealAt({ routine: s.routine, target: store.targets.kcal, meals: s.meals, skippedSlots: skippedOn(s.slotSkips, date), date, at });
         store.addMeal({
           id: `q-${photo.id}`,
           at: at.toISOString(),
-          date: photo.date || toISODate(at),
+          date,
           type: slot?.type ?? 'snack',
-          slotId: justNow ? undefined : slot?.id,
+          slotId: slot?.id,
           items,
           kcal: items.reduce((a, i) => a + i.kcal, 0),
           protein: Math.round(items.reduce((a, i) => a + i.protein, 0)),

@@ -1,6 +1,6 @@
 import { toISODate } from './date';
 import { SLOT_EARLY_MIN, SLOT_GRACE_MIN, slotMinutes, slotStatus, type Routine, type RoutineSlot, type SlotStatus } from './routine';
-import type { Meal, MealType } from './types';
+import type { ISODate, Meal, MealType } from './types';
 
 /**
  * The eating pattern: the routine's slots in time order, each with a share
@@ -169,28 +169,48 @@ export function currentSlot(states: SlotState[], nowMinutes: number): SlotState 
 export const EATEN_NOW_MS = 10 * 60000;
 
 /**
- * A meal that names no slot (one from a photo, a recipe or the coach) gets
- * the slot it is eaten in: eaten now, today, the current slot and its type;
- * eaten earlier or on another day, as a queued photo or an undone delete,
- * the slot its own time and type put it in. `meals` and `skippedSlots` are
- * today's. Unchanged when it already names a slot or there are none.
+ * The slot a meal eaten at `at` on `date` belongs to, judged by what was true
+ * then: the day's slots as they stood with the meals logged that date up to
+ * that moment and the slots skipped that date, and `currentSlot` at that
+ * minute. A meal eaten now and a photo taken earlier and read later go
+ * through the same rule, so a dinner photographed at 19:15 after a 16:00
+ * snack is dinner, not the snack whose window it fell in. `meals` may hold
+ * any dates; `skippedSlots` are the slot ids skipped on `date`. Null only with
+ * no slots.
+ */
+export function slotForMealAt(input: { routine: Routine; target: number; meals: Meal[]; skippedSlots: string[]; date: ISODate; at: Date }): PatternSlot | null {
+  const at = input.at.getTime();
+  const minutes = input.at.getHours() * 60 + input.at.getMinutes();
+  const before = input.meals.filter((m) => m.date === input.date && Date.parse(m.at) <= at);
+  const cur = currentSlot(slotStates({ routine: input.routine, target: input.target, meals: before, nowMinutes: minutes, skippedSlots: input.skippedSlots }), minutes);
+  return cur ? cur.slot : null;
+}
+
+/**
+ * A meal that names no slot (one from a recipe or the coach) gets the slot
+ * it is eaten in: eaten now, today, the slot `slotForMealAt` gives now, and
+ * its type; eaten earlier or on another day, as an undone delete, the slot
+ * its own time and type put it in. A queued photo finds its slot before it
+ * gets here. `meals` and `skippedSlots` are today's. Unchanged when it
+ * already names a slot or there are none.
  */
 export function withSlot(meal: Meal, input: { routine: Routine; target: number; meals: Meal[]; skippedSlots: string[]; now: Date }): Meal {
   if (meal.slotId) return meal;
-  const nowMinutes = input.now.getHours() * 60 + input.now.getMinutes();
-  if (meal.date === toISODate(input.now) && Math.abs(Date.parse(meal.at) - input.now.getTime()) <= EATEN_NOW_MS) {
-    const cur = currentSlot(slotStates({ routine: input.routine, target: input.target, meals: input.meals, nowMinutes, skippedSlots: input.skippedSlots }), nowMinutes);
-    return cur ? { ...meal, slotId: cur.slot.id, type: cur.slot.type } : meal;
+  const today = toISODate(input.now);
+  if (meal.date === today && Math.abs(Date.parse(meal.at) - input.now.getTime()) <= EATEN_NOW_MS) {
+    const cur = slotForMealAt({ routine: input.routine, target: input.target, meals: input.meals, skippedSlots: input.skippedSlots, date: today, at: input.now });
+    return cur ? { ...meal, slotId: cur.id, type: cur.type } : meal;
   }
   const p = slotOf(meal, pattern(input.routine));
   return p ? { ...meal, slotId: p.id, type: p.type } : meal;
 }
 
 /**
- * The slot whose turn it is at this minute: the latest one whose window (its
- * time minus the early margin) has opened; before the day's first window
- * opens, the first slot. Every meal-shaped decision (the coach, the plates, a
- * photo's meal) reads this rather than a fixed list of meal hours. Null only
+ * The slot whose turn it is at this minute by the clock alone: the latest one
+ * whose window (its time minus the early margin) has opened; before the day's
+ * first window opens, the first slot. The coach's meal clock reads this
+ * rather than a fixed list of meal hours. It does not know what was eaten or
+ * skipped; a meal being logged finds its slot with `slotForMealAt`. Null only
  * with no slots.
  */
 export function slotAt(routine: Routine, minutes: number): PatternSlot | null {
@@ -203,14 +223,28 @@ export function slotAt(routine: Routine, minutes: number): PatternSlot | null {
 
 /**
  * How much of the day's target someone following their own pattern would
- * have eaten by this hour: each slot's share counts in as its window runs,
- * from its time minus the early margin to its time plus the grace. A day
- * still running is judged against this, not against the whole target.
+ * have eaten by this minute of the day: each slot's share counts in as its
+ * window runs, from its time minus the early margin to its time plus the
+ * grace. The least a day still running is judged against.
  */
-export function expectedKcalByHour(target: number, hour: number, slots: PatternSlot[]): number {
-  const now = hour * 60;
+export function expectedKcalByMinute(target: number, minutes: number, slots: PatternSlot[]): number {
   const span = SLOT_EARLY_MIN + SLOT_GRACE_MIN;
   let share = 0;
-  for (const s of slots) share += s.share * Math.min(1, Math.max(0, (now - (s.minutes - SLOT_EARLY_MIN)) / span));
+  for (const s of slots) share += s.share * Math.min(1, Math.max(0, (minutes - (s.minutes - SLOT_EARLY_MIN)) / span));
   return Math.round(target * Math.min(1, share));
+}
+
+/**
+ * The day's target over every slot whose window has opened by this minute,
+ * in full: the most someone following their pattern may have eaten by now.
+ * A breakfast eaten as its window opens is all allowed, not over.
+ */
+export function openedKcalByMinute(target: number, minutes: number, slots: PatternSlot[]): number {
+  const share = slots.reduce((a, s) => (minutes >= s.minutes - SLOT_EARLY_MIN ? a + s.share : a), 0);
+  return Math.round(target * Math.min(1, share));
+}
+
+/** The minute the last slot's window closes (its time plus the grace): until then the day is still running. */
+export function windowsCloseAt(slots: PatternSlot[]): number {
+  return slots.reduce((a, s) => Math.max(a, s.minutes + SLOT_GRACE_MIN), 0);
 }

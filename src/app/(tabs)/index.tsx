@@ -39,6 +39,7 @@ import type { Meal } from '../../core/types';
 import { fill, makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
 import { useMantra } from '../../services/useMantra';
+import { useMinute } from '../../services/useWorkSchedule';
 import { useApp } from '../../store/AppProvider';
 import { Banner, BannerBar } from '../../ui/Banner';
 import { Card, Divider, ListRow, MeterRow, Micro, Quote, Row, Small } from '../../ui/components';
@@ -59,6 +60,8 @@ export default function TodayScreen() {
   const en = makeT('en');
   const wide = useBreakpoint() === 'desktop';
   const mantra = useMantra();
+  // The day's score is judged to the minute against the person's own pattern.
+  const minute = useMinute();
   const [mantraWhy, setMantraWhy] = useState(false);
 
   // Today by default; the chevrons under the meals walk back a day at a time.
@@ -122,7 +125,7 @@ export default function TodayScreen() {
     workoutMinutes: workoutDay?.minutes ?? 0,
     sleepScore: sleepDay?.score,
     moodScore: moodDay?.score,
-    hour: isToday ? hour : undefined,
+    minutes: isToday ? minute : undefined,
     slots: pattern(state.routine),
     expectedWaterMl: isToday ? expectedWaterByHour(hour, state.settings.waterGoalMl) : undefined,
   });

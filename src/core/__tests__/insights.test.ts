@@ -27,23 +27,53 @@ describe('scoreDay', () => {
 
   it('does not punish a day that is still running', () => {
     // 11am, breakfast only: that is on pace, not a failure.
-    const s = scoreDay({ ...b, kcal: 450, waterMl: 750, hour: 11 });
+    const s = scoreDay({ ...b, kcal: 450, waterMl: 750, minutes: 11 * 60 });
     expect(s.eating).toBeGreaterThan(70);
   });
 
   it('judges a running day by the person\'s own slots: breakfast alone is on pace at 14:00 when lunch is at 15:00', () => {
     const lateLunch = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS.map((s) => (s.id === 'lunch' ? { ...s, time: '15:00' } : s)) });
-    expect(scoreDay({ ...b, kcal: 450, waterMl: 0, hour: 14, slots: lateLunch }).eating).toBe(100);
+    expect(scoreDay({ ...b, kcal: 450, waterMl: 0, minutes: 14 * 60, slots: lateLunch }).eating).toBe(100);
     // Without them, the four meals of the day expect lunch by 14:00.
-    expect(scoreDay({ ...b, kcal: 450, waterMl: 0, hour: 14 }).eating!).toBeLessThan(50);
+    expect(scoreDay({ ...b, kcal: 450, waterMl: 0, minutes: 14 * 60 }).eating!).toBeLessThan(50);
+  });
+
+  it('does not call a breakfast eaten in its window off pace: at 08:40, with breakfast at 08:30', () => {
+    expect(scoreDay({ ...b, kcal: 450, waterMl: 0, minutes: 8 * 60 + 40 }).eating).toBe(100);
+    expect(scoreDay({ ...b, kcal: 250, waterMl: 0, minutes: 8 * 60 + 40 }).eating).toBe(100);
+    // A whole day's food at breakfast is still over.
+    expect(scoreDay({ ...b, kcal: 1500, waterMl: 0, minutes: 8 * 60 + 40 }).eating!).toBeLessThan(30);
+  });
+
+  it('does not call a lunch not yet eaten off pace as its window opens, and does once it has run on', () => {
+    expect(scoreDay({ ...b, kcal: 450, waterMl: 0, minutes: 12 * 60 + 35 }).eating!).toBeGreaterThan(85);
+    expect(scoreDay({ ...b, kcal: 450, waterMl: 0, minutes: 13 * 60 + 40 }).eating!).toBeLessThan(50);
+  });
+
+  it('keeps a day running until the last slot\'s window has closed, so a 21:30 dinner is not judged as missed at 21:15', () => {
+    const lateDinner = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS.map((s) => (s.id === 'dinner' ? { ...s, time: '21:30' } : s)) });
+    // Everything but dinner: 1260 of 1800.
+    const at = (minutes: number) => scoreDay({ ...b, kcal: 1260, waterMl: 0, minutes, slots: lateDinner }).eating!;
+    expect(at(21 * 60 + 15)).toBeGreaterThan(85);
+    expect(at(22 * 60 + 5)).toBeGreaterThan(60);
+    // Once dinner's window closes at 22:15, the day is judged whole, against the full target.
+    expect(at(22 * 60 + 20)).toBe(scoreDay({ ...b, kcal: 1260, waterMl: 0 }).eating);
+    // The four meals of the day close at 21:15 (dinner at 20:30), so by 21:20 that day is whole.
+    expect(scoreDay({ ...b, kcal: 1260, waterMl: 0, minutes: 21 * 60 + 20 }).eating).toBe(scoreDay({ ...b, kcal: 1260, waterMl: 0 }).eating);
+  });
+
+  it('falls back to the four meals of the day for an empty list of slots, instead of expecting nothing', () => {
+    const none = scoreDay({ ...b, kcal: 450, waterMl: 0, minutes: 11 * 60, slots: [] });
+    expect(none.eating).toBe(scoreDay({ ...b, kcal: 450, waterMl: 0, minutes: 11 * 60 }).eating);
+    expect(none.eating).toBe(100);
   });
 
   it('shows nothing rather than zero before the first meal', () => {
-    expect(scoreDay({ ...b, kcal: 0, waterMl: 0, hour: 9 }).eating).toBeNull();
+    expect(scoreDay({ ...b, kcal: 0, waterMl: 0, minutes: 9 * 60 }).eating).toBeNull();
   });
 
   it('still catches overeating early in the day', () => {
-    const s = scoreDay({ ...b, kcal: 1700, waterMl: 0, hour: 11 });
+    const s = scoreDay({ ...b, kcal: 1700, waterMl: 0, minutes: 11 * 60 });
     expect(s.eating!).toBeLessThan(30);
   });
 
@@ -56,40 +86,40 @@ describe('scoreDay', () => {
   });
 
   it('shows movement as "later" at noon when nothing is done yet', () => {
-    const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, hour: 12 });
+    const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, minutes: 12 * 60 });
     expect(s.movement).toBeNull();
   });
 
   it('scores movement once a session is done, even at noon', () => {
-    const s = scoreDay({ ...b, kcal: 500, waterMl: 1000, hour: 12 });
+    const s = scoreDay({ ...b, kcal: 500, waterMl: 1000, minutes: 12 * 60 });
     expect(s.movement).toBe(100);
   });
 
   it('scores movement as zero after 18:00 with nothing done', () => {
-    const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, hour: 19 });
+    const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, minutes: 19 * 60 });
     expect(s.movement).toBe(0);
   });
 
   it('judges water against the pace so far, not the whole goal', () => {
     // Noon, 1.5 L drunk, 3 L goal. Half the goal at noon is on pace.
-    const s = scoreDay({ ...b, kcal: 500, waterMl: 1500, hour: 12, expectedWaterMl: 1071 });
+    const s = scoreDay({ ...b, kcal: 500, waterMl: 1500, minutes: 12 * 60, expectedWaterMl: 1071 });
     expect(s.water).toBe(100);
     const late = scoreDay({ ...b, kcal: 1800, waterMl: 1500 });
     expect(late.water).toBe(50);
   });
 
   it('leaves water unknown before the pace window opens', () => {
-    const s = scoreDay({ ...b, kcal: 0, waterMl: 0, hour: 6, expectedWaterMl: 0 });
+    const s = scoreDay({ ...b, kcal: 0, waterMl: 0, minutes: 6 * 60, expectedWaterMl: 0 });
     expect(s.water).toBeNull();
   });
 
   it('scores water part-way along the pace, not only at the cap', () => {
-    const s = scoreDay({ ...b, kcal: 500, waterMl: 500, hour: 12, expectedWaterMl: 1000 });
+    const s = scoreDay({ ...b, kcal: 500, waterMl: 500, minutes: 12 * 60, expectedWaterMl: 1000 });
     expect(s.water).toBe(50);
   });
 
   it('judges movement from 18:00 exactly', () => {
-    const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, hour: 18 });
+    const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, minutes: 18 * 60 });
     expect(s.movement).toBe(0);
   });
 });
@@ -182,7 +212,7 @@ describe('biggestLever', () => {
   });
 
   it('ignores metrics that are not known yet', () => {
-    const s = scoreDay({ date: '2026-09-25', kcal: 450, kcalTarget: 1800, waterMl: 700, waterGoalMl: 3000, workedOut: false, workoutMinutes: 0, hour: 11, expectedWaterMl: 857 });
+    const s = scoreDay({ date: '2026-09-25', kcal: 450, kcalTarget: 1800, waterMl: 700, waterGoalMl: 3000, workedOut: false, workoutMinutes: 0, minutes: 11 * 60, expectedWaterMl: 857 });
     // Movement is null at 11am; nothing else is below 60.
     expect(biggestLever(s)).toBeNull();
   });

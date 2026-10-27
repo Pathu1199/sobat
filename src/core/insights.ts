@@ -1,6 +1,6 @@
 import { breakStats, type BreakLog } from './breaks';
 import { addDays, lastNDates, localHour } from './date';
-import { expectedKcalByHour, pattern, type PatternSlot } from './pattern';
+import { expectedKcalByMinute, openedKcalByMinute, pattern, windowsCloseAt, type PatternSlot } from './pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS } from './routine';
 import type { ISODate, Meal, MoodLog, SleepLog, WaterLog, WeightLog, WorkoutLog } from './types';
 
@@ -37,17 +37,23 @@ export function scoreDay(input: {
   workoutMinutes: number;
   sleepScore?: number;
   moodScore?: number;
-  /** Hour of day when the day is still running. Omit to score a finished day. */
-  hour?: number;
-  /** How much water a person on pace would have drunk by `hour`. Only used while running. */
+  /** Minute of the day, for today. Omit to score a finished day. */
+  minutes?: number;
+  /** How much water a person on pace would have drunk by now. Only used while running. */
   expectedWaterMl?: number;
-  /** The eating pattern a running day is judged by; the four meals of the day when not given. */
+  /** The eating pattern a running day is judged by; the four meals of the day when not given or empty. */
   slots?: PatternSlot[];
 }): DayScore {
-  // Mid-day, judge against what the person's own pattern has due by now. Judging a
+  const slots = input.slots?.length ? input.slots : DEFAULT_PATTERN;
+  // Today is still running until the last slot's window has closed, so a 21:30 dinner is not missed at 21:15.
+  const running = input.minutes !== undefined && input.minutes < windowsCloseAt(slots);
+  // Mid-day, judge against the person's own pattern: on pace anywhere from what is due by
+  // now to all the slots whose window has opened, so a breakfast eaten as its window opens
+  // is not over and a lunch not yet eaten as its window opens is not under. Judging a
   // half-eaten day against the full target reads as failure at breakfast.
-  const running = input.hour !== undefined && input.hour < 21;
-  const denominator = running ? Math.max(expectedKcalByHour(input.kcalTarget, input.hour!, input.slots ?? DEFAULT_PATTERN), 1) : input.kcalTarget;
+  const denominator = running
+    ? Math.max(1, Math.min(Math.max(input.kcal, expectedKcalByMinute(input.kcalTarget, input.minutes!, slots)), openedKcalByMinute(input.kcalTarget, input.minutes!, slots)))
+    : input.kcalTarget;
 
   let eating: number | null;
   if (input.kcal === 0) {
@@ -62,7 +68,7 @@ export function scoreDay(input: {
 
   let movement: number | null;
   if (input.workedOut) movement = clamp100(60 + Math.min(input.workoutMinutes, 40));
-  else if (running && input.hour! < MOVEMENT_JUDGED_FROM_HOUR) movement = null;
+  else if (running && input.minutes! < MOVEMENT_JUDGED_FROM_HOUR * 60) movement = null;
   else movement = 0;
 
   let water: number | null;
