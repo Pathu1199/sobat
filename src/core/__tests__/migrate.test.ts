@@ -99,6 +99,14 @@ describe('migrateState', () => {
     expect(migrateState({ ...v1, version: 7, routine: { ...DEFAULT_ROUTINE, enabled: false } }).routine.enabled).toBe(true);
   });
 
+  it('version 7 stores are never reset again, even holding the old example with the pattern off', () => {
+    const kept = migrateState({ ...v1, version: 7, routine: { ...DEFAULT_ROUTINE, enabled: false } }).routine;
+    expect(kept.slots).toEqual(DEFAULT_ROUTINE.slots);
+    expect(kept.week).toEqual(DEFAULT_ROUTINE.week);
+    expect(kept.avoid).toEqual(DEFAULT_ROUTINE.avoid);
+    expect([kept.budgetMin, kept.budgetMax]).toEqual([DEFAULT_ROUTINE.budgetMin, DEFAULT_ROUTINE.budgetMax]);
+  });
+
   it('gives routine meals saved without a time their default time', () => {
     // Version 3, the first where a pattern switched on was the person's choice rather than the old default.
     const old = { ...v1, version: 3, routine: { ...DEFAULT_ROUTINE, enabled: true, slots: DEFAULT_ROUTINE.slots.map(({ time: _t, ...s }) => s) } };

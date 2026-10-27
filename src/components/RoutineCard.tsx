@@ -142,8 +142,8 @@ export function RoutineCard() {
         </Pressable>
       ) : null}
 
-      {/* No bhaji week, no bhaji to show. */}
-      {hasBhajiWeek(routine) ? (
+      {/* No bhaji week and none picked for today, no bhaji to show; the same rule the coach is told. */}
+      {bhaji.length > 0 || hasBhajiWeek(routine) ? (
         <View style={{ gap: 4 }}>
           <Micro>{t('routine_bhaji')}</Micro>
           {bhaji.length > 0 ? (

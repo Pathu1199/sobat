@@ -148,7 +148,8 @@ export default function LogScreen() {
 
   function repeatYesterday() {
     if (!yesterdaySame) return;
-    app.addMeal({ ...yesterdaySame, id: newId(), at: atFor(yesterdaySame.type), date: viewDate, note: undefined, slotId: chosen?.slot.id });
+    // Logged by hand today, whatever yesterday's came from: a copy of a filled-in meal must not be droppable as one.
+    app.addMeal({ ...yesterdaySame, id: newId(), at: atFor(yesterdaySame.type), date: viewDate, note: undefined, slotId: chosen?.slot.id, source: 'manual' });
     fb.haptic('success');
     fb.notify(t('toast_meal_saved').replace('{kcal}', String(yesterdaySame.kcal)));
   }
