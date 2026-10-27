@@ -1,8 +1,11 @@
-import { addDays, weekDates } from './date';
+import { addDays, toISODate, weekDates } from './date';
+import { toMealItem } from './foods';
+import { slotOf, type SlotPoint } from './pattern';
 import { weekdayOf, type PlanLine, type Routine } from './routine';
 import { stable } from './sync';
-import type { FoodItem, ISODate, SlotSkip } from './types';
-import { alignDay, planDayFor, type PlanMeal } from './weekPlan';
+import type { FoodItem, ISODate, Meal, MealItem, MealSource, SavedMeal, SlotSkip } from './types';
+import { isOffDay } from './week';
+import { alignDay, lineInfo, planDayFor, type PlanMeal } from './weekPlan';
 
 /**
  * The menu, date by date. Each date holds its own meals, one per slot of the
@@ -143,4 +146,163 @@ export function removeSkip(skips: SlotSkip[], date: ISODate, slotId: string): Sl
 /** The slot ids skipped on one date. */
 export function skippedOn(skips: SlotSkip[], date: ISODate): string[] {
   return skips.filter((s) => s.date === date).map((s) => s.slotId);
+}
+
+function minutesOf(hhmm: string | undefined): number {
+  const [h, m] = (hhmm ?? '').split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+/** A clock time to build a date-time from; noon when a menu meal has none. */
+function clockOf(hhmm: string | undefined): string {
+  return hhmm && /^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm) ? hhmm : '12:00';
+}
+
+/** A date's slots as its menu has them, to match meals against. */
+export function menuSlots(menu: DayMenu): (SlotPoint & { meal: PlanMeal })[] {
+  return menu.meals.map((m) => ({ id: m.id, type: m.type, minutes: minutesOf(m.time), meal: m }));
+}
+
+/** The menu's slots that hold any meal on its date, matched the way the day's slots are. */
+export function eatenSlotIds(menu: DayMenu, meals: Meal[]): Set<string> {
+  const slots = menuSlots(menu);
+  const out = new Set<string>();
+  for (const m of meals) {
+    if (m.date !== menu.date) continue;
+    const s = slotOf(m, slots);
+    if (s) out.add(s.id);
+  }
+  return out;
+}
+
+/**
+ * A meal made from planned lines: one item per line, its grams from the
+ * line's measure, its calories from the food database at those grams. A food
+ * the person made up keeps its estimated mark. It is logged at the slot's
+ * time on that date, or now when that time has not come yet. Null when no
+ * line names a food that exists.
+ */
+export function mealFromLines(input: {
+  id: string;
+  date: ISODate;
+  slot: Pick<PlanMeal, 'id' | 'type' | 'time'>;
+  lines: PlanLine[];
+  foods: FoodItem[];
+  source: MealSource;
+  now: Date;
+}): Meal | null {
+  const items: MealItem[] = [];
+  for (const line of input.lines) {
+    const info = lineInfo(line, input.foods);
+    if (info && info.grams > 0) items.push(toMealItem(info.food, info.grams, info.food.tags.includes('custom')));
+  }
+  if (items.length === 0) return null;
+  const planned = new Date(`${input.date}T${clockOf(input.slot.time)}:00`);
+  const at = planned.getTime() > input.now.getTime() ? input.now : planned;
+  return {
+    id: input.id,
+    at: at.toISOString(),
+    date: input.date,
+    type: input.slot.type,
+    slotId: input.slot.id,
+    items,
+    kcal: items.reduce((a, i) => a + i.kcal, 0),
+    protein: Math.round(items.reduce((a, i) => a + i.protein, 0)),
+    source: input.source,
+  };
+}
+
+/** Minutes after a slot's time before the app fills it in from the plan. */
+export const AUTO_FILL_AFTER_MIN = 90;
+
+/** The id of a meal the app filled in: the same on every device, so two devices filling one slot make one meal, not two. */
+export function autoMealId(date: ISODate, slotId: string): string {
+  return `auto-${date}-${slotId}`;
+}
+
+/** The open slots of a date's menu: something planned, nothing eaten, not skipped. */
+function openSlots(menu: DayMenu, meals: Meal[], skips: SlotSkip[]): PlanMeal[] {
+  const eaten = eatenSlotIds(menu, meals);
+  const skipped = new Set(skippedOn(skips, menu.date));
+  return menu.meals.filter((m) => m.lines.length > 0 && !eaten.has(m.id) && !skipped.has(m.id));
+}
+
+/**
+ * The planned meals the app logs by itself: a slot of the date's menu with
+ * nothing eaten in it and no skip gets its planned meal 90 minutes after the
+ * slot's time, marked 'auto' until the person confirms it. Only today, and
+ * yesterday when the app was open yesterday; never an off day. Returns the
+ * meals to add.
+ */
+export function autoFill(input: {
+  date: ISODate;
+  now: Date;
+  menu: DayMenu | null;
+  meals: Meal[];
+  skips: SlotSkip[];
+  /** Dates the app was open on (the usage buckets). */
+  openedDates: ISODate[];
+  offDays: number[];
+  foods: FoodItem[];
+}): Meal[] {
+  const { date, now, menu } = input;
+  if (!menu || menu.date !== date) return [];
+  const today = toISODate(now);
+  const yesterdayOpened = date === addDays(today, -1) && input.openedDates.includes(date);
+  if (date !== today && !yesterdayOpened) return [];
+  if (isOffDay(input.offDays, date)) return [];
+  const out: Meal[] = [];
+  for (const slot of openSlots(menu, input.meals, input.skips)) {
+    const due = new Date(`${date}T${clockOf(slot.time)}:00`).getTime() + AUTO_FILL_AFTER_MIN * 60000;
+    if (now.getTime() < due) continue;
+    const meal = mealFromLines({ id: autoMealId(date, slot.id), date, slot, lines: slot.lines, foods: input.foods, source: 'auto', now });
+    if (meal) out.push(meal);
+  }
+  return out;
+}
+
+/** "Fill this day from plan": every open slot of an older day, the kind the app was never open on, logged as planned. */
+export function fillFromPlan(input: { now: Date; menu: DayMenu; meals: Meal[]; skips: SlotSkip[]; foods: FoodItem[] }): Meal[] {
+  const { menu } = input;
+  const out: Meal[] = [];
+  for (const slot of openSlots(menu, input.meals, input.skips)) {
+    const meal = mealFromLines({ id: `plan-${menu.date}-${slot.id}`, date: menu.date, slot, lines: slot.lines, foods: input.foods, source: 'plan', now: input.now });
+    if (meal) out.push(meal);
+  }
+  return out;
+}
+
+/** A meal the app filled in, confirmed by the person: it now reads as eaten as planned. */
+export function withMealConfirmed(meals: Meal[], id: string): Meal[] {
+  if (!meals.some((m) => m.id === id && m.source === 'auto')) return meals;
+  return meals.map((m): Meal => (m.id === id ? { ...m, source: 'plan' } : m));
+}
+
+/** "Day looks right": every meal the app filled in on that date, confirmed at once. */
+export function withDayConfirmed(meals: Meal[], date: ISODate): Meal[] {
+  if (!meals.some((m) => m.date === date && m.source === 'auto')) return meals;
+  return meals.map((m): Meal => (m.date === date && m.source === 'auto' ? { ...m, source: 'plan' } : m));
+}
+
+/**
+ * The skips after a meal is taken away. A meal that came from the plan and
+ * is deleted was not eaten that way: when nothing else is left in its slot
+ * that date, the slot is marked skipped, so the app does not fill it straight
+ * back in. A meal typed in by hand leaves the skips as they are.
+ */
+export function skipsAfterRemove(skips: SlotSkip[], removed: Meal, rest: Meal[]): SlotSkip[] {
+  if ((removed.source !== 'auto' && removed.source !== 'plan') || !removed.slotId) return skips;
+  if (rest.some((m) => m.date === removed.date && m.slotId === removed.slotId)) return skips;
+  return addSkip(skips, removed.date, removed.slotId);
+}
+
+/** Add or replace a saved meal. One without a name or without a line is not saved. */
+export function withSavedMeal(list: SavedMeal[], meal: SavedMeal): SavedMeal[] {
+  const name = meal.name.trim();
+  if (!name || meal.lines.length === 0) return list;
+  return [...list.filter((m) => m.id !== meal.id), { ...meal, name }];
+}
+
+export function withoutSavedMeal(list: SavedMeal[], id: string): SavedMeal[] {
+  return list.some((m) => m.id === id) ? list.filter((m) => m.id !== id) : list;
 }

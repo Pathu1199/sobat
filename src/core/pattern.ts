@@ -57,7 +57,10 @@ function gap(a: number, b: number): number {
   return Math.min(d, 1440 - d);
 }
 
-function nearestTo(list: PatternSlot[], minutes: number): PatternSlot {
+/** What matching a meal to a slot needs; a date's menu meal fits it as well as a pattern slot. */
+export type SlotPoint = { id: string; type: MealType; minutes: number };
+
+function nearestTo<S extends SlotPoint>(list: S[], minutes: number): S {
   return list.reduce((best, s) => (gap(s.minutes, minutes) < gap(best.minutes, minutes) ? s : best));
 }
 
@@ -66,7 +69,7 @@ function nearestTo(list: PatternSlot[], minutes: number): PatternSlot {
  * still exists; else the slot of the same type nearest in time; else the
  * nearest slot of any type. Null only when there are no slots at all.
  */
-export function slotOf(meal: Pick<Meal, 'slotId' | 'type' | 'at'>, slots: PatternSlot[]): PatternSlot | null {
+export function slotOf<S extends SlotPoint>(meal: Pick<Meal, 'slotId' | 'type' | 'at'>, slots: S[]): S | null {
   if (slots.length === 0) return null;
   const byId = meal.slotId ? slots.find((s) => s.id === meal.slotId) : undefined;
   if (byId) return byId;

@@ -1,7 +1,7 @@
 import type { BreakLog, BreakSettings } from './breaks';
 import type { MemoryItem } from './memory';
 import type { QueuedPhoto } from './queue';
-import type { Routine, SpendLog } from './routine';
+import type { PlanLine, Routine, SpendLog } from './routine';
 import type { WorkSchedule } from './schedule';
 import type { UsageBucket } from './usage';
 
@@ -90,6 +90,9 @@ export type MealItem = {
   estimated: boolean;
 };
 
+/** Where a meal came from: typed, searched, a photo or a barcode ('manual'); eaten as planned or confirmed ('plan'); filled in by the app from the plan and not confirmed yet ('auto'). */
+export type MealSource = 'manual' | 'plan' | 'auto';
+
 export type Meal = {
   id: string;
   at: string;
@@ -102,6 +105,8 @@ export type Meal = {
   note?: string;
   /** The pattern slot this meal was logged against. Older meals have none and are matched by type and time. */
   slotId?: string;
+  /** Missing means 'manual', for meals logged before there was a plan to log from. */
+  source?: MealSource;
 };
 
 export type WaterLog = { id: string; at: string; date: ISODate; ml: number };
@@ -144,6 +149,8 @@ export type WorkoutLog = {
 export type NudgeLog = { id: string; at: string; date: ISODate; type: string; action: 'done' | 'snooze' | 'skip' };
 /** A slot not eaten on purpose on one date. One per date and slot. */
 export type SlotSkip = { id: string; date: ISODate; slotId: string };
+/** A meal the person logs often, saved under their own name ("my usual thali"). */
+export type SavedMeal = { id: string; name: string; lines: PlanLine[] };
 export type ChatOption = { foodId: string; name_en: string; name_mr: string; grams: number; kcal: number; protein: number };
 
 export type ChatMsg = {
@@ -223,6 +230,8 @@ export type AppState = {
   actionsDone: { date: ISODate; key: string }[];
   /** Slots skipped on purpose, by date. A meal later logged in the slot takes its skip away. */
   slotSkips: SlotSkip[];
+  /** Meals saved to log again in one tap. */
+  savedMeals: SavedMeal[];
   /** The fixed daily food routine: weekly bhaji, meal slots, avoid list, budget. */
   routine: Routine;
   /** Rupees spent on food. */

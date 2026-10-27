@@ -1,9 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { addMenuLine, addSkip, alignMenu, alignMenus, copyDay, ensureWeek, menuFor, NOT_EDITED, removeSkip, setMenuLine, setMenuMeal, skippedOn, viewMenu, viewWeek, type DayMenu } from '../menu';
+import {
+  addMenuLine,
+  addSkip,
+  alignMenu,
+  alignMenus,
+  autoFill,
+  copyDay,
+  ensureWeek,
+  fillFromPlan,
+  mealFromLines,
+  menuFor,
+  NOT_EDITED,
+  removeSkip,
+  setMenuLine,
+  setMenuMeal,
+  skippedOn,
+  skipsAfterRemove,
+  viewMenu,
+  viewWeek,
+  withDayConfirmed,
+  withMealConfirmed,
+  withoutSavedMeal,
+  withSavedMeal,
+  type DayMenu,
+} from '../menu';
+import { kcalForGrams } from '../nutrition';
 import { DEFAULT_ROUTINE, type PlanLine, type Routine, type RoutineSlot } from '../routine';
-import type { FoodItem } from '../types';
-import { planDayFor, type PlanMeal } from '../weekPlan';
+import type { FoodItem, Meal, SlotSkip } from '../types';
+import { lineInfo, planDayFor, type PlanMeal } from '../weekPlan';
 
 const foods = foodsJson as FoodItem[];
 const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
@@ -142,5 +167,104 @@ describe('skips', () => {
     const skips = addSkip([], '2026-10-27', 'lunch');
     expect(removeSkip(skips, '2026-10-27', 'lunch')).toEqual([]);
     expect(removeSkip(skips, '2026-10-27', 'dinner')).toBe(skips);
+  });
+});
+
+describe('meals from the plan', () => {
+  const lunch: PlanMeal = { id: 'lunch', type: 'lunch', time: '13:00', lines: [chapati(2)] };
+
+  it('"Ate as planned" on a past date logs to that date and slot, with the database calories', () => {
+    const m = mealFromLines({ id: 'x', date: '2026-10-20', slot: lunch, lines: lunch.lines, foods, source: 'plan', now: NOW })!;
+    const info = lineInfo(chapati(2), foods)!;
+    expect(m).toMatchObject({ date: '2026-10-20', slotId: 'lunch', type: 'lunch', source: 'plan' });
+    expect(m.at).toBe(new Date('2026-10-20T13:00:00').toISOString());
+    expect(m.items[0]).toMatchObject({ foodId: 'chapati', grams: info.grams, kcal: kcalForGrams(info.food, info.grams).kcal, estimated: false });
+    expect(m.kcal).toBe(m.items[0].kcal);
+  });
+
+  it('a slot whose time has not come is logged now; a made-up food stays estimated; no known food, no meal', () => {
+    expect(mealFromLines({ id: 'x', date: '2026-10-27', slot: lunch, lines: lunch.lines, foods, source: 'plan', now: NOW })!.at).toBe(NOW.toISOString());
+    const mine: FoodItem = { ...foods.find((f) => f.id === 'poha')!, id: 'my-poha', tags: ['custom'] };
+    const custom = mealFromLines({ id: 'x', date: '2026-10-20', slot: lunch, lines: [{ foodId: 'my-poha', unit: 'katori', qty: 1 }], foods: [...foods, mine], source: 'plan', now: NOW })!;
+    expect(custom.items[0].estimated).toBe(true);
+    expect(mealFromLines({ id: 'x', date: '2026-10-20', slot: lunch, lines: [{ foodId: 'nope', unit: 'piece', qty: 1 }], foods, source: 'plan', now: NOW })).toBeNull();
+  });
+
+  it('"Fill this day from plan" logs every open slot of an older day as planned', () => {
+    const old: DayMenu = { ...menu('2026-10-20', 2), meals: [...menu('2026-10-20', 2).meals.slice(0, 2), { id: 'dinner', type: 'dinner', time: '20:00', lines: [chapati(1)] }] };
+    const out = fillFromPlan({ now: NOW, menu: old, meals: [], skips: addSkip([], '2026-10-20', 'dinner'), foods });
+    expect(out.map((m) => [m.slotId, m.source])).toEqual([['lunch', 'plan']]);
+  });
+});
+
+describe('autoFill', () => {
+  const today = '2026-10-27';
+  const at = (hhmm: string, date = today) => new Date(`${date}T${hhmm}:00`);
+  const base = { date: today, menu: menu(today, 2), meals: [] as Meal[], skips: [] as SlotSkip[], openedDates: [] as string[], offDays: [] as number[], foods };
+
+  it('fills a slot 90 minutes after its time, and not a minute before', () => {
+    expect(autoFill({ ...base, now: at('14:29') })).toEqual([]);
+    const out = autoFill({ ...base, now: at('14:30') });
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ id: 'auto-2026-10-27-lunch', slotId: 'lunch', source: 'auto', date: today });
+    expect(out[0].at).toBe(at('13:00').toISOString());
+  });
+
+  it('never fills an off day, a skipped slot, a slot with any meal in it, or a slot with nothing planned', () => {
+    const late = at('22:00');
+    // 27 October 2026 is a Tuesday.
+    expect(autoFill({ ...base, now: late, offDays: [2] })).toEqual([]);
+    expect(autoFill({ ...base, now: late, skips: addSkip([], today, 'lunch') })).toEqual([]);
+    const ate: Meal = { id: 'm', at: at('13:20').toISOString(), date: today, type: 'lunch', items: [], kcal: 400, protein: 10 };
+    expect(autoFill({ ...base, now: late, meals: [ate] })).toEqual([]);
+    expect(autoFill({ ...base, now: late }).map((m) => m.slotId)).toEqual(['lunch']);
+  });
+
+  it('fills yesterday only when the app was open yesterday, and never an older day', () => {
+    const yesterday = { ...base, date: '2026-10-26', menu: menu('2026-10-26', 2), now: at('09:00') };
+    expect(autoFill(yesterday)).toEqual([]);
+    expect(autoFill({ ...yesterday, openedDates: ['2026-10-26'] })).toHaveLength(1);
+    expect(autoFill({ ...base, date: '2026-10-25', menu: menu('2026-10-25', 2), now: at('09:00'), openedDates: ['2026-10-25'] })).toEqual([]);
+  });
+});
+
+describe('confirming and taking away', () => {
+  const auto = (id: string, date: string, slotId: string): Meal => ({ id, at: `${date}T07:30:00.000Z`, date, type: 'lunch', slotId, items: [], kcal: 300, protein: 10, source: 'auto' });
+
+  it('"Day looks right" turns every filled-in meal of that day into a planned one, and only that day', () => {
+    const out = withDayConfirmed([auto('a', '2026-10-27', 'lunch'), auto('b', '2026-10-27', 'dinner'), auto('c', '2026-10-26', 'lunch')], '2026-10-27');
+    expect(out.map((m) => m.source)).toEqual(['plan', 'plan', 'auto']);
+    expect(withDayConfirmed(out, '2026-10-27')).toBe(out);
+  });
+
+  it('tapping one filled-in meal confirms that one', () => {
+    expect(withMealConfirmed([auto('a', '2026-10-27', 'lunch'), auto('b', '2026-10-27', 'dinner')], 'b').map((m) => m.source)).toEqual(['auto', 'plan']);
+  });
+
+  it('deleting a meal from the plan marks its slot skipped so it is not filled again; a hand-typed one does not', () => {
+    const gone = auto('a', '2026-10-27', 'lunch');
+    expect(skipsAfterRemove([], gone, [])).toEqual([{ id: '2026-10-27:lunch', date: '2026-10-27', slotId: 'lunch' }]);
+    expect(skipsAfterRemove([], { ...gone, source: undefined }, [])).toEqual([]);
+    const other: Meal = { ...auto('b', '2026-10-27', 'lunch'), source: 'manual' };
+    expect(skipsAfterRemove([], gone, [other])).toEqual([]);
+  });
+});
+
+describe('saved meals', () => {
+  const thali = { id: 's1', name: ' My usual thali ', lines: [chapati(2), { foodId: 'moong-dal', unit: 'katori', qty: 1 }] };
+
+  it('saves under a trimmed name, replaces by id, refuses an empty one, and removes', () => {
+    const list = withSavedMeal([], thali);
+    expect(list).toEqual([{ ...thali, name: 'My usual thali' }]);
+    expect(withSavedMeal(list, { ...thali, name: 'Thali' })).toEqual([{ ...thali, name: 'Thali' }]);
+    expect(withSavedMeal(list, { id: 's2', name: '  ', lines: [chapati(1)] })).toBe(list);
+    expect(withSavedMeal(list, { id: 's2', name: 'Nothing', lines: [] })).toBe(list);
+    expect(withoutSavedMeal(list, 's1')).toEqual([]);
+  });
+
+  it('logs the same way as "Ate as planned", with database calories', () => {
+    const m = mealFromLines({ id: 'x', date: '2026-10-20', slot: { id: 'lunch', type: 'lunch', time: '13:00' }, lines: thali.lines, foods, source: 'manual', now: NOW })!;
+    expect(m.items.map((i) => i.foodId)).toEqual(['chapati', 'moong-dal']);
+    expect(m.kcal).toBe(m.items.reduce((a, i) => a + i.kcal, 0));
   });
 });

@@ -84,6 +84,7 @@ export const EMPTY_STATE: AppState = {
   steps: [],
   actionsDone: [],
   slotSkips: [],
+  savedMeals: [],
   routine: DEFAULT_ROUTINE,
   spend: [],
   schedule: DEFAULT_SCHEDULE,
