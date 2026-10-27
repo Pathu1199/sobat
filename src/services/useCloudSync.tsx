@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
-import { applyCloud, forCloud, merge3, sameCloud, type CloudState } from '../core/sync';
+import { applyCloud, forCloud, merge3, sameCloud, signOutPlan, type CloudState } from '../core/sync';
 import { useApp } from '../store/AppProvider';
 import { CloudError, cloudConfigured, deleteData, getData, putData, type RemoteFile } from './cloud';
 import { authApi, useAuth } from './useAuth';
@@ -32,7 +32,7 @@ export type CloudSync = {
   syncNow: () => Promise<void>;
   /** Delete the account's file, then wipe this device. */
   eraseEverywhere: () => Promise<boolean>;
-  /** Sign out. Refuses while changes are unsaved, unless forced; a clean sign-out wipes the device. */
+  /** Sign out. Refuses while anything is not in the account (always, with sync not set up), unless forced; only a sign-out with everything in the account wipes the device. */
   signOut: (force?: boolean) => Promise<'ok' | 'unsynced'>;
 };
 
@@ -264,20 +264,23 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(
     async (force = false): Promise<'ok' | 'unsynced'> => {
-      const clean = !configured || upToDate;
-      if (!clean && !force) return 'unsynced';
+      const plan = signOutPlan({ configured, upToDate, force });
+      if (plan === 'ask') return 'unsynced';
+      const uid = user?.uid ?? null;
       boundUid.current = null;
-      if (clean) {
+      if (plan === 'wipe') {
         // Everything is in the account: hand the device back empty.
         await AsyncStorage.removeItem(OWNER_KEY).catch(() => {});
         resetAll();
+      } else if (uid) {
+        // Whatever is not in the account stays on the device, tagged with its
+        // owner, so the same account gets it back and any other account starts clean.
+        await AsyncStorage.setItem(OWNER_KEY, uid).catch(() => {});
       }
-      // Unsaved changes stay on the device, tagged with their owner, so the
-      // same account gets them back and any other account starts clean.
       await authApi.signOut().catch(() => {});
       return 'ok';
     },
-    [configured, upToDate, resetAll],
+    [configured, upToDate, user?.uid, resetAll],
   );
 
   const value: CloudSync = { status, error, lastSyncAt, upToDate, syncNow, eraseEverywhere, signOut };

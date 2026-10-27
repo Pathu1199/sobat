@@ -174,3 +174,15 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
 
   return out as unknown as CloudState;
 }
+
+/**
+ * What signing out does to this device. It is only handed back empty when
+ * the account is known to hold everything; with sync not set up there is no
+ * account copy at all, so the device's copy is the only one. Otherwise the
+ * person is asked first, and if they sign out anyway the data stays on the
+ * device for the same account to pick up again.
+ */
+export function signOutPlan(o: { configured: boolean; upToDate: boolean; force: boolean }): 'wipe' | 'keep' | 'ask' {
+  if (o.configured && o.upToDate) return 'wipe';
+  return o.force ? 'keep' : 'ask';
+}

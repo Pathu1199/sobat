@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_STATE } from '../../store/defaults';
-import { applyCloud, forCloud, isPristine, merge3, sameCloud, stable, type CloudState } from '../sync';
+import { applyCloud, forCloud, isPristine, merge3, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
 import type { AppState, Meal } from '../types';
 
 const meal = (id: string, at: string, kcal = 300): Meal => ({
@@ -174,5 +174,22 @@ describe('three-way merge of single values', () => {
     const local = { ...cloudOf(used([])), version: 5 };
     const remote = { ...cloudOf(used([])), version: 7 };
     expect(merge3(base, local, remote).version).toBe(7);
+  });
+});
+
+describe('signing out', () => {
+  it('with sync not set up nothing is in any account, so it asks first and never wipes the device', () => {
+    expect(signOutPlan({ configured: false, upToDate: false, force: false })).toBe('ask');
+    expect(signOutPlan({ configured: false, upToDate: true, force: false })).toBe('ask');
+    expect(signOutPlan({ configured: false, upToDate: false, force: true })).toBe('keep');
+  });
+
+  it('everything in the account: the device is handed back empty', () => {
+    expect(signOutPlan({ configured: true, upToDate: true, force: false })).toBe('wipe');
+  });
+
+  it('changes still waiting: asks, and signing out anyway keeps them on the device', () => {
+    expect(signOutPlan({ configured: true, upToDate: false, force: false })).toBe('ask');
+    expect(signOutPlan({ configured: true, upToDate: false, force: true })).toBe('keep');
   });
 });
