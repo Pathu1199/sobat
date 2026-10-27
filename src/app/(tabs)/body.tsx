@@ -1,5 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 import SleepScreen from '../sleep';
 import FitScreen from './fit';
@@ -10,6 +9,7 @@ import { TopBarActions } from '../../components/TopBarActions';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { SectionTabs } from '../../ui/SectionTabs';
+import { useSectionParam } from '../../ui/useSectionParam';
 import { C } from '../../ui/theme';
 import { TopBar } from '../../ui/TopBar';
 
@@ -21,14 +21,7 @@ export default function BodyTab() {
   const { state } = useApp();
   const lang = state.profile.lang;
   const t = makeT(lang);
-  const { s } = useLocalSearchParams<{ s?: string }>();
-  const wanted = typeof s === 'string' && (SECTIONS as string[]).includes(s) ? (s as Section) : SECTIONS[0];
-  const [section, setSection] = useState<Section>(wanted);
-  useEffect(() => {
-    // A link that names a section wins over what was open last time.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (typeof s === 'string') setSection(wanted);
-  }, [s, wanted]);
+  const [section, setSection] = useSectionParam(SECTIONS);
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <TopBar title={t('tab_body')} alt={lang === 'en' ? undefined : t('tab_body')} right={<TopBarActions />} />

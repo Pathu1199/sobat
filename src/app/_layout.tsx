@@ -1,10 +1,12 @@
-import { Redirect, Stack, useSegments } from 'expo-router';
+import { Redirect, Stack, usePathname, useSegments } from 'expo-router';
+import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Platform, useColorScheme, View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
 import { BreakToast } from '../components/BreakToast';
+import { pageTitle } from '../core/screenTitle';
 import { makeT } from '../i18n';
 import { FeedbackProvider } from '../services/feedback';
 import { firebaseEnabled } from '../services/firebase';
@@ -90,6 +92,7 @@ function AppShell() {
     configureNotifyGate({ gapMinutes: notifyGapMinutes || 60, quietStartHour, quietEndHour });
   }, [notifyGapMinutes, quietStartHour, quietEndHour]);
   const segments = useSegments() as string[];
+  const pathname = usePathname();
   const { ready: stateReady, state: appState } = useApp();
   const t = makeT(appState.profile.lang);
 
@@ -109,6 +112,12 @@ function AppShell() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
+      {/* The browser tab says which page this is; expo-router leaves the title to the app. */}
+      {Platform.OS === 'web' ? (
+        <Head>
+          <title>{pageTitle(pathname, t)}</title>
+        </Head>
+      ) : null}
       {/* Dark icons on a light page, light icons on a dark one. AppShell remounts with the theme, so this is read fresh. */}
       <StatusBar style={themeMode() === 'light' ? 'dark' : 'light'} />
       <Stack
