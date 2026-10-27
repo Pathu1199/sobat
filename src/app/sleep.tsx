@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { formatMinutes, localDate, localHHMM, minutesBetween } from '../core/date';
 import { buildSleepLog, prefillAnswers, sleepDebt, sleepFlags, sleepScore } from '../core/sleep';
-import { makeT } from '../i18n';
+import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Divider, Field, H2, H3, Pill, Ring, Row, Screen, Small } from '../ui/components';
@@ -103,17 +103,14 @@ export default function SleepScreen({ embedded }: { embedded?: boolean } = {}) {
       {low ? (
         <Card tone={C.amber}>
           <H3>{t('sleep_quality')}</H3>
-          <Small>Caffeine after 6pm? Phone in bed? Late heavy dinner? Any one of these is usually the cause.</Small>
+          <Small>{t('sleep_low_causes')}</Small>
         </Card>
       ) : null}
 
       {app.state.sleep.length > 0 ? (
         <Card>
           <H3>{t('sleep_debt')}</H3>
-          <Small color={debt < -180 ? C.amber : C.textDim}>
-            {debt >= 0 ? '+' : ''}
-            {Math.round(debt / 60)}h over the last 7 nights
-          </Small>
+          <Small color={debt < -180 ? C.amber : C.textDim}>{fill(t('sleep_debt_week'), { h: `${debt >= 0 ? '+' : ''}${Math.round(debt / 60)}` })}</Small>
           {flags.map((f) => (
             <Small key={f} color={f === 'apnea_screen' ? C.amber : C.textDim}>
               {t(`flag_${f}`)}

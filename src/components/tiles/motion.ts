@@ -58,14 +58,25 @@ export function useLoop(active: boolean, ms: number): SharedValue<number> {
   return v;
 }
 
-/** A breath: 0 to 1 over `halfMs` and back, for as long as `active`; still at 0 otherwise and under reduce motion. */
+/**
+ * A breath: 0 to 1 over `halfMs` and back, for as long as `active`. It never
+ * jumps: when the session stops or ends, the breath under way eases back to 0
+ * (small); when one starts, the first breath in grows from where it stands.
+ * Under reduce motion it stays at 0.
+ */
 export function useBreath(active: boolean, halfMs: number): SharedValue<number> {
   const reduce = useReducedMotion();
   const v = useSharedValue(0);
   useEffect(() => {
-    cancelAnimation(v);
-    v.set(0);
-    if (!active || reduce) return;
+    if (reduce) {
+      cancelAnimation(v);
+      v.set(0);
+      return;
+    }
+    if (!active) {
+      v.set(withTiming(0, EASE));
+      return () => cancelAnimation(v);
+    }
     const half = { duration: halfMs, easing: Easing.inOut(Easing.sin) };
     v.set(withRepeat(withSequence(withTiming(1, half), withTiming(0, half)), -1, false));
     return () => cancelAnimation(v);

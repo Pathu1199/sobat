@@ -1,9 +1,7 @@
-import { useRouter } from 'expo-router';
-import React, { useMemo } from 'react';
+import React from 'react';
 import Animated, { useAnimatedProps, type SharedValue } from 'react-native-reanimated';
 import { Circle, Line, Path } from 'react-native-svg';
-import { KCAL_FLOOR } from '../../core/nutrition';
-import { bestStreak, streakWords } from '../../core/tileText';
+import { streakWords } from '../../core/tileText';
 import { streakFraction } from '../../core/tiles';
 import { fill, makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
@@ -21,29 +19,17 @@ const RIDGE_LEN = polylineLength(RIDGE);
 /**
  * Streak: a mountain with the flag on its summit; the climbed part of the
  * ridge is drawn and the climber sits on today's streak, at the top at the
- * best one. The best run is judged by the streak's own rule, with the
- * person's safe minimum.
+ * best one. The best run is the store's (`bestStreakDays`), judged by the
+ * streak's own rule with the person's safe minimum. What a tap does depends
+ * on where the tile sits: on Today it opens Progress (`onPress` and its
+ * `hint`); on Progress's climb page it is not a button, just the tile.
  */
-export function StreakTile() {
+export function StreakTile({ onPress, hint }: { onPress?: () => void; hint?: string }) {
   const app = useApp();
-  const router = useRouter();
   const t = makeT(app.state.profile.lang);
-  const { state, today, streakDays, menuOn } = app;
-  const best = useMemo(
-    () =>
-      bestStreak({
-        today,
-        menuOn,
-        routine: state.routine,
-        meals: state.meals,
-        skips: state.slotSkips,
-        offDays: state.settings.offDays ?? [],
-        floor: KCAL_FLOOR[state.profile.sex],
-      }),
-    [today, menuOn, state.routine, state.meals, state.slotSkips, state.settings.offDays, state.profile.sex],
-  );
-  const words = shownWords(streakWords(streakDays, best), t);
-  const level = useTileProgress(streakFraction(streakDays, best));
+  const { streakDays, bestStreakDays } = app;
+  const words = shownWords(streakWords(streakDays, bestStreakDays), t);
+  const level = useTileProgress(streakFraction(streakDays, bestStreakDays));
   const name = t('tile_streak');
   return (
     <LivingTile
@@ -52,9 +38,9 @@ export function StreakTile() {
       name={name}
       words={words}
       art={<StreakArt level={level} />}
-      onPress={() => router.push('/progress')}
+      onPress={onPress}
       label={fill(t('tile_open_a11y'), { name, value: words.value, line: words.line })}
-      hint={t('tile_hint_streak')}
+      hint={onPress ? hint : undefined}
     />
   );
 }

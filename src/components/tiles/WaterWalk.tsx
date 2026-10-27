@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 import type { ISODate } from '../../core/types';
-import { makeT } from '../../i18n';
-import { useFeedback } from '../../services/feedback';
 import { useApp } from '../../store/AppProvider';
 import { TileRow } from './TileRow';
-import { TileSheet } from './TileSheet';
-import { addedText, UndoLine, useAddedLine } from './UndoLine';
+import { useTileAdds } from './useTileAdds';
 import { WalkTile } from './WalkTile';
 import { WaterTile } from './WaterTile';
 
@@ -17,28 +14,16 @@ import { WaterTile } from './WaterTile';
  */
 export function WaterWalkTiles({ date }: { date: ISODate }) {
   const app = useApp();
-  const fb = useFeedback();
-  const t = makeT(app.state.profile.lang);
-  const [sheet, setSheet] = useState<'water' | 'walk' | null>(null);
-  const { added, show, clear } = useAddedLine();
-
-  function undo() {
-    if (!added) return;
-    if (added.kind === 'water') app.removeWater(added.id);
-    else app.removeActivity(added.id);
-    fb.haptic('light');
-    clear();
-  }
-
+  const adds = useTileAdds(date);
   if (date > app.today) return null;
   return (
     <View style={{ gap: 8 }}>
       <TileRow>
-        <WaterTile date={date} onAdded={(id, ml) => show({ kind: 'water', id, amount: ml })} onHold={() => setSheet('water')} />
-        <WalkTile date={date} onAdded={(id, minutes) => show({ kind: 'walk', id, amount: minutes })} onHold={() => setSheet('walk')} />
+        <WaterTile date={date} onAdded={(id, ml) => adds.show({ kind: 'water', id, amount: ml })} onHold={() => adds.hold('water')} />
+        <WalkTile date={date} onAdded={(id, minutes) => adds.show({ kind: 'walk', id, amount: minutes })} onHold={() => adds.hold('walk')} />
       </TileRow>
-      {added ? <UndoLine text={addedText(added, t)} undoLabel={t('undo')} onUndo={undo} /> : null}
-      <TileSheet kind={sheet} date={date} onClose={() => setSheet(null)} onAdded={show} />
+      {adds.undoLine}
+      {adds.sheet}
     </View>
   );
 }

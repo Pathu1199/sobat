@@ -29,9 +29,10 @@ export const NO_VALUE = '–';
 
 /** The night the sleep tile fills toward, in minutes. */
 export const SLEEP_TARGET_MIN = 480;
-/** One breathing session: a minute, four seconds in and four seconds out. */
-export const BREATHE_SESSION_MS = 60000;
+/** One breath: four seconds in and four seconds out. */
 export const BREATHE_HALF_MS = 4000;
+/** One breathing session: eight whole breaths, 64 seconds, so it ends on a breath out with the circle small. The tile calls it a minute. */
+export const BREATHE_SESSION_MS = 8 * 2 * BREATHE_HALF_MS;
 /** How far back the weight tile looks for its change. */
 export const WEIGHT_CHANGE_DAYS = 21;
 
@@ -161,7 +162,7 @@ export function bestStreak(input: {
   return bestRun(steps);
 }
 
-/** Where a breathing session is: breathing in or out, seconds left, or done after a minute. */
+/** Where a breathing session is: breathing in or out, seconds left, or done after the eighth breath out. */
 export function breathePhase(elapsedMs: number): { done: boolean; inhale: boolean; leftSec: number } {
   if (elapsedMs >= BREATHE_SESSION_MS) return { done: true, inhale: false, leftSec: 0 };
   const t = Math.max(0, elapsedMs);
@@ -174,9 +175,9 @@ export function clockText(sec: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-/** At rest: "1 min" and "Tap to start". During a session: the time left, and "Breathe in" or "Breathe out". */
+/** At rest: "1 min" (the session in whole minutes) and "Tap to start". During a session: the time left, and "Breathe in" or "Breathe out". */
 export function breatheWords(elapsedMs: number | null): TileWords {
-  if (elapsedMs === null) return { parts: [{ num: String(BREATHE_SESSION_MS / 60000), unitKey: 'tile_unit_min' }], line: { key: 'tile_tap_to_start' } };
+  if (elapsedMs === null) return { parts: [{ num: String(Math.round(BREATHE_SESSION_MS / 60000)), unitKey: 'tile_unit_min' }], line: { key: 'tile_tap_to_start' } };
   const p = breathePhase(elapsedMs);
   return { parts: [{ num: clockText(p.leftSec) }], line: { key: p.inhale ? 'breathe_in' : 'breathe_out' } };
 }

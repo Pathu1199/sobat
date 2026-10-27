@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Animated, { useAnimatedProps, type SharedValue } from 'react-native-reanimated';
 import { Circle } from 'react-native-svg';
-import { BREATHE_HALF_MS, BREATHE_SESSION_MS, breatheWords } from '../../core/tileText';
+import { BREATHE_HALF_MS, breathePhase, breatheWords } from '../../core/tileText';
 import { fill, makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
 import { useApp } from '../../store/AppProvider';
@@ -13,9 +13,10 @@ import { useBreath } from './motion';
 const ACircle = Animated.createAnimatedComponent(Circle);
 
 /**
- * Breathe: a tap starts one minute of slow breathing and another stops it.
- * The circle grows for four seconds and shrinks for four while the number
- * counts down and the line says in or out; with reduce motion on, the words
+ * Breathe: a tap starts eight slow breaths, about a minute, and another stops
+ * it. The circle grows for four seconds and shrinks for four while the number
+ * counts down and the line says in or out; the session ends on a breath out,
+ * and a stopped one eases back to small. With reduce motion on, the words
  * alone lead the breath.
  */
 export function BreatheTile() {
@@ -28,7 +29,8 @@ export function BreatheTile() {
     if (startedAt === null) return;
     const timer = setInterval(() => {
       const n = Date.now();
-      if (n - startedAt >= BREATHE_SESSION_MS) setStartedAt(null);
+      // One rule for the end: the same phase the words read.
+      if (breathePhase(n - startedAt).done) setStartedAt(null);
       else setNow(n);
     }, 250);
     return () => clearInterval(timer);

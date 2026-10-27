@@ -8,6 +8,8 @@ import { fill, makeT } from '../../i18n';
 import {
   bestRun,
   bestStreak,
+  BREATHE_HALF_MS,
+  BREATHE_SESSION_MS,
   breathePhase,
   breatheWords,
   clockText,
@@ -24,6 +26,7 @@ import {
   weightWords,
 } from '../tileText';
 import type { ActivityLog, Lang, Meal } from '../types';
+import { shownWords } from '../../ui/tileWords';
 
 const LANGS: Lang[] = ['en', 'mr', 'hi'];
 
@@ -182,18 +185,30 @@ describe('streak', () => {
 });
 
 describe('breathe', () => {
-  it('breathes in for four seconds and out for four, for one minute', () => {
-    expect(breathePhase(0)).toEqual({ done: false, inhale: true, leftSec: 60 });
+  it('breathes in for four seconds and out for four, eight whole breaths', () => {
+    expect(BREATHE_SESSION_MS).toBe(64000);
+    expect(BREATHE_SESSION_MS % (2 * BREATHE_HALF_MS)).toBe(0);
+    expect(breathePhase(0)).toEqual({ done: false, inhale: true, leftSec: 64 });
     expect(breathePhase(4000).inhale).toBe(false);
     expect(breathePhase(8000).inhale).toBe(true);
-    expect(breathePhase(18000).leftSec).toBe(42);
-    expect(breathePhase(60000).done).toBe(true);
+    expect(breathePhase(18000).leftSec).toBe(46);
+    expect(breathePhase(60000).done).toBe(false);
+    expect(breathePhase(BREATHE_SESSION_MS).done).toBe(true);
+  });
+
+  it('ends on a breath out, so the circle is small when the session stops', () => {
+    expect(breathePhase(BREATHE_SESSION_MS - 1).inhale).toBe(false);
+    expect(breathePhase(BREATHE_SESSION_MS - 1).done).toBe(false);
   });
 
   it('shows "1 min" and "Tap to start" at rest, and the time left with in or out during a session', () => {
     expect(breatheWords(null)).toEqual({ parts: [{ num: '1', unitKey: 'tile_unit_min' }], line: { key: 'tile_tap_to_start' } });
-    expect(breatheWords(18000)).toEqual({ parts: [{ num: '0:42' }], line: { key: 'breathe_in' } });
+    expect(breatheWords(18000)).toEqual({ parts: [{ num: '0:46' }], line: { key: 'breathe_in' } });
     expect(breatheWords(5000).line).toEqual({ key: 'breathe_out' });
     expect(clockText(60)).toBe('1:00');
+  });
+
+  it('reads "1 min" at rest in words, a whole number of minutes', () => {
+    expect(shownWords(breatheWords(null), makeT('en')).value).toBe('1 min');
   });
 });

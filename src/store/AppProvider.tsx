@@ -46,7 +46,7 @@ import {
   type DayMenu,
   type MenuFit,
 } from '../core/menu';
-import { waterMlOn } from '../core/tileText';
+import { bestStreak, waterMlOn } from '../core/tileText';
 import { withWaterAdded, withWaterRemoved } from '../core/tiles';
 import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
@@ -78,6 +78,8 @@ type Ctx = {
   budget: Budget;
   waterToday: number;
   streakDays: number;
+  /** The longest run of full days in the streak's window, by the streak's own rule: the streak tile's "Best". */
+  bestStreakDays: number;
   setProfile: (p: Partial<Profile>) => void;
   setSettings: (s: Partial<Settings>) => void;
   addMeal: (m: Meal) => void;
@@ -326,8 +328,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // A day nobody wrote shows the app's suggestion fitted to the person's target, never under the safe minimum, without the foods they avoid.
   // The target counts the person's age, so the fit is worked out again when the date changes, as Today's targets are.
   const fit = useMemo(() => fitOn(state.profile, state.routine, today), [state.profile, state.routine, today]);
-  // The menu a date shows. The same function until the menus, the pattern, the foods or the day change, so a memo that
-  // reads it (the streak, the streak tile's best run) is not worked out again for a bottle of water.
+  // The menu a date shows. The same function until the menus, the pattern, the foods, the day or the profile (through `fit`)
+  // change, so a memo that reads it (the streak, the best run) is not worked out again for a bottle of water.
   const menuOn = useCallback((date: ISODate) => viewMenu(date, state.menus, state.routine, today, planFoods, fit), [state.menus, state.routine, today, planFoods, fit]);
 
   // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run before then.
@@ -335,6 +337,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const streakDays = useMemo(
     () =>
       recordStreak({
+        today,
+        routine: state.routine,
+        meals: state.meals,
+        skips: state.slotSkips,
+        offDays: state.settings.offDays ?? [],
+        floor: fit.floor,
+        menuOn,
+      }),
+    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, fit.floor, menuOn],
+  );
+  // The best run in the same window, on the same inputs and by the same rule, worked out once here for every tile that shows it.
+  const bestStreakDays = useMemo(
+    () =>
+      bestStreak({
         today,
         routine: state.routine,
         meals: state.meals,
@@ -411,6 +427,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       budget,
       waterToday,
       streakDays,
+      bestStreakDays,
       tipToday: tipRecord?.text ?? null,
       screenMinutesToday,
       stepsToday: state.steps.find((x) => x.date === today)?.count ?? 0,
@@ -635,7 +652,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, menuOn, streakDays, patternMealsLeft, weekPlan]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, menuOn, streakDays, bestStreakDays, patternMealsLeft, weekPlan]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

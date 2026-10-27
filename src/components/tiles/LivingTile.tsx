@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
 import Svg from 'react-native-svg';
 import { C, lh, textScale } from '../../ui/theme';
 import { ART_FIT, ART_H, ART_W, TILE_LINE_GAP, TILE_RADIUS, TILE_SIDE, TILE_TOP, tileMinHeight, tileType } from '../../ui/tileGeometry';
@@ -31,7 +31,8 @@ export function TileArt({ children }: { children: React.ReactNode }) {
  * bottom 42% and never reaches the words; `behind` is the one exception, drawn
  * under the words across the whole tile (the water tank). The tile grows
  * taller than square only when the text size needs the room. Each tracker
- * brings its art, its words and its tap.
+ * brings its art, its words and its tap; a tile with no tap is not a button,
+ * just the tile, read by a screen reader as one phrase.
  */
 export function LivingTile({
   icon,
@@ -55,39 +56,34 @@ export function LivingTile({
   done?: boolean;
   art?: React.ReactNode;
   behind?: (size: TileSize) => React.ReactNode;
-  onPress: () => void;
+  /** The tap; without one the tile is not a button. */
+  onPress?: () => void;
   onLongPress?: () => void;
   label: string;
-  /** What a hold does, said by a screen reader; only for a tile that has a hold. */
+  /** What a tap or a hold does, said by a screen reader; only for a tile that has one. */
   hint?: string;
 }) {
   const scale = textScale();
   const type = tileType(scale);
   // The tank behind the words needs the tile's size in points; the art in the bottom zone scales by itself.
   const [size, setSize] = useState<TileSize | null>(null);
-  return (
-    <Pressable
-      onPress={onPress}
-      onLongPress={onLongPress}
-      delayLongPress={450}
-      onLayout={(e) => {
-        const { width: w, height: h } = e.nativeEvent.layout;
-        setSize((s) => (s && s.w === w && s.h === h ? s : { w, h }));
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityHint={hint}
-      style={({ pressed }) => ({
-        flex: 1,
-        aspectRatio: 1,
-        minHeight: tileMinHeight(scale),
-        borderRadius: TILE_RADIUS,
-        borderWidth: 0.5,
-        borderColor: C.border,
-        backgroundColor: C.card,
-        overflow: 'hidden',
-        opacity: pressed ? 0.85 : 1,
-      })}>
+  const onLayout = (e: LayoutChangeEvent) => {
+    const { width: w, height: h } = e.nativeEvent.layout;
+    setSize((s) => (s && s.w === w && s.h === h ? s : { w, h }));
+  };
+  const frame = (pressed: boolean): ViewStyle => ({
+    flex: 1,
+    aspectRatio: 1,
+    minHeight: tileMinHeight(scale),
+    borderRadius: TILE_RADIUS,
+    borderWidth: 0.5,
+    borderColor: C.border,
+    backgroundColor: C.card,
+    overflow: 'hidden',
+    opacity: pressed ? 0.85 : 1,
+  });
+  const inside = (
+    <>
       {behind && size ? behind(size) : null}
       {art ? <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '42%', pointerEvents: 'none' }}>{art}</View> : null}
       <View style={{ position: 'absolute', top: TILE_TOP, left: TILE_SIDE, right: TILE_SIDE, gap: TILE_LINE_GAP, pointerEvents: 'none' }}>
@@ -111,6 +107,26 @@ export function LivingTile({
           {words.line}
         </Text>
       </View>
+    </>
+  );
+  if (!onPress) {
+    return (
+      <View onLayout={onLayout} accessible accessibilityRole="text" accessibilityLabel={label} style={frame(false)}>
+        {inside}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={450}
+      onLayout={onLayout}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={hint}
+      style={({ pressed }) => frame(pressed)}>
+      {inside}
     </Pressable>
   );
 }

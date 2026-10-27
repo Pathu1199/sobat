@@ -92,7 +92,7 @@ export default function MindScreen({ embedded }: { embedded?: boolean } = {}) {
     <Row style={{ gap: 8 }}>
       {(
         [
-          { key: 'breathe', icon: 'cloud-outline', label: t('breathe') },
+          { key: 'breathe', icon: 'cloud-outline', label: t('box_breathing') },
           { key: 'grounding', icon: 'hand-left-outline', label: t('grounding') },
           { key: 'gratitude', icon: 'sparkles-outline', label: t('gratitude') },
         ] as const
