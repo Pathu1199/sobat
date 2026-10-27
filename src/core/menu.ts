@@ -97,6 +97,17 @@ export function hasPlan(day: { meals: PlanMeal[] }): boolean {
   return day.meals.some((m) => m.lines.length > 0);
 }
 
+/**
+ * A day that holds exactly what the app builds from the pattern for its
+ * weekday: the app's suggestion, not a plan the person shaped. The stamp
+ * cannot tell them apart (a day carried forward from last week and the
+ * migrated old plan are unstamped too), so the meals are compared. A
+ * suggestion under the target is not the person's plan being too low.
+ */
+export function isSuggested(day: { date: ISODate; meals: PlanMeal[] }, routine: Routine, foods: FoodItem[]): boolean {
+  return stable(day.meals) === stable(planDayFor(routine, weekdayOf(day.date), foods).meals);
+}
+
 /** Store one date's meals, stamped now, whatever they were before. */
 function writeDay(menus: DayMenu[], date: ISODate, meals: PlanMeal[], now: Date): DayMenu[] {
   const next: DayMenu = { date, meals, editedAt: now.toISOString() };

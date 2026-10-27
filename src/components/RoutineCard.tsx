@@ -106,8 +106,11 @@ export function RoutineCard() {
       : status === 'in'
         ? t('routine_budget_in')
         : fill(t('routine_budget_under'), { n: routine.budgetMin - app.spentToday });
+  const floor = KCAL_FLOOR[state.profile.sex];
   const planTotal = planDay ? dayTotals(planDay, foods) : null;
-  const planStatus = planTotal ? dayStatus(planTotal.kcal, targets.kcal, KCAL_FLOOR[state.profile.sex]) : null;
+  const planStatus = planTotal ? dayStatus(planTotal.kcal, targets.kcal, floor) : null;
+  // The app's own suggestion is not the person's plan being too low: a neutral line, and below the safe minimum still the way to Balance.
+  const suggested = planDay ? app.isSuggestedMenu(planDay) : false;
 
   /** The lines a slot is planned to hold today: the week plan's when it has them, else the slot's own default with the day's bhaji. */
   function plannedLines(s: SlotState): PlanLine[] {
@@ -141,7 +144,14 @@ export function RoutineCard() {
               <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${targets.kcal} kcal`}</Text>
             </Text>
           </Row>
-          {planStatus === 'low' ? <Small color={C.red}>{fill(t('plan_status_low_short'), { gap: targets.kcal - planTotal.kcal })}</Small> : null}
+          {suggested ? (
+            <>
+              <Small color={C.textDim}>{fill(t('plan_suggested'), { kcal: planTotal.kcal })}</Small>
+              {planTotal.kcal < floor ? <Small color={C.amber}>{fill(t('plan_suggested_floor'), { floor })}</Small> : null}
+            </>
+          ) : planStatus === 'low' ? (
+            <Small color={C.red}>{fill(t('plan_status_low_short'), { gap: targets.kcal - planTotal.kcal })}</Small>
+          ) : null}
         </Pressable>
       ) : null}
 

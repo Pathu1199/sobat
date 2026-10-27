@@ -65,8 +65,11 @@ export function PlanTodayCard() {
     );
   }
 
+  const floor = KCAL_FLOOR[state.profile.sex];
   const totals = dayTotals(day, foods);
-  const status = dayStatus(totals.kcal, targets.kcal, KCAL_FLOOR[state.profile.sex]);
+  const status = dayStatus(totals.kcal, targets.kcal, floor);
+  // The app's own suggestion is not the person's plan being too low: a neutral line, and below the safe minimum still the way to Balance.
+  const suggested = app.isSuggestedMenu({ date: today, meals: day.meals });
   const logged = (meal: PlanMeal) => {
     const ids = new Set(meal.lines.map((l) => l.foodId));
     return todayMeals.some((m) => m.type === meal.type && m.items.some((it) => it.foodId && ids.has(it.foodId)));
@@ -87,7 +90,7 @@ export function PlanTodayCard() {
     fb.notify(fill(t('toast_meal_saved'), { kcal }));
   }
 
-  const color = status === 'low' ? C.red : status === 'on' ? C.green : C.amber;
+  const color = suggested ? (totals.kcal < floor ? C.amber : C.accent) : status === 'low' ? C.red : status === 'on' ? C.green : C.amber;
   return (
     <Card rail={color}>
       <Pressable onPress={() => router.push('/food?s=plan')} accessibilityRole="button">
@@ -105,7 +108,14 @@ export function PlanTodayCard() {
           </Row>
         </Row>
       </Pressable>
-      {status === 'low' ? <Small color={C.red}>{fill(t('plan_status_low_short'), { gap: targets.kcal - totals.kcal })}</Small> : null}
+      {suggested ? (
+        <Pressable onPress={() => router.push('/food?s=plan')} accessibilityRole="button" style={{ gap: 2 }}>
+          <Small color={C.textDim}>{fill(t('plan_suggested'), { kcal: totals.kcal })}</Small>
+          {totals.kcal < floor ? <Small color={C.amber}>{fill(t('plan_suggested_floor'), { floor })}</Small> : null}
+        </Pressable>
+      ) : status === 'low' ? (
+        <Small color={C.red}>{fill(t('plan_status_low_short'), { gap: targets.kcal - totals.kcal })}</Small>
+      ) : null}
       {upcoming.length === 0 ? <Small color={C.green}>{t('plan_all_logged')}</Small> : null}
       {upcoming.map((meal) => {
         const mt = mealTotals(meal, foods);

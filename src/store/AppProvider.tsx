@@ -22,6 +22,7 @@ import {
   applyWeekPlan,
   copyDay,
   editedMeal,
+  isSuggested,
   removeSkip,
   setMenuDay,
   setMenuLine,
@@ -111,6 +112,8 @@ type Ctx = {
   setWeekPlan: (plan: WeekPlan) => void;
   /** The menu a date shows: stored, or as it starts; from today on, following the slots. */
   menuOn: (date: ISODate) => DayMenu;
+  /** A day holding just what the app builds from the pattern for its weekday: the app's suggestion, not a plan the person shaped. */
+  isSuggestedMenu: (day: Pick<DayMenu, 'date' | 'meals'>) => boolean;
   /** The seven menus of the week starting on `monday`, Monday first. */
   weekMenus: (monday: ISODate) => DayMenu[];
   /** Edits to one date's menu; `day` is the menu as shown. Every other date is left as it is. */
@@ -417,6 +420,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return withMenus(s, applyWeekPlan(plan, week, s.menus, new Date()));
         }),
       menuOn: (date) => viewMenu(date, state.menus, state.routine, today, planFoods),
+      isSuggestedMenu: (day) => isSuggested(day, state.routine, planFoods),
       weekMenus: (monday) => viewWeek(monday, state.menus, state.routine, today, planFoods),
       editMenuDay: (day, meals) => update((s) => withMenus(s, setMenuDay(s.menus, day, meals, new Date()))),
       editMenuLine: (day, mealId, lineIdx, next) => update((s) => withMenus(s, setMenuLine(s.menus, day, mealId, lineIdx, next, new Date()))),

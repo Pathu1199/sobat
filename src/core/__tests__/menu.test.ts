@@ -13,8 +13,10 @@ import {
   ensureWeek,
   fillFromPlan,
   hasPlan,
+  isSuggested,
   mealFromLines,
   menuFor,
+  menusFromTemplate,
   NOT_EDITED,
   removeSkip,
   setMenuDay,
@@ -35,9 +37,9 @@ import {
   type DayMenu,
 } from '../menu';
 import { kcalForGrams } from '../nutrition';
-import { DEFAULT_ROUTINE, type PlanLine, type Routine, type RoutineSlot } from '../routine';
+import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, type PlanLine, type Routine, type RoutineSlot } from '../routine';
 import type { FoodItem, Meal, MealSource, SlotSkip } from '../types';
-import { lineInfo, planDayFor, type PlanMeal } from '../weekPlan';
+import { buildWeekPlan, lineInfo, planDayFor, type PlanMeal } from '../weekPlan';
 
 const foods = foodsJson as FoodItem[];
 const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
@@ -472,5 +474,42 @@ describe('a day with a plan', () => {
     expect(fresh.meals).toHaveLength(2);
     expect(hasPlan(fresh)).toBe(false);
     expect(hasPlan(viewMenu('2026-10-28', [], routine, '2026-10-27', foods))).toBe(true);
+  });
+});
+
+describe('a suggested day', () => {
+  const WED = '2026-10-28';
+  const LAST_WED = '2026-10-21';
+
+  it('is a day nobody wrote, as the app built it from the pattern, for a new person and for any pattern', () => {
+    expect(isSuggested(viewMenu(WED, [], NEUTRAL_ROUTINE, '2026-10-27', foods), NEUTRAL_ROUTINE, foods)).toBe(true);
+    expect(isSuggested(viewMenu(WED, [], routine, '2026-10-27', foods), routine, foods)).toBe(true);
+    // Today, as the Today screen shows it.
+    expect(isSuggested(viewMenu('2026-10-27', [], NEUTRAL_ROUTINE, '2026-10-27', foods), NEUTRAL_ROUTINE, foods)).toBe(true);
+  });
+
+  it('is not a day the person edited', () => {
+    const shown = viewMenu(WED, [], NEUTRAL_ROUTINE, '2026-10-27', foods);
+    const edited = addMenuLine([], shown, 'snack', { foodId: 'banana', unit: 'medium', qty: 1 }, NOW);
+    expect(isSuggested(viewMenu(WED, edited, NEUTRAL_ROUTINE, '2026-10-27', foods), NEUTRAL_ROUTINE, foods)).toBe(false);
+    expect(isSuggested(menu(WED, 2), routine, foods)).toBe(false);
+  });
+
+  it('is not a day carried forward from a day the person edited last week, though it carries no stamp', () => {
+    const lastWeek = viewMenu(LAST_WED, [], NEUTRAL_ROUTINE, '2026-10-20', foods);
+    const edited = addMenuLine([], lastWeek, 'snack', { foodId: 'banana', unit: 'medium', qty: 1 }, NOW);
+    const carried = viewMenu(WED, edited, NEUTRAL_ROUTINE, '2026-10-27', foods);
+    expect(carried.editedAt).toBe(NOT_EDITED);
+    expect(isSuggested(carried, NEUTRAL_ROUTINE, foods)).toBe(false);
+  });
+
+  it('is not a day the old week plan was migrated onto when it differs from the pattern; one that matches the pattern still is', () => {
+    const own = buildWeekPlan(NEUTRAL_ROUTINE, foods);
+    own.days[3] = { meals: own.days[3].meals.map((m) => (m.id === 'lunch' ? { ...m, lines: [chapati(3)] } : m)) };
+    const migrated = menusFromTemplate(own, MON, []);
+    expect(menuFor(WED, migrated)!.editedAt).toBe(NOT_EDITED);
+    expect(isSuggested(viewMenu(WED, migrated, NEUTRAL_ROUTINE, '2026-10-27', foods), NEUTRAL_ROUTINE, foods)).toBe(false);
+    // Thursday kept the plan the app had built.
+    expect(isSuggested(viewMenu('2026-10-29', migrated, NEUTRAL_ROUTINE, '2026-10-27', foods), NEUTRAL_ROUTINE, foods)).toBe(true);
   });
 });
