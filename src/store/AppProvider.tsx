@@ -325,7 +325,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const fit = useMemo(() => fitOn(state.profile, state.routine, today), [state.profile, state.routine, today]);
 
   // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run while it is going.
-  // A day settled only by skips never counts and ends the run.
+  // A full day eaten under the safe minimum (a day of skips among them) neither counts nor ends the run.
   const streakDays = useMemo(
     () =>
       recordStreak({
@@ -334,6 +334,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         meals: state.meals,
         skips: state.slotSkips,
         offDays: state.settings.offDays ?? [],
+        floor: fit.floor,
         menuOn: (d) => viewMenu(d, state.menus, state.routine, today, planFoods, fit),
       }),
     [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, state.menus, planFoods, fit],

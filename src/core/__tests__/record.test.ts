@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { addSkip, type DayMenu } from '../menu';
-import { dayRecord, recordStreak, weekRecord } from '../record';
+import { dayRecord, recordStreak, streakStep, weekRecord } from '../record';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
+import { KCAL_FLOOR } from '../nutrition';
 import type { Meal, SlotSkip } from '../types';
 
 const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
@@ -18,11 +19,13 @@ const menu = (date: string): DayMenu => ({
     { id: 'dinner', type: 'dinner', time: '20:00', lines: [line] },
   ],
 });
-const meal = (date: string, slotId: string, source?: Meal['source']): Meal => ({ id: `${date}-${slotId}`, at: new Date(`${date}T12:00:00`).toISOString(), date, type: 'lunch', slotId, items: [], kcal: 400, protein: 10, source });
+/** A meal of 600 kcal unless told otherwise: three make an 1800 kcal day, two the 1200 kcal safe minimum. */
+const meal = (date: string, slotId: string, source?: Meal['source'], kcal = 600): Meal => ({ id: `${date}-${slotId}`, at: new Date(`${date}T12:00:00`).toISOString(), date, type: 'lunch', slotId, items: [], kcal, protein: 10, source });
 const fullDay = (date: string) => [meal(date, 'morning'), meal(date, 'lunch'), meal(date, 'dinner')];
 // 27 October 2026 is a Tuesday.
 const TODAY = '2026-10-27';
-const base = { today: TODAY, routine, skips: [], offDays: [] as number[] };
+// The safe minimum is the person's: 1200 kcal for a woman.
+const base = { today: TODAY, routine, skips: [], offDays: [] as number[], floor: KCAL_FLOOR.female };
 const rec = (date: string, meals: Meal[], extra: Partial<Parameters<typeof dayRecord>[0]> = {}) => dayRecord({ ...base, date, menu: menu(date), meals, ...extra });
 
 describe('dayRecord', () => {
@@ -91,30 +94,50 @@ describe('recordStreak', () => {
   // Every planned slot of the date marked skipped, nothing eaten.
   const allSkipped = (date: string) => ['morning', 'lunch', 'dinner'].reduce<SlotSkip[]>((acc, id) => addSkip(acc, date, id), []);
 
-  it('a day settled only by skips is a complete record, but never counts and ends the run: skipping is never rewarded', () => {
+  it('a day settled only by skips is a complete record that never counts: nothing eaten is under the safe minimum, so it does not end the run either', () => {
     expect(rec('2026-10-25', [], { skips: allSkipped('2026-10-25') }).state).toBe('full');
     const meals = [...fullDay('2026-10-24'), ...fullDay('2026-10-26')];
-    expect(recordStreak({ ...base, skips: allSkipped('2026-10-25'), menuOn: menu, meals })).toBe(1);
+    expect(recordStreak({ ...base, skips: allSkipped('2026-10-25'), menuOn: menu, meals })).toBe(2);
   });
 
-  it('a day with one meal eaten and the rest skipped counts', () => {
+  it('a day with one meal eaten and the rest skipped, under the safe minimum, neither counts nor ends the run', () => {
     const skips = addSkip(addSkip([], '2026-10-25', 'morning'), '2026-10-25', 'dinner');
     const meals = [...fullDay('2026-10-24'), meal('2026-10-25', 'lunch'), ...fullDay('2026-10-26')];
-    expect(recordStreak({ ...base, skips, menuOn: menu, meals })).toBe(3);
+    expect(rec('2026-10-25', meals, { skips }).state).toBe('full');
+    expect(recordStreak({ ...base, skips, menuOn: menu, meals })).toBe(2);
+  });
+
+  it('a full day eaten under the safe minimum neither counts nor ends the run: a sick day is not punished, and eating little is never rewarded', () => {
+    // Every planned meal eaten, but small: 3 × 300 is 900 kcal, under 1200.
+    const light = ['morning', 'lunch', 'dinner'].map((id) => meal('2026-10-25', id, undefined, 300));
+    const meals = [...fullDay('2026-10-23'), ...fullDay('2026-10-24'), ...light, ...fullDay('2026-10-26')];
+    expect(rec('2026-10-25', meals).state).toBe('full');
+    expect(streakOf(meals)).toBe(3);
+    // At the safe minimum it counts: 3 × 400 is 1200.
+    const enough = ['morning', 'lunch', 'dinner'].map((id) => meal('2026-10-25', id, undefined, 400));
+    expect(streakOf([...fullDay('2026-10-23'), ...fullDay('2026-10-24'), ...enough, ...fullDay('2026-10-26')])).toBe(4);
+    // The minimum is the person's own: the same 1200 kcal day is under a man's 1500.
+    expect(recordStreak({ ...base, floor: KCAL_FLOOR.male, menuOn: menu, meals: [...fullDay('2026-10-24'), ...enough, ...fullDay('2026-10-26')] })).toBe(2);
+  });
+
+  it('a today eaten under the safe minimum neither counts nor ends the run', () => {
+    const before = [...fullDay('2026-10-25'), ...fullDay('2026-10-26')];
+    const light = ['morning', 'lunch', 'dinner'].map((id) => meal(TODAY, id, undefined, 300));
+    expect(streakOf([...before, ...light])).toBe(2);
   });
 
   it('a meal logged without a slot settles the slot it was eaten in, matched by its type and time', () => {
     const d = '2026-10-26';
     // Breakfast at 08:45 and dinner at 20:10, neither naming its slot.
-    const loose = (id: string, type: Meal['type'], hhmm: string): Meal => ({ id, at: new Date(`${d}T${hhmm}:00`).toISOString(), date: d, type, items: [], kcal: 400, protein: 10 });
+    const loose = (id: string, type: Meal['type'], hhmm: string): Meal => ({ id, at: new Date(`${d}T${hhmm}:00`).toISOString(), date: d, type, items: [], kcal: 600, protein: 10 });
     const meals = [loose('b', 'breakfast', '08:45'), meal(d, 'lunch'), loose('d', 'dinner', '20:10')];
     expect(rec(d, meals).state).toBe('full');
     expect(streakOf([...fullDay('2026-10-25'), ...meals])).toBe(2);
   });
 
-  it('on dates whose menu holds no meals, a day with anything eaten counts and a day with nothing breaks the run', () => {
+  it('on dates whose menu holds no meals, a day eaten up to the safe minimum counts and a day with nothing breaks the run', () => {
     const bare = (date: string): DayMenu => ({ date, editedAt: '', meals: [] });
-    const meals = [meal('2026-10-23', 'lunch'), meal('2026-10-25', 'lunch'), meal('2026-10-26', 'dinner')];
+    const meals = [meal('2026-10-23', 'lunch', undefined, 1300), meal('2026-10-25', 'lunch', undefined, 1300), meal('2026-10-26', 'dinner', undefined, 1300)];
     expect(recordStreak({ ...base, menuOn: bare, meals })).toBe(2);
     expect(dayRecord({ ...base, date: '2026-10-24', menu: bare('2026-10-24'), meals }).state).toBe('empty');
   });
@@ -149,5 +172,20 @@ describe('recordStreak', () => {
   it('a today of nothing but skips neither counts nor breaks the run while it is going', () => {
     const meals = [...fullDay('2026-10-24'), ...fullDay('2026-10-25'), ...fullDay('2026-10-26')];
     expect(recordStreak({ ...base, skips: allSkipped(TODAY), menuOn: menu, meals })).toBe(3);
+  });
+});
+
+describe('streakStep', () => {
+  it('is the one rule the streak and the best run both follow', () => {
+    // A full day at or above the safe minimum counts; under it, or with nothing eaten, it holds.
+    expect(streakStep('full', 1200, 1200)).toBe('count');
+    expect(streakStep('full', 1199, 1200)).toBe('hold');
+    expect(streakStep('full', 0, 1200)).toBe('hold');
+    // Nothing eaten never counts, whatever the minimum, and a total that is not a number never counts.
+    expect(streakStep('full', 0, 0)).toBe('hold');
+    expect(streakStep('full', Number.NaN, 1200)).toBe('hold');
+    // An off day holds; any other day ends the run, however much was eaten.
+    expect(streakStep('off', 0, 1200)).toBe('hold');
+    for (const state of ['partial', 'empty', 'planned'] as const) expect(streakStep(state, 2000, 1200)).toBe('break');
   });
 });

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addSkip, type DayMenu } from '../menu';
+import { KCAL_FLOOR } from '../nutrition';
+import { recordStreak } from '../record';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import {
   bestRun,
@@ -78,22 +80,28 @@ describe('streak', () => {
     expect(streakWords(1, 0)).toEqual({ parts: [{ num: '1', unitKey: 'tile_unit_day' }], line: { key: 'tile_best', params: { n: 1 } } });
   });
 
-  it('finds the longest run of full days; an off day neither breaks it nor counts', () => {
-    expect(bestRun(['full', 'full', 'partial', 'full', 'off', 'full', 'full', 'empty'])).toBe(3);
+  it('finds the longest run of days that count; a day that holds neither breaks it nor counts', () => {
+    expect(bestRun(['count', 'count', 'break', 'count', 'hold', 'count', 'count', 'break'])).toBe(3);
     expect(bestRun([])).toBe(0);
   });
 
-  it('looks back over the menus as shown, and a day of nothing but skips does not count', () => {
+  it('looks back over the menus as shown; a day of nothing but skips, or one eaten under the safe minimum, does not count and does not end the run', () => {
     const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
     const routine: Routine = { ...DEFAULT_ROUTINE, enabled: true, slots: [slot('lunch', 'lunch', '13:00', 100)] };
     const menuOn = (date: string): DayMenu => ({ date, editedAt: '', meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] }] });
-    const ate = (date: string): Meal => ({ id: date, at: new Date(`${date}T13:00:00`).toISOString(), date, type: 'lunch', slotId: 'lunch', items: [], kcal: 300, protein: 9 });
-    const meals = ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-24', '2026-10-25'].map(ate);
-    const base = { today: '2026-10-27', menuOn, routine, meals, skips: [], offDays: [] as number[] };
+    const ate = (date: string, kcal = 1300): Meal => ({ id: date, at: new Date(`${date}T13:00:00`).toISOString(), date, type: 'lunch', slotId: 'lunch', items: [], kcal, protein: 9 });
+    const meals = ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-24', '2026-10-25'].map((d) => ate(d));
+    const base = { today: '2026-10-27', menuOn, routine, meals, skips: [], offDays: [] as number[], floor: KCAL_FLOOR.female };
     expect(bestStreak(base)).toBe(3);
-    // 23 October skipped: a complete record, but not a day eaten, so the run still ends there.
-    expect(bestStreak({ ...base, skips: addSkip([], '2026-10-23', 'lunch') })).toBe(3);
+    // 23 October skipped: a complete record but nothing eaten, under the safe minimum, so it neither counts nor ends the run.
+    expect(bestStreak({ ...base, skips: addSkip([], '2026-10-23', 'lunch') })).toBe(5);
+    // Eaten, but 500 kcal: under the safe minimum, the same.
+    expect(bestStreak({ ...base, meals: [...meals, ate('2026-10-23', 500)] })).toBe(5);
     expect(bestStreak({ ...base, meals: [...meals, ate('2026-10-23')] })).toBe(6);
+    // The best run and the streak follow one rule: a run that reaches yesterday is the streak.
+    const toYesterday = [...meals, ate('2026-10-23', 500), ate('2026-10-26')];
+    expect(bestStreak({ ...base, meals: toYesterday })).toBe(6);
+    expect(recordStreak({ ...base, meals: toYesterday })).toBe(6);
   });
 });
 

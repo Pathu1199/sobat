@@ -1,7 +1,7 @@
 import { WALK_ACTIVITY_ID } from './activity';
 import { addDays } from './date';
 import type { DayMenu } from './menu';
-import { dayRecord, type DayRecordState } from './record';
+import { dayRecord, eatenKcal, mealsByDate, streakStep, type StreakStep } from './record';
 import type { Routine } from './routine';
 import { walkTile, waterTile } from './tiles';
 import type { ActivityLog, ISODate, Meal, SlotSkip, WeightLog } from './types';
@@ -110,23 +110,22 @@ export function streakWords(streak: number, best: number): TileWords {
   };
 }
 
-/** The longest run of full days, oldest first. An off day neither breaks a run nor adds to it. */
-export function bestRun(states: DayRecordState[]): number {
+/** The longest run of days that count, oldest first. A day that holds neither breaks a run nor adds to it. */
+export function bestRun(steps: StreakStep[]): number {
   let run = 0;
   let best = 0;
-  for (const s of states) {
-    if (s === 'off') continue;
-    run = s === 'full' ? run + 1 : 0;
+  for (const s of steps) {
+    if (s === 'hold') continue;
+    run = s === 'count' ? run + 1 : 0;
     best = Math.max(best, run);
   }
   return best;
 }
 
 /**
- * The best run of full days in the last `days`, judged on the menus as they
- * show, the way the streak is. A day settled only by skips is a complete
- * record but not a day eaten as planned, so it ends a run, as it ends the
- * streak: skipping is never rewarded.
+ * The best run in the last `days`, judged on the menus as they show and by
+ * the streak's own rule (`streakStep`, with the person's safe minimum as
+ * `floor`): a full day eaten under it neither counts nor ends a run.
  */
 export function bestStreak(input: {
   today: ISODate;
@@ -135,23 +134,18 @@ export function bestStreak(input: {
   meals: Meal[];
   skips: SlotSkip[];
   offDays: number[];
+  floor: number;
   days?: number;
 }): number {
-  const byDate = new Map<ISODate, Meal[]>();
-  for (const m of input.meals) {
-    const list = byDate.get(m.date);
-    if (list) list.push(m);
-    else byDate.set(m.date, [m]);
-  }
-  const states: DayRecordState[] = [];
+  const byDate = mealsByDate(input.meals);
+  const steps: StreakStep[] = [];
   for (let i = (input.days ?? BEST_STREAK_DAYS) - 1; i >= 0; i--) {
     const date = addDays(input.today, -i);
     const meals = byDate.get(date) ?? [];
     const r = dayRecord({ date, today: input.today, menu: input.menuOn(date), routine: input.routine, meals, skips: input.skips, offDays: input.offDays });
-    // Skips alone: the run ends here, as it ends the streak (recordStreak).
-    states.push(r.state === 'full' && meals.length === 0 ? 'partial' : r.state);
+    steps.push(streakStep(r.state, eatenKcal(meals), input.floor));
   }
-  return bestRun(states);
+  return bestRun(steps);
 }
 
 /** Where a breathing session is: breathing in or out, seconds left, or done after a minute. */
