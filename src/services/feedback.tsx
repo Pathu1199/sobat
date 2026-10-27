@@ -121,7 +121,8 @@ function ToastView({ text, opacity, action, onAction }: { text: string; opacity:
         }}>
         <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{text}</Text>
         {action ? (
-          <Pressable onPress={onAction} accessibilityRole="button" style={({ pressed }) => ({ minHeight: 36, paddingHorizontal: 14, borderRadius: 999, backgroundColor: pressed ? C.accentSoft : C.accentDim, alignItems: 'center', justifyContent: 'center' })}>
+          // A finger wide, like every other control.
+          <Pressable onPress={onAction} accessibilityRole="button" style={({ pressed }) => ({ minHeight: S.touch, minWidth: S.touch, paddingHorizontal: 16, borderRadius: 999, backgroundColor: pressed ? C.accentSoft : C.accentDim, alignItems: 'center', justifyContent: 'center' })}>
             <Text style={{ color: C.accentText, fontSize: F.small, fontWeight: '500' }}>{action.label}</Text>
           </Pressable>
         ) : null}

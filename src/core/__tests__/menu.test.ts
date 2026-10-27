@@ -43,6 +43,7 @@ import {
   withoutOrphanedAuto,
   withoutSavedMeal,
   withSavedMeal,
+  withSavedMealAt,
   withSkipAdded,
   type DayMenu,
   type MenuFit,
@@ -610,6 +611,24 @@ describe('saved meals', () => {
     const again = withSavedMeal(list, { ...thali, name: 'My usual thali', lines: [chapati(3)] });
     expect(again.map((m) => [m.id, m.name])).toEqual([['s2', 'Poha'], ['s1', 'My usual thali']]);
     expect(again[1].lines).toEqual([chapati(3)]);
+  });
+
+  it('Undo puts a deleted saved meal back as it was: the same id, at the place it had', () => {
+    const poha = { id: 's2', name: 'Poha', lines: [{ foodId: 'poha', unit: 'katori', qty: 1 }] };
+    const upma = { id: 's3', name: 'Upma', lines: [{ foodId: 'upma', unit: 'katori', qty: 1 }] };
+    const list = [thali, poha, upma];
+    const after = withoutSavedMeal(list, 's2');
+    expect(withSavedMealAt(after, poha, 1)).toEqual(list);
+    expect(withSavedMealAt(withoutSavedMeal(list, 's1'), thali, 0)).toEqual(list);
+    expect(withSavedMealAt(withoutSavedMeal(list, 's3'), upma, 2)).toEqual(list);
+  });
+
+  it('Undo puts it at the end when the list got shorter meanwhile, and does nothing when it is already back', () => {
+    const poha = { id: 's2', name: 'Poha', lines: [{ foodId: 'poha', unit: 'katori', qty: 1 }] };
+    expect(withSavedMealAt([thali], poha, 5).map((m) => m.id)).toEqual(['s1', 's2']);
+    expect(withSavedMealAt([thali], poha, -1).map((m) => m.id)).toEqual(['s2', 's1']);
+    const both = [thali, poha];
+    expect(withSavedMealAt(both, poha, 0)).toBe(both);
   });
 
   it('logs the same way as "Ate as planned", with database calories', () => {

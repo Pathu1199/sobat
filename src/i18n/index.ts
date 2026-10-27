@@ -1030,6 +1030,7 @@ const en: Dict = {
   box_breathing: 'Box breathing',
   sleep_low_causes: 'Tea or coffee after 6 pm? Phone in bed? A late, heavy dinner? Any one of these is usually the cause.',
   sleep_debt_week: '{h} h over the last 7 nights',
+  me_saved_deleted: 'Deleted {name}',
 };
 
 const mr: Dict = {
@@ -2064,6 +2065,7 @@ const mr: Dict = {
   box_breathing: 'चौकोनी श्वास',
   sleep_low_causes: 'संध्याकाळी ६ नंतर चहा किंवा कॉफी? अंथरुणात फोन? रात्री उशिरा जड जेवण? यापैकी एखादं कारण असतं.',
   sleep_debt_week: 'गेल्या ७ रात्रींत {h} तास',
+  me_saved_deleted: '{name} काढलं',
 };
 
 const hi: Dict = {
@@ -3096,6 +3098,7 @@ const hi: Dict = {
   box_breathing: 'चौकोर साँस',
   sleep_low_causes: 'शाम 6 बजे के बाद चाय या कॉफ़ी? बिस्तर में फ़ोन? देर रात भारी खाना? अक्सर इनमें से कोई एक वजह होती है.',
   sleep_debt_week: 'पिछली 7 रातों में {h} घंटे',
+  me_saved_deleted: '{name} हटाया',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

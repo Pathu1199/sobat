@@ -4,12 +4,14 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { formatDayLabel } from '../core/date';
 import { planFrom, planVerdict } from '../core/plan';
+import type { WeightLog } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Divider, Field, Micro, Pill, Row, Small } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
 import { C, F, lh } from '../ui/theme';
+import { UndoLine, useUndoable } from './tiles/UndoLine';
 
 const RATES = [0.25, 0.5, 0.75, 1];
 
@@ -28,6 +30,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
   const t = makeT(lang);
   const [kg, setKg] = useState('');
   const [goal, setGoal] = useState(String(state.profile.goalWeightKg));
+  const removed = useUndoable<WeightLog>();
 
   const sorted = useMemo(() => [...state.weights].sort((a, b) => b.date.localeCompare(a.date)), [state.weights]);
   const todayEntry = sorted.find((w) => w.date === today);
@@ -105,11 +108,22 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
       </Row>
       <Small color={C.textFaint}>{fill(t('plan_daily'), { kcal: targets.kcal, p: targets.proteinG })}</Small>
 
-      {/* History */}
-      {sorted.length > 0 ? (
+      {/* History. The Undo for a removed weigh-in is a line here, where the tap was: the app-wide toast would sit behind this sheet. */}
+      {sorted.length > 0 || removed.held ? (
         <>
           <Divider />
           <Micro>{t('weight_history')}</Micro>
+          {removed.held ? (
+            <UndoLine
+              text={t('weight_removed')}
+              undoLabel={t('undo')}
+              onUndo={() => {
+                if (removed.held) app.addWeight(removed.held);
+                fb.haptic('light');
+                removed.clear();
+              }}
+            />
+          ) : null}
           {sorted.slice(0, 8).map((w) => (
             <Row key={w.date} style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
               <Small>{formatDayLabel(w.date, lang)}</Small>
@@ -118,7 +132,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
                 <Pressable
                   onPress={() => {
                     app.removeWeight(w.date);
-                    fb.notify(t('weight_removed'), { label: t('undo'), onPress: () => app.addWeight(w) });
+                    removed.show(w);
                   }}
                   accessibilityRole="button"
                   accessibilityLabel={t('delete')}

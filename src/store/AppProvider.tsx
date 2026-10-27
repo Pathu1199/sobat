@@ -42,6 +42,7 @@ import {
   withoutOrphanedAuto,
   withoutSavedMeal,
   withSavedMeal,
+  withSavedMealAt,
   withSkipAdded,
   type DayMenu,
   type MenuFit,
@@ -52,7 +53,7 @@ import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from 
 import type { WorkSchedule } from '../core/schedule';
 import type { PlanDay, PlanMeal, WeekPlan } from '../core/weekPlan';
 import type { BreakKind, BreakSettings } from '../core/breaks';
-import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MealSource, MoodLog, Profile, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
+import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MealSource, MoodLog, Profile, SavedMeal, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { allFoods, EMPTY_STATE } from './defaults';
 import { migrateState } from './migrate';
 
@@ -151,6 +152,8 @@ type Ctx = {
   runAutoFill: () => void;
   addSavedMeal: (name: string, lines: PlanLine[]) => void;
   removeSavedMeal: (id: string) => void;
+  /** Undo of a delete: the saved meal back as it was, the same id at the place it had. */
+  restoreSavedMeal: (meal: SavedMeal, index: number) => void;
   /** A walk from the walk tile: an activity log, so its calories are earned the usual way. Returns its id, for undo. A date after today logs nothing, and its id then names nothing. */
   logWalk: (date: ISODate, minutes: number) => string;
   addActivity: (a: ActivityLog) => void;
@@ -595,6 +598,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       removeSavedMeal: (id) =>
         update((s) => {
           const savedMeals = withoutSavedMeal(s.savedMeals, id);
+          return savedMeals === s.savedMeals ? s : { ...s, savedMeals };
+        }),
+      restoreSavedMeal: (meal, index) =>
+        update((s) => {
+          const savedMeals = withSavedMealAt(s.savedMeals, meal, index);
           return savedMeals === s.savedMeals ? s : { ...s, savedMeals };
         }),
       logWalk: (date, minutes) => {

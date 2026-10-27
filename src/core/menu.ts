@@ -543,6 +543,17 @@ export function withoutSavedMeal(list: SavedMeal[], id: string): SavedMeal[] {
 }
 
 /**
+ * Undo of a delete: the saved meal put back as it was, the same id at the
+ * place it had (`index`, kept within the list as it is now). The same list
+ * when a meal with that id is already there.
+ */
+export function withSavedMealAt(list: SavedMeal[], meal: SavedMeal, index: number): SavedMeal[] {
+  if (list.some((m) => m.id === meal.id)) return list;
+  const at = Math.max(0, Math.min(index, list.length));
+  return [...list.slice(0, at), meal, ...list.slice(at)];
+}
+
+/**
  * The old one-week plan written onto a real week: each date of the week
  * starting on `monday` that has no menu yet takes the template's day for its
  * weekday (index 0 is Sunday). A date that has a menu keeps it. Stamped as
