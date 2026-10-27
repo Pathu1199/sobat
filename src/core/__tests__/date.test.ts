@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { formatDayLabel, localDate, localHHMM, localHour, mondayOf, msToNextMinute, weekDates } from '../date';
+import { formatDayLabel, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
 describe('local time from ISO strings', () => {
@@ -98,5 +98,18 @@ describe('weeks', () => {
 
   it('lists the seven dates from Monday', () => {
     expect(weekDates('2026-10-26')).toEqual(['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01']);
+  });
+});
+
+describe('loggedAt', () => {
+  it('logs something added for today now, and something added to an earlier day at its noon', () => {
+    const now = new Date('2026-10-27T18:05:00');
+    expect(loggedAt('2026-10-27', now)).toBe(now);
+    expect(loggedAt('2026-10-25', now)?.toISOString()).toBe(new Date('2026-10-25T12:00:00').toISOString());
+  });
+
+  it('logs nothing for a date after today, even a minute before midnight', () => {
+    expect(loggedAt('2026-10-28', new Date('2026-10-27T23:59:00'))).toBeNull();
+    expect(loggedAt('2026-10-28', new Date('2026-10-28T00:01:00'))).not.toBeNull();
   });
 });

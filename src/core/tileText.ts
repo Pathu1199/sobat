@@ -4,7 +4,7 @@ import type { DayMenu } from './menu';
 import { dayRecord, mealsByDate, STREAK_LOOKBACK_DAYS, streakStep, type StreakStep } from './record';
 import type { Routine } from './routine';
 import { walkTile, waterTile } from './tiles';
-import type { ActivityLog, ISODate, Meal, SlotSkip, WeightLog } from './types';
+import type { ActivityLog, ISODate, Meal, SlotSkip, WaterLog, WeightLog } from './types';
 
 /**
  * The words and numbers on the living tiles, worked out once so every tile
@@ -179,6 +179,11 @@ export function breatheWords(elapsedMs: number | null): TileWords {
   if (elapsedMs === null) return { parts: [{ num: String(BREATHE_SESSION_MS / 60000), unitKey: 'tile_unit_min' }], line: { key: 'tile_tap_to_start' } };
   const p = breathePhase(elapsedMs);
   return { parts: [{ num: clockText(p.leftSec) }], line: { key: p.inhale ? 'breathe_in' : 'breathe_out' } };
+}
+
+/** Millilitres of water logged on a date. */
+export function waterMlOn(logs: WaterLog[], date: ISODate): number {
+  return logs.filter((w) => w.date === date).reduce((a, w) => a + w.ml, 0);
 }
 
 /** Minutes of walking logged on a date; other activities do not fill the walk tile. */

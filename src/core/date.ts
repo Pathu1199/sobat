@@ -13,6 +13,17 @@ export function addDays(date: ISODate, n: number): ISODate {
   return toISODate(d);
 }
 
+/**
+ * When something added from a tile for `date` is logged: now for today, the
+ * date's noon for an earlier day. Null for a date after today: nothing is
+ * drunk or walked in the future.
+ */
+export function loggedAt(date: ISODate, now: Date): Date | null {
+  const today = toISODate(now);
+  if (date > today) return null;
+  return date === today ? now : new Date(`${date}T12:00:00`);
+}
+
 /** The Monday of the week a date is in. Weeks run Monday to Sunday, the way the plan screen shows them. */
 export function mondayOf(date: ISODate): ISODate {
   return addDays(date, -((new Date(date + 'T12:00:00').getDay() + 6) % 7));

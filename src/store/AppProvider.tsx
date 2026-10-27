@@ -46,7 +46,8 @@ import {
   type DayMenu,
   type MenuFit,
 } from '../core/menu';
-import { waterLog } from '../core/tiles';
+import { waterMlOn } from '../core/tileText';
+import { withWaterAdded, withWaterRemoved } from '../core/tiles';
 import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
 import type { PlanDay, PlanMeal, WeekPlan } from '../core/weekPlan';
@@ -374,7 +375,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const mealsLeftOverride =
       patternStates.length > 0 ? patternStates.filter((x) => x.status === 'now' || x.status === 'missed' || x.status === 'later').length : undefined;
     const budget = calcBudget(targets, totals, hour, eatBack(burnedToday), mealsLeftOverride);
-    const waterToday = state.water.filter((w) => w.date === today).reduce((a, w) => a + w.ml, 0);
+    const waterToday = waterMlOn(state.water, today);
     const screenMinutesToday = minutesOn(state.usage, today);
     // A tip is only today's if it was also written in the language now selected.
     const tipRecord = state.tips.find((t) => t.date === today && t.lang === state.profile.lang);
@@ -408,12 +409,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addWater: (ml, date) => {
         const id = newId();
         update((s) => {
-          const log = waterLog({ id, date: date ?? toISODate(), ml, now: new Date() });
-          return log ? { ...s, water: [...s.water, log] } : s;
+          const water = withWaterAdded(s.water, { id, date: date ?? toISODate(), ml, now: new Date() });
+          return water === s.water ? s : { ...s, water };
         });
         return id;
       },
-      removeWater: (id) => update((s) => (s.water.some((w) => w.id === id) ? { ...s, water: s.water.filter((w) => w.id !== id) } : s)),
+      removeWater: (id) =>
+        update((s) => {
+          const water = withWaterRemoved(s.water, id);
+          return water === s.water ? s : { ...s, water };
+        }),
       undoWater: () =>
         update((s) => {
           const d = toISODate();

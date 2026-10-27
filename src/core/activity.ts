@@ -1,5 +1,5 @@
 import { ACTIVITIES, activityById, type Activity } from '../data/activities';
-import { lastNDates, toISODate } from './date';
+import { lastNDates, loggedAt } from './date';
 import type { ActivityLog, ISODate } from './types';
 
 /**
@@ -115,13 +115,12 @@ const WALK: Activity = (() => {
 /**
  * A walk from the walk tile: an activity log like any other (walking, normal
  * effort, at the person's weight then), so its calories are earned back the
- * usual way. Today's is logged now; one added to an earlier day at its noon.
- * Never another activity in its place. Null for a date after today: nobody
- * has walked in the future.
+ * usual way. Today's is logged now; one added to an earlier day at its noon
+ * (`loggedAt`, as water is). Never another activity in its place. Null for a
+ * date after today: nobody has walked in the future.
  */
 export function walkLog(input: { id: string; date: ISODate; minutes: number; weightKg: number; now: Date }): ActivityLog | null {
-  const today = toISODate(input.now);
-  if (input.date > today) return null;
-  const at = input.date === today ? input.now : new Date(`${input.date}T12:00:00`);
+  const at = loggedAt(input.date, input.now);
+  if (!at) return null;
   return { id: input.id, date: input.date, at: at.toISOString(), activityId: WALK.id, minutes: input.minutes, intensity: 1, kcal: kcalBurned(WALK, 1, input.minutes, input.weightKg) };
 }

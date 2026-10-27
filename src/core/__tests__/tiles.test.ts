@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fillFraction, sleepFraction, streakFraction, walkTile, waterLog, waterTile, weightPoints } from '../tiles';
+import { fillFraction, sleepFraction, streakFraction, walkTile, waterLog, waterTile, weightPoints, withWaterAdded, withWaterRemoved } from '../tiles';
 
 describe('water', () => {
   it('fills toward the goal, capped at full', () => {
@@ -104,5 +104,30 @@ describe('waterLog', () => {
     const now = new Date('2026-10-27T23:59:00');
     expect(waterLog({ id: 'w1', date: '2026-10-28', ml: 500, now })).toBeNull();
     expect(waterLog({ id: 'w1', date: '2026-10-27', ml: 500, now })).not.toBeNull();
+  });
+});
+
+describe('adding and taking back water', () => {
+  const now = new Date('2026-10-27T18:05:00');
+  const w = (id: string, date: string, ml: number) => ({ id, at: new Date(`${date}T12:00:00`).toISOString(), date, ml });
+  const logs = [w('w1', '2026-10-26', 500), w('w10', '2026-10-27', 500), w('w2', '2026-10-27', 750)];
+
+  it('adds one log for the date given, after the others', () => {
+    expect(withWaterAdded(logs, { id: 'w3', date: '2026-10-27', ml: 250, now })).toEqual([...logs, { id: 'w3', at: now.toISOString(), date: '2026-10-27', ml: 250 }]);
+    expect(withWaterAdded(logs, { id: 'w3', date: '2026-10-20', ml: 1000, now }).at(-1)).toEqual(w('w3', '2026-10-20', 1000));
+  });
+
+  it('adds nothing for a date after today, and hands back the same list', () => {
+    expect(withWaterAdded(logs, { id: 'w3', date: '2026-10-28', ml: 500, now })).toBe(logs);
+  });
+
+  it('takes back exactly the log with that id, and no other', () => {
+    expect(withWaterRemoved(logs, 'w1')).toEqual([logs[1], logs[2]]);
+    expect(withWaterRemoved(logs, 'w2')).toEqual([logs[0], logs[1]]);
+  });
+
+  it('hands back the same list when no log has that id', () => {
+    expect(withWaterRemoved(logs, 'w3')).toBe(logs);
+    expect(withWaterRemoved([], 'w1')).toEqual([]);
   });
 });

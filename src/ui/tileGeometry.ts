@@ -136,6 +136,18 @@ export function wavePath(width: number, wavelength: number, amp: number, height:
   return `${d} L${r1(width)} ${height} L0 ${height} Z`;
 }
 
+/**
+ * Where a looping sweep (0 to 1, the wave sliding one tile width) stands, and
+ * how long the rest of it takes. The end of a sweep is the same picture as its
+ * start, so 1 reads as 0 with a whole sweep to go. A wave that stops runs out
+ * the rest and is still; one that starts again carries on from here.
+ */
+export function restOfSweep(at: number, ms: number): { from: number; duration: number } {
+  const part = Number.isFinite(at) ? at % 1 : 0;
+  const from = part < 0 ? part + 1 : part;
+  return { from, duration: ms * (1 - from) };
+}
+
 /** How bright star `i` of three is at loop time `t` (0 to 1): each twinkles a third of a turn after the one before. */
 export function starOpacity(t: number, i: number): number {
   'worklet';

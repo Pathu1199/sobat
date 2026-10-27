@@ -19,6 +19,7 @@ import {
   walkMinutesOn,
   walkWords,
   waterLabel,
+  waterMlOn,
   waterWords,
   weightWords,
 } from '../tileText';
@@ -58,6 +59,14 @@ describe('water and walk', () => {
   it('shows walking minutes and the minutes left, never "of 30" without a unit', () => {
     expect(walkWords(10, 30)).toEqual({ parts: [{ num: '10', unitKey: 'tile_unit_min' }], line: { key: 'tile_min_left', params: { n: 20 } } });
     expect(walkWords(40, 30).line).toEqual({ key: 'tile_goal_reached' });
+  });
+
+  it('adds up the water drunk on that date only', () => {
+    const w = (id: string, date: string, ml: number) => ({ id, at: `${date}T06:00:00.000Z`, date, ml });
+    const logs = [w('a', '2026-10-27', 500), w('b', '2026-10-27', 750), w('c', '2026-10-26', 1000)];
+    expect(waterMlOn(logs, '2026-10-27')).toBe(1250);
+    expect(waterMlOn(logs, '2026-10-25')).toBe(0);
+    expect(waterMlOn([], '2026-10-27')).toBe(0);
   });
 
   it('counts only walks toward the walk tile, and only on that date', () => {

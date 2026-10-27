@@ -15,6 +15,7 @@ import {
   NIGHT_ARC,
   pointAlong,
   polylineLength,
+  restOfSweep,
   RIDGE,
   STARS,
   starOpacity,
@@ -124,6 +125,16 @@ describe('paths', () => {
   it('runs the point lookups on the UI thread: each is a worklet, and pointAlong measures with polylineLength', () => {
     for (const f of [pointAlong, polylineLength, starOpacity]) expect(f.toString()).toMatch(/['"]worklet['"]/);
     expect(pointAlong.toString()).toContain('polylineLength(');
+  });
+
+  it('finishes a wave\'s sweep from where it stands, so stopping or starting it again never jumps', () => {
+    const r = restOfSweep(0.4, 2600);
+    expect(r.from).toBe(0.4);
+    expect(r.duration).toBeCloseTo(1560);
+    // The end of a sweep is the same picture as its start: a whole sweep to go.
+    expect(restOfSweep(1, 2600)).toEqual({ from: 0, duration: 2600 });
+    expect(restOfSweep(0, 2600)).toEqual({ from: 0, duration: 2600 });
+    expect(restOfSweep(Number.NaN, 2600)).toEqual({ from: 0, duration: 2600 });
   });
 
   it('lets the stars twinkle between faint and full', () => {

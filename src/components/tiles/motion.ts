@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { cancelAnimation, Easing, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming, type SharedValue } from 'react-native-reanimated';
+import { restOfSweep } from '../../ui/tileGeometry';
 
 /**
  * How the living tiles move. A change eases in within the 1.1 s a tile may
@@ -34,15 +35,25 @@ export function useDrawOn(key: string): SharedValue<number> {
   return v;
 }
 
-/** 0 to 1 over `ms`, again and again, while `active`; still at 0 otherwise, and always under reduce motion. */
+/**
+ * 0 to 1 over `ms`, again and again, while `active`; always still at 0 under
+ * reduce motion. It never jumps: when it stops, the sweep under way runs to
+ * its end (1, the same picture as 0) and rests there, so the water's wave
+ * keeps moving while the column finishes rising to the goal; when it starts
+ * again it carries on from where it stands.
+ */
 export function useLoop(active: boolean, ms: number): SharedValue<number> {
   const reduce = useReducedMotion();
   const v = useSharedValue(0);
   useEffect(() => {
-    cancelAnimation(v);
-    v.set(0);
-    if (!active || reduce) return;
-    v.set(withRepeat(withTiming(1, { duration: ms, easing: Easing.linear }), -1, false));
+    if (reduce) return;
+    const { from, duration } = restOfSweep(v.get(), ms);
+    // Stopped and at rest: nothing under way to finish.
+    if (!active && from === 0) return;
+    const sweep = { duration: ms, easing: Easing.linear };
+    const rest = withTiming(1, { duration, easing: Easing.linear });
+    v.set(from);
+    v.set(active ? withSequence(rest, withRepeat(withSequence(withTiming(0, { duration: 0 }), withTiming(1, sweep)), -1, false)) : rest);
     return () => cancelAnimation(v);
   }, [active, reduce, ms, v]);
   return v;

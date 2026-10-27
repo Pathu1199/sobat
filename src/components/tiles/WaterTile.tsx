@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
-import { waterLabel, waterWords } from '../../core/tileText';
+import { waterLabel, waterMlOn, waterWords } from '../../core/tileText';
 import { waterTile } from '../../core/tiles';
 import type { ISODate } from '../../core/types';
 import { fill, makeT } from '../../i18n';
@@ -28,7 +28,7 @@ export function WaterTile({ date, onAdded, onHold }: { date: ISODate; onAdded?: 
   const fb = useFeedback();
   const t = makeT(app.state.profile.lang);
   const { bottleMl, waterGoalMl } = app.state.settings;
-  const ml = app.state.water.filter((w) => w.date === date).reduce((a, w) => a + w.ml, 0);
+  const ml = waterMlOn(app.state.water, date);
   const tank = waterTile(ml, waterGoalMl, bottleMl);
   const level = useTileProgress(tank.fraction);
   const label = waterLabel(ml, waterGoalMl);

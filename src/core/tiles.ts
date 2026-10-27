@@ -1,4 +1,4 @@
-import { toISODate } from './date';
+import { loggedAt } from './date';
 import type { ISODate, WaterLog, WeightLog } from './types';
 
 /**
@@ -68,12 +68,21 @@ export function weightPoints(weights: WeightLog[], width = 100, height = 42, cou
 }
 
 /**
- * A water log from the water tile: today's is logged now, one added to an earlier day at its noon, the way a walk is.
- * Null for a date after today: nothing is drunk in the future.
+ * A water log from the water tile: today's is logged now, one added to an earlier day at its noon, the way a walk is
+ * (`loggedAt`). Null for a date after today: nothing is drunk in the future.
  */
 export function waterLog(input: { id: string; date: ISODate; ml: number; now: Date }): WaterLog | null {
-  const today = toISODate(input.now);
-  if (input.date > today) return null;
-  const at = input.date === today ? input.now : new Date(`${input.date}T12:00:00`);
-  return { id: input.id, at: at.toISOString(), date: input.date, ml: input.ml };
+  const at = loggedAt(input.date, input.now);
+  return at ? { id: input.id, at: at.toISOString(), date: input.date, ml: input.ml } : null;
+}
+
+/** The water logs with one more (`waterLog`) after the others; the same list when a date after today logs nothing. */
+export function withWaterAdded(water: WaterLog[], input: { id: string; date: ISODate; ml: number; now: Date }): WaterLog[] {
+  const log = waterLog(input);
+  return log ? [...water, log] : water;
+}
+
+/** The water logs without the one with this id, the others untouched; the same list when no log has it. */
+export function withWaterRemoved(water: WaterLog[], id: string): WaterLog[] {
+  return water.some((w) => w.id === id) ? water.filter((w) => w.id !== id) : water;
 }
