@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,7 +15,8 @@ import { useAddSheet } from './AddSheet';
  * wide screen shows the same list. The tabs are tabs in a tab list, so the
  * selected one is announced on the web too; ➕ is a button, not a tab, laid
  * over an empty slot in the list's middle: it adds food for the day Today is
- * showing. Hand-rolled because the stock bar gives its label a box that clips
+ * showing. Holding any tab opens Customize, where the tabs are chosen.
+ * Hand-rolled because the stock bar gives its label a box that clips
  * Devanagari marks on the web.
  */
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -31,6 +33,7 @@ type TabBarProps = {
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const addSheet = useAddSheet();
+  const router = useRouter();
   const app = useApp();
   const t = makeT(app.state.profile.lang);
   const focused = state.routes[state.index]?.name;
@@ -70,7 +73,15 @@ export function TabBar({ state, navigation }: TabBarProps) {
           item.route === null ? (
             <View key={item.key} style={{ flex: 1 }} />
           ) : (
-            <TabButton key={item.key} item={item} focused={focused === item.route} label={t(item.labelKey)} onPress={() => open(item)} />
+            <TabButton
+              key={item.key}
+              item={item}
+              focused={focused === item.route}
+              label={t(item.labelKey)}
+              hint={t('cust_hint')}
+              onPress={() => open(item)}
+              onLongPress={() => router.push('/customize' as never)}
+            />
           ),
         )}
       </View>
@@ -102,14 +113,30 @@ export function TabBar({ state, navigation }: TabBarProps) {
   );
 }
 
-function TabButton({ item, focused, label, onPress }: { item: BarItem; focused: boolean; label: string; onPress: () => void }) {
+function TabButton({
+  item,
+  focused,
+  label,
+  hint,
+  onPress,
+  onLongPress,
+}: {
+  item: BarItem;
+  focused: boolean;
+  label: string;
+  hint: string;
+  onPress: () => void;
+  onLongPress: () => void;
+}) {
   const color = focused ? C.accentText : C.textFaint;
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
       accessibilityRole="tab"
       aria-selected={focused}
       accessibilityLabel={label}
+      accessibilityHint={hint}
       style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'flex-start', gap: 3, paddingHorizontal: 2, opacity: pressed ? 0.6 : 1 })}>
       {/* The active tab sits on a 48 × 32 tinted pill: seen before it is read. */}
       <View style={{ width: 48, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: focused ? C.accentDim : 'transparent' }}>

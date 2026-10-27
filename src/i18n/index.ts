@@ -1078,6 +1078,15 @@ const en: Dict = {
   setup_target_line: 'Eat about {kcal} kcal a day, with about {protein} g of protein.', setup_goal_line: 'At {rate} kg a week you could reach {goal} kg around {date}.',
   setup_hold_line: 'For now the plan keeps your weight where it is.',
   plan_gained: 'Gained',
+  hdr_customize: 'Customize', me_customize: 'Customize', me_customize_sub: 'Tabs and the cards on Today', cust_tabs: 'Tab bar',
+  cust_tabs_note: 'Three tabs always stay; choose up to two more. Hold the tab bar to come back here.', cust_locked: 'always there',
+  cust_on_bar: 'On the tab bar', cust_in_me: 'Opens from {me}', cust_replace_q: 'Two extra tabs is the most. Which one should {tab} replace?',
+  cust_replace_a11y: 'Put {tab} in place of {out}',
+  cust_cards: 'Cards on Today', cust_more_cards: 'More cards', cust_on_today: 'On Today', cust_off_today: 'Not on Today',
+  cust_card_left: 'Calories left', cust_card_menu: 'The day\'s menu', cust_card_coach: 'Coach line', cust_card_waterWalk: 'Water and walk',
+  cust_card_weight: 'Weight', cust_card_sleep: 'Sleep', cust_card_steps: 'Steps', cust_card_climb: 'Streak', cust_card_mantra: 'The day\'s line',
+  cust_move_up: 'Move {card} up', cust_move_down: 'Move {card} down', cust_reset: 'Reset to default', cust_reset_done: 'Tabs and cards are back to the default',
+  cust_mantra_note: 'The day\'s line is switched off in Settings; switch it on there to add its card.', cust_hint: 'Hold to choose the tabs',
 };
 
 const mr: Dict = {
@@ -2160,6 +2169,15 @@ const mr: Dict = {
   setup_target_line: 'रोज साधारण {kcal} kcal खा, त्यात साधारण {protein} ग्रॅ प्रथिने.', setup_goal_line: 'आठवड्याला {rate} किलो या वेगाने तुम्ही साधारण {date} पर्यंत {goal} किलो गाठू शकता.',
   setup_hold_line: 'सध्या नियोजन तुमचं वजन आहे तसंच ठेवतं.',
   plan_gained: 'वाढले',
+  hdr_customize: 'मांडणी', me_customize: 'मांडणी', me_customize_sub: 'टॅब आणि आजच्या पानावरची कार्डं', cust_tabs: 'टॅब पट्टी',
+  cust_tabs_note: 'तीन टॅब कायम राहतात; आणखी दोन निवडा. इथे परत येण्यासाठी टॅब पट्टी दाबून धरा.', cust_locked: 'कायम असतं',
+  cust_on_bar: 'टॅब पट्टीवर', cust_in_me: '{me} मधून उघडतं', cust_replace_q: 'जास्तीत जास्त दोन टॅब. {tab} कोणाच्या जागी ठेवायचा?',
+  cust_replace_a11y: '{out} ऐवजी {tab} ठेवा',
+  cust_cards: 'आजच्या पानावरची कार्डं', cust_more_cards: 'आणखी कार्डं', cust_on_today: 'आजच्या पानावर', cust_off_today: 'आजच्या पानावर नाही',
+  cust_card_left: 'उरलेल्या कॅलरी', cust_card_menu: 'दिवसाचा मेन्यू', cust_card_coach: 'कोचची ओळ', cust_card_waterWalk: 'पाणी आणि चालणं',
+  cust_card_weight: 'वजन', cust_card_sleep: 'झोप', cust_card_steps: 'पावलं', cust_card_climb: 'साखळी', cust_card_mantra: 'आजची ओळ',
+  cust_move_up: '{card} वर हलवा', cust_move_down: '{card} खाली हलवा', cust_reset: 'मूळ मांडणी', cust_reset_done: 'टॅब आणि कार्डं मूळ मांडणीवर आली',
+  cust_mantra_note: 'आजची ओळ सेटिंग्जमध्ये बंद आहे; तिचं कार्ड जोडण्यासाठी ती तिथे सुरू करा.', cust_hint: 'टॅब निवडण्यासाठी दाबून धरा',
 };
 
 const hi: Dict = {
@@ -3240,6 +3258,15 @@ const hi: Dict = {
   setup_target_line: 'रोज़ लगभग {kcal} kcal खाएँ, जिसमें लगभग {protein} ग्राम प्रोटीन हो.', setup_goal_line: 'हफ़्ते में {rate} किलो की रफ़्तार से आप लगभग {date} तक {goal} किलो तक पहुँच सकते हैं.',
   setup_hold_line: 'अभी योजना आपका वज़न जैसा है वैसा रखती है.',
   plan_gained: 'बढ़ा',
+  hdr_customize: 'अपनी पसंद', me_customize: 'अपनी पसंद', me_customize_sub: 'टैब और आज के पन्ने के कार्ड', cust_tabs: 'टैब पट्टी',
+  cust_tabs_note: 'तीन टैब हमेशा रहते हैं; दो और चुनें. यहाँ लौटने के लिए टैब पट्टी दबाकर रखें.', cust_locked: 'हमेशा रहता है',
+  cust_on_bar: 'टैब पट्टी पर', cust_in_me: '{me} से खुलता है', cust_replace_q: 'ज़्यादा से ज़्यादा दो टैब. {tab} किसकी जगह रखें?',
+  cust_replace_a11y: '{out} की जगह {tab} रखें',
+  cust_cards: 'आज के पन्ने के कार्ड', cust_more_cards: 'और कार्ड', cust_on_today: 'आज के पन्ने पर', cust_off_today: 'आज के पन्ने पर नहीं',
+  cust_card_left: 'बची कैलोरी', cust_card_menu: 'दिन का मेन्यू', cust_card_coach: 'कोच की पंक्ति', cust_card_waterWalk: 'पानी और सैर',
+  cust_card_weight: 'वज़न', cust_card_sleep: 'नींद', cust_card_steps: 'कदम', cust_card_climb: 'सिलसिला', cust_card_mantra: 'आज की पंक्ति',
+  cust_move_up: '{card} ऊपर करें', cust_move_down: '{card} नीचे करें', cust_reset: 'पहले जैसा करें', cust_reset_done: 'टैब और कार्ड पहले जैसे हो गए',
+  cust_mantra_note: 'आज की पंक्ति सेटिंग्स में बंद है; उसका कार्ड जोड़ने के लिए उसे वहाँ चालू करें.', cust_hint: 'टैब चुनने के लिए दबाकर रखें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

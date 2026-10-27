@@ -15,6 +15,7 @@ export const TITLES: Record<string, string> = {
   '/plan': 'hdr_plan',
   '/log': 'add_food',
   '/settings': 'hdr_settings',
+  '/customize': 'hdr_customize',
   '/history': 'hdr_history',
   '/guide': 'hdr_guide',
   '/journey': 'hdr_journey',

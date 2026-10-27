@@ -31,6 +31,11 @@ export function barItems(tabs: unknown): BarItem[] {
   return [...around.slice(0, middle), ADD, ...around.slice(middle)];
 }
 
+/** One extra tab's item, for Customize's list of every tab. */
+export function extraItem(id: TabId): BarItem {
+  return EXTRA[id];
+}
+
 /**
  * Where ➕ sits: the bar's tab list leaves an empty slot at ➕'s place, and ➕
  * is laid over it, outside the list, so the list holds only tabs. Its index
@@ -54,6 +59,7 @@ export function meRows(tabs: unknown): MeRow[] {
     { key: 'saved', icon: 'bookmark-outline', labelKey: 'me_saved', sheet: 'savedMeals' },
     { key: 'grocery', icon: 'basket-outline', labelKey: 'grocery_title', sheet: 'grocery' },
     { key: 'recipes', icon: 'restaurant-outline', labelKey: 'recipes', href: '/food?s=recipes' },
+    { key: 'customize', icon: 'options-outline', labelKey: 'me_customize', subKey: 'me_customize_sub', href: '/customize' },
     { key: 'settings', icon: 'settings-outline', labelKey: 'settings', href: '/settings' },
     { key: 'guide', icon: 'help-circle-outline', labelKey: 'hdr_guide', href: '/guide' },
   ];

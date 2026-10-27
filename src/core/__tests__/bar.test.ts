@@ -3,7 +3,7 @@
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { addSlot, barItems, hrefOf, meRows, routeAt, viewedDate } from '../bar';
+import { addSlot, barItems, extraItem, hrefOf, meRows, routeAt, viewedDate } from '../bar';
 import { TAB_IDS } from '../tabs';
 
 /** The screens expo-router can open: the files under src/app and under src/app/(tabs), by name without the extension. */
@@ -35,6 +35,11 @@ describe('barItems', () => {
     expect(addSlot(barItems(['progress']))).toEqual({ index: 1, count: 4 });
     expect(addSlot(barItems([]))).toEqual({ index: 1, count: 3 });
     expect(addSlot(barItems(['progress', 'coach']))).toEqual({ index: 2, count: 5 });
+  });
+
+  it('gives each extra tab its item for Customize, the same the bar shows', () => {
+    for (const id of TAB_IDS) expect(barItems([id])).toContainEqual(extraItem(id));
+    expect(extraItem('sleep')).toMatchObject({ key: 'sleep', route: 'sleep-tab', labelKey: 'sleep_title' });
   });
 
   it('every tab the bar can show has its screen file under src/app/(tabs)', () => {
@@ -76,8 +81,12 @@ describe('viewedDate: the day ➕ adds to', () => {
 
 describe('meRows', () => {
   it('lists the pages in a plain order, with Progress while it is not a tab', () => {
-    expect(meRows([]).map((r) => r.key)).toEqual(['coach', 'progress', 'body', 'plan', 'saved', 'grocery', 'recipes', 'settings', 'guide']);
-    expect(meRows(['progress']).map((r) => r.key)).toEqual(['coach', 'body', 'plan', 'saved', 'grocery', 'recipes', 'settings', 'guide']);
+    expect(meRows([]).map((r) => r.key)).toEqual(['coach', 'progress', 'body', 'plan', 'saved', 'grocery', 'recipes', 'customize', 'settings', 'guide']);
+    expect(meRows(['progress']).map((r) => r.key)).toEqual(['coach', 'body', 'plan', 'saved', 'grocery', 'recipes', 'customize', 'settings', 'guide']);
+  });
+
+  it('has a Customize row before Settings, to the tabs and the cards on Today', () => {
+    expect(meRows([]).find((r) => r.key === 'customize')).toMatchObject({ labelKey: 'me_customize', subKey: 'me_customize_sub', href: '/customize' });
   });
 
   it('every row goes somewhere: a page, or a sheet', () => {
