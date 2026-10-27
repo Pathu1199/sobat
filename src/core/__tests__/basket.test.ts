@@ -8,6 +8,7 @@ import {
   basketTotals,
   countFromGrams,
   formatQty,
+  gramsText,
   itemsMeal,
   lineGrams,
   lineOf,
@@ -147,6 +148,33 @@ describe('the basket', () => {
   it('a line is rounded where it is written, and one that rounds to nothing is not written', () => {
     expect(linesFromBasket(setGrams(addLine([], lineOf(food('poha'))), 'poha', 100), foods)).toEqual([{ foodId: 'poha', unit: 'katori', qty: 0.67 }]);
     expect(linesFromBasket([{ foodId: 'poha', unit: 'katori', gramsPerUnit: 150, count: 0.001 }], foods)).toEqual([]);
+  });
+});
+
+describe('the grams box in the add sheet', () => {
+  const poha = { foodId: 'poha', unit: 'katori', gramsPerUnit: 150, count: 1 };
+
+  it("shows the line's grams while nothing is typed", () => {
+    expect(gramsText(null, poha)).toBe('150');
+    expect(gramsText(null, { ...poha, count: 1.5 })).toBe('225');
+  });
+
+  it('keeps what is typed while the line holds those grams, exactly as typed', () => {
+    const typed = setGrams([poha], 'poha', 100)[0];
+    expect(gramsText({ text: '100', grams: 150 }, typed)).toBe('100');
+    expect(gramsText({ text: '100.0', grams: 150 }, typed)).toBe('100.0');
+  });
+
+  it('keeps text that is not an amount yet ("", "12abc", too little) until the line changes some other way', () => {
+    expect(gramsText({ text: '', grams: 150 }, poha)).toBe('');
+    expect(gramsText({ text: '12abc', grams: 150 }, poha)).toBe('12abc');
+    expect(gramsText({ text: '0.1', grams: 150 }, poha)).toBe('0.1');
+  });
+
+  it('shows the new grams after a − or + while the box still has the typing in it', () => {
+    const typed = setGrams([poha], 'poha', 100)[0];
+    expect(gramsText({ text: '100', grams: 150 }, { ...typed, count: 1 })).toBe('150');
+    expect(gramsText({ text: '', grams: 150 }, { ...poha, count: 1.5 })).toBe('225');
   });
 });
 
