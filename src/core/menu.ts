@@ -333,12 +333,11 @@ function autoFillAt(date: ISODate, slot: Pick<RoutineSlot, 'type' | 'time'>): nu
 
 /**
  * Whether the moment the app fills a slot in from the plan has passed on a
- * date: always on an earlier date, never on a later one, and today once the
- * slot's time plus AUTO_FILL_AFTER_MIN has come.
+ * date: once the slot's time that date plus AUTO_FILL_AFTER_MIN has come, on
+ * every date, so yesterday's 23:00 slot has not passed at 00:15. A later
+ * date's never has.
  */
-export function autoFillPassed(date: ISODate, slot: Pick<RoutineSlot, 'type' | 'time'>, now: Date): boolean {
-  const today = toISODate(now);
-  if (date !== today) return date < today;
+function autoFillPassed(date: ISODate, slot: Pick<RoutineSlot, 'type' | 'time'>, now: Date): boolean {
   return now.getTime() >= autoFillAt(date, slot);
 }
 
@@ -380,7 +379,7 @@ export function autoFill(input: {
   if (isOffDay(input.offDays, date)) return [];
   const out: Meal[] = [];
   for (const slot of openSlots(menu, input.meals, input.skips)) {
-    if (now.getTime() < autoFillAt(date, slot)) continue;
+    if (!autoFillPassed(date, slot, now)) continue;
     const meal = mealFromLines({ id: autoMealId(date, slot.id), date, slot, lines: slot.lines, foods: input.foods, source: 'auto', now });
     if (meal) out.push(meal);
   }
@@ -418,13 +417,21 @@ export function withDayConfirmed(meals: Meal[], date: ISODate): Meal[] {
  * plan, or an Undo of one typed in by hand. Before that moment nothing is
  * marked, so a meal logged into lunch by mistake at 08:00 and taken away
  * leaves lunch to come. Eating in the slot later lifts the skip, as always.
+ * A meal typed in by hand taken away from a date before yesterday marks
+ * nothing: the app never fills that date in, so nothing would come back, and
+ * a skip nobody asked for would read the slot as settled in the day's record.
+ * A meal from the plan taken away marks its slot on any date: it was not
+ * eaten as planned.
  * A meal that names no slot is in the slot its time and type put it in among
  * that date's slots (`slotOf`, as the day's record reads it), and so is each
  * meal left. Today's slot time is the pattern's (today's menu follows it); a
  * slot no longer in the pattern takes the usual time for the meal's kind.
  */
 export function skipsAfterRemove(skips: SlotSkip[], removed: Meal, rest: Meal[], at: { routine: Routine; menus: DayMenu[]; now: Date }): SlotSkip[] {
-  const slots = slotsOn(removed.date, at.menus, at.routine, toISODate(at.now));
+  const today = toISODate(at.now);
+  const typed = (removed.source ?? 'manual') === 'manual';
+  if (typed && removed.date < addDays(today, -1)) return skips;
+  const slots = slotsOn(removed.date, at.menus, at.routine, today);
   const slotIdOf = (m: Meal) => m.slotId ?? slotOf(m, slots)?.id;
   const slotId = slotIdOf(removed);
   if (!slotId) return skips;
@@ -473,13 +480,19 @@ export type MealState = MealsAndSkips & { routine: Routine; menus: DayMenu[] };
  * Every meal goes into the state this way: into the slot it is eaten in when
  * it names none (a photo, a recipe, the coach), one of its own date's slots,
  * a slot that gets a meal on a date is no longer marked skipped that date,
- * and a meal the app filled in there from the plan gives way to it.
+ * and a meal the app filled in there from the plan gives way to it. A meal
+ * on an earlier date that names a slot that date's menu does not have (a
+ * photo read late, a meal typed for that date, named after today's pattern)
+ * goes to the slot its type and time put it in among that date's slots, so
+ * it settles the right one.
  */
 export function withMealAdded(state: MealState, m: Meal, target: number, now: Date): MealsAndSkips {
   const today = toISODate(now);
   // The pattern is always on, so every meal finds its slot.
-  const slots = m.slotId ? undefined : slotsOn(m.date, state.menus, state.routine, today);
-  const meal = withSlot(m, { routine: state.routine, target, meals: state.meals.filter((x) => x.date === today), skippedSlots: skippedOn(state.slotSkips, today), now, slots });
+  const slots = m.slotId && m.date >= today ? undefined : slotsOn(m.date, state.menus, state.routine, today);
+  const own = m.slotId && slots && !slots.some((s) => s.id === m.slotId) ? slotOf({ type: m.type, at: m.at }, slots) : null;
+  const placed = own ? { ...m, slotId: own.id, type: own.type } : m;
+  const meal = withSlot(placed, { routine: state.routine, target, meals: state.meals.filter((x) => x.date === today), skippedSlots: skippedOn(state.slotSkips, today), now, slots });
   const slotSkips = meal.slotId ? removeSkip(state.slotSkips, meal.date, meal.slotId) : state.slotSkips;
   return { meals: settleAuto([...state.meals, meal], slotSkips), slotSkips };
 }

@@ -390,11 +390,35 @@ describe('confirming and taking away', () => {
     expect(skipsAfterRemove([], { ...typo, source: 'plan' }, [], { routine, menus: [], now: new Date('2026-10-27T14:29:00') })).toEqual([]);
   });
 
-  it('on an earlier date the moment has always passed, even in the small hours; on a later date it has not', () => {
+  it('on an earlier date the moment is that date\'s slot time plus 90 minutes too: yesterday\'s 20:00 dinner has passed in the small hours; on a later date it has not', () => {
     const now = new Date('2026-10-27T00:10:00');
     expect(skipsAfterRemove([], auto('a', '2026-10-26', 'dinner'), [], { routine, menus: [], now }).map((s) => s.id)).toEqual(['2026-10-26:dinner']);
-    expect(skipsAfterRemove([], { ...auto('a', '2026-10-20', 'morning'), source: 'manual' }, [], { routine, menus: [], now }).map((s) => s.id)).toEqual(['2026-10-20:morning']);
+    expect(skipsAfterRemove([], auto('a', '2026-10-20', 'morning'), [], { routine, menus: [], now }).map((s) => s.id)).toEqual(['2026-10-20:morning']);
     expect(skipsAfterRemove([], auto('a', '2026-10-28', 'morning'), [], { routine, menus: [], now: new Date('2026-10-27T22:00:00') })).toEqual([]);
+  });
+
+  it('yesterday\'s 23:00 slot is not filled in until 00:30: a meal taken away from it at 00:15 leaves it to come, and from 00:30 marks it', () => {
+    const late: Routine = { ...routine, slots: [...routine.slots, slot('late', 'snack', '23:00', 10)] };
+    const gone: Meal = { ...auto('a', '2026-10-26', 'late'), type: 'snack' };
+    for (const source of ['auto', 'manual'] as const) {
+      expect(skipsAfterRemove([], { ...gone, source }, [], { routine: late, menus: [], now: new Date('2026-10-27T00:15:00') }), source).toEqual([]);
+      expect(skipsAfterRemove([], { ...gone, source }, [], { routine: late, menus: [], now: new Date('2026-10-27T00:30:00') }).map((s) => s.id), source).toEqual(['2026-10-26:late']);
+    }
+  });
+
+  it('a hand-typed meal taken away from a date before yesterday marks nothing: the app never fills that date in, and an unasked skip would read the slot as settled', () => {
+    const now = new Date('2026-10-27T10:00:00');
+    const typed: Meal = { ...auto('a', '2026-10-25', 'lunch'), source: 'manual' };
+    for (const source of ['manual', undefined] as const) {
+      expect(skipsAfterRemove([], { ...typed, source }, [], { routine, menus: [], now }), String(source)).toEqual([]);
+    }
+    expect(withMealRemoved({ routine, menus: [], meals: [typed], slotSkips: [] }, 'a', now)).toEqual({ meals: [], slotSkips: [] });
+    // Yesterday the app may still fill the slot in, so taking a typed meal away there marks it, as before.
+    expect(skipsAfterRemove([], { ...typed, date: '2026-10-26' }, [], { routine, menus: [], now }).map((s) => s.id)).toEqual(['2026-10-26:lunch']);
+    // A meal from the plan taken away marks its slot skipped on any date: the person said it was not eaten.
+    for (const source of ['plan', 'auto'] as const) {
+      expect(skipsAfterRemove([], { ...typed, source }, [], { routine, menus: [], now }).map((s) => s.id), source).toEqual(['2026-10-25:lunch']);
+    }
   });
 
   it('a slot that still holds another meal that date is not marked', () => {
@@ -405,7 +429,8 @@ describe('confirming and taking away', () => {
 
   it('a meal that names no slot, taken away, is matched against its own date\'s menu, and the usual rule follows', () => {
     const loose: Meal = { id: 'x', at: new Date('2026-10-20T13:20:00').toISOString(), date: '2026-10-20', type: 'lunch', items: [], kcal: 400, protein: 10, source: 'manual' };
-    const at = { routine, menus: [oldMenu], now: new Date('2026-10-27T10:00:00') };
+    // The next morning: a hand-typed meal is only marked up to yesterday.
+    const at = { routine, menus: [oldMenu], now: new Date('2026-10-21T10:00:00') };
     expect(skipsAfterRemove([], loose, [], at).map((s) => s.id)).toEqual(['2026-10-20:midday']);
     // Another meal still in that slot, named or not, leaves it unmarked.
     expect(skipsAfterRemove([], loose, [{ ...loose, id: 'y', at: new Date('2026-10-20T12:50:00').toISOString() }], at)).toEqual([]);
@@ -538,6 +563,18 @@ describe('adding a meal to the state', () => {
     // Today's meals follow today's pattern, whatever an old menu said.
     const today: Meal = { ...real('m2', undefined, '09:10'), type: 'breakfast' };
     expect(withMealAdded(state([], [], [{ ...oldMenu, date: '2026-10-20' }]), today, 1600, at('15:00')).meals[0]).toMatchObject({ slotId: 'morning' });
+  });
+
+  it('a meal on an earlier date naming a slot that date does not have lands in a slot of that date\'s menu, so the filled-in meal there gives way and its skip lifts', () => {
+    // A photo read a week late, or a meal typed on that date, named after today's pattern: 20 October's menu has a midday meal, not a lunch.
+    const photo: Meal = { ...real('q-1', 'lunch', '12:45', '2026-10-20'), type: 'lunch', source: undefined, note: 'needs_review' };
+    const settled = withMealAdded(state([filled('midday', '2026-10-20')], [], [oldMenu]), photo, 1600, at('10:00'));
+    expect(settled.meals.map((m) => [m.id, m.slotId, m.type])).toEqual([['q-1', 'midday', 'lunch']]);
+    const unskipped = withMealAdded(state([], addSkip([], '2026-10-20', 'midday'), [oldMenu]), photo, 1600, at('10:00'));
+    expect(unskipped.slotSkips).toEqual([]);
+    // A slot the date has is kept as named.
+    const named = withMealAdded(state([], [], [oldMenu]), { ...photo, slotId: 'supper' }, 1600, at('10:00'));
+    expect(named.meals[0]).toMatchObject({ slotId: 'supper', type: 'lunch' });
   });
 });
 
@@ -760,9 +797,11 @@ describe('the app\'s suggestion fits the person\'s day', () => {
     // Not the pattern's own lines, which are under the target.
     expect(rebuilt.meals).not.toEqual(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods).meals);
     // Its own copy: changing it changes neither the next one nor the day shown.
+    const before = structuredClone(rebuilt.meals);
     rebuilt.meals[1].lines[0].qty = 9;
     rebuilt.meals[1].lines.push(chapati(4));
-    expect(suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit).meals).toEqual(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods, fit).meals);
+    expect(suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit).meals).toEqual(before);
+    expect(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods, fit).meals).toEqual(before);
     // A Wednesday the person edited, rebuilt through the plan screen's week, is the suggestion again.
     const week = viewWeek(MON, [], NEUTRAL_ROUTINE, TODAY, foods, fit);
     const edited = addMenuLine([], week[2], 'snack', { foodId: 'banana', unit: 'medium', qty: 1 }, NOW);
