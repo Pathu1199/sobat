@@ -1,9 +1,10 @@
 import type { ISODate, Meal, MealType, SleepLog, WaterLog, WeightLog } from './types';
 import { expectedWaterByHour, inQuietHours } from './nudge';
-import { MEAL_WINDOWS } from './nutrition';
 import type { Budget } from './nutrition';
+import { pattern, slotAt } from './pattern';
 import { weighInDue } from './plan';
 import { wasHeavy } from './review';
+import { SLOT_GRACE_MIN, slotTime, type Routine } from './routine';
 
 /**
  * The coach that watches the day. Pure rules over the logs and the clock:
@@ -39,8 +40,12 @@ export type CoachInput = {
   weighDay: number;
   kcalTarget: number;
   streakDays: number;
-  /** The plate the day plan laid for the meal that is on now, if any. */
-  nextPlate?: { type: MealType; budget: number; kcal: number; names: string[] } | null;
+  /** The eating pattern: the meals the coach speaks of are its slots, by id. */
+  routine: Routine;
+  /** Slots eaten or skipped today. */
+  settledSlotIds: string[];
+  /** The plate the day plan laid for the slot that is on now, if any. */
+  nextPlate?: { id?: string; type: MealType; budget: number; kcal: number; names: string[] } | null;
 };
 
 const ORDER: Record<Urgency, number> = { now: 0, soon: 1, note: 2 };
@@ -49,28 +54,34 @@ export function coachAdvice(input: CoachInput): Advice[] {
   const { hour, budget: b } = input;
   const out: Advice[] = [];
   const todayMeals = input.meals.filter((m) => m.date === input.today);
-  const types = new Set(todayMeals.map((m) => m.type));
-  const window = MEAL_WINDOWS.find((w) => hour >= w.startHour && hour < w.endHour);
+  const nowMin = hour * 60 + input.minute;
+  const slots = pattern(input.routine);
+  const settled = new Set(input.settledSlotIds);
+  const cur = slotAt(input.routine, nowMin);
   const lastMeal = [...todayMeals].sort((a, b2) => a.at.localeCompare(b2.at)).slice(-1)[0];
   const lastMealHour = lastMeal ? new Date(lastMeal.at).getHours() : null;
 
-  // Eating: the meal that is on, with its budget, or the reason to stop.
+  // Eating: the slot whose turn it is, with its budget, or the reason to stop.
+  // A skipped slot is settled like an eaten one: nothing asks for it and nothing remarks on it.
   if (b.remaining < 80 && hour >= 12) {
     out.push({ key: b.remaining <= 0 ? 'coach_over' : 'coach_stop', kind: 'stop', urgency: 'now', action: 'water', params: { kcal: Math.max(0, b.remaining), over: Math.max(0, -b.remaining) } });
-  } else if (window && !types.has(window.type) && hour >= window.startHour + 1) {
-    const plate = input.nextPlate && input.nextPlate.type === window.type ? input.nextPlate : null;
+  } else if (cur && !settled.has(cur.id) && nowMin >= cur.minutes) {
+    const plate = input.nextPlate && input.nextPlate.id === cur.id ? input.nextPlate : null;
     out.push({
       key: plate ? 'coach_meal_plate' : 'coach_meal_due',
       kind: 'food',
-      urgency: hour >= window.endHour - 1 ? 'now' : 'soon',
+      // Urgent once the slot's time and its grace have passed with nothing in it.
+      urgency: nowMin > cur.minutes + SLOT_GRACE_MIN ? 'now' : 'soon',
       action: plate ? 'plan' : 'log',
-      params: { meal: window.type, kcal: plate ? plate.budget : Math.min(b.remaining, Math.max(300, b.perMeal)), names: plate ? plate.names.join(', ') : '' },
+      params: { meal: cur.type, slot: cur.id, kcal: plate ? plate.budget : Math.min(b.remaining, Math.max(300, b.perMeal)), names: plate ? plate.names.join(', ') : '' },
     });
-  } else if (window && types.has(window.type) && b.remaining > 0 && window.type !== 'dinner') {
-    const next = MEAL_WINDOWS.find((w) => w.startHour >= window.endHour && !types.has(w.type));
-    if (next) out.push({ key: 'coach_next_meal', kind: 'food', urgency: 'note', action: 'plan', params: { meal: next.type, kcal: Math.min(b.remaining, Math.max(250, b.perMeal)), at: `${String(next.startHour).padStart(2, '0')}:00` } });
+  } else if (cur && settled.has(cur.id) && b.remaining > 0) {
+    const next = slots.find((s) => s.minutes > cur.minutes && !settled.has(s.id));
+    if (next) out.push({ key: 'coach_next_meal', kind: 'food', urgency: 'note', action: 'plan', params: { meal: next.type, slot: next.id, kcal: Math.min(b.remaining, Math.max(250, b.perMeal)), at: slotTime(next.slot) } });
   }
-  if (hour >= 21 && !types.has('dinner') && b.remaining > 0) {
+  // The day's last dinner slot, past its own time and grace with nothing in it.
+  const dinner = [...slots].reverse().find((s) => s.type === 'dinner');
+  if (dinner && !settled.has(dinner.id) && nowMin > dinner.minutes + SLOT_GRACE_MIN && b.remaining > 0) {
     out.push({ key: 'coach_late_dinner', kind: 'food', urgency: 'now', action: 'log', params: { kcal: Math.min(b.remaining, Math.max(300, b.perMeal)) } });
   }
   if (b.consumed > 0 && b.proteinConsumed < b.proteinTarget * 0.4 && hour >= 15) {

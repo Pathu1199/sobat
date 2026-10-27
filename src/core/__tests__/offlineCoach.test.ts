@@ -58,6 +58,28 @@ describe('answerOffline', () => {
     expect(a.text).toContain('[oc_stop]');
     expect(a.options).toHaveLength(0);
   });
+
+  it('picks the plate on now by its slot id, and lists every slot of the day once', () => {
+    const tp = (k: string) => (k === 'oc_plate' ? 'plate {kcal}' : `[${k}]`);
+    const pick = { food: { id: 'palak' } as never, grams: 150, kcal: 120, protein: 5 };
+    const twoSnacks: OfflineCtx = {
+      ...ctx,
+      dayPlan: {
+        remaining: 600,
+        stop: false,
+        now: 'snack',
+        nowId: 'bhel',
+        slots: [
+          { id: 'tea', type: 'snack', budget: 100, kcal: 90, protein: 2, picks: [pick] },
+          { id: 'bhel', type: 'snack', budget: 200, kcal: 180, protein: 4, picks: [pick] },
+        ],
+      },
+    };
+    expect(answerOffline('kiti calories baki ahet', twoSnacks, tp).text).toContain('plate 200');
+    const day = answerOffline('full day plan dya', twoSnacks, tp).text;
+    expect(day).toContain('plate 100');
+    expect(day).toContain('plate 200');
+  });
 });
 
 describe('fasting questions get a code-written answer', () => {

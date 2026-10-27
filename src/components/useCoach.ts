@@ -15,26 +15,21 @@ export function useCoach(minute: number): Advice[] {
   return useMemo(() => {
     if (isOffDay(state.settings.offDays, today)) return [];
     const todayMeals = state.meals.filter((m) => m.date === today);
-    const loggedTypes = Array.from(new Set(todayMeals.map((m) => m.type)));
-    // With the pattern on, the plates are its slots still to eat, the way the fits card shows them.
-    const patternOn = state.routine.enabled;
-    const loggedSlotIds = patternOn
-      ? slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: skippedToday })
-          .filter((s) => s.status === 'done' || s.status === 'skipped')
-          .map((s) => s.slot.id)
-      : [];
+    // The plates and the coach go by the pattern's slots, keyed by id, the way the fits card shows them.
+    const settledSlotIds = slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: skippedToday })
+      .filter((s) => s.status === 'done' || s.status === 'skipped')
+      .map((s) => s.slot.id);
     const plan = dayPlan({
       remaining: budget.remaining,
       hour,
-      loggedTypes,
       foods,
       avoided: avoidedFoodIds({ ...state.routine, enabled: true }),
-      preferred: patternOn ? bhajiFor(state.routine, today) : [],
-      slots: patternOn ? pattern(state.routine) : undefined,
-      loggedSlotIds,
+      preferred: bhajiFor(state.routine, today),
+      slots: pattern(state.routine),
+      loggedSlotIds: settledSlotIds,
       nowMinutes: minute,
     });
-    const slot = plan.slots.find((s) => s.type === plan.now) ?? plan.slots[0];
+    const slot = plan.slots.find((s) => s.id === plan.nowId) ?? plan.slots[0];
     return coachAdvice({
       today,
       hour,
@@ -49,7 +44,9 @@ export function useCoach(minute: number): Advice[] {
       weighDay: state.settings.weighDay,
       kcalTarget: targets.kcal,
       streakDays: app.streakDays,
-      nextPlate: slot ? { type: slot.type, budget: slot.budget, kcal: slot.kcal, names: slot.picks.map((p) => foodName(p.food, lang)) } : null,
+      routine: state.routine,
+      settledSlotIds,
+      nextPlate: slot ? { id: slot.id, type: slot.type, budget: slot.budget, kcal: slot.kcal, names: slot.picks.map((p) => foodName(p.food, lang)) } : null,
     });
     // The minute is the clock; everything else is read when it ticks or the logs change.
   }, [minute, today, hour, budget, state.meals, state.water, state.sleep, state.weights, state.routine, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, foods, targets.kcal, skippedToday, app.stepsToday, app.streakDays, lang]);

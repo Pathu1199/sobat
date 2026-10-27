@@ -1,5 +1,5 @@
 import type { Advice } from './coach';
-import type { DayPlan } from './dayPlan';
+import type { DayPlan, SlotPlan } from './dayPlan';
 import { asksAboutFasting, foldText } from './guardrails';
 import type { Budget } from './nutrition';
 import { planVerdict, type Plan } from './plan';
@@ -107,8 +107,14 @@ function f(s: string, p: Record<string, string | number>): string {
   return s.replace(/\{(\w+)\}/g, (_, k) => String(p[k] ?? ''));
 }
 
-function plateLine(ctx: OfflineCtx, t: T, type?: MealType): string | null {
-  const slot = type ? ctx.dayPlan.slots.find((s) => s.type === type) : ctx.dayPlan.slots.find((s) => s.type === ctx.dayPlan.now) ?? ctx.dayPlan.slots[0];
+/** The plate to talk about: the meal asked for, else the slot on now (by its id), else the first one ahead. */
+function plateFor(ctx: OfflineCtx, meal?: MealType): SlotPlan | undefined {
+  const { slots, nowId, now } = ctx.dayPlan;
+  if (meal) return slots.find((s) => s.type === meal);
+  return (nowId ? slots.find((s) => s.id === nowId) : undefined) ?? slots.find((s) => s.type === now) ?? slots[0];
+}
+
+function plateLine(ctx: OfflineCtx, t: T, slot: SlotPlan | undefined): string | null {
   if (!slot || slot.picks.length === 0) return null;
   return f(t('oc_plate'), { meal: ctx.mealName(slot.type), kcal: slot.budget, items: slot.picks.map((p) => `${ctx.foodName(p.food.id)} (${p.kcal})`).join(', '), total: slot.kcal, protein: slot.protein });
 }
@@ -128,7 +134,7 @@ export function answerOffline(question: string, ctx: OfflineCtx, t: T): { text: 
         break;
       }
       lines.push(f(t('oc_left'), { kcal: left, eaten: b.consumed, target: b.target }));
-      const plate = plateLine(ctx, t, p.meal);
+      const plate = plateLine(ctx, t, plateFor(ctx, p.meal));
       if (plate) lines.push(plate);
       if (b.proteinConsumed < b.proteinTarget * 0.5) lines.push(f(t('oc_protein_push'), { g: Math.round(b.proteinTarget - b.proteinConsumed) }));
       const slot = p.meal ? ctx.dayPlan.slots.find((s) => s.type === p.meal) : undefined;
@@ -147,7 +153,7 @@ export function answerOffline(question: string, ctx: OfflineCtx, t: T): { text: 
     case 'left': {
       lines.push(f(t('oc_left'), { kcal: left, eaten: b.consumed, target: b.target }));
       lines.push(f(t('oc_left_split'), { n: b.mealsLeft, per: b.perMeal }));
-      const plate = plateLine(ctx, t);
+      const plate = plateLine(ctx, t, plateFor(ctx));
       if (plate) lines.push(plate);
       lines.push(f(t('oc_protein_status'), { have: b.proteinConsumed, target: b.proteinTarget }));
       break;
@@ -217,7 +223,7 @@ export function answerOffline(question: string, ctx: OfflineCtx, t: T): { text: 
     case 'plan_day': {
       lines.push(f(t('oc_day_plan'), { kcal: ctx.kcalTarget }));
       for (const s of ctx.dayPlan.slots) {
-        const l = plateLine(ctx, t, s.type);
+        const l = plateLine(ctx, t, s);
         if (l) lines.push(l);
       }
       lines.push(t('oc_day_plan_tip'));

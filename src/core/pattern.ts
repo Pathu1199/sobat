@@ -208,10 +208,11 @@ export function withSlot(meal: Meal, input: { routine: Routine; target: number; 
 /**
  * The slot whose turn it is at this minute by the clock alone: the latest one
  * whose window (its time minus the early margin) has opened; before the day's
- * first window opens, the first slot. The coach's meal clock reads this
- * rather than a fixed list of meal hours. It does not know what was eaten or
- * skipped; a meal being logged finds its slot with `slotForMealAt`. Null only
- * with no slots.
+ * first window opens, the first slot. Its one caller is the coach's meal
+ * clock (`coachAdvice` in coach.ts: the slot due now, the one after it), which
+ * reads this rather than a fixed list of meal hours. It does not know what was
+ * eaten or skipped; the coach is told which slots are settled, and a meal being
+ * logged finds its slot with `slotForMealAt`. Null only with no slots.
  */
 export function slotAt(routine: Routine, minutes: number): PatternSlot | null {
   const slots = pattern(routine);

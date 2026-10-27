@@ -142,24 +142,19 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
         plan,
       });
       const todayMeals = app.state.meals.filter((m) => m.date === app.today);
-      const loggedTypes = Array.from(new Set(todayMeals.map((m) => m.type)));
-      // With the pattern on, the plates are its slots still to eat, the way the fits card shows them.
-      const patternOn = app.state.routine.enabled;
+      // The plates are the pattern's slots still to eat, the way the fits card shows them.
       const clock = new Date();
       const nowMinutes = clock.getHours() * 60 + clock.getMinutes();
-      const loggedSlotIds = patternOn
-        ? slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes, skippedSlots: app.skippedToday })
-            .filter((s) => s.status === 'done' || s.status === 'skipped')
-            .map((s) => s.slot.id)
-        : [];
+      const loggedSlotIds = slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes, skippedSlots: app.skippedToday })
+        .filter((s) => s.status === 'done' || s.status === 'skipped')
+        .map((s) => s.slot.id);
       const dp = dayPlan({
         remaining: app.budget.remaining,
         hour: app.hour,
-        loggedTypes,
         foods: app.foods,
         avoided,
-        preferred: patternOn ? bhajiFor(app.state.routine, app.today) : [],
-        slots: patternOn ? pattern(app.state.routine) : undefined,
+        preferred: bhajiFor(app.state.routine, app.today),
+        slots: pattern(app.state.routine),
         loggedSlotIds,
         nowMinutes,
       });

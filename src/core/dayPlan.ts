@@ -1,5 +1,5 @@
 import { defaultPortion } from './foods';
-import { kcalForGrams, MEAL_WINDOWS } from './nutrition';
+import { kcalForGrams } from './nutrition';
 import type { PatternSlot } from './pattern';
 import { SLOT_EARLY_MIN } from './routine';
 import type { FoodItem, MealType } from './types';
@@ -12,7 +12,7 @@ import type { FoodItem, MealType } from './types';
  * line can be logged with one tap. A seed reshuffles the picks.
  */
 export type Pick = { food: FoodItem; grams: number; kcal: number; protein: number; /** Lighter swaps for the same role: cut this, have that. */ alts?: Pick[] };
-export type SlotPlan = { /** The pattern slot this plate is for, when the pattern is on. */ id?: string; type: MealType; budget: number; picks: Pick[]; kcal: number; protein: number };
+export type SlotPlan = { /** The pattern slot this plate is for. */ id?: string; type: MealType; budget: number; picks: Pick[]; kcal: number; protein: number };
 export type DayPlan = {
   remaining: number;
   /** True when what is left is too little to eat anything but water or fruit. */
@@ -20,21 +20,20 @@ export type DayPlan = {
   slots: SlotPlan[];
   /** The meal that is on now, or next. */
   now: MealType;
-  /** The slot that is on now or next, when the pattern is on. */
+  /** The slot that is on now or next. */
   nowId?: string;
 };
 
 export type DayPlanInput = {
   remaining: number;
   hour: number;
-  loggedTypes: MealType[];
   foods: FoodItem[];
   avoided: Set<string>;
   /** Today's bhaji from the routine, if any; these are preferred for lunch and dinner. */
   preferred?: string[];
   seed?: number;
-  /** The eating pattern, when it is on: the meals ahead are its slots, not the fixed windows. */
-  slots?: PatternSlot[];
+  /** The eating pattern: the meals ahead are its slots. */
+  slots: PatternSlot[];
   /** Slots already eaten or skipped today. */
   loggedSlotIds?: string[];
   /** Minutes after midnight; defaults to the hour. */
@@ -118,24 +117,19 @@ function plate(type: MealType, budget: number, input: DayPlanInput, slotIndex = 
   return picks;
 }
 
-type Ahead = { id?: string; type: MealType; share: number };
+type Ahead = { id: string; type: MealType; share: number };
 
 /** The meals still to come. A slot stays ahead until the next slot's window opens, so a late lunch is still lunch. */
 function mealsAhead(input: DayPlanInput): { ahead: Ahead[]; now: MealType; nowId?: string } {
-  if (input.slots && input.slots.length > 0) {
-    const now = input.nowMinutes ?? input.hour * 60;
-    const logged = new Set(input.loggedSlotIds ?? []);
-    const ahead = input.slots
-      .filter((s, i) => {
-        const end = i + 1 < input.slots!.length ? input.slots![i + 1].minutes - SLOT_EARLY_MIN : 1440;
-        return !logged.has(s.id) && now < end;
-      })
-      .map((s) => ({ id: s.id, type: s.type, share: s.share }));
-    return { ahead, now: ahead[0]?.type ?? 'snack', nowId: ahead[0]?.id };
-  }
-  const windowsLeft = MEAL_WINDOWS.filter((w) => w.endHour > input.hour && !input.loggedTypes.includes(w.type));
-  const nowWindow = MEAL_WINDOWS.find((w) => input.hour >= w.startHour && input.hour < w.endHour);
-  return { ahead: windowsLeft.map((w) => ({ type: w.type, share: w.share })), now: nowWindow?.type ?? windowsLeft[0]?.type ?? 'snack' };
+  const now = input.nowMinutes ?? input.hour * 60;
+  const logged = new Set(input.loggedSlotIds ?? []);
+  const ahead = input.slots
+    .filter((s, i) => {
+      const end = i + 1 < input.slots.length ? input.slots[i + 1].minutes - SLOT_EARLY_MIN : 1440;
+      return !logged.has(s.id) && now < end;
+    })
+    .map((s) => ({ id: s.id, type: s.type, share: s.share }));
+  return { ahead, now: ahead[0]?.type ?? 'snack', nowId: ahead[0]?.id };
 }
 
 export function dayPlan(input: DayPlanInput): DayPlan {
@@ -154,6 +148,6 @@ export function dayPlan(input: DayPlanInput): DayPlan {
 }
 
 /** The whole day on the target, every meal, as a sheet to plan from in the morning. */
-export function fullDayPlan(input: Omit<DayPlanInput, 'hour' | 'loggedTypes' | 'loggedSlotIds' | 'nowMinutes'>): DayPlan {
-  return dayPlan({ ...input, hour: 0, loggedTypes: [], loggedSlotIds: [], nowMinutes: 0 });
+export function fullDayPlan(input: Omit<DayPlanInput, 'hour' | 'loggedSlotIds' | 'nowMinutes'>): DayPlan {
+  return dayPlan({ ...input, hour: 0, loggedSlotIds: [], nowMinutes: 0 });
 }

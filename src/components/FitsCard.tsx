@@ -34,21 +34,18 @@ export function FitsCard({ compact }: { compact?: boolean }) {
   const [allMeals, setAllMeals] = useState(false);
   const [swapsFor, setSwapsFor] = useState<string | null>(null);
   const minute = useMinute();
-  const patternOn = state.routine.enabled;
-  const slots = useMemo(() => (patternOn ? pattern(state.routine) : undefined), [patternOn, state.routine]);
+  const slots = useMemo(() => pattern(state.routine), [state.routine]);
   const loggedSlotIds = useMemo(() => {
-    if (!patternOn) return [];
     const todayMeals = state.meals.filter((m) => m.date === today);
     return slotStates({ routine: state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday })
       .filter((s) => s.status === 'done' || s.status === 'skipped')
       .map((s) => s.slot.id);
-  }, [patternOn, state.routine, state.meals, today, app.targets.kcal, minute, app.skippedToday]);
+  }, [state.routine, state.meals, today, app.targets.kcal, minute, app.skippedToday]);
 
-  const loggedTypes = useMemo(() => Array.from(new Set(state.meals.filter((m) => m.date === today).map((m) => m.type))), [state.meals, today]);
   const plan = useMemo(() => {
-    const base = { foods, avoided: avoidedFoodIds({ ...state.routine, enabled: true }), preferred: state.routine.enabled ? bhajiFor(state.routine, today) : [], seed, slots };
-    return mode === 'day' ? fullDayPlan({ ...base, remaining: app.targets.kcal }) : dayPlan({ ...base, remaining: budget.remaining, hour, loggedTypes, loggedSlotIds, nowMinutes: minute });
-  }, [mode, app.targets.kcal, budget.remaining, hour, loggedTypes, loggedSlotIds, minute, foods, state.routine, today, seed, slots]);
+    const base = { foods, avoided: avoidedFoodIds({ ...state.routine, enabled: true }), preferred: bhajiFor(state.routine, today), seed, slots };
+    return mode === 'day' ? fullDayPlan({ ...base, remaining: app.targets.kcal }) : dayPlan({ ...base, remaining: budget.remaining, hour, loggedSlotIds, nowMinutes: minute });
+  }, [mode, app.targets.kcal, budget.remaining, hour, loggedSlotIds, minute, foods, state.routine, today, seed, slots]);
 
   function log(type: MealType, foodId: string, grams: number, slotId?: string) {
     const food = foods.find((f) => f.id === foodId);
