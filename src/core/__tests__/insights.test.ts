@@ -166,9 +166,13 @@ describe('streak', () => {
 
 describe('weightTrend', () => {
   it('compares 7-day windows rather than single days', () => {
-    const logs = lastNDates(14, '2026-09-25').map((date, i) => ({ date, kg: 100 - i * 0.1 }));
+    // A tenth of a kilo less every day for two weeks: each window, later days counting more, averages its eleventh and
+    // its fourth day, 98.9 and 99.6, so the week took off exactly 0.7.
+    const logs = lastNDates(14, '2026-09-25').map((date, i) => ({ date, kg: Math.round((100 - i * 0.1) * 10) / 10 }));
     const t = weightTrend(logs, '2026-09-25')!;
-    expect(t.change7).toBeLessThan(0);
+    expect(t.current).toBe(98.9);
+    expect(t.change7).toBe(-0.7);
+    expect(t.asOf).toBe('2026-09-25');
   });
 
   it('returns null with no weigh-in on or before today', () => {
@@ -176,9 +180,15 @@ describe('weightTrend', () => {
     expect(weightTrend([{ date: '2026-09-30', kg: 80 }], '2026-09-25')).toBeNull();
   });
 
-  it('counts days, not weigh-ins: many old entries do not outweigh this week', () => {
+  it('an old weigh-in never stands in for this week, however many there are', () => {
     const old = Array.from({ length: 20 }, () => ({ date: '2026-09-01', kg: 90 }));
     expect(weightTrend([...old, { date: '2026-09-25', kg: 80 }], '2026-09-25')!.current).toBe(80);
+  });
+
+  it('counts days, not weigh-ins: several on one day count as that day once', () => {
+    // Three weigh-ins on the window's last day are one day at 79, beside one at 80 six days before: (80 + 7 × 79) / 8.
+    const burst = [{ date: '2026-09-19', kg: 80 }, { date: '2026-09-25', kg: 79.2 }, { date: '2026-09-25', kg: 78.8 }, { date: '2026-09-25', kg: 79 }];
+    expect(weightTrend(burst, '2026-09-25')!.current).toBe(79.1);
   });
 
   it('weighs the later days of the window more', () => {
@@ -191,6 +201,52 @@ describe('weightTrend', () => {
     expect(t.current).toBe(79);
     expect(t.change21).toBe(-3);
     expect(t.change7).toBeNull();
+    expect(t.asOf).toBe('2026-09-22');
+  });
+
+  it('shows the changes to someone who weighs in every fortnight', () => {
+    const logs = [
+      { date: '2026-08-14', kg: 84 },
+      { date: '2026-08-28', kg: 83 },
+      { date: '2026-09-11', kg: 82 },
+      { date: '2026-09-25', kg: 81 },
+    ];
+    const t = weightTrend(logs, '2026-09-26')!;
+    expect(t.current).toBe(81);
+    // A week back the latest weigh-in is the one a fortnight before, three weeks back the one four weeks before, thirty
+    // days back the one six weeks before.
+    expect([t.change7, t.change21, t.change30]).toEqual([-1, -2, -3]);
+    expect(t.asOf).toBe('2026-09-25');
+  });
+
+  it('shows the changes to someone who weighs in every ten days', () => {
+    const logs = [
+      { date: '2026-08-26', kg: 83 },
+      { date: '2026-09-05', kg: 82.5 },
+      { date: '2026-09-15', kg: 82 },
+      { date: '2026-09-25', kg: 81.5 },
+    ];
+    const t = weightTrend(logs, '2026-09-25')!;
+    // A week back: the weigh-in ten days before; three weeks and thirty days back: the one thirty days before.
+    expect([t.change7, t.change21, t.change30]).toEqual([-0.5, -1.5, -1.5]);
+  });
+
+  it('bridges a missed week, but never calls a change over months one over a week', () => {
+    // Weekly, then a week missed: the week's change reaches back to the weigh-in two weeks before.
+    const missed = [
+      { date: '2026-09-04', kg: 82 },
+      { date: '2026-09-11', kg: 81.5 },
+      { date: '2026-09-25', kg: 80.5 },
+    ];
+    expect(weightTrend(missed, '2026-09-25')!.change7).toBe(-1);
+    // Two months without a weigh-in: no change over a week or three, and the weigh-in it has is old (asOf says when).
+    const gap = [
+      { date: '2026-07-01', kg: 85 },
+      { date: '2026-09-01', kg: 82 },
+    ];
+    const t = weightTrend(gap, '2026-10-20')!;
+    expect([t.change7, t.change21, t.change30]).toEqual([null, null, null]);
+    expect(t.asOf).toBe('2026-09-01');
   });
 });
 

@@ -942,7 +942,7 @@ const en: Dict = {
   routine_instead: 'instead',
   wd_0: 'Sun',
   // Grocery list, meal timing, yoga
-  grocery_title: 'Grocery list', grocery_sub: 'What this week\'s plan needs, grouped for the market', grocery_week: 'Whole week', grocery_half: 'Next 4 days', grocery_done: '{done}/{total} bought', grocery_note: 'Raw amounts, rounded up to what shops sell. Bhaji is listed by its vegetable, dal by its pulse.', grocery_times: '{n}× this week', grocery_empty: 'Nothing planned yet.',
+  grocery_title: 'Grocery list', grocery_sub: 'What this week\'s plan needs, grouped for the market', grocery_week: 'Whole week', grocery_half: 'Next 4 days', grocery_done: '{done}/{total} bought', grocery_note: 'Raw amounts, rounded up to what shops sell. Bhaji is listed by its vegetable, dal by its pulse.', grocery_times: '{n}× in the week', grocery_empty: 'Nothing planned yet.',
   timing_title: 'Eating window', timing_first: 'First', timing_last: 'Last', timing_window: 'Window', timing_gap: 'Gap', timing_v_good: 'On time', timing_v_long: 'Long day', timing_v_late: 'Late dinner', timing_v_both: 'Long and late', timing_v_none: '',
   timing_good: 'All meals inside 12 hours and dinner before 9. The body gets a real overnight fast.', timing_long: 'More than 12 hours between first and last bite. A later breakfast or an earlier dinner shortens it.', timing_late: 'Last meal after {h}:00. Dinner by 8 means better sleep and less stored as fat.', timing_both: 'Over 12 hours and a late dinner. Try one thing tomorrow: dinner by 8.',
   yoga_tab: 'Yoga', yoga_title: 'Yoga', yoga_none_today: 'No yoga yet today', yoga_done_today: '{n} min today', yoga_intro: 'Names in Marathi and English, a photo, the steps, and who should skip it. Tap an asana; log it when done and it counts like any activity.', yoga_routines: 'Ready routines', yoga_asanas: 'asanas', yoga_log_min: 'Log {n} min', yoga_steps: 'How to do it right', yoga_prev: 'Back', yoga_next: 'Next', yoga_benefits: 'What it does', yoga_caution: 'Take care', yoga_avoid_if: 'Skip if', yoga_l1: 'Start', yoga_l2: 'Some practice', yoga_l3: 'Steady',
@@ -1061,6 +1061,9 @@ const en: Dict = {
   planweek_past_note: 'This day has passed. What was eaten is filled in on Today.', planweek_open_today: 'Open on Today',
   coach_water_one: 'You are behind on water: one bottle to catch up. Start it now.',
   strip_skipped: 'All meals skipped',
+  plan_suggested_floor_here: 'This is low, under the safe minimum of {floor} kcal a day. Tap Balance to target below.',
+  menu_plan_low_here: 'Too little for one day. Add food, or tap Balance to target below.',
+  grocery_sub_week: 'What the plan for {week} needs, grouped for the market', grocery_half_range: '{from} to {to}',
 };
 
 const mr: Dict = {
@@ -1450,7 +1453,7 @@ const mr: Dict = {
   plan_status_low: 'खूप कमी: लक्ष्यापेक्षा {gap} kcal कमी. इतकं कमी खाल्लं की स्नायू जातात, शरीर मंदावतं आणि नंतर जास्त खाणं होतं. Balance दाबा.',
   plan_status_low_short: 'नियोजन {gap} kcal कमी आहे. उघडा आणि Balance दाबा.',
   plan_suggested: 'सुचवलेलं नियोजन, {kcal} kcal. तुमच्या दिवसाप्रमाणे बदला.',
-  plan_suggested_floor: 'हे कमी आहे, दिवसाला किमान {floor} kcal सुरक्षित मर्यादेखाली. उघडा आणि Balance दाबा.',
+  plan_suggested_floor: 'हे कमी आहे, दिवसाला किमान {floor} kcal सुरक्षित मर्यादेखाली. उघडा आणि "लक्ष्याप्रमाणे जुळवा" दाबा.',
   plan_status_under: 'थोडं कमी ({gap} kcal). चालेल, किंवा Balance दाबा.',
   plan_status_floor: 'दिवसाला किमान {floor} kcal सुरक्षित मर्यादेखाली. त्याखाली कधीच नियोजन नको: Balance दाबा.',
   plan_status_on: 'लक्ष्यावर. हा दिवस बरोबर आहे.',
@@ -2126,6 +2129,9 @@ const mr: Dict = {
   planweek_past_note: 'हा दिवस गेला. काय खाल्लं ते आजच्या पानावर भरा.', planweek_open_today: 'आजच्या पानावर उघडा',
   coach_water_one: 'पाणी मागे आहे: एक बाटली भरून काढायची. ती आत्ता सुरू करा.',
   strip_skipped: 'सगळी जेवणं टाळली',
+  plan_suggested_floor_here: 'हे कमी आहे, दिवसाला किमान {floor} kcal सुरक्षित मर्यादेखाली. खाली "लक्ष्याप्रमाणे जुळवा" दाबा.',
+  menu_plan_low_here: 'एका दिवसासाठी खूप कमी. पदार्थ जोडा, किंवा खाली "लक्ष्याप्रमाणे जुळवा" दाबा.',
+  grocery_sub_week: '{week} च्या प्लॅनला काय लागेल, बाजाराप्रमाणे गट', grocery_half_range: '{from} ते {to}',
 };
 
 const hi: Dict = {
@@ -2509,7 +2515,7 @@ const hi: Dict = {
   plan_status_low: 'बहुत कम: लक्ष्य से {gap} kcal कम. इतना कम खाने से मांसपेशियाँ जाती हैं, शरीर धीमा होता है और बाद में ज़्यादा खाना होता है. Balance दबाएँ.',
   plan_status_low_short: 'प्लान {gap} kcal कम है. खोलें और Balance दबाएँ.',
   plan_suggested: 'सुझाया गया प्लान, {kcal} kcal. अपने दिन के हिसाब से बदलें.',
-  plan_suggested_floor: 'यह कम है, रोज़ के {floor} kcal की सुरक्षित न्यूनतम सीमा से नीचे. खोलें और Balance दबाएँ.',
+  plan_suggested_floor: 'यह कम है, रोज़ के {floor} kcal की सुरक्षित न्यूनतम सीमा से नीचे. खोलें और "लक्ष्य के हिसाब से मिलाएँ" दबाएँ.',
   plan_status_under: 'थोड़ा कम ({gap} kcal). ठीक है, या Balance दबाएँ.',
   plan_status_floor: 'रोज़ के {floor} kcal की सुरक्षित न्यूनतम सीमा से नीचे. इससे नीचे कभी प्लान न करें: Balance दबाएँ.',
   plan_status_on: 'लक्ष्य पर. यह दिन ठीक है.',
@@ -3189,6 +3195,9 @@ const hi: Dict = {
   planweek_past_note: 'यह दिन बीत गया. क्या खाया, वह आज वाले पन्ने पर भरें.', planweek_open_today: 'आज वाले पन्ने पर खोलें',
   coach_water_one: 'पानी पीछे है: एक बोतल पूरी करनी है. अभी शुरू करें.',
   strip_skipped: 'सारे खाने छोड़े',
+  plan_suggested_floor_here: 'यह कम है, रोज़ के {floor} kcal की सुरक्षित न्यूनतम सीमा से नीचे. नीचे "लक्ष्य के हिसाब से मिलाएँ" दबाएँ.',
+  menu_plan_low_here: 'एक दिन के लिए बहुत कम. खाना जोड़ें, या नीचे "लक्ष्य के हिसाब से मिलाएँ" दबाएँ.',
+  grocery_sub_week: '{week} के प्लान को क्या चाहिए, बाज़ार के हिसाब से', grocery_half_range: '{from} से {to}',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

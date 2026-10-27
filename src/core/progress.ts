@@ -1,4 +1,5 @@
 import { addDays } from './date';
+import { weekdayOf } from './routine';
 import type { ISODate } from './types';
 
 /**
@@ -10,7 +11,7 @@ export type MonthCell = ISODate | null;
 
 export function monthCells(month: string): MonthCell[][] {
   const first = `${month}-01`;
-  const lead = (new Date(`${first}T12:00:00`).getDay() + 6) % 7;
+  const lead = (weekdayOf(first) + 6) % 7;
   const cells: MonthCell[] = Array.from({ length: lead }, (): MonthCell => null);
   for (let d = first; d.startsWith(month); d = addDays(d, 1)) cells.push(d);
   while (cells.length % 7 !== 0) cells.push(null);

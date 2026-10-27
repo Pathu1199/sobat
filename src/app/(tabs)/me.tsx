@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { GrocerySheet } from '../../components/GrocerySheet';
 import { SavedMealsSheet } from '../../components/SavedMealsSheet';
 import { meRows, type MeSheet } from '../../core/bar';
+import { mondayOf } from '../../core/date';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { Card, Divider, ListRow } from '../../ui/components';
@@ -40,7 +41,7 @@ export default function MeScreen() {
       </Card>
       <SavedMealsSheet open={sheet === 'savedMeals'} onClose={() => setSheet(null)} />
       {/* This week's plan as a shopping list, the same sheet the diet plan opens. */}
-      <GrocerySheet open={sheet === 'grocery'} onClose={() => setSheet(null)} plan={app.weekPlan} />
+      <GrocerySheet open={sheet === 'grocery'} onClose={() => setSheet(null)} plan={app.weekPlan} monday={mondayOf(app.today)} />
     </Page>
   );
 }

@@ -40,14 +40,23 @@ export function weekStrip(input: { monday: ISODate; today: ISODate; viewed: ISOD
 
 /**
  * One day's mark from its record, the same on the week strip and on
- * Progress's calendar. A full day with nothing eaten (every meal skipped, a
- * drink at most) is `skipped`, never `full`: the record is complete, but
- * skipping is not praised, as the streak never counts it.
+ * Progress's calendar. A day before the person started shows nothing, a free
+ * weekday too: the record starts on `since`. A full day with nothing eaten
+ * (every meal skipped, a drink at most) is `skipped`, never `full`: the
+ * record is complete, but skipping is not praised, as the streak never
+ * counts it.
  */
 export function markOf(r: DayRecord, date: ISODate, today: ISODate, since: ISODate): { mark: StripMark; light: boolean } {
-  const mark: StripMark =
-    r.state === 'off' ? 'off' : date > today ? 'planned' : date < since ? 'none' : r.state === 'full' ? (r.nothingEaten ? 'skipped' : 'full') : date === today ? 'today' : 'missing';
+  const mark = markFor(r, date, today, since);
   return { mark, light: r.fromPlan && (mark === 'full' || mark === 'missing' || mark === 'today') };
+}
+
+function markFor(r: DayRecord, date: ISODate, today: ISODate, since: ISODate): StripMark {
+  if (date < since) return 'none';
+  if (r.state === 'off') return 'off';
+  if (date > today) return 'planned';
+  if (r.state === 'full') return r.nothingEaten ? 'skipped' : 'full';
+  return date === today ? 'today' : 'missing';
 }
 
 /** Where the record starts: the day setup finished, else the first meal ever logged, else today. Days before it have nothing to miss. */

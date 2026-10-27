@@ -1,4 +1,6 @@
+import { addDays, weekDates } from './date';
 import { defaultPortion } from './foods';
+import { weekdayOf } from './routine';
 import type { FoodItem, ISODate } from './types';
 import type { WeekPlan } from './weekPlan';
 
@@ -73,10 +75,19 @@ export function groceryList(plan: WeekPlan, foods: FoodItem[], dayIdxs: number[]
   return GROUP_ORDER.filter((k) => groups.has(k)).map((k) => ({ key: k, lines: groups.get(k)!.sort((a, b) => b.grams - a.grams) }));
 }
 
-/** The week a tick belongs to, so a list ticked on Sunday is clean again next week. */
-export function groceryWeekKey(today: ISODate, weekStartDay = 0): string {
-  const d = new Date(today + 'T12:00:00');
-  const back = (d.getDay() - weekStartDay + 7) % 7;
-  d.setDate(d.getDate() - back);
-  return d.toISOString().slice(0, 10);
+/** The week a tick belongs to, so a list ticked on Sunday is clean again next week. The plan screen and Me pass the Monday of the week shown, so next week's ticks never tick this week's list. */
+export function groceryWeekKey(day: ISODate, weekStartDay = 0): string {
+  return addDays(day, -((weekdayOf(day) - weekStartDay + 7) % 7));
+}
+
+/**
+ * The dates the list covers, of the week from `monday`: all seven, or half a
+ * week for someone who shops twice, four dates from the later of today and
+ * that Monday (fewer near the week's end, none once it is past).
+ */
+export function groceryDates(monday: ISODate, today: ISODate, scope: 'week' | 'half'): ISODate[] {
+  const week = weekDates(monday);
+  if (scope === 'week') return week;
+  const from = today > monday ? today : monday;
+  return week.filter((d) => d >= from).slice(0, 4);
 }

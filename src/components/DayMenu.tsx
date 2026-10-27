@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { slotBefore, undoSteps } from '../core/addSheet';
 import { amountText, stepFoodLine, withKcal } from '../core/basket';
-import { draftKey, fillUndoSteps, offersDayConfirm, planNote, recordTone, rowLines, rowOffers, stepDraft, type DayView, type MenuRow, type RowLine } from '../core/dayView';
+import { draftKey, fillUndoSteps, lowNoteKey, offersDayConfirm, planNote, recordTone, rowLines, rowOffers, stepDraft, type DayView, type MenuRow, type RowLine } from '../core/dayView';
 import { itemName } from '../core/foods';
 import type { DayMenu as Menu } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
@@ -299,7 +299,8 @@ export function DayMenu({
         </View>
       );
     }
-    if (row.state === 'later') {
+    // A later slot today, and a day already past as the plan screen reads it: what it plans, nothing to do there.
+    if (row.state === 'later' || row.state === 'kept') {
       return <View style={{ paddingVertical: 10 }}>{head(row, row.lines.length > 0 ? fill(t('menu_planned_kcal'), { kcal: row.plannedKcal }) : t('menu_nothing_planned'))}</View>;
     }
     // Open (a past day, or a slot today passed with nothing in it) and plan (a future day): each planned food with − / +,
@@ -337,13 +338,15 @@ export function DayMenu({
       {note === 'suggested' || note === 'suggested_low' ? (
         <View style={{ gap: 4 }}>
           <Text style={small}>{fill(t('plan_suggested'), { kcal: numberText(view.plannedKcal) })}</Text>
-          {note === 'suggested_low' ? <Text style={{ color: C.amber, fontSize: F.small, lineHeight: lh(F.small) }}>{fill(t('plan_suggested_floor'), { floor: numberText(floor) })}</Text> : null}
+          {note === 'suggested_low' ? (
+            <Text style={{ color: C.amber, fontSize: F.small, lineHeight: lh(F.small) }}>{fill(t(lowNoteKey('suggested_low', !!onBalance)), { floor: numberText(floor) })}</Text>
+          ) : null}
           {note === 'suggested_low' ? openPlan : null}
         </View>
       ) : null}
       {note === 'low' ? (
         <View style={{ gap: 4 }}>
-          <Text style={{ color: C.red, fontSize: F.small, lineHeight: lh(F.small) }}>{t('menu_plan_low')}</Text>
+          <Text style={{ color: C.red, fontSize: F.small, lineHeight: lh(F.small) }}>{t(lowNoteKey('low', !!onBalance))}</Text>
           {openPlan}
         </View>
       ) : null}

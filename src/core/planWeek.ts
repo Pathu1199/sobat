@@ -134,7 +134,7 @@ export function weekAverage(rows: PlanRow[], target: number): { avg: number; dif
 
 /** The week the plan screen opens on: this one from Monday to Friday, the next one at the weekend, when it is the one to plan. */
 export function defaultPlanWeek(today: ISODate): ISODate {
-  const wd = new Date(`${today}T12:00:00`).getDay();
+  const wd = weekdayOf(today);
   return wd === 0 || wd === 6 ? addDays(mondayOf(today), 7) : mondayOf(today);
 }
 
@@ -144,4 +144,18 @@ export function withReviewedWeek(list: ISODate[] | undefined, monday: ISODate): 
   if (prev.includes(monday)) return prev;
   const next = [monday, ...prev].sort((a, b) => b.localeCompare(a)).slice(0, 8);
   return next.includes(monday) ? next : prev;
+}
+
+/**
+ * What Balance on the plan screen leaves alone. It counts with every food a
+ * plan names (`planFoods`, the list the totals on screen are counted with),
+ * so it balances the total the person sees; a food outside the person's diet
+ * counts as avoided, so Balance never adds one or makes one bigger, as it
+ * never does a food the pattern avoids.
+ */
+export function balanceAvoided(avoided: Set<string>, planFoods: FoodItem[], dietFoods: FoodItem[]): Set<string> {
+  const diet = new Set(dietFoods.map((f) => f.id));
+  const out = new Set(avoided);
+  for (const f of planFoods) if (!diet.has(f.id)) out.add(f.id);
+  return out;
 }

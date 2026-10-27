@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
 import type { UndoStep } from '../addSheet';
-import { dayMode, dayView, draftKey, fillUndoSteps, offersDayConfirm, planNote, recordTone, rowLines, rowOffers, stepDraft, type MenuRow } from '../dayView';
+import { t } from '../../i18n';
+import { dayMode, dayView, draftKey, fillUndoSteps, lowNoteKey, offersDayConfirm, planNote, recordTone, rowLines, rowOffers, stepDraft, type MenuRow } from '../dayView';
 import { measureName } from '../foods';
 import { fillFromPlan, planFillId, removeSkip, withMealAdded, withMealRemoved, type DayMenu, type MealState } from '../menu';
 import { DEFAULT_ROUTINE } from '../routine';
@@ -187,11 +188,12 @@ describe('a future day', () => {
     expect(states(view(TODAY, [], { planOnly: true }))).toEqual(['plan', 'plan', 'plan', 'plan']);
   });
 
-  it('plan-only never makes a past day a plan: it offers no Change and is never judged', () => {
+  it('plan-only never makes a past day a plan: it offers nothing, logs nothing and is never judged', () => {
     const v = view('2026-10-25', [], { planOnly: true });
     expect(v.mode).toBe('past');
     expect(states(v)).not.toContain('plan');
-    expect(v.rows.flatMap((r) => rowOffers(r))).not.toContain('change');
+    // No Change (the store refuses an edit before today), and no Ate this, Ate other or Skipped: the plan screen never logs.
+    expect(v.rows.map((r) => rowOffers(r))).toEqual([[], [], [], []]);
     expect([v.judged, v.missing, v.canFill]).toEqual([false, 0, false]);
     // What it planned is still there to read.
     expect(v.rows[1].lines.map((l) => l.foodId)).toEqual(['chapati', 'moong-dal']);
@@ -259,6 +261,24 @@ describe("a future day's line under its total", () => {
 
   it('a day with nothing planned has no total to call low', () => {
     expect(planNote({ ...base, kcal: 0, suggested: false, hasPlan: false })).toBeNull();
+  });
+
+  it('on the plan screen, with Balance at the foot of the same card, the low line says to tap it there, not to go elsewhere', () => {
+    expect(lowNoteKey('suggested_low', false)).toBe('plan_suggested_floor');
+    expect(lowNoteKey('low', false)).toBe('menu_plan_low');
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const balance = t(lang, 'plan_balance');
+      for (const note of ['suggested_low', 'low'] as const) {
+        const here = t(lang, lowNoteKey(note, true));
+        expect(here, `${lang} ${note}`).toContain(balance);
+        expect(here, `${lang} ${note}`).not.toBe(t(lang, lowNoteKey(note, false)));
+      }
+    }
+    // Marathi and Hindi name the Balance button in their own words, as it reads on the button.
+    for (const lang of ['mr', 'hi'] as const) {
+      expect(t(lang, 'plan_suggested_floor'), lang).toContain(t(lang, 'plan_balance'));
+      expect(t(lang, 'plan_suggested_floor'), lang).not.toMatch(/Balance/);
+    }
   });
 });
 

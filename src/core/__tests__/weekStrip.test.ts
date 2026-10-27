@@ -52,6 +52,15 @@ describe('markOf', () => {
     expect(markOf(r('planned'), '2026-10-30', TODAY, '2026-10-01')).toEqual({ mark: 'planned', light: false });
     expect(markOf(r('off', true), '2026-10-25', TODAY, '2026-10-01')).toEqual({ mark: 'off', light: false });
   });
+
+  it('shows nothing before the person started, a free weekday too', () => {
+    for (const state of ['off', 'full', 'partial', 'empty'] as const) {
+      expect(markOf(r(state, true), '2026-09-20', TODAY, '2026-10-01'), state).toEqual({ mark: 'none', light: false });
+    }
+    // The strip keeps the start: a free day before it reads as before the start, a free day after it as free.
+    const days = weekStrip({ monday: MON, today: TODAY, viewed: TODAY, since: '2026-10-28', records: [r('off'), r('partial'), r('partial'), r('planned'), r('planned'), r('off'), r('planned')] });
+    expect(days.map((d) => d.mark)).toEqual(['none', 'none', 'today', 'planned', 'planned', 'off', 'planned']);
+  });
 });
 
 describe('a day with every meal skipped and nothing eaten', () => {

@@ -13,7 +13,7 @@ import { dayView } from '../core/dayView';
 import { foodName } from '../core/foods';
 import { weekPlanView, type DayMenu as Menu } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
-import { defaultPlanWeek, planRowTone, planWeekRows, weekAverage, withReviewedWeek, type PlanRow, type PlanRowTone } from '../core/planWeek';
+import { balanceAvoided, defaultPlanWeek, planRowTone, planWeekRows, weekAverage, withReviewedWeek, type PlanRow, type PlanRowTone } from '../core/planWeek';
 import { avoidedFoodIds, slotLabel, weekdayOf } from '../core/routine';
 import { isOffDay } from '../core/week';
 import { balanceDay, lineInfo, swapsFor } from '../core/weekPlan';
@@ -77,6 +77,7 @@ function PlanWeek() {
   const dayRow = day ? (rows.find((r) => r.date === day.date) ?? null) : null;
   const view = day ? dayView({ date: day.date, today, menu: day, meals: [], skippedIds: [], currentId: null, foods, lang, planOnly: true, offDay: isOffDay(offDays, day.date) }) : null;
 
+  const weekRange = `${formatDayMonth(week[0].date, lang)} – ${formatDayMonth(week[6].date, lang)}`;
   const strong = { color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' } as const;
   const small = { color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) } as const;
   const slotName = (id: string, type: string) => {
@@ -95,14 +96,16 @@ function PlanWeek() {
 
   function saveWeek() {
     const next = withReviewedWeek(state.settings.reviewedWeeks, monday);
-    // The same list back means nothing changed, so nothing is written.
-    if (next !== state.settings.reviewedWeeks) app.setSettings({ reviewedWeeks: next });
+    // The same list back means nothing changed: nothing is written, so nothing says it was saved.
+    if (next === state.settings.reviewedWeeks) return;
+    app.setSettings({ reviewedWeeks: next });
     fb.haptic('success');
     fb.notify(t('planweek_saved'));
   }
 
   function balance(d: Menu) {
-    const r = balanceDay({ meals: d.meals }, app.foods, targets.kcal, avoided, floor);
+    // Counted with the same foods as the totals on screen; a food outside the diet is never added or made bigger.
+    const r = balanceDay({ meals: d.meals }, foods, targets.kcal, balanceAvoided(avoided, foods, app.foods), floor);
     if (!r.changes.length) {
       // Nothing changed, so nothing is written and nothing buzzes as if it were.
       setNote(t('plan_nothing_to_change'));
@@ -128,7 +131,7 @@ function PlanWeek() {
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <IconButton name="chevron-back" label={t('strip_prev_week')} onPress={() => moveWeek(-1)} />
         <Text numberOfLines={1} style={[strong, { flex: 1, textAlign: 'center' }]}>
-          {`${formatDayMonth(week[0].date, lang)} – ${formatDayMonth(week[6].date, lang)}`}
+          {weekRange}
         </Text>
         <IconButton name="chevron-forward" label={t('strip_next_week')} onPress={() => moveWeek(1)} />
       </View>
@@ -150,7 +153,7 @@ function PlanWeek() {
                     setNote(null);
                   }}
                   accessibilityRole="button"
-                  aria-selected={selected}
+                  aria-expanded={selected}
                   accessibilityLabel={
                     dish
                       ? fill(t('planweek_row_a11y'), { day: dayLabel, dish: foodName(dish, lang), kcal: numberText(r.kcal), status: statusWord(r) })
@@ -242,7 +245,7 @@ function PlanWeek() {
           <Ionicons name="basket-outline" size={22} color={C.accentText} />
           <View style={{ flex: 1 }}>
             <Text style={strong}>{t('grocery_title')}</Text>
-            <Text style={small}>{t('grocery_sub')}</Text>
+            <Text style={small}>{monday === mondayOf(today) ? t('grocery_sub') : fill(t('grocery_sub_week'), { week: weekRange })}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={C.textFaint} />
         </Pressable>
@@ -251,7 +254,7 @@ function PlanWeek() {
         </Pressable>
       </View>
 
-      <GrocerySheet open={grocery} onClose={() => setGrocery(false)} plan={weekPlanView(week)} />
+      <GrocerySheet open={grocery} onClose={() => setGrocery(false)} plan={weekPlanView(week)} monday={monday} />
 
       {/* Another food of the same kind in this one's place, or this one taken out. */}
       <Sheet open={!!swapInfo} title={swapInfo ? fill(t('plan_swap_title'), { food: foodName(swapInfo.food, lang) }) : ''} onClose={() => setSwap(null)}>

@@ -150,4 +150,15 @@ describe('dates with the year', () => {
     expect(formatMonthYear('2026-10-01', 'en')).toMatch(/October/);
     expect(formatMonthYear('2026-10-01', 'en')).toMatch(/2026/);
   });
+
+  it('keeps the year in Marathi and Hindi, in the digits beside it', () => {
+    for (const lang of ['mr', 'hi'] as const) {
+      const d = formatDayMonthYear('2027-03-14', lang);
+      expect(d, lang).toMatch(/14/);
+      expect(d, lang).toMatch(/2027/);
+      expect(d, lang).not.toMatch(/[\u0966-\u096F]/);
+      expect(d, lang).not.toBe(formatDayMonthYear('2027-03-14', 'en'));
+      expect(formatMonthYear('2026-10-01', lang), lang).toMatch(/2026/);
+    }
+  });
 });

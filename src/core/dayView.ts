@@ -21,7 +21,8 @@ import { dayStatus, lineInfo } from './weekPlan';
  * them is missing or filled in from the plan (`judged` is false). Pure.
  */
 export type DayMode = 'past' | 'today' | 'future';
-export type RowState = 'done' | 'skipped' | 'current' | 'open' | 'later' | 'plan';
+/** `kept`: a day already past as the plan screen reads it, what it planned and nothing to do there. */
+export type RowState = 'done' | 'skipped' | 'current' | 'open' | 'later' | 'plan' | 'kept';
 /** One planned food: `idx` is its place in the menu meal, so − / + edits the right line; `measure` names one of its measures ("1 katori (150 g)"). */
 export type RowLine = { idx: number; foodId: string; name: string; qty: number; qtyText: string; unit: string; measure: string; grams: number; kcal: number; protein: number };
 export type MenuRow = {
@@ -75,7 +76,7 @@ export function dayView(input: {
   currentId: string | null;
   foods: FoodItem[];
   lang: Lang;
-  /** The plan screen's view: today and later as plan, never judged. It edits a day's menu and never logs; a past date keeps its own rows, which offer no Change (the store refuses an edit before today). */
+  /** The plan screen's view: today and later as plan, never judged. It edits a day's menu and never logs; a past date's rows are `kept`, read only, and offer nothing: no Change (the store refuses an edit before today) and nothing to log. */
   planOnly?: boolean;
   /** An off day in the person's settings. */
   offDay: boolean;
@@ -95,7 +96,7 @@ export function dayView(input: {
   const rows: MenuRow[] = slots.map((s) => {
     const lines = rowLines(s.meal.lines, input.foods, input.lang);
     const meals = bySlot.get(s.id) ?? [];
-    const state: RowState = mode === 'future' ? 'plan' : meals.length > 0 ? 'done' : skipped.has(s.id) ? 'skipped' : 'open';
+    const state: RowState = mode === 'future' ? 'plan' : input.planOnly ? 'kept' : meals.length > 0 ? 'done' : skipped.has(s.id) ? 'skipped' : 'open';
     return {
       slotId: s.id,
       type: s.type,
@@ -187,7 +188,8 @@ export type RowOffer = 'planned' | 'change' | 'add' | 'ate_this' | 'ate_other' |
  * open slot (a past day, or one today passed empty): Ate this when there is
  * something to log as planned, Ate other, and Skipped while it is one of the
  * day's meals. A future day changes its plan and never logs: Change, or add
- * food to an empty slot. Done, skipped and later rows have none of these.
+ * food to an empty slot. Done, skipped and later rows have none of these, nor
+ * has a past day read on the plan screen (`kept`), which never logs.
  */
 export function rowOffers(row: Pick<MenuRow, 'state' | 'lines' | 'planned'>): RowOffer[] {
   const has = row.lines.length > 0;
@@ -231,6 +233,17 @@ export function planNote(input: { kcal: number; target: number; floor: number; s
   if (!input.hasPlan) return null;
   if (input.suggested) return input.kcal < input.floor ? 'suggested_low' : 'suggested';
   return dayStatus(input.kcal, input.target, input.floor) === 'low' ? 'low' : null;
+}
+
+/**
+ * The words of a low line under a future day's total. On the plan screen
+ * Balance sits at the foot of the same card (`balanceHere`), so the line says
+ * to tap it there instead of sending the person elsewhere; elsewhere it points
+ * to the diet plan.
+ */
+export function lowNoteKey(note: 'suggested_low' | 'low', balanceHere: boolean): string {
+  if (note === 'suggested_low') return balanceHere ? 'plan_suggested_floor_here' : 'plan_suggested_floor';
+  return balanceHere ? 'menu_plan_low_here' : 'menu_plan_low';
 }
 
 /**

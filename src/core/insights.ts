@@ -136,14 +136,24 @@ export function breakStreak(logs: BreakLog[], dates: ISODate[]): number {
 const TREND_DAYS = 7;
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
-/** The weigh-ins from `from` to `to`, each counting its day's place in the window: 1 on the first day, 2 on the next, and so on. Null when there is none. */
+/** Each day's weigh-ins as one: their average. Several weigh-ins on one day are that day, counted once. */
+function dailyKg(logs: WeightLog[]): Map<ISODate, number> {
+  const sums = new Map<ISODate, { kg: number; n: number }>();
+  for (const l of logs) {
+    const s = sums.get(l.date) ?? { kg: 0, n: 0 };
+    sums.set(l.date, { kg: s.kg + l.kg, n: s.n + 1 });
+  }
+  return new Map(Array.from(sums, ([date, s]) => [date, s.kg / s.n]));
+}
+
+/** The days weighed from `from` to `to`, each counting its place in the window: 1 on the first day, 2 on the next, and so on; several weigh-ins on one day count as that day once. Null when there is none. */
 export function timeWeightedKg(logs: WeightLog[], from: ISODate, to: ISODate): number | null {
   let sum = 0;
   let weight = 0;
-  for (const l of logs) {
-    if (l.date < from || l.date > to) continue;
-    const w = Math.round((Date.parse(`${l.date}T12:00:00`) - Date.parse(`${from}T12:00:00`)) / 86400000) + 1;
-    sum += l.kg * w;
+  for (const [date, kg] of dailyKg(logs)) {
+    if (date < from || date > to) continue;
+    const w = Math.round((Date.parse(`${date}T12:00:00`) - Date.parse(`${from}T12:00:00`)) / 86400000) + 1;
+    sum += kg * w;
     weight += w;
   }
   return weight > 0 ? sum / weight : null;
@@ -151,23 +161,36 @@ export function timeWeightedKg(logs: WeightLog[], from: ISODate, to: ISODate): n
 
 /**
  * The weight smoothed over time, not over entries: a seven-day window ending
- * at the latest weigh-in on or before today, later days counting more, so
- * three weigh-ins on a Sunday do not outweigh a week and an old one never
- * stands in for this week. Each change compares it with the same window 7,
- * 21 and 30 days earlier; null where that window has no weigh-in.
+ * at the latest weigh-in on or before today (`asOf`), later days counting
+ * more and each day once, so a burst of weigh-ins on a Sunday does not
+ * outweigh the week and an old one never stands in for this week. A change
+ * over 7, 21 or 30 days compares it with the same window ending at the latest
+ * weigh-in on or before that many days back, so someone who weighs in every
+ * ten days or every fortnight sees them too. That weigh-in may be at most as
+ * far again before it (a week's change reaches back two weeks at most): a
+ * change over months is never called one over a week. Null where there is
+ * none. `asOf` lets a screen say when, or leave out a change gone stale.
  */
-export function weightTrend(logs: WeightLog[], today: ISODate): { current: number; change7: number | null; change21: number | null; change30: number | null } | null {
-  let end: ISODate | null = null;
-  for (const l of logs) if (l.date <= today && (end === null || l.date > end)) end = l.date;
-  if (end === null) return null;
-  const last = end;
-  const at = (back: number) => timeWeightedKg(logs, addDays(last, -back - (TREND_DAYS - 1)), addDays(last, -back));
-  const now = at(0) ?? 0;
+export function weightTrend(
+  logs: WeightLog[],
+  today: ISODate,
+): { current: number; change7: number | null; change21: number | null; change30: number | null; asOf: ISODate } | null {
+  const days = Array.from(dailyKg(logs).keys())
+    .filter((d) => d <= today)
+    .sort();
+  if (days.length === 0) return null;
+  const last = days[days.length - 1];
+  const at = (end: ISODate) => timeWeightedKg(logs, addDays(end, -(TREND_DAYS - 1)), end);
+  const now = at(last) ?? 0;
   const change = (back: number) => {
-    const then = at(back);
+    const target = addDays(last, -back);
+    let end: ISODate | null = null;
+    for (const d of days) if (d <= target) end = d;
+    if (end === null || end < addDays(target, -back)) return null;
+    const then = at(end);
     return then === null ? null : r1(now - then);
   };
-  return { current: r1(now), change7: change(7), change21: change(21), change30: change(30) };
+  return { current: r1(now), change7: change(7), change21: change(21), change30: change(30), asOf: last };
 }
 
 export type Correlation = { key: string; strength: number; params: Record<string, string | number> };

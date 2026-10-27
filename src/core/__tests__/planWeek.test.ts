@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
 import type { DayMenu } from '../menu';
-import { defaultPlanWeek, mainDish, planRowTone, planWeekRows, weekAverage, withReviewedWeek } from '../planWeek';
+import { foodsForDiet } from '../foods';
+import { balanceAvoided, defaultPlanWeek, mainDish, planRowTone, planWeekRows, weekAverage, withReviewedWeek } from '../planWeek';
 import type { FoodItem } from '../types';
 import type { PlanLine } from '../routine';
-import { dayTotals, type PlanMeal } from '../weekPlan';
+import { balanceDay, dayTotals, type PlanMeal } from '../weekPlan';
 
 const foods = foodsJson as unknown as FoodItem[];
 const day = (date: string, lines: PlanLine[]): DayMenu => ({ date, editedAt: '', meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines }] });
@@ -166,5 +167,32 @@ describe('the week to open and the reviewed stamp', () => {
   it('gives back the same list when a week older than the eight kept would be dropped at once', () => {
     const eight = ['2026-09-01', '2026-08-01', '2026-07-01', '2026-06-01', '2026-05-01', '2026-04-01', '2026-03-01', '2026-02-01'];
     expect(withReviewedWeek(eight, '2026-01-01')).toBe(eight);
+  });
+});
+
+describe('Balance on the plan screen', () => {
+  const veg = foodsForDiet(foods, 'veg');
+  const lunch = (lines: PlanLine[]) => ({ meals: [{ id: 'lunch', type: 'lunch' as const, time: '13:00', lines }] });
+
+  it('counts with every food a plan names, as the totals on screen, and treats foods outside the diet as avoided', () => {
+    const avoided = balanceAvoided(new Set(['shev']), foods, veg);
+    expect(avoided.has('shev')).toBe(true);
+    expect(avoided.has('chicken-curry')).toBe(true);
+    expect(avoided.has('chapati')).toBe(false);
+    // Chicken curry and chapati, the total on screen on target: Balance changes nothing.
+    const d = lunch([{ foodId: 'chicken-curry', unit: 'katori', qty: 1 }, { foodId: 'chapati', unit: 'piece', qty: 2 }]);
+    const target = dayTotals(d, foods).kcal;
+    expect(balanceDay(d, foods, target, avoided, 0).changes).toEqual([]);
+    // Counted with the diet's list alone, the curry was nothing and the same day looked short.
+    expect(balanceDay(d, veg, target, avoided, 0).changes.length).toBeGreaterThan(0);
+  });
+
+  it('never adds a food outside the diet, nor makes one bigger', () => {
+    const avoided = balanceAvoided(new Set(), foods, veg);
+    const d = lunch([{ foodId: 'chicken-curry', unit: 'katori', qty: 1 }]);
+    const r = balanceDay(d, foods, dayTotals(d, foods).kcal + 600, avoided, 0);
+    const ids = r.day.meals.flatMap((m) => m.lines.map((l) => l.foodId));
+    expect(ids.filter((id) => avoided.has(id))).toEqual(['chicken-curry']);
+    expect(r.day.meals[0].lines.find((l) => l.foodId === 'chicken-curry')!.qty).toBe(1);
   });
 });

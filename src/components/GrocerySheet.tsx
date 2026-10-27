@@ -2,7 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { foodName } from '../core/foods';
-import { groceryList, groceryWeekKey } from '../core/grocery';
+import { groceryDates, groceryList, groceryWeekKey } from '../core/grocery';
+import { weekdayOf } from '../core/routine';
+import type { ISODate } from '../core/types';
 import type { WeekPlan } from '../core/weekPlan';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -12,24 +14,35 @@ import { C, F, S } from '../ui/theme';
 import { FoodThumb } from './FoodDetailSheet';
 
 /**
- * The week's plan as a shopping list: grouped like the market, with buying
- * amounts, ticked off as things come home. Ticks belong to the week, so the
- * list is clean again on the next one.
+ * A week's plan as a shopping list: grouped like the market, with buying
+ * amounts, ticked off as things come home. It is the week shown (`monday`,
+ * the plan screen's week; this week on Me), and its ticks belong to that
+ * week, so next week's ticks never tick this week's list and the list is
+ * clean again on the next one.
  */
-export function GrocerySheet({ open, onClose, plan }: { open: boolean; onClose: () => void; plan: WeekPlan }) {
+export function GrocerySheet({ open, onClose, plan, monday }: { open: boolean; onClose: () => void; plan: WeekPlan; monday: ISODate }) {
   const app = useApp();
   const { state, foods, today } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
-  const [scope, setScope] = useState<'week' | 'half'>('week');
-  // Half a week: today and the next three days, for someone who shops twice.
-  const dayIdxs = useMemo(() => {
-    if (scope === 'week') return [0, 1, 2, 3, 4, 5, 6];
-    const d = new Date(today + 'T12:00:00').getDay();
-    return [0, 1, 2, 3].map((i) => (d + i) % 7);
-  }, [scope, today]);
+  const [picked, setPicked] = useState<'week' | 'half'>('week');
+  // Half a week, for someone who shops twice: four dates of the week shown from the later of today and its Monday. A week
+  // already past has none, so it offers the whole week only.
+  const half = useMemo(() => groceryDates(monday, today, 'half'), [monday, today]);
+  const scope = half.length > 0 ? picked : 'week';
+  const dayIdxs = useMemo(() => groceryDates(monday, today, scope).map(weekdayOf), [monday, today, scope]);
   const groups = useMemo(() => groceryList(plan, foods, dayIdxs), [plan, foods, dayIdxs]);
-  const week = groceryWeekKey(today, 0);
+  const week = groceryWeekKey(monday);
+  // "Next 4 days" while the half starts today and has four; else the weekdays it covers.
+  const wd = (d: ISODate) => t(`wd_${weekdayOf(d)}`);
+  const halfLabel =
+    half.length === 0
+      ? ''
+      : half.length === 4 && half[0] === today
+        ? t('grocery_half')
+        : half.length === 1
+          ? wd(half[0])
+          : fill(t('grocery_half_range'), { from: wd(half[0]), to: wd(half[half.length - 1]) });
   const ticked = state.groceryTicks?.week === week ? state.groceryTicks.ids : [];
   const total = groups.reduce((n, g) => n + g.lines.length, 0);
   const done = groups.reduce((n, g) => n + g.lines.filter((l) => ticked.includes(l.foodId)).length, 0);
@@ -41,8 +54,8 @@ export function GrocerySheet({ open, onClose, plan }: { open: boolean; onClose: 
       <View style={{ gap: 12 }}>
         <Row style={{ justifyContent: 'space-between' }}>
           <Row style={{ gap: 6 }}>
-            <Pill label={t('grocery_week')} active={scope === 'week'} onPress={() => setScope('week')} />
-            <Pill label={t('grocery_half')} active={scope === 'half'} onPress={() => setScope('half')} />
+            <Pill label={t('grocery_week')} active={scope === 'week'} onPress={() => setPicked('week')} />
+            {half.length > 0 ? <Pill label={halfLabel} active={scope === 'half'} onPress={() => setPicked('half')} /> : null}
           </Row>
           <Micro color={done === total && total > 0 ? C.green : C.textDim}>{fill(t('grocery_done'), { done, total })}</Micro>
         </Row>

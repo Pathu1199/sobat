@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { groceryList, groceryWeekKey } from '../grocery';
+import { groceryDates, groceryList, groceryWeekKey } from '../grocery';
 import { DEFAULT_ROUTINE } from '../routine';
 import { dayTiming, fmtDuration } from '../timing';
 import type { FoodItem, Meal } from '../types';
@@ -32,6 +32,29 @@ describe('groceryList', () => {
     expect(mon.length).toBeLessThanOrEqual(week.length);
     expect(groceryWeekKey('2026-10-07', 0)).toBe('2026-10-04');
     expect(groceryWeekKey('2026-10-04', 0)).toBe('2026-10-04');
+  });
+
+  it('keys the ticks by the week shown, so next week ticked never ticks this one', () => {
+    // The plan screen and Me key a week by its Monday.
+    expect(groceryWeekKey('2026-10-26')).toBe('2026-10-25');
+    expect(groceryWeekKey('2026-11-02')).toBe('2026-11-01');
+    expect(groceryWeekKey('2026-11-02')).not.toBe(groceryWeekKey('2026-10-26'));
+    // Across the turn of a year and a month.
+    expect(groceryWeekKey('2027-01-04')).toBe('2027-01-03');
+    expect(groceryWeekKey('2026-12-01', 1)).toBe('2026-11-30');
+  });
+
+  it('lists the week shown: all of it, or half a week from the later of today and its Monday', () => {
+    const thisWeek = ['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'];
+    expect(groceryDates('2026-10-26', '2026-10-28', 'week')).toEqual(thisWeek);
+    // This week on a Wednesday: Wednesday to Saturday.
+    expect(groceryDates('2026-10-26', '2026-10-28', 'half')).toEqual(['2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31']);
+    // Next week, looked at on a Saturday: its own Monday to Thursday, not the days after today.
+    expect(groceryDates('2026-11-02', '2026-10-31', 'half')).toEqual(['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05']);
+    // Near the week's end, only the days it has left.
+    expect(groceryDates('2026-10-26', '2026-10-31', 'half')).toEqual(['2026-10-31', '2026-11-01']);
+    // A week already past has nothing left to buy for.
+    expect(groceryDates('2026-10-19', '2026-10-28', 'half')).toEqual([]);
   });
 });
 
