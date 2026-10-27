@@ -91,7 +91,8 @@ export default function TodayScreen() {
         </View>
         <CaloriesLeft mode={mode} view={view} suggested={suggested} />
       </Card>
-      {todayBlocks(state.settings.todayCards).map((b, i) => {
+      {/* A day still to come has no night to check in yet, so todayBlocks leaves its Sleep tile out. */}
+      {todayBlocks(state.settings.todayCards, mode).map((b, i) => {
         if (b.kind === 'menu') return <DayMenu key="menu" date={viewed} view={view} menu={menu} onOpenMeal={setOpenMeal} />;
         // The coach and the mantra speak about now; nothing is drunk or walked on a day still to come.
         if (b.kind === 'coach') return mode === 'today' ? <CoachLine key="coach" /> : null;

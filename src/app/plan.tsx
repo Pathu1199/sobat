@@ -30,6 +30,7 @@ import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, Btn, Card, Field, Micro, Pill, Row, Screen, Small, Toggle } from '../ui/components';
+import { QtyStepper } from '../ui/QtyStepper';
 import { Sheet } from '../ui/Sheet';
 import { C, F, lh, S } from '../ui/theme';
 
@@ -164,14 +165,21 @@ export default function PlanScreen() {
                 setNote(null);
               }}
               accessibilityRole="button"
-              style={{ flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: S.radiusSm, backgroundColor: active ? C.accent : C.card, borderWidth: S.hairline, borderColor: d === weekdayOf(today) ? C.accent : C.border }}>
-              <Text style={{ color: active ? C.onAccent : C.text, fontSize: F.small, fontWeight: '500' }}>{t(`wd_${d}`)}</Text>
-              <Text style={{ color: active ? C.onAccent : offDays.includes(d) ? C.textFaint : st === 'low' ? C.red : st === 'on' ? C.green : C.textFaint, fontSize: F.small, fontWeight: '500' }}>{offDays.includes(d) ? t('free_short') : k}</Text>
+              aria-selected={active}
+              accessibilityLabel={offDays.includes(d) ? `${t(`wd_${d}`)}, ${t('free_day')}` : `${t(`wd_${d}`)}, ${k} kcal`}
+              style={{ flex: 1, minHeight: S.touch, alignItems: 'center', justifyContent: 'center', paddingVertical: 6, borderRadius: S.radiusSm, backgroundColor: active ? C.accent : C.card, borderWidth: S.hairline, borderColor: d === weekdayOf(today) ? C.accent : C.border }}>
+              <Text numberOfLines={1} style={{ color: active ? C.onAccent : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{t(`wd_${d}`)}</Text>
+              {/* An off day is a leaf, not the word: the word overflowed a seventh of a phone at large text. */}
+              {offDays.includes(d) ? (
+                <Ionicons name="leaf-outline" size={F.small} color={active ? C.onAccent : C.textFaint} />
+              ) : (
+                <Text numberOfLines={1} style={{ color: active ? C.onAccent : st === 'low' ? C.red : st === 'on' ? C.green : C.textFaint, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{k}</Text>
+              )}
             </Pressable>
           );
         })}
       </Row>
-      <Pressable onPress={() => router.push('/food?s=routine')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('plan_follows_pattern')} style={{ paddingVertical: 2 }}>
+      <Pressable onPress={() => router.push('/food?s=routine')} accessibilityRole="button" accessibilityLabel={t('plan_follows_pattern')} style={{ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start' }}>
         <Micro color={C.accentText}>{`${t('plan_follows_pattern')} ›`}</Micro>
       </Pressable>
 
@@ -209,9 +217,10 @@ export default function PlanScreen() {
               <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${targets.kcal} kcal`}</Text>
             </Text>
           </View>
-          <Small color={totals.protein < targets.proteinG * 0.7 ? C.amber : C.textDim}>{fill(t('plan_protein'), { p: totals.protein, target: targets.proteinG })}</Small>
         </Row>
         <Bar value={totals.kcal} max={targets.kcal} color={statusColor} />
+        {/* On its own line: beside the total it ran into the edge in Marathi at large text. */}
+        <Small color={totals.protein < targets.proteinG * 0.7 ? C.amber : C.textDim}>{fill(t('plan_protein'), { p: totals.protein, target: targets.proteinG })}</Small>
         <Text style={{ color: statusColor, fontSize: F.body, fontWeight: '500', lineHeight: lh(F.body) }}>{fill(t(status === 'low' && totals.kcal >= targets.kcal * 0.85 ? 'plan_status_floor' : `plan_status_${status}`), { gap, floor })}</Text>
         {note ? <Small color={C.textDim}>{note}</Small> : null}
         <Row style={{ gap: 8, flexWrap: 'wrap' }}>
@@ -245,18 +254,18 @@ export default function PlanScreen() {
                       <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${info.kcal} kcal · ${t('plan_tap_to_change')}`}</Text>
                     </View>
                   </Pressable>
-                  <Row style={{ gap: 4 }}>
-                    <Pressable onPress={() => changeQty(meal.id, i, line, -1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('less')} style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name="remove" size={16} color={C.text} />
+                  <View style={{ alignItems: 'center' }}>
+                    <QtyStepper
+                      value={qtyText(line.qty)}
+                      onMinus={() => changeQty(meal.id, i, line, -1)}
+                      onPlus={() => changeQty(meal.id, i, line, 1)}
+                      minusLabel={fill(t('qty_less'), { food: foodName(info.food, lang) })}
+                      plusLabel={fill(t('qty_more'), { food: foodName(info.food, lang) })}
+                    />
+                    <Pressable onPress={() => cycleUnit(meal.id, i, line)} accessibilityRole="button" accessibilityLabel={fill(t('plan_change_unit'), { unit: unitName(info.unit) })} style={{ minHeight: S.touch, justifyContent: 'center', paddingHorizontal: 6 }}>
+                      <Text style={{ color: C.accentText, fontSize: F.small, lineHeight: lh(F.small) }} numberOfLines={1}>{`${unitName(info.unit)} · ${info.grams} g`}</Text>
                     </Pressable>
-                    <Pressable onPress={() => cycleUnit(meal.id, i, line)} style={{ minWidth: 64, alignItems: 'center' }}>
-                      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{qtyText(line.qty)}</Text>
-                      <Text style={{ color: C.accentText, fontSize: F.small }} numberOfLines={1}>{`${unitName(info.unit)} · ${info.grams} g`}</Text>
-                    </Pressable>
-                    <Pressable onPress={() => changeQty(meal.id, i, line, 1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('more')} style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name="add" size={16} color={C.text} />
-                    </Pressable>
-                  </Row>
+                  </View>
                 </View>
               );
             })}

@@ -8,6 +8,8 @@ import { Btn, Card, Micro, P, Row, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
 
 const WAIT_SECONDS = 120;
+/** Step one says a glass of water, so a glass is what is logged, not a whole bottle. */
+const GLASS_ML = 250;
 
 const STEPS: Record<string, string[]> = {
   en: ['Drink a full glass of water', 'Take ten slow breaths', 'Walk to another room', 'Now decide'],
@@ -43,7 +45,7 @@ export function CravingSOS() {
     setLeft(WAIT_SECONDS);
     // Step one is a glass of water, so it may as well be counted.
     if (!waterAdded.current) {
-      app.addWater(app.state.settings.bottleMl);
+      app.addWater(GLASS_ML);
       waterAdded.current = true;
     }
   }

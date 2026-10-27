@@ -8,22 +8,24 @@ import type { TodayCardId } from './types';
  * person has on, in their order: the menu, the coach line, the Water and Walk
  * pair, and the optional cards. The single tiles (weight, sleep, the climb)
  * pair up two to a row in the order they come; a lone one keeps half a row.
- * Unknown, repeated and switched-off cards are left out, and anything that is
- * not a list gets the default. Pure.
+ * On a day still to come the Sleep tile is left out (there is no night to
+ * check in yet), so the tiles left pair up without it. Unknown, repeated and
+ * switched-off cards are left out, and anything that is not a list gets the
+ * default. Pure.
  */
 export type PairTile = 'weight' | 'sleep' | 'climb';
 export type TodayBlock = { kind: 'menu' } | { kind: 'coach' } | { kind: 'waterWalk' } | { kind: 'steps' } | { kind: 'mantra' } | { kind: 'pair'; tiles: PairTile[] };
 
 const SINGLE_TILES: string[] = ['weight', 'sleep', 'climb'];
 
-export function todayBlocks(cards: unknown): TodayBlock[] {
+export function todayBlocks(cards: unknown, mode: DayMode = 'today'): TodayBlock[] {
   const out: TodayBlock[] = [];
   let pending: PairTile[] = [];
   const flush = () => {
     if (pending.length > 0) out.push({ kind: 'pair', tiles: pending });
     pending = [];
   };
-  for (const { id } of normalizeTodayCards(cards).filter((c) => c.on)) {
+  for (const { id } of normalizeTodayCards(cards).filter((c) => c.on && !(mode === 'future' && c.id === 'sleep'))) {
     if (SINGLE_TILES.includes(id)) {
       pending.push(id as PairTile);
       if (pending.length === 2) flush();

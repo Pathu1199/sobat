@@ -8,7 +8,7 @@ const en: Dict = {
   tab_today: 'Today', tab_log: 'Log', tab_fit: 'Move', tab_mind: 'Mind', tab_coach: 'Coach',
   good_morning: 'Good morning', good_afternoon: 'Good afternoon', good_evening: 'Good evening',
   kcal_left: 'kcal left', kcal_over: 'kcal over', eaten: 'Eaten', target: 'Target', burned: 'Moved',
-  protein: 'Protein', water: 'Water', glasses: 'glasses', steps: 'Steps',
+  protein: 'Protein', water: 'Water', glasses: 'bottles', steps: 'Steps',
   add_food_for: 'Add food for {day}',
   add_food: 'Add food', add_photo: 'Photo', add_water: 'Water', add_weight: 'Weight',
   breakfast: 'Breakfast', lunch: 'Lunch', snack: 'Snack', dinner: 'Dinner',
@@ -18,7 +18,7 @@ const en: Dict = {
   sit_way_over: 'You are well over today', sit_over_budget: 'Over budget', sit_protein_low: 'Protein is low',
   sit_under_eating: 'You have eaten too little', sit_late_eating: 'Late eating is becoming a habit',
   sit_on_track: 'On track', sit_day_start: 'Fresh day',
-  act_walk_20: 'Walk for 20 minutes', act_water_2_glass: 'Drink 2 glasses of water',
+  act_walk_20: 'Walk for 20 minutes', act_water_2_glass: 'Drink a bottle of water',
   act_light_dinner: 'Keep dinner light', act_no_fasting_tomorrow: 'Eat normally tomorrow, do not fast',
   act_sleep_early: 'Sleep a little early tonight', act_protein_first: 'Eat the protein first',
   act_add_dal: 'Add a katori of dal', act_add_curd: 'Add curd', act_add_egg_or_paneer: 'Add eggs or paneer',
@@ -256,7 +256,7 @@ const en: Dict = {
   energy: 'Energy', next_break: 'Next break', on_pace: 'On pace', behind_glasses: '{n} behind', ahead_glasses: '{n} ahead',
   check_in: 'Check in', log_mood: 'Log mood', yesterday: 'Yesterday', close: 'Close',
   recent: 'Recent', same_as_yesterday: 'Same as yesterday', items: 'Items',
-  toast_water_added: '+1 glass', toast_meal_saved: 'Saved · {kcal} kcal', toast_session_done: 'Session saved', toast_break_done: 'Break done',
+  toast_water_added: '+1 bottle', toast_meal_saved: 'Saved · {kcal} kcal', toast_session_done: 'Session saved', toast_break_done: 'Break done',
   phase_of: 'Phase {p} · week {w} of {n}',
   todays_numbers: "Today's numbers", offered: 'Offered', no_chat_yet: 'Ask anything about food, movement or a hard day.',
   brk_micro: 'Look away',
@@ -1053,6 +1053,7 @@ const en: Dict = {
   today_protein: 'Protein {p} of {target} g', today_left_after_plan: 'kcal left after the plan', today_back: 'Back to today',
   meal_line_remove: 'Remove {name}',
   menu_record_one: '{n} of 1 meal',
+  plan_change_unit: 'Change the measure, now {unit}',
 };
 
 const mr: Dict = {
@@ -1061,7 +1062,7 @@ const mr: Dict = {
   tab_today: 'आज', tab_log: 'नोंद', tab_fit: 'हालचाल', tab_mind: 'मन', tab_coach: 'मदत',
   good_morning: 'शुभ सकाळ', good_afternoon: 'शुभ दुपार', good_evening: 'शुभ संध्याकाळ',
   kcal_left: 'कॅलरी शिल्लक', kcal_over: 'कॅलरी जास्त', eaten: 'खाल्ले', target: 'लक्ष्य', burned: 'हालचाल',
-  protein: 'प्रथिने', water: 'पाणी', glasses: 'ग्लास', steps: 'पावले',
+  protein: 'प्रथिने', water: 'पाणी', glasses: 'बाटल्या', steps: 'पावले',
   add_food_for: '{day}चे जेवण नोंदवा',
   add_food: 'जेवण नोंदवा', add_photo: 'फोटो', add_water: 'पाणी', add_weight: 'वजन',
   breakfast: 'नाश्ता', lunch: 'दुपारचे जेवण', snack: 'नाश्ता', dinner: 'रात्रीचे जेवण',
@@ -1071,7 +1072,7 @@ const mr: Dict = {
   sit_way_over: 'आज खूप जास्त झाले', sit_over_budget: 'लक्ष्यापेक्षा जास्त', sit_protein_low: 'प्रथिने कमी आहेत',
   sit_under_eating: 'खूप कमी खाल्ले', sit_late_eating: 'रात्री उशिरा खाण्याची सवय होत आहे',
   sit_on_track: 'व्यवस्थित चालू आहे', sit_day_start: 'नवीन दिवस',
-  act_walk_20: '२० मिनिटे चाला', act_water_2_glass: '२ ग्लास पाणी प्या',
+  act_walk_20: '२० मिनिटे चाला', act_water_2_glass: 'एक बाटली पाणी प्या',
   act_light_dinner: 'रात्रीचे जेवण हलके ठेवा', act_no_fasting_tomorrow: 'उद्या नेहमीसारखे खा, उपाशी राहू नका',
   act_sleep_early: 'आज लवकर झोपा', act_protein_first: 'आधी प्रथिने खा',
   act_add_dal: 'एक वाटी डाळ घ्या', act_add_curd: 'दही घ्या', act_add_egg_or_paneer: 'अंडी किंवा पनीर घ्या',
@@ -1313,7 +1314,7 @@ const mr: Dict = {
   energy: 'ऊर्जा', next_break: 'पुढचा ब्रेक', on_pace: 'वेळेत', behind_glasses: '{n} मागे', ahead_glasses: '{n} पुढे',
   check_in: 'नोंद करा', log_mood: 'मूड नोंदवा', yesterday: 'काल', close: 'बंद',
   recent: 'अलीकडचे', same_as_yesterday: 'कालसारखंच', items: 'पदार्थ',
-  toast_water_added: '+१ ग्लास', toast_meal_saved: 'नोंदवलं · {kcal} kcal', toast_session_done: 'सराव नोंदवला', toast_break_done: 'ब्रेक झाला',
+  toast_water_added: '+१ बाटली', toast_meal_saved: 'नोंदवलं · {kcal} kcal', toast_session_done: 'सराव नोंदवला', toast_break_done: 'ब्रेक झाला',
   phase_of: 'टप्पा {p} · आठवडा {w} / {n}',
   todays_numbers: 'आजचे आकडे', offered: 'सुचवलेले', no_chat_yet: 'जेवण, हालचाल किंवा कठीण दिवसाबद्दल काहीही विचारा.',
   brk_micro: 'लांब बघा',
@@ -2110,6 +2111,7 @@ const mr: Dict = {
   today_protein: 'प्रथिने {target} पैकी {p} ग्रॅ', today_left_after_plan: 'नियोजनानंतर शिल्लक कॅलरी', today_back: 'आजवर परत',
   meal_line_remove: '{name} काढा',
   menu_record_one: '1 जेवणापैकी {n}',
+  plan_change_unit: 'माप बदला, आत्ता {unit}',
 };
 
 const hi: Dict = {
@@ -2118,7 +2120,7 @@ const hi: Dict = {
   tab_today: 'आज', tab_log: 'दर्ज', tab_fit: 'हलचल', tab_mind: 'मन', tab_coach: 'मदद',
   good_morning: 'सुप्रभात', good_afternoon: 'नमस्कार', good_evening: 'शुभ संध्या',
   kcal_left: 'कैलोरी बची', kcal_over: 'कैलोरी ज़्यादा', eaten: 'खाया', target: 'लक्ष्य', burned: 'हलचल',
-  protein: 'प्रोटीन', water: 'पानी', glasses: 'गिलास', steps: 'कदम',
+  protein: 'प्रोटीन', water: 'पानी', glasses: 'बोतलें', steps: 'कदम',
   add_food_for: '{day} का खाना दर्ज करें',
   add_food: 'खाना दर्ज करें', add_photo: 'फ़ोटो', add_water: 'पानी', add_weight: 'वज़न',
   breakfast: 'नाश्ता', lunch: 'दोपहर का खाना', snack: 'स्नैक', dinner: 'रात का खाना',
@@ -2128,7 +2130,7 @@ const hi: Dict = {
   sit_way_over: 'आज बहुत ज़्यादा हो गया', sit_over_budget: 'लक्ष्य से ज़्यादा', sit_protein_low: 'प्रोटीन कम है',
   sit_under_eating: 'बहुत कम खाया', sit_late_eating: 'देर रात खाने की आदत बन रही है',
   sit_on_track: 'सब ठीक चल रहा है', sit_day_start: 'नया दिन',
-  act_walk_20: '20 मिनट टहलें', act_water_2_glass: '2 गिलास पानी पिएँ',
+  act_walk_20: '20 मिनट टहलें', act_water_2_glass: 'एक बोतल पानी पिएँ',
   act_light_dinner: 'रात का खाना हल्का रखें', act_no_fasting_tomorrow: 'कल सामान्य खाएँ, भूखे न रहें',
   act_sleep_early: 'आज जल्दी सोएँ', act_protein_first: 'पहले प्रोटीन खाएँ',
   act_add_dal: 'एक कटोरी दाल लें', act_add_curd: 'दही लें', act_add_egg_or_paneer: 'अंडे या पनीर लें',
@@ -2364,7 +2366,7 @@ const hi: Dict = {
   energy: 'ऊर्जा', next_break: 'अगला ब्रेक', on_pace: 'समय पर', behind_glasses: '{n} पीछे', ahead_glasses: '{n} आगे',
   check_in: 'दर्ज करें', log_mood: 'मूड दर्ज करें', yesterday: 'कल', close: 'बंद',
   recent: 'हाल के', same_as_yesterday: 'कल जैसा ही', items: 'चीज़ें',
-  toast_water_added: '+1 गिलास', toast_meal_saved: 'दर्ज · {kcal} kcal', toast_session_done: 'सत्र दर्ज', toast_break_done: 'ब्रेक हो गया',
+  toast_water_added: '+1 बोतल', toast_meal_saved: 'दर्ज · {kcal} kcal', toast_session_done: 'सत्र दर्ज', toast_break_done: 'ब्रेक हो गया',
   phase_of: 'चरण {p} · हफ़्ता {w} / {n}',
   todays_numbers: 'आज के आँकड़े', offered: 'सुझाए गए', no_chat_yet: 'खाने, हलचल या मुश्किल दिन के बारे में कुछ भी पूछें.',
   brk_micro: 'दूर देखें',
@@ -3165,6 +3167,7 @@ const hi: Dict = {
   today_protein: 'प्रोटीन {target} में से {p} ग्राम', today_left_after_plan: 'प्लान के बाद बची कैलोरी', today_back: 'आज पर वापस',
   meal_line_remove: '{name} हटाएँ',
   menu_record_one: '1 खाने में से {n}',
+  plan_change_unit: 'माप बदलें, अभी {unit}',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

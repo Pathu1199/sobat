@@ -19,6 +19,14 @@ describe('todayBlocks', () => {
     expect(todayBlocks([on('weight'), on('menu'), on('sleep')])).toEqual([{ kind: 'pair', tiles: ['weight'] }, { kind: 'menu' }, { kind: 'pair', tiles: ['sleep'] }]);
   });
 
+  it('leaves the Sleep tile out of a day still to come, where there is no night to check in yet, and pairs the rest', () => {
+    const cards = [on('menu'), on('weight'), on('sleep'), on('climb')];
+    expect(todayBlocks(cards, 'future')).toEqual([{ kind: 'menu' }, { kind: 'pair', tiles: ['weight', 'climb'] }]);
+    expect(todayBlocks([on('sleep'), on('menu')], 'future')).toEqual([{ kind: 'menu' }]);
+    expect(todayBlocks(cards, 'past')).toEqual(todayBlocks(cards, 'today'));
+    expect(todayBlocks(cards, 'today')).toEqual([{ kind: 'menu' }, { kind: 'pair', tiles: ['weight', 'sleep'] }, { kind: 'pair', tiles: ['climb'] }]);
+  });
+
   it('leaves out unknown, repeated and switched-off cards', () => {
     expect(todayBlocks([on('menu'), on('menu'), { id: 'today', on: true }, 42, off('coach'), on('steps'), on('mantra')])).toEqual([{ kind: 'menu' }, { kind: 'steps' }, { kind: 'mantra' }]);
   });
