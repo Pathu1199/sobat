@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { migrateState } from '../../store/migrate';
-import { EMPTY_STATE } from '../../store/defaults';
+import { EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { allowance, pattern } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE } from '../routine';
+import { landMerge, syncRound } from '../sync';
+import type { AppState } from '../types';
 
 // A realistic v1 blob: the shape the app has been writing until now.
 const v1 = {
@@ -367,5 +369,47 @@ describe('migrateState', () => {
     expect(emptied.slots).toEqual(DEFAULT_SLOTS);
     expect(emptied.avoid).toEqual(DEFAULT_ROUTINE.avoid);
     expect(emptied.budgetMax).toBe(150);
+  });
+});
+
+describe('an account file from before version 7 arriving on a device that was never used', () => {
+  /** The first sync on a never-used device, landed the way the store lands it: the merge, then the migration. */
+  async function signInWith(file: unknown): Promise<AppState> {
+    let now: AppState = { ...EMPTY_STATE };
+    await syncRound({
+      pull: true,
+      base: null,
+      modifiedTime: null,
+      supported: STATE_VERSION,
+      io: {
+        readNow: async () => now,
+        land: (local, merged) => {
+          now = migrateState(landMerge(now, local, merged), NOW);
+        },
+        get: async () => ({ state: JSON.stringify(file), modifiedTime: 't1' }),
+        put: async () => ({ ok: true, modifiedTime: 't2' }),
+        live: () => true,
+      },
+    });
+    return now;
+  }
+  // What a version-6 build writes to the account: no device settings, no caches, a glass and no bottle.
+  const accountFile = (glassMl: number) => ({
+    version: 6,
+    profile: { ...v1.profile },
+    settings: { nudgeMinutes: 60, nudgesEnabled: true, quietStartHour: 22, quietEndHour: 7, waterGoalMl: 3000, glassMl },
+    meals: v1.meals,
+  });
+
+  it('the glass size the account holds becomes the bottle, not the bottle this device started with', async () => {
+    const chosen = await signInWith(accountFile(300));
+    expect(chosen.profile.name).toBe('Varad');
+    expect(chosen.settings.bottleMl).toBe(300);
+    expect((chosen.settings as unknown as Record<string, unknown>).glassMl).toBeUndefined();
+    expect((await signInWith(accountFile(250))).settings.bottleMl).toBe(500);
+  });
+
+  it('a bottle size someone picked is never replaced by a glass beside it', () => {
+    expect(migrateState({ ...v1, settings: { ...v1.settings, glassMl: 300, bottleMl: 750 } }).settings.bottleMl).toBe(750);
   });
 });

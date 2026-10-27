@@ -129,8 +129,11 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   const s = { ...EMPTY_STATE.settings, ...raw } as AppState['settings'] & { glassMl?: unknown };
   if (s.ollamaUrl === OLD_OLLAMA_PLACEHOLDER) s.ollamaUrl = DEFAULT_OLLAMA_URL;
   // Version 7: water is counted in bottles. The old default glass becomes the default 500 ml bottle; a size the person chose stays.
+  // Only a build from before version 7 wrote a glass, and none of them wrote a bottle: a default bottle beside a glass is the one
+  // this device filled in under an older account file as it landed, so the glass decides. A bottle size someone picked stays.
   const glass = raw.glassMl;
-  if (typeof glass === 'number' && glass > 0 && typeof raw.bottleMl !== 'number') s.bottleMl = glass === 250 ? 500 : glass;
+  const bottleFilledIn = typeof raw.bottleMl !== 'number' || raw.bottleMl === EMPTY_STATE.settings.bottleMl;
+  if (typeof glass === 'number' && glass > 0 && bottleFilledIn) s.bottleMl = glass === 250 ? 500 : glass;
   delete s.glassMl;
   s.features = { ...EMPTY_STATE.settings.features, ...(isRecord(raw.features) ? raw.features : {}) } as AppState['settings']['features'];
   s.reminders = { ...EMPTY_STATE.settings.reminders, ...(isRecord(raw.reminders) ? raw.reminders : {}) } as AppState['settings']['reminders'];
