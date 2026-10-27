@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { switchStored, type Store } from '../accounts';
+import { parkedPhotoIds, switchStored, type Store } from '../accounts';
 
 const keys = { state: 'state', base: 'base', owner: 'owner' };
 const EMPTY = '{"empty":true}';
@@ -9,6 +9,7 @@ function memory(initial: Record<string, string>, failSet = false) {
   const data = new Map(Object.entries(initial));
   const sets: [string, string][][] = [];
   const store: Store = {
+    getAllKeys: async () => [...data.keys()],
     multiGet: async (ks) => ks.map((k) => [k, data.get(k) ?? null] as const),
     multiSet: async (pairs) => {
       if (failSet) throw new Error('disk full');
@@ -56,5 +57,24 @@ describe('switching accounts on a shared device', () => {
     const m = memory({ state: 'A', base: 'A-base', owner: 'a' }, true);
     await expect(switchStored(m.store, keys, { from: 'a', to: 'b', current: 'A', empty: EMPTY })).rejects.toThrow('disk full');
     expect(m.data()).toEqual({ state: 'A', base: 'A-base', owner: 'a' });
+  });
+
+  it('brings an account\'s data back onto a device a sign-out left empty, with nothing put aside in its place', async () => {
+    const m = memory({ 'state@b': 'B-unsaved', 'base@b': 'B-base' });
+    const back = await switchStored(m.store, keys, { from: null, to: 'b', current: EMPTY, empty: EMPTY });
+    expect(back).toEqual({ state: 'B-unsaved', base: 'B-base' });
+    expect(m.data()).toEqual({ state: 'B-unsaved', base: 'B-base', owner: 'b' });
+  });
+});
+
+describe('photos of accounts put aside', () => {
+  it('are known by id, so a clean-up on launch keeps them; a damaged copy is passed over', async () => {
+    const m = memory({
+      state: JSON.stringify({ photoQueue: [{ id: 'mine' }] }),
+      'state@a': JSON.stringify({ photoQueue: [{ id: 'p1' }, { id: 'p2' }] }),
+      'state@c': '{',
+      'state.cloudBase@a': JSON.stringify({ photoQueue: [{ id: 'not-a-state' }] }),
+    });
+    expect((await parkedPhotoIds(m.store, 'state')).sort()).toEqual(['p1', 'p2']);
   });
 });

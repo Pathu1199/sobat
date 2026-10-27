@@ -8,7 +8,7 @@ import { newId } from '../core/id';
 import { prunePhotos } from '../services/photoStore';
 import { useClock } from '../services/useClock';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
-import { switchStored } from '../core/accounts';
+import { parkedPhotoIds, switchStored } from '../core/accounts';
 import { burnedOn, eatBack } from '../core/activity';
 import { streak } from '../core/insights';
 import { isOffDay } from '../core/week';
@@ -24,7 +24,7 @@ import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal,
 import { EMPTY_STATE } from './defaults';
 import { migrateState } from './migrate';
 
-const KEY = 'sobat.state.v1';
+export const STATE_KEY = 'sobat.state.v1';
 /** The account file the stored state was last merged with. Only ever written in the same call as the state, and removed with it. */
 export const CLOUD_BASE_KEY = 'sobat.state.v1.cloudBase';
 /** Whose data the stored state is, so another account signing in never sees or syncs it. */
@@ -94,11 +94,11 @@ type Ctx = {
   /** The state with every change already made applied, including one not rendered yet. */
   readNow: () => Promise<AppState>;
   /**
-   * Another account signed in here: put this device's data aside for `from`, never thrown away,
-   * and bring back what was aside for `to`, or start empty. Resolves with `to`'s saved sync base,
-   * if one came back. Throws, with nothing changed, if the data could not be put aside.
+   * Another account signed in here: put this device's data aside for `from` (null: it holds nobody's),
+   * never thrown away, and bring back what was aside for `to`, or start empty. Resolves with `to`'s
+   * saved sync base, if one came back. Throws, with nothing changed, if the data could not be put aside.
    */
-  switchAccount: (from: string, to: string) => Promise<string | null>;
+  switchAccount: (from: string | null, to: string) => Promise<string | null>;
   tipToday: string | null;
   screenMinutesToday: number;
   resetAll: () => void;
@@ -126,17 +126,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // newer than the state beside it would read the missing records as deleted here.
   const pendingBase = useRef<string | null>(null);
   const [baseTick, setBaseTick] = useState(0);
-  // While one account's data is being put aside, no save may write it back over the next one's.
+  // While one account's data is being put aside, no save may write it back over the next one's,
+  // nor may a save armed before the switch ended: each switch starts a new generation.
   const switching = useRef(false);
+  const saveGen = useRef(0);
 
   useEffect(() => {
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(KEY);
+        const raw = await AsyncStorage.getItem(STATE_KEY);
         if (raw) {
           const loaded = migrateState(JSON.parse(raw));
           setState(loaded);
-          void prunePhotos(loaded.photoQueue.map((p) => p.id));
+          // Photos queued by an account whose data is put aside wait for it too.
+          parkedPhotoIds(AsyncStorage, STATE_KEY)
+            .then((parked) => prunePhotos([...loaded.photoQueue.map((p) => p.id), ...parked]))
+            .catch(() => {});
         }
       } catch {
         // The store is there but could not be read or parsed. Running on in
@@ -156,9 +161,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     // Taken now, beside the state this render holds, not whatever is pending when the timer fires.
     const base = pendingBase.current;
+    const gen = saveGen.current;
     saveTimer.current = setTimeout(() => {
-      if (switching.current) return;
-      const pairs: [string, string][] = [[KEY, JSON.stringify(state)]];
+      if (switching.current || gen !== saveGen.current) return;
+      const pairs: [string, string][] = [[STATE_KEY, JSON.stringify(state)]];
       if (base !== null) pairs.push([CLOUD_BASE_KEY, base]);
       AsyncStorage.multiSet(pairs)
         .then(() => {
@@ -182,26 +188,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const switchAccount = useCallback(
-    async (from: string, to: string) => {
+    async (from: string | null, to: string) => {
       switching.current = true;
+      saveGen.current += 1;
       if (saveTimer.current) clearTimeout(saveTimer.current);
       pendingBase.current = null;
       try {
         const current = await readNow();
         const back = await switchStored(
           AsyncStorage,
-          { state: KEY, base: CLOUD_BASE_KEY, owner: OWNER_KEY },
+          { state: STATE_KEY, base: CLOUD_BASE_KEY, owner: OWNER_KEY },
           { from, to, current: JSON.stringify(current), empty: JSON.stringify(EMPTY_STATE) },
         );
         let next = EMPTY_STATE;
         try {
           if (back.state) next = migrateState(JSON.parse(back.state));
         } catch {
-          // What came back could not be read; the copy on disk is still there for a later load.
+          // What came back could not be read. It is on disk as the state now; nothing may be written over it.
+          setStorageError('load');
         }
         setState(next);
         return back.base;
       } finally {
+        saveGen.current += 1;
         switching.current = false;
       }
     },
@@ -384,7 +393,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setState(EMPTY_STATE);
         // A deliberate reset is the one time an unreadable store may be replaced.
         setStorageError(null);
-        AsyncStorage.multiRemove([KEY, CLOUD_BASE_KEY]).catch(() => {});
+        AsyncStorage.multiRemove([STATE_KEY, CLOUD_BASE_KEY]).catch(() => {});
       },
       saveCloudBase,
       storageError,

@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
-import { bindStart, encodeSavedBase, forCloud, inAccount, landMerge, readSavedBase, RoundStop, sameCloud, signOutPlan, syncRound, type CloudState } from '../core/sync';
-import { CLOUD_BASE_KEY, OWNER_KEY, useApp } from '../store/AppProvider';
+import { parkedKey } from '../core/accounts';
+import { bindStart, encodeSavedBase, forCloud, inAccount, isPristine, landMerge, readSavedBase, RoundStop, sameCloud, signOutPlan, syncRound, type CloudState } from '../core/sync';
+import { CLOUD_BASE_KEY, OWNER_KEY, STATE_KEY, useApp } from '../store/AppProvider';
 import { EMPTY_STATE, STATE_VERSION } from '../store/defaults';
 import { CloudError, cloudConfigured, deleteData, getData, putData } from './cloud';
 import { authApi, useAuth } from './useAuth';
@@ -73,6 +74,9 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const binding = useRef<Promise<void>>(Promise.resolve());
   // Set from a sign-out until the session is gone, so the account leaving is not bound again meanwhile.
   const signingOut = useRef(false);
+  // The rounds running now, so an erase can let a write already sent finish before the file is deleted.
+  const loop = useRef<Promise<void>>(Promise.resolve());
+  const erasing = useRef(false);
   const inFlight = useRef(false);
   const again = useRef(false);
   const stateRef = useRef(state);
@@ -140,19 +144,19 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   /** Run rounds until nothing is waiting. A call that lands mid-round queues one more. */
   const sync = useCallback(
     async (opts: { pull: boolean }) => {
-      if (!configured || !boundUid.current) return;
+      if (!configured || !boundUid.current || erasing.current) return;
       if (inFlight.current) {
         again.current = true;
         return;
       }
       inFlight.current = true;
       let pull = opts.pull;
-      try {
+      const run = (async () => {
         do {
           again.current = false;
           // Read each time round: the account may have changed while the last round was out.
           const uid = boundUid.current;
-          if (!uid) break;
+          if (!uid || erasing.current) break;
           const at = epoch.current;
           const live = () => epoch.current === at;
           setStatus('syncing');
@@ -178,6 +182,10 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
           }
           pull = false;
         } while (again.current);
+      })();
+      loop.current = run;
+      try {
+        await run;
       } finally {
         inFlight.current = false;
       }
@@ -210,21 +218,23 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     binding.current = binding.current
       .then(async () => {
         if (cancelled || boundUid.current === uid || signingOut.current) return;
-        const [owner, saved] = await Promise.all([AsyncStorage.getItem(OWNER_KEY).catch(() => null), AsyncStorage.getItem(CLOUD_BASE_KEY).catch(() => null)]);
+        const [owner, saved, parked] = await Promise.all([OWNER_KEY, CLOUD_BASE_KEY, parkedKey(STATE_KEY, uid)].map((k) => AsyncStorage.getItem(k).catch(() => null)));
+        const now = await readNow();
         if (cancelled) return;
         // The base is loaded before the first merge: without it, deletions and edits made elsewhere since the last run would be undone.
-        const start = bindStart({ uid, owner, saved: readSavedBase(saved), loaded: storageError !== 'load' });
+        const start = bindStart({ uid, owner, saved: readSavedBase(saved), loaded: storageError !== 'load', parked: parked !== null, empty: isPristine(now) });
         // Nothing still out for the last session may land from here on.
         epoch.current += 1;
         boundUid.current = null;
         let first = { base: start.base, modifiedTime: start.modifiedTime };
-        if (start.aside) {
+        if (start.move) {
           try {
-            const back = readSavedBase(await switchAccount(start.aside, uid));
+            const back = readSavedBase(await switchAccount(start.move.from, uid));
             if (back?.uid === uid) first = { base: back.base, modifiedTime: back.modifiedTime };
           } catch (e) {
-            // Could not put it aside: nothing is lost, and nothing syncs into this account.
+            // Could not put it aside: nothing is lost. This account must not see or edit what is on the device, so it is signed out again.
             if (configured) fail(e);
+            authApi.signOut().catch(() => {});
             return;
           }
         } else if (start.tag) {
@@ -240,7 +250,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [configured, ready, stateReady, storageError, user, sync, switchAccount, fail]);
+  }, [configured, ready, stateReady, storageError, user, sync, readNow, switchAccount, fail]);
 
   // Push a moment after changes settle. Nothing is pushed before the first
   // pull has set a base, so a fresh sign-in never overwrites the account.
@@ -281,11 +291,16 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const syncNow = useCallback(() => sync({ pull: true }), [sync]);
 
   const eraseEverywhere = useCallback(async () => {
-    // Nothing still out may land on the emptied device or write the file back: dropped now, and again once it is gone.
+    // Nothing still out may land on the emptied device, and no new round starts. A write already
+    // sent is let finish before the file is deleted, or it would bring the file back.
+    erasing.current = true;
     epoch.current += 1;
     if (pushTimer.current) clearTimeout(pushTimer.current);
     try {
+      await loop.current.catch(() => {});
       const token = await authApi.idToken();
+      // Erasing only the device would be undone by the next pull.
+      if (configured && token === null) throw new CloudError(401, 'not_signed_in');
       const erased = configured && token !== null;
       if (erased) await deleteData(token);
       epoch.current += 1;
@@ -305,6 +320,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       fail(e);
       return false;
+    } finally {
+      erasing.current = false;
     }
   }, [configured, resetAll, fail]);
 

@@ -223,22 +223,22 @@ describe('after a restart', () => {
 
   it('the base saved beside the state comes back for the same account', () => {
     expect(saved).toEqual({ uid: 'u1', base: synced, modifiedTime: 't1' });
-    expect(bindStart({ uid: 'u1', owner: 'u1', saved, loaded: true })).toMatchObject({ base: synced, modifiedTime: 't1' });
+    expect(bindStart({ uid: 'u1', owner: 'u1', saved, loaded: true, parked: false, empty: false })).toMatchObject({ base: synced, modifiedTime: 't1' });
   });
 
   it('a meal deleted on another device while this one was closed stays deleted', () => {
-    const start = bindStart({ uid: 'u1', owner: 'u1', saved, loaded: true });
+    const start = bindStart({ uid: 'u1', owner: 'u1', saved, loaded: true, parked: false, empty: false });
     expect(merge3(start.base, synced, cloudOf(used([b]))).meals.map((m) => m.id)).toEqual(['b']);
   });
 
   it('an edit made on another device while this one was closed is not reverted', () => {
-    const start = bindStart({ uid: 'u1', owner: 'u1', saved, loaded: true });
+    const start = bindStart({ uid: 'u1', owner: 'u1', saved, loaded: true, parked: false, empty: false });
     expect(merge3(start.base, synced, cloudOf(used([{ ...a, kcal: 450 }, b]))).meals.find((m) => m.id === 'a')?.kcal).toBe(450);
   });
 
   it('is not used for another account, nor when the stored state could not be read', () => {
-    expect(bindStart({ uid: 'u2', owner: 'u2', saved, loaded: true }).base).toBeNull();
-    expect(bindStart({ uid: 'u1', owner: 'u1', saved, loaded: false }).base).toBeNull();
+    expect(bindStart({ uid: 'u2', owner: 'u2', saved, loaded: true, parked: false, empty: false }).base).toBeNull();
+    expect(bindStart({ uid: 'u1', owner: 'u1', saved, loaded: false, parked: false, empty: false }).base).toBeNull();
   });
 
   it('a damaged record is ignored', () => {
@@ -288,20 +288,28 @@ describe('binding to an account', () => {
   const leftover = { uid: 'a', base: cloudOf(used([meal('x', '2026-10-10T08:00:00.000Z')])), modifiedTime: 't1' };
 
   it('a device holding another account\'s data puts it aside for them before anything syncs, and its base with it', () => {
-    expect(bindStart({ uid: 'b', owner: 'a', saved: leftover, loaded: true })).toEqual({ aside: 'a', tag: true, base: null, modifiedTime: null });
+    expect(bindStart({ uid: 'b', owner: 'a', saved: leftover, loaded: true, parked: false, empty: false })).toEqual({ move: { from: 'a' }, tag: true, base: null, modifiedTime: null });
   });
 
   it('a base saved for another account marks the device as theirs even when the owner tag is missing', () => {
-    expect(bindStart({ uid: 'b', owner: null, saved: leftover, loaded: true }).aside).toBe('a');
+    expect(bindStart({ uid: 'b', owner: null, saved: leftover, loaded: true, parked: false, empty: false }).move).toEqual({ from: 'a' });
   });
 
   it('the same account, or a device nobody has claimed, keeps what is on it and is tagged at once', () => {
-    expect(bindStart({ uid: 'a', owner: 'a', saved: null, loaded: true })).toMatchObject({ aside: null, tag: true });
-    expect(bindStart({ uid: 'a', owner: null, saved: null, loaded: true })).toMatchObject({ aside: null, tag: true });
+    expect(bindStart({ uid: 'a', owner: 'a', saved: null, loaded: true, parked: false, empty: false })).toMatchObject({ move: null, tag: true });
+    expect(bindStart({ uid: 'a', owner: null, saved: null, loaded: true, parked: false, empty: false })).toMatchObject({ move: null, tag: true });
+  });
+
+  it('an account whose data was put aside here gets it back on a device a sign-out left empty', () => {
+    expect(bindStart({ uid: 'b', owner: null, saved: null, loaded: true, parked: true, empty: true }).move).toEqual({ from: null });
+  });
+
+  it('but never over something on the device: an unclaimed device that holds data keeps it', () => {
+    expect(bindStart({ uid: 'b', owner: null, saved: null, loaded: true, parked: true, empty: false }).move).toBeNull();
   });
 
   it('a store that could not be read is neither moved nor claimed: what is on disk is not known to be anyone\'s', () => {
-    expect(bindStart({ uid: 'b', owner: 'a', saved: null, loaded: false })).toEqual({ aside: null, tag: false, base: null, modifiedTime: null });
+    expect(bindStart({ uid: 'b', owner: 'a', saved: null, loaded: false, parked: true, empty: true })).toEqual({ move: null, tag: false, base: null, modifiedTime: null });
   });
 });
 
