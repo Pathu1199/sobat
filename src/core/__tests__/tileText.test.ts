@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { addDays } from '../date';
 import { addSkip, type DayMenu } from '../menu';
 import { KCAL_FLOOR } from '../nutrition';
-import { recordStreak } from '../record';
+import { recordStreak, STREAK_LOOKBACK_DAYS } from '../record';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import {
   bestRun,
@@ -85,7 +86,7 @@ describe('streak', () => {
     expect(bestRun([])).toBe(0);
   });
 
-  it('looks back over the menus as shown; a day of nothing but skips, or one eaten under the safe minimum, does not count and does not end the run', () => {
+  it('looks back over the menus as shown; a day of nothing but skips ends the run, and one eaten under the safe minimum neither counts nor ends it', () => {
     const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
     const routine: Routine = { ...DEFAULT_ROUTINE, enabled: true, slots: [slot('lunch', 'lunch', '13:00', 100)] };
     const menuOn = (date: string): DayMenu => ({ date, editedAt: '', meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] }] });
@@ -93,8 +94,8 @@ describe('streak', () => {
     const meals = ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-24', '2026-10-25'].map((d) => ate(d));
     const base = { today: '2026-10-27', menuOn, routine, meals, skips: [], offDays: [] as number[], floor: KCAL_FLOOR.female };
     expect(bestStreak(base)).toBe(3);
-    // 23 October skipped: a complete record but nothing eaten, under the safe minimum, so it neither counts nor ends the run.
-    expect(bestStreak({ ...base, skips: addSkip([], '2026-10-23', 'lunch') })).toBe(5);
+    // 23 October skipped: a complete record, but nothing eaten, so the run ends there, as it ends the streak: skipping is never rewarded.
+    expect(bestStreak({ ...base, skips: addSkip([], '2026-10-23', 'lunch') })).toBe(3);
     // Eaten, but 500 kcal: under the safe minimum, the same.
     expect(bestStreak({ ...base, meals: [...meals, ate('2026-10-23', 500)] })).toBe(5);
     expect(bestStreak({ ...base, meals: [...meals, ate('2026-10-23')] })).toBe(6);
@@ -102,6 +103,21 @@ describe('streak', () => {
     const toYesterday = [...meals, ate('2026-10-23', 500), ate('2026-10-26')];
     expect(bestStreak({ ...base, meals: toYesterday })).toBe(6);
     expect(recordStreak({ ...base, meals: toYesterday })).toBe(6);
+  });
+
+  it('the streak and the best run look back over one window, so a 75-day run reads 75 days and is the best', () => {
+    const routine: Routine = { ...DEFAULT_ROUTINE, enabled: true, slots: [{ id: 'lunch', type: 'lunch', time: '13:00', label_en: 'lunch', label_mr: '', label_hi: '', options: [[]], withBhaji: false, share: 100 }] };
+    const menuOn = (date: string): DayMenu => ({ date, editedAt: '', meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] }] });
+    const run = (days: number): Meal[] =>
+      Array.from({ length: days }, (_, i) => addDays('2026-10-27', -i)).map((date) => ({ id: date, at: new Date(`${date}T13:00:00`).toISOString(), date, type: 'lunch', slotId: 'lunch', items: [], kcal: 1300, protein: 9 }));
+    const base = { today: '2026-10-27', menuOn, routine, skips: [], offDays: [] as number[], floor: KCAL_FLOOR.female };
+    expect(STREAK_LOOKBACK_DAYS).toBe(90);
+    expect(recordStreak({ ...base, meals: run(75) })).toBe(75);
+    expect(bestStreak({ ...base, meals: run(75) })).toBe(75);
+    expect(streakWords(recordStreak({ ...base, meals: run(75) }), bestStreak({ ...base, meals: run(75) })).line).toEqual({ key: 'tile_best', params: { n: 75 } });
+    // A longer run reads the window in both, never one number for the streak and another for the best.
+    expect(recordStreak({ ...base, meals: run(120) })).toBe(STREAK_LOOKBACK_DAYS);
+    expect(bestStreak({ ...base, meals: run(120) })).toBe(STREAK_LOOKBACK_DAYS);
   });
 });
 

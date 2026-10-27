@@ -1,7 +1,7 @@
 import { WALK_ACTIVITY_ID } from './activity';
 import { addDays } from './date';
 import type { DayMenu } from './menu';
-import { dayRecord, eatenKcal, mealsByDate, streakStep, type StreakStep } from './record';
+import { dayRecord, mealsByDate, STREAK_LOOKBACK_DAYS, streakStep, type StreakStep } from './record';
 import type { Routine } from './routine';
 import { walkTile, waterTile } from './tiles';
 import type { ActivityLog, ISODate, Meal, SlotSkip, WeightLog } from './types';
@@ -27,8 +27,6 @@ export const BREATHE_SESSION_MS = 60000;
 export const BREATHE_HALF_MS = 4000;
 /** How far back the weight tile looks for its change. */
 export const WEIGHT_CHANGE_DAYS = 21;
-/** How far back the streak tile looks for the best run. */
-export const BEST_STREAK_DAYS = 90;
 
 /** One place after the point, always shown: 1 → "1.0". */
 export function oneDecimal(n: number): string {
@@ -123,9 +121,11 @@ export function bestRun(steps: StreakStep[]): number {
 }
 
 /**
- * The best run in the last `days`, judged on the menus as they show and by
- * the streak's own rule (`streakStep`, with the person's safe minimum as
- * `floor`): a full day eaten under it neither counts nor ends a run.
+ * The best run in the last `days` (the streak's own window unless told),
+ * judged on the menus as they show and by the streak's own rule
+ * (`streakStep`, with the person's safe minimum as `floor`): a full day eaten
+ * under it neither counts nor ends a run, and a day of nothing but skips ends
+ * it.
  */
 export function bestStreak(input: {
   today: ISODate;
@@ -139,11 +139,11 @@ export function bestStreak(input: {
 }): number {
   const byDate = mealsByDate(input.meals);
   const steps: StreakStep[] = [];
-  for (let i = (input.days ?? BEST_STREAK_DAYS) - 1; i >= 0; i--) {
+  for (let i = (input.days ?? STREAK_LOOKBACK_DAYS) - 1; i >= 0; i--) {
     const date = addDays(input.today, -i);
     const meals = byDate.get(date) ?? [];
     const r = dayRecord({ date, today: input.today, menu: input.menuOn(date), routine: input.routine, meals, skips: input.skips, offDays: input.offDays });
-    steps.push(streakStep(r.state, eatenKcal(meals), input.floor));
+    steps.push(streakStep(r.state, meals, input.floor));
   }
   return bestRun(steps);
 }

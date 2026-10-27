@@ -94,10 +94,10 @@ describe('recordStreak', () => {
   // Every planned slot of the date marked skipped, nothing eaten.
   const allSkipped = (date: string) => ['morning', 'lunch', 'dinner'].reduce<SlotSkip[]>((acc, id) => addSkip(acc, date, id), []);
 
-  it('a day settled only by skips is a complete record that never counts: nothing eaten is under the safe minimum, so it does not end the run either', () => {
+  it('a day settled only by skips is a complete record, but never counts and ends the run: skipping is never rewarded', () => {
     expect(rec('2026-10-25', [], { skips: allSkipped('2026-10-25') }).state).toBe('full');
     const meals = [...fullDay('2026-10-24'), ...fullDay('2026-10-26')];
-    expect(recordStreak({ ...base, skips: allSkipped('2026-10-25'), menuOn: menu, meals })).toBe(2);
+    expect(recordStreak({ ...base, skips: allSkipped('2026-10-25'), menuOn: menu, meals })).toBe(1);
   });
 
   it('a day with one meal eaten and the rest skipped, under the safe minimum, neither counts nor ends the run', () => {
@@ -176,16 +176,21 @@ describe('recordStreak', () => {
 });
 
 describe('streakStep', () => {
+  const ate = (kcal: number) => [meal(TODAY, 'lunch', undefined, kcal)];
+
   it('is the one rule the streak and the best run both follow', () => {
-    // A full day at or above the safe minimum counts; under it, or with nothing eaten, it holds.
-    expect(streakStep('full', 1200, 1200)).toBe('count');
-    expect(streakStep('full', 1199, 1200)).toBe('hold');
-    expect(streakStep('full', 0, 1200)).toBe('hold');
-    // Nothing eaten never counts, whatever the minimum, and a total that is not a number never counts.
-    expect(streakStep('full', 0, 0)).toBe('hold');
-    expect(streakStep('full', Number.NaN, 1200)).toBe('hold');
+    // A full day at or above the safe minimum counts; a full day eaten under it holds.
+    expect(streakStep('full', ate(1200), 1200)).toBe('count');
+    expect(streakStep('full', [...ate(600), meal(TODAY, 'dinner')], 1200)).toBe('count');
+    expect(streakStep('full', ate(1199), 1200)).toBe('hold');
+    // Something eaten that adds up to nothing, or to a total that is not a number, never counts; it is still a meal eaten, so it holds.
+    expect(streakStep('full', ate(0), 0)).toBe('hold');
+    expect(streakStep('full', ate(Number.NaN), 1200)).toBe('hold');
+    // Every slot skipped and nothing eaten ends the run, whatever the minimum: skipping is never kept alive by the streak.
+    expect(streakStep('full', [], 1200)).toBe('break');
+    expect(streakStep('full', [], 0)).toBe('break');
     // An off day holds; any other day ends the run, however much was eaten.
-    expect(streakStep('off', 0, 1200)).toBe('hold');
-    for (const state of ['partial', 'empty', 'planned'] as const) expect(streakStep(state, 2000, 1200)).toBe('break');
+    expect(streakStep('off', [], 1200)).toBe('hold');
+    for (const state of ['partial', 'empty', 'planned'] as const) expect(streakStep(state, ate(2000), 1200)).toBe('break');
   });
 });
