@@ -32,7 +32,7 @@ export default function BodyTab() {
           <YogaPanel />
         </Screen>
       ) : null}
-      {section === 'sleep' ? <SleepScreen /> : null}
+      {section === 'sleep' ? <SleepScreen embedded /> : null}
       {section === 'mind' ? <MindScreen embedded /> : null}
     </View>
   );

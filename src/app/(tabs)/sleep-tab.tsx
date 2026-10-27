@@ -13,7 +13,7 @@ export default function SleepTab() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <TopBar title={t('sleep_title')} />
-      <SleepScreen />
+      <SleepScreen embedded />
     </View>
   );
 }

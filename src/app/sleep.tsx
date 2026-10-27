@@ -4,13 +4,16 @@ import { Text, View } from 'react-native';
 import { formatMinutes, localDate, localHHMM, minutesBetween } from '../core/date';
 import { buildSleepLog, prefillAnswers, sleepDebt, sleepFlags, sleepScore } from '../core/sleep';
 import { makeT } from '../i18n';
+import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Divider, Field, H2, H3, Pill, Ring, Row, Screen, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
 
-export default function SleepScreen() {
+/** The sleep check-in. As its own page, saving goes back; inside a tab (`embedded`), it stays and says it was saved. */
+export default function SleepScreen({ embedded }: { embedded?: boolean } = {}) {
   const app = useApp();
   const router = useRouter();
+  const fb = useFeedback();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
 
@@ -36,7 +39,13 @@ export default function SleepScreen() {
 
   function save() {
     app.addSleep(buildSleepLog(app.today, { bed, wake, quality, wakeups, energy }));
-    router.back();
+    if (embedded) {
+      // Going back from a tab would leave it for another tab, so the check-in stays on screen.
+      fb.haptic('success');
+      fb.notify(t('toast_sleep_saved'));
+    } else {
+      router.back();
+    }
   }
 
   return (

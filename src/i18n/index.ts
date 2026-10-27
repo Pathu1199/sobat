@@ -259,7 +259,6 @@ const en: Dict = {
   toast_water_added: '+1 glass', toast_meal_saved: 'Saved · {kcal} kcal', toast_session_done: 'Session saved', toast_break_done: 'Break done',
   phase_of: 'Phase {p} · week {w} of {n}',
   todays_numbers: "Today's numbers", offered: 'Offered', no_chat_yet: 'Ask anything about food, movement or a hard day.',
-  water_glasses: 'glasses today',
   brk_micro: 'Look away',
   brk_long: 'Stand up and move',
   brk_posture: 'Sit back',
@@ -1026,6 +1025,7 @@ const en: Dict = {
   me_coach: 'Coach chat', me_body_sub: 'Move, yoga, sleep, mind', me_plan: 'Diet plan and eating pattern', me_grocery: 'Grocery and recipes',
   me_saved: 'Saved meals', me_saved_empty: 'Meals you save after logging them show here.', me_saved_delete: 'Delete {name}',
   add_bar: '{n} items · {kcal} kcal', add_bar_one: '1 item · {kcal} kcal',
+  toast_sleep_saved: 'Sleep saved',
 };
 
 const mr: Dict = {
@@ -1289,7 +1289,6 @@ const mr: Dict = {
   toast_water_added: '+१ ग्लास', toast_meal_saved: 'नोंदवलं · {kcal} kcal', toast_session_done: 'सराव नोंदवला', toast_break_done: 'ब्रेक झाला',
   phase_of: 'टप्पा {p} · आठवडा {w} / {n}',
   todays_numbers: 'आजचे आकडे', offered: 'सुचवलेले', no_chat_yet: 'जेवण, हालचाल किंवा कठीण दिवसाबद्दल काहीही विचारा.',
-  water_glasses: 'ग्लास आज',
   brk_micro: 'लांब बघा',
   brk_long: 'उठा आणि हालचाल करा',
   brk_posture: 'नीट बसा',
@@ -2056,6 +2055,7 @@ const mr: Dict = {
   me_coach: 'कोचशी गप्पा', me_body_sub: 'हालचाल, योग, झोप, मन', me_plan: 'आहार नियोजन आणि खाण्याची पद्धत', me_grocery: 'किराणा आणि रेसिपी',
   me_saved: 'जतन केलेली जेवणं', me_saved_empty: 'नोंदवल्यावर जतन केलेली जेवणं इथे दिसतात.', me_saved_delete: '{name} काढा',
   add_bar: '{n} पदार्थ · {kcal} kcal', add_bar_one: '1 पदार्थ · {kcal} kcal',
+  toast_sleep_saved: 'झोप नोंदवली',
 };
 
 const hi: Dict = {
@@ -2313,7 +2313,6 @@ const hi: Dict = {
   toast_water_added: '+1 गिलास', toast_meal_saved: 'दर्ज · {kcal} kcal', toast_session_done: 'सत्र दर्ज', toast_break_done: 'ब्रेक हो गया',
   phase_of: 'चरण {p} · हफ़्ता {w} / {n}',
   todays_numbers: 'आज के आँकड़े', offered: 'सुझाए गए', no_chat_yet: 'खाने, हलचल या मुश्किल दिन के बारे में कुछ भी पूछें.',
-  water_glasses: 'गिलास आज',
   brk_micro: 'दूर देखें',
   brk_long: 'उठें और चलें',
   brk_posture: 'सीधे बैठें',
@@ -3084,6 +3083,7 @@ const hi: Dict = {
   me_coach: 'कोच से बात', me_body_sub: 'हलचल, योग, नींद, मन', me_plan: 'डाइट प्लान और खाने का पैटर्न', me_grocery: 'किराना और विधियाँ',
   me_saved: 'सहेजे हुए खाने', me_saved_empty: 'दर्ज करने के बाद सहेजे गए खाने यहाँ दिखते हैं.', me_saved_delete: '{name} हटाएँ',
   add_bar: '{n} चीज़ें · {kcal} kcal', add_bar_one: '1 चीज़ · {kcal} kcal',
+  toast_sleep_saved: 'नींद दर्ज',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
