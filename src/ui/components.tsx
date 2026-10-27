@@ -1,11 +1,16 @@
 import React from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useEased, useEntrance } from './animated';
 import { C, F, lh, lift, MICRO, onThemeChange, S } from './theme';
 
+// A pressable says whether it is selected or checked with aria-selected / aria-checked, not accessibilityState:
+// React Native reads either, but react-native-web only reads the aria props, so the web would announce no state.
+
 /** Extra reach around a pill, so a 35-point chip still takes a 44-point finger. */
 const PILL_SLOP = { top: 6, bottom: 6, left: 4, right: 4 };
+/** The web ignores hitSlop, so there the chip's own button grows to a finger and the chip stays 35 tall in the middle of it. */
+const PILL_REACH: ViewStyle | undefined = Platform.OS === 'web' ? { minHeight: S.touch, justifyContent: 'center' } : undefined;
 
 export function Screen({ children, refreshing, wide }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean }) {
   return (
@@ -181,8 +186,15 @@ export function Pill({
       <Text style={[st.pillText, { color: fg }]}>{label}</Text>
     </View>
   );
+  // Only a chip given `active` claims a state; an action chip ("History ›") is not "not selected".
   return onPress ? (
-    <Pressable onPress={onPress} hitSlop={PILL_SLOP} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: !!active }}>
+    <Pressable
+      onPress={onPress}
+      hitSlop={PILL_SLOP}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      aria-selected={active}
+      style={PILL_REACH}>
       {body}
     </Pressable>
   ) : (
@@ -212,7 +224,7 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
             onPress={() => onChange(o.key)}
             accessibilityRole="tab"
             accessibilityLabel={o.label}
-            accessibilityState={{ selected: on }}
+            aria-selected={on}
             style={[st.segment, on && { backgroundColor: C.card, ...lift(1) }]}>
             <Text style={[MICRO, { color: on ? C.accentText : C.textDim }]}>{o.label}</Text>
           </Pressable>
@@ -269,7 +281,7 @@ export function Toggle({ title, desc, on, onToggle }: { title: string; desc: str
       accessibilityRole="switch"
       accessibilityLabel={title}
       accessibilityHint={desc}
-      accessibilityState={{ checked: on }}
+      aria-checked={on}
       style={({ pressed }) => [st.row, { justifyContent: 'space-between', gap: 14, minHeight: S.touch, opacity: pressed ? 0.8 : 1 }]}>
       <View style={{ flex: 1, gap: 3 }}>
         <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{title}</Text>
@@ -432,7 +444,12 @@ export function Quote({ children, color = C.cyan }: { children: React.ReactNode;
   );
 }
 
-/** A list row: leading icon, title with subtitle, trailing value. With onPress it is one button, at least a finger tall. */
+/**
+ * A list row: leading icon, title with subtitle, trailing value. With onPress it is one button, at least a
+ * finger tall. `trailing` sits inside that button, so it must not hold a button of its own; buttons go in
+ * `actions`, which sit beside the row (a button cannot nest in a button, and one inside would be hidden
+ * from a screen reader).
+ */
 export function ListRow({
   icon,
   title,
@@ -442,6 +459,7 @@ export function ListRow({
   valueUnit,
   onPress,
   trailing,
+  actions,
 }: {
   icon?: React.ReactNode;
   title: string;
@@ -450,7 +468,10 @@ export function ListRow({
   value?: string;
   valueUnit?: string;
   onPress?: () => void;
+  /** Look-only decoration at the end of the row (a chevron, a plus). */
   trailing?: React.ReactNode;
+  /** Buttons at the end of the row, outside the row's own button. */
+  actions?: React.ReactNode;
 }) {
   const body = (
     <View style={[st.row, { paddingVertical: 11, gap: 12, minHeight: S.touch }]}>
@@ -468,12 +489,22 @@ export function ListRow({
       {trailing}
     </View>
   );
-  return onPress ? (
-    <Pressable onPress={onPress} accessibilityRole="button">
+  const main = onPress ? (
+    <Pressable onPress={onPress} accessibilityRole="button" style={actions ? st.rowMain : undefined}>
       {body}
     </Pressable>
+  ) : actions ? (
+    <View style={st.rowMain}>{body}</View>
   ) : (
     body
+  );
+  return actions ? (
+    <View style={st.row}>
+      {main}
+      {actions}
+    </View>
+  ) : (
+    main
   );
 }
 
@@ -499,6 +530,7 @@ function buildStyles() {
     p: { color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '400' },
     small: { color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '400' },
     row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    rowMain: { flex: 1, minWidth: 0 },
     rowIcon: { width: 32, height: 32, borderRadius: 9, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' },
     btn: {
       minHeight: 48,

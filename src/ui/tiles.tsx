@@ -86,7 +86,7 @@ export function Checklist({
           key={i.key}
           onPress={() => onToggle(i.key)}
           accessibilityRole="checkbox"
-          accessibilityState={{ checked: i.done }}
+          aria-checked={i.done}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, minHeight: S.touch, opacity: pressed ? 0.7 : 1 })}>
           <View
             style={{

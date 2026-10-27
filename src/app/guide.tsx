@@ -36,7 +36,7 @@ export default function GuideScreen() {
               <Pressable
                 onPress={() => setOpen(on ? '' : s.id)}
                 accessibilityRole="button"
-                accessibilityState={{ expanded: on }}
+                aria-expanded={on}
                 style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: pressed ? 0.7 : 1 })}>
                 <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name={s.icon as keyof typeof Ionicons.glyphMap} size={16} color={on ? C.accent : C.textDim} />

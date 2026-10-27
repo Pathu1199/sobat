@@ -48,7 +48,7 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
       <Pressable
         key={route.key}
         accessibilityRole="button"
-        accessibilityState={focused ? { selected: true } : {}}
+        aria-selected={focused || undefined}
         accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
         onPress={() => {
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });

@@ -45,7 +45,7 @@ export function DateStrip({
             onPress={future ? undefined : () => onSelect(d)}
             disabled={future}
             accessibilityRole="button"
-            accessibilityState={{ selected: on, disabled: future }}
+            aria-selected={on}
             style={({ pressed }) => ({
               width: CELL,
               paddingVertical: 8,

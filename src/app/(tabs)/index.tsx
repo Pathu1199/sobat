@@ -326,9 +326,10 @@ export function MealRow({ meal, first, lang, onPress, onDelete }: { meal: Meal; 
         value={String(meal.kcal)}
         valueUnit="kcal"
         onPress={onPress}
-        trailing={
+        trailing={onDelete ? undefined : <Ionicons name="chevron-forward" size={15} color={C.textFaint} />}
+        actions={
           onDelete ? (
-            // Edit and delete live on the row, each a 44-point target.
+            // Edit and delete live beside the row, outside its button, each a 44-point target.
             <Row style={{ gap: 2 }}>
               <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={t('edit')} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.cardAlt : 'transparent' })}>
                 <Ionicons name="create-outline" size={20} color={C.textDim} />
@@ -337,9 +338,7 @@ export function MealRow({ meal, first, lang, onPress, onDelete }: { meal: Meal; 
                 <Ionicons name="trash-outline" size={20} color={C.textDim} />
               </Pressable>
             </Row>
-          ) : (
-            <Ionicons name="chevron-forward" size={15} color={C.textFaint} />
-          )
+          ) : undefined
         }
       />
     </View>
