@@ -133,19 +133,41 @@ export function breakStreak(logs: BreakLog[], dates: ISODate[]): number {
   });
 }
 
-/** Weight jumps around daily, so compare 7-day averages instead. */
-export function weightTrend(logs: WeightLog[]): { current: number; change7: number | null; change30: number | null } | null {
-  if (logs.length === 0) return null;
-  const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date));
-  const avg = (arr: WeightLog[]) => arr.reduce((a, b) => a + b.kg, 0) / arr.length;
-  const last7 = sorted.slice(-7);
-  const prev7 = sorted.slice(-14, -7);
-  const prev30 = sorted.slice(-37, -30);
-  return {
-    current: Math.round(avg(last7) * 10) / 10,
-    change7: prev7.length ? Math.round((avg(last7) - avg(prev7)) * 10) / 10 : null,
-    change30: prev30.length ? Math.round((avg(last7) - avg(prev30)) * 10) / 10 : null,
+const TREND_DAYS = 7;
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+/** The weigh-ins from `from` to `to`, each counting its day's place in the window: 1 on the first day, 2 on the next, and so on. Null when there is none. */
+export function timeWeightedKg(logs: WeightLog[], from: ISODate, to: ISODate): number | null {
+  let sum = 0;
+  let weight = 0;
+  for (const l of logs) {
+    if (l.date < from || l.date > to) continue;
+    const w = Math.round((Date.parse(`${l.date}T12:00:00`) - Date.parse(`${from}T12:00:00`)) / 86400000) + 1;
+    sum += l.kg * w;
+    weight += w;
+  }
+  return weight > 0 ? sum / weight : null;
+}
+
+/**
+ * The weight smoothed over time, not over entries: a seven-day window ending
+ * at the latest weigh-in on or before today, later days counting more, so
+ * three weigh-ins on a Sunday do not outweigh a week and an old one never
+ * stands in for this week. Each change compares it with the same window 7,
+ * 21 and 30 days earlier; null where that window has no weigh-in.
+ */
+export function weightTrend(logs: WeightLog[], today: ISODate): { current: number; change7: number | null; change21: number | null; change30: number | null } | null {
+  let end: ISODate | null = null;
+  for (const l of logs) if (l.date <= today && (end === null || l.date > end)) end = l.date;
+  if (end === null) return null;
+  const last = end;
+  const at = (back: number) => timeWeightedKg(logs, addDays(last, -back - (TREND_DAYS - 1)), addDays(last, -back));
+  const now = at(0) ?? 0;
+  const change = (back: number) => {
+    const then = at(back);
+    return then === null ? null : r1(now - then);
   };
+  return { current: r1(now), change7: change(7), change21: change(21), change30: change(30) };
 }
 
 export type Correlation = { key: string; strength: number; params: Record<string, string | number> };
@@ -234,5 +256,5 @@ export function weeklyStats(input: {
   const avgKcal = loggedDays ? Math.round(dates.reduce((a, d) => a + (kcalByDate.get(d) ?? 0), 0) / loggedDays) : 0;
   const sleepDays = input.sleep.filter((s) => dates.includes(s.date));
   const avgSleep = sleepDays.length ? Math.round(sleepDays.reduce((a, s) => a + s.minutes, 0) / sleepDays.length) : 0;
-  return { dates, loggedDays, overDays, workoutDays, avgKcal, avgSleepMinutes: avgSleep, trend: weightTrend(input.weights) };
+  return { dates, loggedDays, overDays, workoutDays, avgKcal, avgSleepMinutes: avgSleep, trend: weightTrend(input.weights, input.today) };
 }

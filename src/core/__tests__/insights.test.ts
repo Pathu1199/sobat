@@ -165,14 +165,32 @@ describe('streak', () => {
 });
 
 describe('weightTrend', () => {
-  it('compares 7-day averages rather than single days', () => {
+  it('compares 7-day windows rather than single days', () => {
     const logs = lastNDates(14, '2026-09-25').map((date, i) => ({ date, kg: 100 - i * 0.1 }));
-    const t = weightTrend(logs)!;
+    const t = weightTrend(logs, '2026-09-25')!;
     expect(t.change7).toBeLessThan(0);
   });
 
-  it('returns null with no data', () => {
-    expect(weightTrend([])).toBeNull();
+  it('returns null with no weigh-in on or before today', () => {
+    expect(weightTrend([], '2026-09-25')).toBeNull();
+    expect(weightTrend([{ date: '2026-09-30', kg: 80 }], '2026-09-25')).toBeNull();
+  });
+
+  it('counts days, not weigh-ins: many old entries do not outweigh this week', () => {
+    const old = Array.from({ length: 20 }, () => ({ date: '2026-09-01', kg: 90 }));
+    expect(weightTrend([...old, { date: '2026-09-25', kg: 80 }], '2026-09-25')!.current).toBe(80);
+  });
+
+  it('weighs the later days of the window more', () => {
+    // Six days back counts once, today seven times: (80 + 7 × 79) / 8 = 79.125.
+    expect(weightTrend([{ date: '2026-09-19', kg: 80 }, { date: '2026-09-25', kg: 79 }], '2026-09-25')!.current).toBe(79.1);
+  });
+
+  it('gives the change over three weeks, the window ending at the latest weigh-in', () => {
+    const t = weightTrend([{ date: '2026-09-01', kg: 82 }, { date: '2026-09-22', kg: 79 }, { date: '2026-10-30', kg: 70 }], '2026-09-25')!;
+    expect(t.current).toBe(79);
+    expect(t.change21).toBe(-3);
+    expect(t.change7).toBeNull();
   });
 });
 

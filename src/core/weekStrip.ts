@@ -25,19 +25,22 @@ export type StripDay = {
 export function weekStrip(input: { monday: ISODate; today: ISODate; viewed: ISODate; records: DayRecord[]; since: ISODate }): StripDay[] {
   return input.records.slice(0, 7).map((r, i) => {
     const date = addDays(input.monday, i);
-    const isToday = date === input.today;
-    const mark: StripMark =
-      r.state === 'off' ? 'off' : date > input.today ? 'planned' : date < input.since ? 'none' : r.state === 'full' ? 'full' : isToday ? 'today' : 'missing';
     return {
       date,
       weekday: (i + 1) % 7,
       day: Number(date.slice(8, 10)),
-      mark,
-      light: r.fromPlan && (mark === 'full' || mark === 'missing' || mark === 'today'),
-      isToday,
+      ...markOf(r, date, input.today, input.since),
+      isToday: date === input.today,
       selected: date === input.viewed,
     };
   });
+}
+
+/** One day's mark from its record, the same on the week strip and on Progress's calendar. */
+export function markOf(r: DayRecord, date: ISODate, today: ISODate, since: ISODate): { mark: StripMark; light: boolean } {
+  const mark: StripMark =
+    r.state === 'off' ? 'off' : date > today ? 'planned' : date < since ? 'none' : r.state === 'full' ? 'full' : date === today ? 'today' : 'missing';
+  return { mark, light: r.fromPlan && (mark === 'full' || mark === 'missing' || mark === 'today') };
 }
 
 /** Where the record starts: the day setup finished, else the first meal ever logged, else today. Days before it have nothing to miss. */

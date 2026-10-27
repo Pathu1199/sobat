@@ -109,3 +109,23 @@ export function formatDayMonth(date: ISODate, lang: Lang): string {
     return date;
   }
 }
+
+/** "14 Mar 2027" in the chosen language: a date far enough off to need its year. */
+export function formatDayMonthYear(date: ISODate, lang: Lang): string {
+  try {
+    const s = new Date(date + 'T12:00:00').toLocaleDateString(LOCALE[lang] ?? 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    return s && s !== 'Invalid Date' ? s : date;
+  } catch {
+    return date;
+  }
+}
+
+/** "October 2026" in the chosen language, for any date in the month. */
+export function formatMonthYear(date: ISODate, lang: Lang): string {
+  try {
+    const s = new Date(date + 'T12:00:00').toLocaleDateString(LOCALE[lang] ?? 'en-IN', { month: 'long', year: 'numeric' });
+    return s && s !== 'Invalid Date' ? s : date.slice(0, 7);
+  } catch {
+    return date.slice(0, 7);
+  }
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DayRecord } from '../record';
-import { stripSince, swipeStep, weekStrip } from '../weekStrip';
+import { markOf, stripSince, swipeStep, weekStrip } from '../weekStrip';
 
 const r = (state: DayRecord['state'], fromPlan = false): DayRecord => ({ state, fromPlan });
 const MON = '2026-10-26';
@@ -39,5 +39,16 @@ describe('swipeStep', () => {
     expect(swipeStep(80, 10)).toBe(-1);
     expect(swipeStep(30, 0)).toBe(0);
     expect(swipeStep(80, 60)).toBe(0);
+  });
+});
+
+describe('markOf', () => {
+  it('marks one day the way the strip does, for the calendar', () => {
+    expect(markOf(r('full', true), '2026-10-20', TODAY, '2026-10-01')).toEqual({ mark: 'full', light: true });
+    expect(markOf(r('partial'), '2026-10-20', TODAY, '2026-10-01')).toEqual({ mark: 'missing', light: false });
+    expect(markOf(r('partial'), TODAY, TODAY, '2026-10-01')).toEqual({ mark: 'today', light: false });
+    expect(markOf(r('empty'), '2026-09-20', TODAY, '2026-10-01')).toEqual({ mark: 'none', light: false });
+    expect(markOf(r('planned'), '2026-10-30', TODAY, '2026-10-01')).toEqual({ mark: 'planned', light: false });
+    expect(markOf(r('off', true), '2026-10-25', TODAY, '2026-10-01')).toEqual({ mark: 'off', light: false });
   });
 });
