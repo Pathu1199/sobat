@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { migrateState, upgradeFile } from '../../store/migrate';
-import { EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
+import { allFoods, EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { allowance, pattern } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE } from '../routine';
 import { DEFAULT_TODAY_CARDS } from '../tabs';
 import foodsJson from '../../data/foods.json';
 import { weekDates } from '../date';
-import { fitFor, isSuggested, menuFor, setMenuLine, viewMenu } from '../menu';
-import { landMerge, RoundStop, syncRound, type CloudState } from '../sync';
+import { fitFor, isSuggested, menuFor, setMenuLine, viewMenu, withAutoFill } from '../menu';
+import { forCloud, landMerge, RoundStop, stable, syncRound, type CloudState } from '../sync';
 import type { AppState, FoodItem } from '../types';
 import { buildWeekPlan } from '../weekPlan';
 
@@ -434,7 +434,7 @@ describe('migrateState', () => {
  * One sync round on this device against an account holding `file`, landed the way the store lands it (the merge, then the
  * migration), with the very upgrade the app hands every round. Returns the device after it and every file written.
  */
-async function syncWith(file: unknown, o: { local?: AppState; base?: CloudState | null; modifiedTime?: string | null } = {}) {
+async function syncWith(file: unknown, o: { local?: AppState; base?: CloudState | null; modifiedTime?: string | null; upgrade?: (f: CloudState) => CloudState } = {}) {
   let now: AppState = o.local ?? { ...EMPTY_STATE };
   let account = { state: JSON.stringify(file), modifiedTime: 't1' };
   const written: CloudState[] = [];
@@ -444,7 +444,7 @@ async function syncWith(file: unknown, o: { local?: AppState; base?: CloudState 
       base,
       modifiedTime,
       supported: STATE_VERSION,
-      upgrade: upgradeFile(NOW),
+      upgrade: o.upgrade ?? upgradeFile(NOW),
       io: {
         readNow: async () => now,
         land: (local, merged) => {
@@ -708,3 +708,72 @@ describe('settings in an odd shape, from sync or an old file', () => {
     }
   });
 });
+
+describe('the day a store moved to this version', () => {
+  // A version-6 store in use: the pattern switched on, breakfast logged yesterday and the app used yesterday.
+  const UPGRADE = new Date('2026-10-27T09:00:00');
+  const v6 = {
+    ...v1,
+    version: 6,
+    routine: { ...DEFAULT_ROUTINE, enabled: true },
+    meals: [{ id: 'b1', at: new Date('2026-10-26T08:40:00').toISOString(), date: '2026-10-26', type: 'breakfast', items: [], kcal: 350, protein: 12 }],
+    usage: [{ date: '2026-10-26', hour: 20, activeMinutes: 15 }],
+  };
+  /** The app's own run at `now`, as the store runs it. */
+  const run = (state: AppState, now: Date) => {
+    const fit = fitFor(state.profile, state.routine, now);
+    return withAutoFill(state, now, allFoods(state.customFoods), fit.target, fit);
+  };
+
+  it('fills in nothing that day or the day before, though both were lived; the next day it fills in only that day', () => {
+    const s = migrateState(v6, UPGRADE);
+    expect(s.profile.autoFillFrom).toBe('2026-10-27');
+    const evening = run(s, new Date('2026-10-27T22:00:00'));
+    expect(evening.meals).toEqual(s.meals);
+    const next = run(evening, new Date('2026-10-28T22:00:00'));
+    const added = next.meals.filter((m) => !s.meals.some((x) => x.id === m.id));
+    expect(added.length).toBeGreaterThan(0);
+    expect(new Set(added.map((m) => m.date))).toEqual(new Set(['2026-10-28']));
+    // A second load, on any day, changes nothing.
+    expect(migrateState(s, new Date('2026-11-05T09:00:00'))).toEqual(s);
+  });
+
+  it('stamps only someone who finished setup, keeps a stamp already there, and never stamps a store already on this version', () => {
+    expect(migrateState({ ...v6, profile: { ...v6.profile, onboarded: false } }, UPGRADE).profile.autoFillFrom).toBeUndefined();
+    expect(migrateState({ ...v6, profile: { ...v6.profile, autoFillFrom: '2026-10-20' } }, UPGRADE).profile.autoFillFrom).toBe('2026-10-20');
+    expect(migrateState({ ...v6, version: 7 }, UPGRADE).profile.autoFillFrom).toBeUndefined();
+  });
+
+  it('a sync round brings an older account file and its base up with the same stamp, so the stamp never reads as a change on either side', () => {
+    const at = new Date('2026-10-29T10:00:00');
+    const file = upgradeFile(at)(v6 as unknown as CloudState);
+    const base = upgradeFile(at)({ ...v6, meals: [] } as unknown as CloudState);
+    expect(file.profile.autoFillFrom).toBe('2026-10-29');
+    expect(base.profile.autoFillFrom).toBe('2026-10-29');
+    expect(stable(file.profile)).toBe(stable(base.profile));
+  });
+
+  it('a device that moved on an earlier day brings them up with its own stamp, so a profile change another device made since is kept', async () => {
+    // The account file and the base this device last saw: what a version-6 build wrote.
+    const base6 = { ...accountFile(250), routine: { ...DEFAULT_ROUTINE, enabled: true } };
+    const local = migrateState(base6, UPGRADE);
+    expect(local.profile.autoFillFrom).toBe('2026-10-27');
+    // Another version-6 device changed the goal after the base; the round runs on 28 October.
+    const remote = { ...base6, profile: { ...base6.profile, goalWeightKg: 75 } };
+    const s = await syncWith(remote, { local, base: base6 as unknown as CloudState, modifiedTime: 't0', upgrade: upgradeFile(NOW, local.profile.autoFillFrom) });
+    expect(s.now().profile.goalWeightKg).toBe(75);
+    expect(s.now().profile.autoFillFrom).toBe('2026-10-27');
+    expect(s.written[0].profile.goalWeightKg).toBe(75);
+    // Stamped on the round's day instead, this device's whole profile would read as changed here and win.
+    const stale = await syncWith(remote, { local, base: base6 as unknown as CloudState, modifiedTime: 't0' });
+    expect(stale.now().profile.goalWeightKg).toBe(80);
+  });
+
+  it('an account file reaching a device that was never used carries the stamp of the round', async () => {
+    const s = await syncWith({ ...accountFile(250), routine: { ...DEFAULT_ROUTINE, enabled: true } });
+    expect(s.now().profile.autoFillFrom).toBe('2026-10-28');
+    expect(s.written[0].profile.autoFillFrom).toBe('2026-10-28');
+    expect(forCloud(s.now()).profile).toEqual(s.written[0].profile);
+  });
+});
+

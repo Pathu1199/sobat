@@ -40,6 +40,7 @@ import {
   withMealConfirmed,
   withMealRemoved,
   withOpened,
+  withoutOrphanedAuto,
   withoutSavedMeal,
   withSavedMeal,
   withSkipAdded,
@@ -47,9 +48,10 @@ import {
   type MenuFit,
 } from '../menu';
 import { dailyTargets, KCAL_FLOOR, kcalForGrams } from '../nutrition';
+import { dayRecord } from '../record';
 import { forCloud, isPristine } from '../sync';
 import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, ruleForFood, type PlanLine, type Routine, type RoutineSlot } from '../routine';
-import type { FoodItem, Meal, MealSource, SlotSkip } from '../types';
+import type { FoodItem, Meal, MealSource, Profile, SlotSkip } from '../types';
 import { buildWeekPlan, dayTotals, lineInfo, planDayFor, type PlanMeal } from '../weekPlan';
 
 const foods = foodsJson as FoodItem[];
@@ -66,6 +68,16 @@ const menu = (date: string, qty: number, editedAt = '2026-10-01T09:00:00.000Z'):
     { id: 'dinner', type: 'dinner', time: '20:00', lines: [] },
   ],
 });
+/** 20 October's menu, written then: an early breakfast, a midday meal and a supper, not the slots of today's pattern. */
+const oldMenu: DayMenu = {
+  date: '2026-10-20',
+  editedAt: '2026-10-19T09:00:00.000Z',
+  meals: [
+    { id: 'early', type: 'breakfast', time: '07:00', lines: [] },
+    { id: 'midday', type: 'lunch', time: '12:30', lines: [chapati(2)] },
+    { id: 'supper', type: 'dinner', time: '19:00', lines: [] },
+  ],
+};
 const lunchQty = (m: { meals: PlanMeal[] } | null | undefined) => m?.meals.find((x) => x.id === 'lunch')?.lines[0]?.qty;
 // vitest pins TZ to Asia/Kolkata. 26 October 2026 is a Monday.
 const MON = '2026-10-26';
@@ -363,32 +375,43 @@ describe('confirming and taking away', () => {
   it('a meal taken away once its slot\'s fill-in moment has passed marks the slot skipped, whatever it was, so the plan does not fill it back', () => {
     const gone = auto('a', '2026-10-27', 'lunch');
     // Lunch is at 13:00, so the app would fill it in at 14:30.
-    const after = { routine, now: new Date('2026-10-27T14:30:00') };
+    const after = { routine, menus: [] as DayMenu[], now: new Date('2026-10-27T14:30:00') };
     for (const source of ['auto', 'plan', 'manual', undefined] as const) {
       expect(skipsAfterRemove([], { ...gone, source }, [], after), String(source)).toEqual([{ id: '2026-10-27:lunch', date: '2026-10-27', slotId: 'lunch' }]);
     }
-    // A meal that names no slot has no slot to mark.
-    expect(skipsAfterRemove([], { ...gone, slotId: undefined }, [], after)).toEqual([]);
+    // A meal that names no slot is matched to the slot it was eaten in, as the day's record matches it.
+    expect(skipsAfterRemove([], { ...gone, slotId: undefined }, [], after).map((s) => s.id)).toEqual(['2026-10-27:lunch']);
   });
 
   it('before that moment nothing is marked: a meal logged into lunch by mistake at 08:00 and taken away leaves lunch to come', () => {
     const typo: Meal = { ...auto('a', '2026-10-27', 'lunch'), source: 'manual' };
-    expect(skipsAfterRemove([], typo, [], { routine, now: new Date('2026-10-27T08:00:00') })).toEqual([]);
-    expect(skipsAfterRemove([], typo, [], { routine, now: new Date('2026-10-27T14:29:00') })).toEqual([]);
-    expect(skipsAfterRemove([], { ...typo, source: 'plan' }, [], { routine, now: new Date('2026-10-27T14:29:00') })).toEqual([]);
+    expect(skipsAfterRemove([], typo, [], { routine, menus: [], now: new Date('2026-10-27T08:00:00') })).toEqual([]);
+    expect(skipsAfterRemove([], typo, [], { routine, menus: [], now: new Date('2026-10-27T14:29:00') })).toEqual([]);
+    expect(skipsAfterRemove([], { ...typo, source: 'plan' }, [], { routine, menus: [], now: new Date('2026-10-27T14:29:00') })).toEqual([]);
   });
 
   it('on an earlier date the moment has always passed, even in the small hours; on a later date it has not', () => {
     const now = new Date('2026-10-27T00:10:00');
-    expect(skipsAfterRemove([], auto('a', '2026-10-26', 'dinner'), [], { routine, now }).map((s) => s.id)).toEqual(['2026-10-26:dinner']);
-    expect(skipsAfterRemove([], { ...auto('a', '2026-10-20', 'morning'), source: 'manual' }, [], { routine, now }).map((s) => s.id)).toEqual(['2026-10-20:morning']);
-    expect(skipsAfterRemove([], auto('a', '2026-10-28', 'morning'), [], { routine, now: new Date('2026-10-27T22:00:00') })).toEqual([]);
+    expect(skipsAfterRemove([], auto('a', '2026-10-26', 'dinner'), [], { routine, menus: [], now }).map((s) => s.id)).toEqual(['2026-10-26:dinner']);
+    expect(skipsAfterRemove([], { ...auto('a', '2026-10-20', 'morning'), source: 'manual' }, [], { routine, menus: [], now }).map((s) => s.id)).toEqual(['2026-10-20:morning']);
+    expect(skipsAfterRemove([], auto('a', '2026-10-28', 'morning'), [], { routine, menus: [], now: new Date('2026-10-27T22:00:00') })).toEqual([]);
   });
 
   it('a slot that still holds another meal that date is not marked', () => {
     const gone = auto('a', '2026-10-27', 'lunch');
     const other: Meal = { ...auto('b', '2026-10-27', 'lunch'), source: 'manual' };
-    expect(skipsAfterRemove([], gone, [other], { routine, now: new Date('2026-10-27T22:00:00') })).toEqual([]);
+    expect(skipsAfterRemove([], gone, [other], { routine, menus: [], now: new Date('2026-10-27T22:00:00') })).toEqual([]);
+  });
+
+  it('a meal that names no slot, taken away, is matched against its own date\'s menu, and the usual rule follows', () => {
+    const loose: Meal = { id: 'x', at: new Date('2026-10-20T13:20:00').toISOString(), date: '2026-10-20', type: 'lunch', items: [], kcal: 400, protein: 10, source: 'manual' };
+    const at = { routine, menus: [oldMenu], now: new Date('2026-10-27T10:00:00') };
+    expect(skipsAfterRemove([], loose, [], at).map((s) => s.id)).toEqual(['2026-10-20:midday']);
+    // Another meal still in that slot, named or not, leaves it unmarked.
+    expect(skipsAfterRemove([], loose, [{ ...loose, id: 'y', at: new Date('2026-10-20T12:50:00').toISOString() }], at)).toEqual([]);
+    expect(skipsAfterRemove([], loose, [{ ...loose, id: 'z', slotId: 'midday' }], at)).toEqual([]);
+    // Taken away through the state, the same.
+    expect(withMealRemoved({ routine, menus: [oldMenu], meals: [loose], slotSkips: [] }, 'x', at.now).slotSkips.map((s) => s.id)).toEqual(['2026-10-20:midday']);
   });
 });
 
@@ -476,7 +499,7 @@ describe('adding a meal to the state', () => {
   const at = (hhmm: string, date = d) => new Date(`${date}T${hhmm}:00`);
   const real = (id: string, slotId: string | undefined, hhmm: string, date = d): Meal => ({ id, at: at(hhmm, date).toISOString(), date, type: 'snack', slotId, items: [], kcal: 300, protein: 10, source: 'manual' });
   const filled = (slotId: string, date = d): Meal => ({ id: autoMealId(date, slotId), at: at('13:00', date).toISOString(), date, type: 'lunch', slotId, items: [], kcal: 600, protein: 20, source: 'auto' });
-  const state = (meals: Meal[], slotSkips: SlotSkip[] = []) => ({ routine, meals, slotSkips });
+  const state = (meals: Meal[], slotSkips: SlotSkip[] = [], menus: DayMenu[] = []) => ({ routine, menus, meals, slotSkips });
 
   it('a slot marked skipped is no longer skipped once a meal is eaten in it', () => {
     const out = withMealAdded(state([], addSkip([], d, 'lunch')), real('m1', 'lunch', '13:30'), 1600, at('13:30'));
@@ -503,6 +526,18 @@ describe('adding a meal to the state', () => {
     expect(named.meals.map((m) => m.id)).toEqual(['auto-2026-10-26-lunch', 'm1']);
     const routed = withMealAdded(state([filled('lunch')]), real('m2', undefined, '15:00'), 1600, at('15:00'));
     expect(routed.meals.map((m) => [m.id, m.slotId])).toEqual([['m2', 'lunch']]);
+  });
+
+  it('a meal on an earlier date that names no slot lands in a slot of that date\'s menu, never one of today\'s pattern', () => {
+    const lunchThen: Meal = { ...real('m1', undefined, '13:20', '2026-10-20'), type: 'lunch' };
+    expect(withMealAdded(state([], [], [oldMenu]), lunchThen, 1600, at('10:00')).meals[0]).toMatchObject({ slotId: 'midday', type: 'lunch' });
+    // A date with no menu of its own shows the same weekday a week earlier, and takes its slots from there.
+    expect(withMealAdded(state([], [], [{ ...oldMenu, date: '2026-10-13' }]), lunchThen, 1600, at('10:00')).meals[0]).toMatchObject({ slotId: 'midday' });
+    // With no menu to show, the date shows the pattern's own slots.
+    expect(withMealAdded(state([]), lunchThen, 1600, at('10:00')).meals[0]).toMatchObject({ slotId: 'lunch' });
+    // Today's meals follow today's pattern, whatever an old menu said.
+    const today: Meal = { ...real('m2', undefined, '09:10'), type: 'breakfast' };
+    expect(withMealAdded(state([], [], [{ ...oldMenu, date: '2026-10-20' }]), today, 1600, at('15:00')).meals[0]).toMatchObject({ slotId: 'morning' });
   });
 });
 
@@ -825,6 +860,17 @@ describe('dueAutoFills', () => {
     expect(dueAutoFills({ state: since('2026-10-26'), now, foods }).map((m) => m.id)).toEqual(['auto-2026-10-27-lunch']);
   });
 
+  it('fills nothing on or before the day the store moved to this version, read like the setup day; with both, the later holds', () => {
+    const moved = (autoFillFrom: string, onboardedOn?: string) => ({ ...state, profile: { ...state.profile, autoFillFrom, onboardedOn } });
+    expect(dueAutoFills({ state: moved('2026-10-27'), now, foods })).toEqual([]);
+    expect(dueAutoFills({ state: moved('2026-10-26'), now, foods }).map((m) => m.id)).toEqual(['auto-2026-10-27-lunch']);
+    // One after today came from a clock that ran ahead, and is not heeded.
+    expect(dueAutoFills({ state: moved('2026-10-29'), now, foods }).map((m) => m.id)).toEqual(['auto-2026-10-26-lunch', 'auto-2026-10-27-lunch']);
+    expect(dueAutoFills({ state: moved('2026-10-20', '2026-10-27'), now, foods })).toEqual([]);
+    expect(dueAutoFills({ state: moved('2026-10-27', '2026-10-20'), now, foods })).toEqual([]);
+    expect(dueAutoFills({ state: moved('2026-10-29', '2026-10-26'), now, foods }).map((m) => m.id)).toEqual(['auto-2026-10-27-lunch']);
+  });
+
   it('pays no heed to a setup date after today, as from a device whose clock ran ahead', () => {
     const ahead = { ...state, profile: { ...state.profile, onboardedOn: '2026-10-29' } };
     expect(dueAutoFills({ state: ahead, now, foods }).map((m) => m.id)).toEqual(['auto-2026-10-26-lunch', 'auto-2026-10-27-lunch']);
@@ -884,7 +930,7 @@ describe('taking a meal away', () => {
   const logged = (id: string, slotId: string, source: MealSource | undefined): Meal => ({ id, at: `${d}T07:30:00.000Z`, date: d, type: 'lunch', slotId, items: [], kcal: 400, protein: 10, source });
 
   it('a meal from the plan taken away marks its slot skipped, so the app does not fill it straight back', () => {
-    const state = { routine, meals: [logged(autoMealId(d, 'lunch'), 'lunch', 'auto')], slotSkips: [] as SlotSkip[] };
+    const state = { routine, menus: [] as DayMenu[], meals: [logged(autoMealId(d, 'lunch'), 'lunch', 'auto')], slotSkips: [] as SlotSkip[] };
     const out = withMealRemoved(state, autoMealId(d, 'lunch'), late);
     expect(out.meals).toEqual([]);
     expect(out.slotSkips.map((s) => s.id)).toEqual(['2026-10-27:lunch']);
@@ -892,23 +938,109 @@ describe('taking a meal away', () => {
   });
 
   it('a hand-typed meal taken away before its slot is filled in leaves the skips as they are; an id that is not there changes nothing', () => {
-    const state = { routine, meals: [logged('m1', 'lunch', 'manual')], slotSkips: [] as SlotSkip[] };
+    const state = { routine, menus: [] as DayMenu[], meals: [logged('m1', 'lunch', 'manual')], slotSkips: [] as SlotSkip[] };
     expect(withMealRemoved(state, 'm1', new Date(`${d}T08:00:00`))).toEqual({ meals: [], slotSkips: [] });
     expect(withMealRemoved(state, 'nope', late)).toBe(state);
   });
 
   it('a hand-typed meal taken away after its slot would be filled in, as an Undo, marks it skipped so it is not filled back; eating there again lifts the skip', () => {
-    const state = { routine, meals: [logged('m1', 'lunch', 'manual')], slotSkips: [] as SlotSkip[] };
+    const state = { routine, menus: [] as DayMenu[], meals: [logged('m1', 'lunch', 'manual')], slotSkips: [] as SlotSkip[] };
     const undone = withMealRemoved(state, 'm1', late);
     expect(undone.slotSkips.map((s) => s.id)).toEqual(['2026-10-27:lunch']);
     expect(autoFill({ date: d, now: late, menu: menu(d, 2), meals: undone.meals, skips: undone.slotSkips, openedDates: [], offDays: [], foods })).toEqual([]);
-    expect(withMealAdded({ ...undone, routine }, logged('m2', 'lunch', 'manual'), 1600, late).slotSkips).toEqual([]);
+    expect(withMealAdded({ ...undone, routine, menus: [] }, logged('m2', 'lunch', 'manual'), 1600, late).slotSkips).toEqual([]);
   });
 
   it('leaves the meals settled, as every writer does: a filled-in copy in a slot skipped that date goes', () => {
-    const state = { routine, meals: [logged('p1', 'lunch', 'plan'), logged(autoMealId(d, 'dinner'), 'dinner', 'auto')], slotSkips: addSkip([], d, 'dinner') };
+    const state = { routine, menus: [] as DayMenu[], meals: [logged('p1', 'lunch', 'plan'), logged(autoMealId(d, 'dinner'), 'dinner', 'auto')], slotSkips: addSkip([], d, 'dinner') };
     const out = withMealRemoved(state, 'p1', late);
     expect(out.meals).toEqual([]);
     expect(out.slotSkips.map((s) => s.id)).toEqual(['2026-10-27:dinner', '2026-10-27:lunch']);
+  });
+});
+
+describe('lived days keep their menu', () => {
+  const TODAY = '2026-10-27';
+  // 20 October 2026 is the Tuesday a week before.
+  const TUE = '2026-10-20';
+  const NOW_ = new Date('2026-10-27T10:00:00');
+  const fit1800: MenuFit = { target: 1800, floor: 1200, avoided: new Set() };
+  const fit1900: MenuFit = { target: 1900, floor: 1200, avoided: new Set() };
+  const ate = (date: string, slotId: string, type: Meal['type']): Meal => ({ id: `${date}-${slotId}`, at: new Date(`${date}T12:00:00`).toISOString(), date, type, slotId, items: [], kcal: 600, protein: 20, source: 'manual' });
+  const tuesday = [ate(TUE, 'breakfast', 'breakfast'), ate(TUE, 'lunch', 'lunch'), ate(TUE, 'dinner', 'dinner')];
+  const person = {
+    ...EMPTY_STATE,
+    profile: { ...EMPTY_STATE.profile, onboarded: true },
+    routine: NEUTRAL_ROUTINE,
+    meals: tuesday,
+    settings: { ...EMPTY_STATE.settings, offDays: [] },
+  };
+  const recordOn = (date: string, menus: DayMenu[], fit: MenuFit, meals = tuesday) =>
+    dayRecord({ date, today: TODAY, menu: viewMenu(date, menus, NEUTRAL_ROUTINE, TODAY, foods, fit), routine: NEUTRAL_ROUTINE, meals, skips: [], offDays: [] }).state;
+
+  it('a past Tuesday eaten in full stays full when the target moves, once kept', () => {
+    expect(recordOn(TUE, [], fit1800)).toBe('full');
+    // Rebuilt from today's fit, a day already lived would change: at 1900 the app's suggestion adds a snack the person never saw planned.
+    expect(recordOn(TUE, [], fit1900)).toBe('partial');
+    const run = withAutoFill(person, NOW_, foods, 1800, fit1800);
+    expect(menuFor(TUE, run.menus)).toMatchObject({ editedAt: NOT_EDITED, frozen: true });
+    expect(menuFor(TUE, run.menus)!.meals).toEqual(viewMenu(TUE, [], NEUTRAL_ROUTINE, TODAY, foods, fit1800).meals);
+    expect(recordOn(TUE, run.menus, fit1900)).toBe('full');
+  });
+
+  it('keeps yesterday and every date of the fourteen before today with a meal or a skip, as it showed; a stored menu is never touched', () => {
+    const edited = { ...menu('2026-10-23', 4) };
+    const s = {
+      ...person,
+      menus: [edited],
+      meals: [...tuesday, ate('2026-10-12', 'lunch', 'lunch'), ate('2026-10-23', 'lunch', 'lunch')],
+      slotSkips: addSkip([], '2026-10-15', 'lunch'),
+    };
+    const out = withAutoFill(s, NOW_, foods, 1800, fit1800);
+    // 12 October is fifteen days back, 22 October holds nothing, and today is still being lived.
+    expect(out.menus.map((m) => m.date).sort()).toEqual(['2026-10-15', '2026-10-20', '2026-10-23', '2026-10-26']);
+    expect(menuFor('2026-10-23', out.menus)).toBe(edited);
+    for (const d of ['2026-10-15', TUE, '2026-10-26']) expect(menuFor(d, out.menus)).toEqual({ ...viewMenu(d, s.menus, NEUTRAL_ROUTINE, TODAY, foods, fit1800), frozen: true });
+    // In the same change as the meals filled in today.
+    expect(out.meals.filter((m) => m.source === 'auto').map((m) => m.id)).toEqual(['auto-2026-10-27-breakfast']);
+    // Nothing more to do: the same state comes back.
+    expect(withAutoFill(out, NOW_, foods, 1800, fit1800)).toBe(out);
+  });
+
+  it('keeps nothing on a device holding nobody\'s data, or on or before the day setup was finished or the store moved to this version', () => {
+    const lived = { ...person, meals: [...tuesday, ate('2026-10-24', 'lunch', 'lunch')] };
+    const nobody = { ...EMPTY_STATE, meals: lived.meals };
+    expect(withAutoFill(nobody, NOW_, foods, 1800, fit1800)).toBe(nobody);
+    const kept = (p: Partial<Profile>) => withAutoFill({ ...lived, profile: { ...lived.profile, ...p } }, NOW_, foods, 1800, fit1800).menus.map((m) => m.date).sort();
+    expect(kept({})).toEqual(['2026-10-20', '2026-10-24', '2026-10-26']);
+    expect(kept({ onboardedOn: '2026-10-21' })).toEqual(['2026-10-24', '2026-10-26']);
+    expect(kept({ autoFillFrom: '2026-10-24' })).toEqual(['2026-10-26']);
+    expect(kept({ onboardedOn: '2026-10-21', autoFillFrom: '2026-10-26' })).toEqual([]);
+    // One after today came from a clock that ran ahead, and is not heeded.
+    expect(kept({ autoFillFrom: '2026-10-29' })).toEqual(['2026-10-20', '2026-10-24', '2026-10-26']);
+  });
+
+  it('changes nothing another date shows: a kept day is that day\'s record, never carried forward to a later week', () => {
+    const run = withAutoFill(person, NOW_, foods, 1800, fit1800);
+    for (const d of [TODAY, '2026-10-28', '2026-11-02', '2026-11-03']) {
+      expect(viewMenu(d, run.menus, NEUTRAL_ROUTINE, TODAY, foods, fit1900)).toEqual(viewMenu(d, person.menus, NEUTRAL_ROUTINE, TODAY, foods, fit1900));
+    }
+    // Once the person edits a kept day it is theirs, and a later week starts from it like any edited day.
+    const kept = menuFor(TUE, run.menus)!;
+    const edited = setMenuLine(run.menus, kept, 'lunch', 0, null, NOW_);
+    expect(menuFor(TUE, edited)!.frozen).toBeUndefined();
+    expect(viewMenu('2026-11-03', edited, NEUTRAL_ROUTINE, TODAY, foods, fit1900).meals).toEqual(menuFor(TUE, edited)!.meals);
+  });
+});
+
+describe('slots taken out of the pattern', () => {
+  const fill = (date: string, slotId: string, source: MealSource = 'auto'): Meal => ({ id: `${source}-${date}-${slotId}`, at: `${date}T10:30:00.000Z`, date, type: 'snack', slotId, items: [], kcal: 200, protein: 5, source });
+
+  it('drop the meals the app filled in today and later in a slot the pattern no longer has, and no other meal', () => {
+    // The routine has morning, lunch and dinner: the tea slot was taken out.
+    const meals = [fill('2026-10-27', 'tea'), fill('2026-10-27', 'lunch'), fill('2026-10-26', 'tea'), fill('2026-10-27', 'tea', 'manual'), fill('2026-10-27', 'tea', 'plan')];
+    const out = withoutOrphanedAuto(meals, routine, '2026-10-27');
+    expect(out.map((m) => m.id)).toEqual(['auto-2026-10-27-lunch', 'auto-2026-10-26-tea', 'manual-2026-10-27-tea', 'plan-2026-10-27-tea']);
+    expect(withoutOrphanedAuto(out, routine, '2026-10-27')).toBe(out);
   });
 });

@@ -202,18 +202,20 @@ export function slotForMealAt(input: { routine: Routine; target: number; meals: 
  * A meal that names no slot (one from a recipe or the coach) gets the slot
  * it is eaten in: eaten now, today, the slot `slotForMealAt` gives now, and
  * its type; eaten earlier or on another day, as an undone delete, the slot
- * its own time and type put it in. A queued photo finds its slot before it
- * gets here. `meals` and `skippedSlots` are today's. Unchanged when it
- * already names a slot or there are none.
+ * its own time and type put it in among `slots`, the slots of the meal's own
+ * date (the pattern's when not given), so it always names a slot its date
+ * has. A queued photo finds its slot before it gets here. `meals` and
+ * `skippedSlots` are today's. Unchanged when it already names a slot or there
+ * are none.
  */
-export function withSlot(meal: Meal, input: { routine: Routine; target: number; meals: Meal[]; skippedSlots: string[]; now: Date }): Meal {
+export function withSlot(meal: Meal, input: { routine: Routine; target: number; meals: Meal[]; skippedSlots: string[]; now: Date; slots?: SlotPoint[] }): Meal {
   if (meal.slotId) return meal;
   const today = toISODate(input.now);
   if (meal.date === today && Math.abs(Date.parse(meal.at) - input.now.getTime()) <= EATEN_NOW_MS) {
     const cur = slotForMealAt({ routine: input.routine, target: input.target, meals: input.meals, skippedSlots: input.skippedSlots, date: today, at: input.now });
     return cur ? { ...meal, slotId: cur.id, type: cur.type } : meal;
   }
-  const p = slotOf(meal, pattern(input.routine));
+  const p = slotOf(meal, input.slots ?? pattern(input.routine));
   return p ? { ...meal, slotId: p.id, type: p.type } : meal;
 }
 

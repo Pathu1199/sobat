@@ -204,8 +204,11 @@ function isSkipKey(a: unknown): a is { date: string; key: string } {
 /**
  * Brings a stored blob up to the current shape. Never throws: a corrupt or
  * foreign file yields a fresh state rather than bricking the app.
+ * `movedOn` is the day a store from before version 7 records as the day it
+ * moved (`autoFillFrom`): the day of `now` unless a sync round passes this
+ * device's own (see `upgradeFile`).
  */
-export function migrateState(raw: unknown, now: Date = new Date()): AppState {
+export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISODate = toISODate(now)): AppState {
   if (!isRecord(raw) || !isRecord(raw.profile)) return { ...EMPTY_STATE };
   const breakSettings = upgradeSettings(raw.breakSettings);
   const fromVersion = typeof raw.version === 'number' ? raw.version : 1;
@@ -220,6 +223,9 @@ export function migrateState(raw: unknown, now: Date = new Date()): AppState {
     const weights = Array.isArray(raw.weights) ? ([...(raw.weights as AppState['weights'])].sort((a, b) => a.date.localeCompare(b.date))) : [];
     profile.startWeightKg = weights[0]?.kg ?? profile.weightKg;
   }
+  // Version 7: the app fills planned meals in by itself. The days lived before this load had nothing filled in, so none is
+  // filled now: an update must not log meals nobody saw planned onto a day already lived.
+  if (fromVersion < 7 && profile.onboarded && !profile.autoFillFrom) profile.autoFillFrom = movedOn;
   // A plan that is not seven days of meals is not a plan; the week starts from the pattern instead.
   const rawPlan = isRecord(raw.weekPlan) && Array.isArray((raw.weekPlan as { days?: unknown }).days) && (raw.weekPlan as { days: unknown[] }).days.length === 7 ? (raw.weekPlan as WeekPlan) : null;
   const routine = upgradeRoutine(raw.routine, fromVersion, rawPlan !== null);
@@ -262,8 +268,11 @@ export function migrateState(raw: unknown, now: Date = new Date()): AppState {
 
 /**
  * How a sync round brings an account file from an older build up to this one: the store's own migration at the round's
- * moment `at`, minus the caches and machine settings it fills in for a device.
+ * moment `at`, minus the caches and machine settings it fills in for a device. The file and its base are stamped with
+ * the same day they moved (`movedOn`): this device's own `autoFillFrom` when it has one, so its profile reads the same as
+ * theirs and a profile change another device made since is not lost to a stamp that differs only by the day; else the
+ * round's day.
  */
-export function upgradeFile(at: Date): (file: CloudState) => CloudState {
-  return (file) => forCloud(migrateState(file, at));
+export function upgradeFile(at: Date, movedOn?: ISODate): (file: CloudState) => CloudState {
+  return (file) => forCloud(migrateState(file, at, movedOn ?? toISODate(at)));
 }

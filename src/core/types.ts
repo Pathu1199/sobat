@@ -27,6 +27,8 @@ export type Profile = {
   onboarded: boolean;
   /** The day setup was finished, when no meal-time prompt goes out. Missing on older profiles: they are not on day one. */
   onboardedOn?: ISODate;
+  /** No meal is filled in from the plan on or before this date: the day the store moved to version 7, so an update never fills in a day already lived. */
+  autoFillFrom?: ISODate;
 };
 
 export type Settings = {

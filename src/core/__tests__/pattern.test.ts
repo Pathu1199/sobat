@@ -238,6 +238,22 @@ describe('withSlot', () => {
     expect(withSlot(lateLastNight, { ...input, now: new Date('2026-10-12T00:02:00') })).toMatchObject({ slotId: 'dinner' });
   });
 
+  it('given the slots of the meal\'s own date, routes a meal from another day by them, so its slot is one that date has', () => {
+    // That date's menu had other slots than today's pattern: an early breakfast, a midday meal and a supper.
+    const thatDay = [
+      { id: 'early', type: 'breakfast' as const, minutes: 7 * 60 },
+      { id: 'midday', type: 'lunch' as const, minutes: 12 * 60 + 30 },
+      { id: 'supper', type: 'dinner' as const, minutes: 19 * 60 },
+    ];
+    const yesterday = { ...meal('lunch', '13:20', 450), date: '2026-10-11', at: new Date('2026-10-11T13:20:00').toISOString() };
+    expect(withSlot(yesterday, { ...input, slots: thatDay })).toMatchObject({ slotId: 'midday', type: 'lunch' });
+    // That date had no snack: a tea at 17:00 goes to the slot nearest in time, the supper.
+    const tea = { ...meal('snack', '17:00', 100), date: '2026-10-11', at: new Date('2026-10-11T17:00:00').toISOString() };
+    expect(withSlot(tea, { ...input, slots: thatDay })).toMatchObject({ slotId: 'supper', type: 'dinner' });
+    // A meal eaten now is still routed by what is open now.
+    expect(withSlot(meal('snack', '14:00', 300), { ...input, slots: thatDay })).toMatchObject({ slotId: 'lunch', type: 'lunch' });
+  });
+
   it('gives a lunch eaten after the app filled lunch in the lunch slot, not dinner; after a real lunch, the next slot as before', () => {
     const at15 = { ...input, now: new Date('2026-10-12T15:00:00') };
     const filled: Meal = { ...meal('lunch', '13:00', 600, 'lunch'), source: 'auto' };

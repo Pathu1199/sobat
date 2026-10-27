@@ -39,6 +39,7 @@ import {
   withMealAdded,
   withMealConfirmed,
   withMealRemoved,
+  withoutOrphanedAuto,
   withoutSavedMeal,
   withSavedMeal,
   withSkipAdded,
@@ -495,9 +496,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // The pattern is always on: a menu is a list of slots.
           const routine = { ...s.routine, ...r, enabled: true };
           // Menus are written against the slots; when they change, today's and later ones follow. Past ones are history.
+          // A meal the app filled in from today on, in a slot taken out, goes with it.
           const slotsChanged = r.slots !== undefined && r.slots !== s.routine.slots;
           const menus = slotsChanged ? alignMenus(s.menus, routine, today, allFoods(s.customFoods)) : s.menus;
-          return { ...s, routine, menus };
+          const meals = slotsChanged ? withoutOrphanedAuto(s.meals, routine, today) : s.meals;
+          return { ...s, routine, menus, meals };
         }),
       weekPlan: weekPlanView(thisWeek),
       setWeekPlan: (plan) =>

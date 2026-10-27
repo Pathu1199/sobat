@@ -132,8 +132,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         base: base.current,
         modifiedTime: baseModifiedTime.current,
         supported: STATE_VERSION,
-        // The store's migration, minus the caches and machine settings it fills in.
-        upgrade: upgradeFile(at),
+        // The store's migration, minus the caches and machine settings it fills in, stamped with the day this device moved.
+        upgrade: upgradeFile(at, stateRef.current.profile.autoFillFrom),
         io: {
           readNow,
           // Onto the state as it is when this lands, not as it was when the request went out.
