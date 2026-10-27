@@ -76,7 +76,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
           </View>
         </Row>
         <Pressable onPress={() => setMode('day')}>
-          <Micro color={C.accent}>{`${t('fits_full_day')} ›`}</Micro>
+          <Micro color={C.accentText}>{`${t('fits_full_day')} ›`}</Micro>
         </Pressable>
       </Card>
     );
@@ -110,7 +110,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
             <View key={s.id ?? s.type} style={{ gap: 6 }}>
               {i > 0 ? <Divider /> : null}
               <Row style={{ justifyContent: 'space-between' }}>
-                <Micro color={mode === 'rest' && isNow(s) ? C.accent : C.textFaint}>{`${labelOf(s)}${mode === 'rest' && isNow(s) ? ` · ${t('fits_now')}` : ''}`}</Micro>
+                <Micro color={mode === 'rest' && isNow(s) ? C.accentText : C.textFaint}>{`${labelOf(s)}${mode === 'rest' && isNow(s) ? ` · ${t('fits_now')}` : ''}`}</Micro>
                 <Micro>{`${s.kcal} / ${s.budget} kcal · ${s.protein} g`}</Micro>
               </Row>
               {s.picks.map((p) => (
@@ -130,7 +130,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
               ))}
               {s.picks.some((p) => p.alts?.length) && compact && swapsFor !== (s.id ?? s.type) ? (
                 <Pressable onPress={() => setSwapsFor(s.id ?? s.type)} style={{ paddingLeft: 40, paddingVertical: 2 }}>
-                  <Micro color={C.accent}>{`${t('fits_show_swaps')} ›`}</Micro>
+                  <Micro color={C.accentText}>{`${t('fits_show_swaps')} ›`}</Micro>
                 </Pressable>
               ) : null}
               {s.picks.some((p) => p.alts?.length) && (!compact || swapsFor === (s.id ?? s.type)) ? (
@@ -142,7 +142,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
                         <Micro color={C.textFaint}>{fill(t('fits_swap'), { food: foodName(p.food, lang) })}</Micro>
                         {p.alts!.map((a) => (
                           <Pressable key={a.food.id} onPress={() => log(s.type, a.food.id, a.grams, s.id)} accessibilityRole="button">
-                            <Micro color={C.accent}>{`${foodName(a.food, lang)} (${a.kcal}${p.kcal - a.kcal > 0 ? `, −${p.kcal - a.kcal}` : ''})`}</Micro>
+                            <Micro color={C.accentText}>{`${foodName(a.food, lang)} (${a.kcal}${p.kcal - a.kcal > 0 ? `, −${p.kcal - a.kcal}` : ''})`}</Micro>
                           </Pressable>
                         ))}
                       </Row>
@@ -154,7 +154,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
         : null}
       {open && compact && mode === 'rest' && plan.slots.length > 1 ? (
         <Pressable onPress={() => setAllMeals((a) => !a)} accessibilityRole="button" style={{ paddingVertical: 2 }}>
-          <Micro color={C.accent}>{allMeals ? `${t('fits_hide_rest')} ‹` : `${fill(t('fits_show_rest'), { n: plan.slots.length - 1 })} ›`}</Micro>
+          <Micro color={C.accentText}>{allMeals ? `${t('fits_hide_rest')} ‹` : `${fill(t('fits_show_rest'), { n: plan.slots.length - 1 })} ›`}</Micro>
         </Pressable>
       ) : null}
       {open ? <Micro color={C.textFaint}>{t('fits_hint')}</Micro> : null}

@@ -56,7 +56,7 @@ export function BreakToast() {
         <View style={{ flexDirection: 'row', gap: 16, marginTop: 6, flexWrap: 'wrap' }}>
           {state.breakSettings.snoozeMinutes.map((m) => (
             <Pressable key={m} onPress={() => monitor.snooze(m)} hitSlop={6} accessibilityRole="button">
-              <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '500' }}>{fill(t('brk_snooze_n'), { n: m })}</Text>
+              <Text style={{ color: C.accentText, fontSize: F.small, fontWeight: '500' }}>{fill(t('brk_snooze_n'), { n: m })}</Text>
             </Pressable>
           ))}
           {monitor.skipsLeft > 0 ? (

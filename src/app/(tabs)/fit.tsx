@@ -97,9 +97,9 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
           <Ionicons
             name={doneToday.status === 'done' ? 'checkmark-circle' : 'remove-circle-outline'}
             size={17}
-            color={doneToday.status === 'done' ? C.accent : C.textFaint}
+            color={doneToday.status === 'done' ? C.accentText : C.textFaint}
           />
-          <Small color={doneToday.status === 'done' ? C.accent : C.textFaint}>
+          <Small color={doneToday.status === 'done' ? C.accentText : C.textFaint}>
             {doneToday.status === 'done' ? `${t('done')} · ${doneToday.minutes} min` : t('skip_session')}
           </Small>
         </Row>
@@ -143,7 +143,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
               <Divider />
               {instructions(e).map((s, i) => (
                 <Row key={i} style={{ alignItems: 'flex-start', gap: 10 }}>
-                  <Text style={{ color: C.accent, fontSize: F.small, width: 12, marginTop: 3 }}>{i + 1}</Text>
+                  <Text style={{ color: C.accentText, fontSize: F.small, width: 12, marginTop: 3 }}>{i + 1}</Text>
                   <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), flex: 1 }}>{s}</Text>
                 </Row>
               ))}
@@ -190,7 +190,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
               {i > 0 ? <Divider /> : null}
               <Row style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
                 <Small>{formatDayLabel(w.date, lang)}</Small>
-                <Small color={w.status === 'done' ? C.accent : C.textFaint}>{w.status === 'done' ? `${t('done')} · ${w.minutes} min` : t('skip_session')}</Small>
+                <Small color={w.status === 'done' ? C.accentText : C.textFaint}>{w.status === 'done' ? `${t('done')} · ${w.minutes} min` : t('skip_session')}</Small>
               </Row>
             </View>
           ))}

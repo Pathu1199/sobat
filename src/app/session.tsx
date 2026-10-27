@@ -129,7 +129,7 @@ export default function SessionScreen() {
     return (
       <Screen>
         <Card tone={C.accent}>
-          <Micro color={C.accent}>{en(done ? 'session_complete' : 'session_stopped')}</Micro>
+          <Micro color={C.accentText}>{en(done ? 'session_complete' : 'session_stopped')}</Micro>
           <Text style={{ color: C.text, fontSize: F.number, fontWeight: '500' }}>
             {reached}
             <Text style={{ color: C.textFaint, fontSize: F.title }}> / {session.exercises.length}</Text>
@@ -236,7 +236,7 @@ export default function SessionScreen() {
           <Card>
             {instructions(current).map((line, i) => (
               <Row key={i} style={{ alignItems: 'flex-start', gap: 10 }}>
-                <Text style={{ color: C.accent, fontSize: F.small, width: 12, marginTop: 3 }}>{i + 1}</Text>
+                <Text style={{ color: C.accentText, fontSize: F.small, width: 12, marginTop: 3 }}>{i + 1}</Text>
                 <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), flex: 1 }}>{line}</Text>
               </Row>
             ))}

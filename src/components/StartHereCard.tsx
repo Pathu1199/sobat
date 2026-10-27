@@ -42,10 +42,10 @@ export function StartHereCard() {
       </View>
       <Row style={{ gap: 14 }}>
         <Pressable onPress={() => router.push('/guide')}>
-          <Micro color={C.accent}>{`${t('guide_title')} ›`}</Micro>
+          <Micro color={C.accentText}>{`${t('guide_title')} ›`}</Micro>
         </Pressable>
         <Pressable onPress={() => router.push('/tour?from=settings')}>
-          <Micro color={C.accent}>{`${t('show_tour')} ›`}</Micro>
+          <Micro color={C.accentText}>{`${t('show_tour')} ›`}</Micro>
         </Pressable>
       </Row>
       <WeightSheet open={weighOpen} onClose={() => setWeighOpen(false)} />

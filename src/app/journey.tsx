@@ -47,7 +47,7 @@ export default function Journey() {
         </View>
         <Pressable onPress={() => setWeighOpen(true)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: pressed ? 0.7 : 1 })}>
           <Ionicons name="scale-outline" size={16} color={C.accent} />
-          <Small color={C.accent}>{t('journey_add_weight')}</Small>
+          <Small color={C.accentText}>{t('journey_add_weight')}</Small>
         </Pressable>
       </Card>
 
@@ -125,7 +125,7 @@ export default function Journey() {
       </Card>
 
       <Pressable onPress={() => router.push('/progress?s=charts')} style={{ alignSelf: 'center', paddingVertical: 6 }}>
-        <Micro color={C.accent}>{`${t('growth')} ›`}</Micro>
+        <Micro color={C.accentText}>{`${t('growth')} ›`}</Micro>
       </Pressable>
       <WeightSheet open={weighOpen} onClose={() => setWeighOpen(false)} />
     </Screen>

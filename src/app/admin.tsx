@@ -87,7 +87,7 @@ export default function Admin() {
                 <Small color={C.textDim}>{u.email}</Small>
               </View>
               <Row style={{ gap: 6 }}>
-                {u.disabled ? <Pill label={t('admin_blocked')} color={C.red} textColor={C.white} /> : null}
+                {u.disabled ? <Pill label={t('admin_blocked')} color={C.redSoft} textColor={C.red} /> : null}
                 <Pill label={u.platform || '—'} />
               </Row>
             </Row>

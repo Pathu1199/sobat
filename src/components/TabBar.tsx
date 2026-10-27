@@ -41,7 +41,7 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
     if (HIDDEN.has(route.name)) return;
     const { options } = descriptors[route.key];
     const focused = state.index === index;
-    const color = focused ? C.accent : C.textFaint;
+    const color = focused ? C.accentText : C.textFaint;
     const label = typeof options.title === 'string' ? options.title : route.name;
 
     slots.push(
@@ -61,7 +61,7 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
         </View>
         <Text
           numberOfLines={1}
-          style={{ color: focused ? C.accent : C.textFaint, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500', includeFontPadding: false, textAlign: 'center' }}>
+          style={{ color: focused ? C.accentText : C.textFaint, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500', includeFontPadding: false, textAlign: 'center' }}>
           {label}
         </Text>
       </Pressable>,
@@ -89,7 +89,7 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
               shadowOpacity: 0.4,
               transform: [{ scale: pressed ? 0.94 : 1 }],
             })}>
-            <Ionicons name="add" size={30} color={C.white} />
+            <Ionicons name="add" size={30} color={C.onAccent} />
           </Pressable>
         </View>,
       );

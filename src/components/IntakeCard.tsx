@@ -30,7 +30,7 @@ export function IntakeCard() {
         </View>
       </Row>
       <Pressable onPress={() => router.push('/food?s=plan')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('intake_open_plan')}>
-        <Micro color={C.accent}>{`${t('intake_open_plan')} ›`}</Micro>
+        <Micro color={C.accentText}>{`${t('intake_open_plan')} ›`}</Micro>
       </Pressable>
     </Card>
   );

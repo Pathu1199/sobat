@@ -69,7 +69,7 @@ export function RecipeSheet({ recipe, onClose }: { recipe: Recipe | null; onClos
         </Row>
       ))}
       <Divider />
-      <Btn label={t('log_this')} icon={<Ionicons name="add" size={16} color={C.white} />} onPress={log} disabled={!food} />
+      <Btn label={t('log_this')} icon={<Ionicons name="add" size={16} color={C.onAccent} />} onPress={log} disabled={!food} />
     </Sheet>
   );
 }

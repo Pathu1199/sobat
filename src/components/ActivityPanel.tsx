@@ -74,7 +74,7 @@ export function ActivityPanel() {
       <Row style={{ justifyContent: 'space-between' }}>
         <Micro color={C.textDim}>{t('act_mine')}</Micro>
         <Pressable onPress={() => setChoosing(true)} accessibilityRole="button" hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>
-          <Micro color={C.accent}>{`${t('act_choose')} ›`}</Micro>
+          <Micro color={C.accentText}>{`${t('act_choose')} ›`}</Micro>
         </Pressable>
       </Row>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -98,7 +98,7 @@ export function ActivityPanel() {
         ))}
         <Pressable onPress={() => setChoosing(true)} accessibilityRole="button" style={({ pressed }) => ({ flexBasis: '31%', flexGrow: 1, minHeight: 88, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.borderStrong, padding: 12, alignItems: 'center', justifyContent: 'center', gap: 6, opacity: pressed ? 0.7 : 1 })}>
           <Ionicons name="add" size={22} color={C.accent} />
-          <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '500' }}>{t('act_add')}</Text>
+          <Text style={{ color: C.accentText, fontSize: F.small, fontWeight: '500' }}>{t('act_add')}</Text>
         </Pressable>
       </View>
 
@@ -183,7 +183,7 @@ export function ActivityPanel() {
               <Bar value={preview} max={Math.max(300, preview)} color={C.green} />
               <Small color={C.textDim}>{fill(t('act_math'), { met: logging.met[intensity], kg: state.profile.weightKg, back: eatBack(preview) })}</Small>
             </Card>
-            <Btn label={t('act_log')} icon={<Ionicons name="checkmark" size={16} color={C.white} />} onPress={save} />
+            <Btn label={t('act_log')} icon={<Ionicons name="checkmark" size={16} color={C.onAccent} />} onPress={save} />
           </View>
         ) : null}
       </Sheet>

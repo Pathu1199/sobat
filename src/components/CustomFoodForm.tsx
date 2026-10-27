@@ -72,7 +72,7 @@ export function CustomFoodForm({ initialName, onSaved, onCancel }: { initialName
 
   return (
     <Card tone={C.accent}>
-      <Micro color={C.accent}>{t('custom_food')}</Micro>
+      <Micro color={C.accentText}>{t('custom_food')}</Micro>
       <Small>{t('custom_food_hint')}</Small>
 
       <Field label={t('custom_name_en')} value={nameEn} onChangeText={setNameEn} placeholder="Aunty's poha" />

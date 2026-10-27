@@ -273,7 +273,7 @@ function Gratitude({ lang }: { lang: any }) {
         />
       ))}
       <Btn small label={t('save')} onPress={save} disabled={lines.every((l) => !l.trim())} />
-      {saved ? <Small color={C.accent}>{t('gratitude_saved')}</Small> : null}
+      {saved ? <Small color={C.accentText}>{t('gratitude_saved')}</Small> : null}
     </Card>
   );
 }

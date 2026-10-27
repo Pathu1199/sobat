@@ -27,7 +27,7 @@ export function AwayCard() {
         </View>
       </Row>
       <Row style={{ gap: 8 }}>
-        <Btn small label={t('add_food')} icon={<Ionicons name="add" size={14} color={C.white} />} onPress={() => router.push('/log')} style={{ flex: 1 }} />
+        <Btn small label={t('add_food')} icon={<Ionicons name="add" size={14} color={C.onAccent} />} onPress={() => router.push('/log')} style={{ flex: 1 }} />
         <Btn small tone="ghost" label={t('away_ok')} onPress={() => app.toggleAction(SEEN)} style={{ flex: 1 }} />
       </Row>
     </Card>

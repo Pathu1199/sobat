@@ -129,7 +129,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
             </View>
           ) : (
             <Pressable onPress={() => { setAddingTo(oi); setQuery(''); }} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, paddingVertical: 4 })}>
-              <Micro color={C.accent}>{`+ ${t('routine_add_food')}`}</Micro>
+              <Micro color={C.accentText}>{`+ ${t('routine_add_food')}`}</Micro>
             </Pressable>
           )}
         </View>

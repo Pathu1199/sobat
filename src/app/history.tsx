@@ -65,7 +65,7 @@ export default function History() {
                   <Micro color={C.cyan}>{`🌿 ${t('free_day')}`}</Micro>
                 ) : d.meals === 0 ? (
                   <Row style={{ gap: 6 }}>
-                    <Micro color={C.accent}>{t('history_add')}</Micro>
+                    <Micro color={C.accentText}>{t('history_add')}</Micro>
                     <Ionicons name="add-circle-outline" size={15} color={C.accent} />
                   </Row>
                 ) : (

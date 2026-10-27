@@ -74,7 +74,7 @@ export function TomorrowCard() {
           <Pill key={id} label={name(id)} active={chosen.includes(id)} onPress={() => pick(id)} />
         ))}
         <Pressable onPress={() => router.push('/food?s=routine')} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, justifyContent: 'center' })}>
-          <Micro color={C.accent}>{`${t('more_choices')} ›`}</Micro>
+          <Micro color={C.accentText}>{`${t('more_choices')} ›`}</Micro>
         </Pressable>
       </Row>
       <View />

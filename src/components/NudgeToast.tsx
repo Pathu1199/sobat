@@ -45,7 +45,7 @@ function NudgeCard({ nudge, respond }: { nudge: Nudge; respond: (action: 'done' 
         maxWidth: 520,
         alignSelf: 'center',
       }}>
-      <Micro color={C.accent}>{nudge.title}</Micro>
+      <Micro color={C.accentText}>{nudge.title}</Micro>
       <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body) }}>{nudge.body}</Text>
       <Text style={{ color: C.cyan, fontSize: F.small }}>{nudge.task}</Text>
 

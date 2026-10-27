@@ -88,11 +88,11 @@ export function YogaPanel() {
               onPress={() => setRoutine(active ? null : r.id)}
               accessibilityRole="button"
               style={({ pressed }) => ({ width: 150, minHeight: 84, padding: 12, borderRadius: 18, backgroundColor: active ? C.accent : C.card, borderWidth: S.hairline, borderColor: active ? C.accent : C.border, gap: 4, opacity: pressed ? 0.8 : 1, ...lift(1) })}>
-              <Text style={{ color: active ? C.white : C.text, fontSize: F.body, fontWeight: '500' }}>{t(`yoga_r_${r.id.replace('-', '_')}`)}</Text>
-              <Text style={{ color: active ? C.white : C.textFaint, fontSize: F.small }}>{`${r.minutes} ${t('act_min')} · ${r.asanas.length} ${t('yoga_asanas')}`}</Text>
+              <Text style={{ color: active ? C.onAccent : C.text, fontSize: F.body, fontWeight: '500' }}>{t(`yoga_r_${r.id.replace('-', '_')}`)}</Text>
+              <Text style={{ color: active ? C.onAccent : C.textFaint, fontSize: F.small }}>{`${r.minutes} ${t('act_min')} · ${r.asanas.length} ${t('yoga_asanas')}`}</Text>
               {active ? (
-                <Pressable onPress={() => logRoutine(r.id)} accessibilityRole="button" style={{ marginTop: 4, alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: C.white }}>
-                  <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '500' }}>{fill(t('yoga_log_min'), { n: r.minutes })}</Text>
+                <Pressable onPress={() => logRoutine(r.id)} accessibilityRole="button" style={{ marginTop: 4, alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: C.card }}>
+                  <Text style={{ color: C.accentText, fontSize: F.small, fontWeight: '500' }}>{fill(t('yoga_log_min'), { n: r.minutes })}</Text>
                 </Pressable>
               ) : null}
             </Pressable>
@@ -117,7 +117,7 @@ export function YogaPanel() {
             style={({ pressed }) => ({ flexBasis: wide ? '31%' : '47%', flexGrow: 1, backgroundColor: C.card, borderRadius: 18, borderWidth: S.hairline, borderColor: C.border, overflow: 'hidden', opacity: pressed ? 0.8 : 1, ...lift(1) })}>
             <View style={{ aspectRatio: 4 / 3, backgroundColor: C.cardAlt }}>
               {YOGA_IMAGES[a.id] ? <Image source={YOGA_IMAGES[a.id]} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={150} /> : <Text style={{ fontSize: 40, textAlign: 'center', marginTop: 28 }}>🧘</Text>}
-              {routine ? <View style={{ position: 'absolute', top: 8, left: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: C.white, fontSize: F.small, fontWeight: '500' }}>{i + 1}</Text></View> : null}
+              {routine ? <View style={{ position: 'absolute', top: 8, left: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: C.onAccent, fontSize: F.small, fontWeight: '500' }}>{i + 1}</Text></View> : null}
             </View>
             <View style={{ padding: 10, gap: 2 }}>
               <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }} numberOfLines={1}>{asanaName(a, lang)}</Text>
@@ -148,20 +148,20 @@ export function YogaPanel() {
             <Card still rail={C.accent}>
               <Row style={{ gap: 12, alignItems: 'flex-start' }}>
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ color: C.white, fontSize: F.body, fontWeight: '500' }}>{step + 1}</Text>
+                  <Text style={{ color: C.onAccent, fontSize: F.body, fontWeight: '500' }}>{step + 1}</Text>
                 </View>
                 <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body) }}>{steps[step]}</Text>
               </Row>
               <Row style={{ justifyContent: 'space-between', marginTop: 6 }}>
                 <Btn small tone="soft" label={t('yoga_prev')} icon={<Ionicons name="chevron-back" size={14} color={C.text} />} onPress={() => setStep((s) => Math.max(0, s - 1))} />
                 <Micro color={C.textFaint}>{`${step + 1} / ${steps.length}`}</Micro>
-                <Btn small tone={step < steps.length - 1 ? 'primary' : 'soft'} label={t('yoga_next')} icon={<Ionicons name="chevron-forward" size={14} color={step < steps.length - 1 ? C.white : C.text} />} onPress={() => setStep((s) => Math.min(steps.length - 1, s + 1))} />
+                <Btn small tone={step < steps.length - 1 ? 'primary' : 'soft'} label={t('yoga_next')} icon={<Ionicons name="chevron-forward" size={14} color={step < steps.length - 1 ? C.onAccent : C.text} />} onPress={() => setStep((s) => Math.min(steps.length - 1, s + 1))} />
               </Row>
             </Card>
             <View style={{ gap: 6 }}>
               {steps.map((s, i) => (
                 <Pressable key={i} onPress={() => setStep(i)} style={{ flexDirection: 'row', gap: 10, opacity: i === step ? 1 : 0.6 }}>
-                  <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '500', width: 20 }}>{i + 1}</Text>
+                  <Text style={{ color: C.accentText, fontSize: F.small, fontWeight: '500', width: 20 }}>{i + 1}</Text>
                   <Text style={{ flex: 1, color: C.text, fontSize: F.small, lineHeight: lh(F.small) }}>{s}</Text>
                 </Pressable>
               ))}
@@ -177,7 +177,7 @@ export function YogaPanel() {
                 {open.avoidIf.length ? <Small color={C.textFaint}>{`${t('yoga_avoid_if')}: ${open.avoidIf.map((f) => t(`yoga_f_${f}`)).join(', ')}`}</Small> : null}
               </View>
             </Row>
-            <Btn label={fill(t('yoga_log_min'), { n: open.minutes })} icon={<Ionicons name="checkmark" size={16} color={C.white} />} onPress={() => log(open, open.minutes)} />
+            <Btn label={fill(t('yoga_log_min'), { n: open.minutes })} icon={<Ionicons name="checkmark" size={16} color={C.onAccent} />} onPress={() => log(open, open.minutes)} />
           </ScrollView>
         ) : null}
       </Sheet>

@@ -63,7 +63,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
         <Stat label={t('sleep_title')} value={lastSleep ? `${formatMinutes(lastSleep.minutes)} · ${lastSleep.score}` : '--'} />
         <Divider />
         <Pressable onPress={() => router.push('/memory')}>
-          <Small color={C.accent}>{`${app.state.memory.length} ${t('mem_fact')} ›`}</Small>
+          <Small color={C.accentText}>{`${app.state.memory.length} ${t('mem_fact')} ›`}</Small>
         </Pressable>
       </Card>
       {lastOptions.length > 0 ? (
@@ -330,7 +330,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
               </Pressable>
               {app.state.chat.length > 0 ? (
                 <Pressable onPress={app.clearChat}>
-                  <Micro color={C.accent}>{`+ ${t('new_chat')}`}</Micro>
+                  <Micro color={C.accentText}>{`+ ${t('new_chat')}`}</Micro>
                 </Pressable>
               ) : null}
             </Row>
@@ -365,7 +365,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
                 </Row>
                 <Small color={C.textDim}>{t('coach_ai_off_hint')}</Small>
                 <Pressable onPress={() => router.push('/settings')}>
-                  <Micro color={C.accent}>{`${t('local_ai')} ›`}</Micro>
+                  <Micro color={C.accentText}>{`${t('local_ai')} ›`}</Micro>
                 </Pressable>
               </Card>
             ) : null}
@@ -384,7 +384,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
             {chatOpen ? app.state.chat.map((m) =>
               m.role === 'user' ? (
                 <View key={m.id} style={{ alignSelf: 'flex-end', maxWidth: '86%', backgroundColor: C.accent, borderRadius: 16, borderBottomRightRadius: 5, padding: 13 }}>
-                  <Text style={{ color: C.white, fontSize: F.body, lineHeight: lh(F.body) }}>{m.text}</Text>
+                  <Text style={{ color: C.onAccent, fontSize: F.body, lineHeight: lh(F.body) }}>{m.text}</Text>
                 </View>
               ) : (
                 <View key={m.id} style={{ gap: 10 }}>
@@ -453,7 +453,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
-                <Ionicons name="arrow-up" size={19} color={busy || !input.trim() ? C.textFaint : C.white} />
+                <Ionicons name="arrow-up" size={19} color={busy || !input.trim() ? C.textFaint : C.onAccent} />
               </Pressable>
             </View>
           </View>

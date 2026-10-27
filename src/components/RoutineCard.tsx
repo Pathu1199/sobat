@@ -199,7 +199,7 @@ export function RoutineCard() {
                 </View>
                 {done ? (
                   <Pressable onPress={() => unlog(s)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('meal_removed')}>
-                    <Micro color={C.accent}>{`${t('routine_logged')} ×`}</Micro>
+                    <Micro color={C.accentText}>{`${t('routine_logged')} ×`}</Micro>
                   </Pressable>
                 ) : skipped ? (
                   <Pressable onPress={() => app.toggleAction(skipKey(slot))} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('undo')}>
@@ -214,7 +214,7 @@ export function RoutineCard() {
               {!quiet ? (
                 <Row style={{ gap: 14, paddingLeft: 31, paddingBottom: 6 }}>
                   <Pressable onPress={() => router.push({ pathname: '/log', params: { slot: slot.id } })} accessibilityRole="button" accessibilityLabel={`${t('pattern_log_other')} · ${slotLabel(slot, lang)}`} hitSlop={10} style={{ paddingVertical: 6 }}>
-                    <Micro color={C.accent}>{`${t('pattern_log_other')} ›`}</Micro>
+                    <Micro color={C.accentText}>{`${t('pattern_log_other')} ›`}</Micro>
                   </Pressable>
                   {s.status === 'missed' ? (
                     <Pressable onPress={() => app.toggleAction(skipKey(slot))} hitSlop={6} accessibilityRole="button">
@@ -251,7 +251,7 @@ export function RoutineCard() {
         <Bar value={app.spentToday} max={routine.budgetMax} color={spendColor} marker={routine.budgetMin / Math.max(1, routine.budgetMax)} />
         <Row style={{ justifyContent: 'space-between' }}>
           <Small color={spendColor}>{spendNote}</Small>
-          <Micro color={C.accent}>{`+ ${t('routine_add_spend')}`}</Micro>
+          <Micro color={C.accentText}>{`+ ${t('routine_add_spend')}`}</Micro>
         </Row>
       </Pressable>
 

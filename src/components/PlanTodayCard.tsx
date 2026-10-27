@@ -97,7 +97,7 @@ export function PlanTodayCard() {
             </Text>
           </View>
           <Row style={{ gap: 6 }}>
-            <Micro color={C.accent}>{t('plan_open')}</Micro>
+            <Micro color={C.accentText}>{t('plan_open')}</Micro>
             <Ionicons name="chevron-forward" size={15} color={C.accent} />
           </Row>
         </Row>
@@ -116,7 +116,7 @@ export function PlanTodayCard() {
         return (
           <View key={meal.id} style={{ gap: 4 }}>
             <Row style={{ justifyContent: 'space-between' }}>
-              <Micro color={C.accent}>{`${mealName(meal)} · ${meal.time}`}</Micro>
+              <Micro color={C.accentText}>{`${mealName(meal)} · ${meal.time}`}</Micro>
               <Micro>{`${mt.kcal} kcal`}</Micro>
             </Row>
             <Row style={{ gap: 10 }}>

@@ -38,7 +38,7 @@ export default function Welcome() {
           <Pressable
             onPress={() => router.replace('/login')}
             style={{ backgroundColor: C.accent, paddingVertical: 9, paddingHorizontal: 18, borderRadius: 999 }}>
-            <Text style={{ color: C.white, fontWeight: '500', fontSize: F.small }}>{t('w_cta')}</Text>
+            <Text style={{ color: C.onAccent, fontWeight: '500', fontSize: F.small }}>{t('w_cta')}</Text>
           </Pressable>
         </View>
 
@@ -46,7 +46,7 @@ export default function Welcome() {
           <View style={{ marginBottom: 22 }}>
             <Logo size={wide ? 64 : 52} />
           </View>
-          <Text style={[MICRO, { color: C.accent, marginBottom: 16 }]}>{t('w_eyebrow')}</Text>
+          <Text style={[MICRO, { color: C.accentText, marginBottom: 16 }]}>{t('w_eyebrow')}</Text>
           <Text style={{ color: C.text, fontSize: wide ? F.number : F.title, fontWeight: '500', lineHeight: lh(wide ? F.number : F.title) }}>
             {t('w_headline')}
           </Text>
@@ -56,7 +56,7 @@ export default function Welcome() {
             <Pressable
               onPress={() => router.replace('/login')}
               style={{ backgroundColor: C.accent, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999 }}>
-              <Text style={{ color: C.white, fontWeight: '500', fontSize: F.body }}>{t('w_cta')}</Text>
+              <Text style={{ color: C.onAccent, fontWeight: '500', fontSize: F.body }}>{t('w_cta')}</Text>
             </Pressable>
             {Platform.OS === 'web' ? (
               <Pressable
@@ -131,7 +131,7 @@ export default function Welcome() {
           <View style={{ flexDirection: wide ? 'row' : 'column', gap: 14 }}>
             {[1, 2, 3].map((n) => (
               <View key={n} style={{ flex: 1, gap: 8 }}>
-                <Text style={{ color: C.accent, fontSize: F.title, fontWeight: '400' }}>{n}</Text>
+                <Text style={{ color: C.accentText, fontSize: F.title, fontWeight: '400' }}>{n}</Text>
                 <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t(`w_step${n}_t`)}</Text>
                 <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{t(`w_step${n}_b`)}</Text>
               </View>
@@ -143,7 +143,7 @@ export default function Welcome() {
           <Pressable
             onPress={() => router.replace('/login')}
             style={{ backgroundColor: C.accent, paddingVertical: 15, paddingHorizontal: 34, borderRadius: 999 }}>
-            <Text style={{ color: C.white, fontWeight: '500', fontSize: F.body }}>{t('w_cta')}</Text>
+            <Text style={{ color: C.onAccent, fontWeight: '500', fontSize: F.body }}>{t('w_cta')}</Text>
           </Pressable>
           <Text style={[MICRO, { color: C.textFaint }]}>{`${t('made_by')} · ${t('w_footer')}`}</Text>
         </View>

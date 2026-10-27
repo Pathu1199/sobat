@@ -106,7 +106,7 @@ export default function Onboarding() {
       </Card>
 
       <Card tone={C.accent}>
-        <Micro color={C.accent}>{t('target')}</Micro>
+        <Micro color={C.accentText}>{t('target')}</Micro>
         <Row style={{ alignItems: 'baseline', gap: 8 }}>
           <Text style={{ color: C.text, fontSize: F.number, fontWeight: '400' }}>{targets.kcal.toLocaleString()}</Text>
           <Text style={{ color: C.textDim, fontSize: F.title }}>kcal</Text>

@@ -83,11 +83,11 @@ export default function Login() {
             label={busy ? '…' : t(mode === 'in' ? 'login_signin' : 'login_signup')}
             onPress={() => run(() => (mode === 'in' ? authApi.signIn(email, password) : authApi.signUp(email, password, name)))}
             disabled={busy || !canGo}
-            icon={<Ionicons name={mode === 'in' ? 'log-in-outline' : 'person-add-outline'} size={16} color={C.white} />}
+            icon={<Ionicons name={mode === 'in' ? 'log-in-outline' : 'person-add-outline'} size={16} color={C.onAccent} />}
           />
           {mode === 'in' ? (
             <Pressable onPress={forgot} style={{ alignSelf: 'center' }}>
-              <Micro color={C.accent}>{t('login_forgot')}</Micro>
+              <Micro color={C.accentText}>{t('login_forgot')}</Micro>
             </Pressable>
           ) : null}
 
@@ -107,7 +107,7 @@ export default function Login() {
           ) : null}
 
           <Pressable onPress={() => setMode(mode === 'in' ? 'up' : 'in')} style={{ alignSelf: 'center', paddingVertical: 8 }}>
-            <Small color={C.accent}>{t(mode === 'in' ? 'login_switch_up' : 'login_switch_in')}</Small>
+            <Small color={C.accentText}>{t(mode === 'in' ? 'login_switch_up' : 'login_switch_in')}</Small>
           </Pressable>
         </View>
       </ScrollView>

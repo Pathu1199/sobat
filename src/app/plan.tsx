@@ -163,14 +163,14 @@ export default function PlanScreen() {
               }}
               accessibilityRole="button"
               style={{ flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: S.radiusSm, backgroundColor: active ? C.accent : C.card, borderWidth: S.hairline, borderColor: d === weekdayOf(today) ? C.accent : C.border }}>
-              <Text style={{ color: active ? C.white : C.text, fontSize: F.small, fontWeight: '500' }}>{t(`wd_${d}`)}</Text>
-              <Text style={{ color: active ? C.white : offDays.includes(d) ? C.textFaint : st === 'low' ? C.red : st === 'on' ? C.green : C.textFaint, fontSize: F.small, fontWeight: '500' }}>{offDays.includes(d) ? t('free_short') : k}</Text>
+              <Text style={{ color: active ? C.onAccent : C.text, fontSize: F.small, fontWeight: '500' }}>{t(`wd_${d}`)}</Text>
+              <Text style={{ color: active ? C.onAccent : offDays.includes(d) ? C.textFaint : st === 'low' ? C.red : st === 'on' ? C.green : C.textFaint, fontSize: F.small, fontWeight: '500' }}>{offDays.includes(d) ? t('free_short') : k}</Text>
             </Pressable>
           );
         })}
       </Row>
       <Pressable onPress={() => router.push('/food?s=routine')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('plan_follows_pattern')} style={{ paddingVertical: 2 }}>
-        <Micro color={C.accent}>{`${t('plan_follows_pattern')} ›`}</Micro>
+        <Micro color={C.accentText}>{`${t('plan_follows_pattern')} ›`}</Micro>
       </Pressable>
 
       <Pressable
@@ -213,7 +213,7 @@ export default function PlanScreen() {
         <Text style={{ color: statusColor, fontSize: F.body, fontWeight: '500', lineHeight: lh(F.body) }}>{fill(t(status === 'low' && totals.kcal >= targets.kcal * 0.85 ? 'plan_status_floor' : `plan_status_${status}`), { gap, floor })}</Text>
         {note ? <Small color={C.textDim}>{note}</Small> : null}
         <Row style={{ gap: 8, flexWrap: 'wrap' }}>
-          <Btn small tone={status === 'on' ? 'soft' : 'primary'} label={t('plan_balance')} icon={<Ionicons name="scale-outline" size={14} color={status === 'on' ? C.text : C.white} />} onPress={balance} style={{ flexGrow: 1 }} />
+          <Btn small tone={status === 'on' ? 'soft' : 'primary'} label={t('plan_balance')} icon={<Ionicons name="scale-outline" size={14} color={status === 'on' ? C.text : C.onAccent} />} onPress={balance} style={{ flexGrow: 1 }} />
           {dayIdx >= 1 && dayIdx <= 5 ? <Btn small tone="soft" label={t('plan_copy_weekdays')} icon={<Ionicons name="copy-outline" size={14} color={C.text} />} onPress={copyWeekdays} style={{ flexGrow: 1 }} /> : null}
           <Btn small tone="ghost" label={t('plan_rebuild')} icon={<Ionicons name="refresh" size={14} color={C.text} />} onPress={rebuild} style={{ flexGrow: 1 }} />
         </Row>
@@ -249,7 +249,7 @@ export default function PlanScreen() {
                     </Pressable>
                     <Pressable onPress={() => cycleUnit(meal.id, i, line)} style={{ minWidth: 64, alignItems: 'center' }}>
                       <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{qtyText(line.qty)}</Text>
-                      <Text style={{ color: C.accent, fontSize: F.small }} numberOfLines={1}>{`${unitName(info.unit)} · ${info.grams} g`}</Text>
+                      <Text style={{ color: C.accentText, fontSize: F.small }} numberOfLines={1}>{`${unitName(info.unit)} · ${info.grams} g`}</Text>
                     </Pressable>
                     <Pressable onPress={() => changeQty(meal.id, i, line, 1)} hitSlop={6} accessibilityLabel="+" style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                       <Ionicons name="add" size={16} color={C.text} />

@@ -61,7 +61,7 @@ export function GrocerySheet({ open, onClose, plan }: { open: boolean; onClose: 
                     aria-checked={on}
                     style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, paddingVertical: 4, opacity: pressed ? 0.7 : on ? 0.55 : 1 })}>
                     <View style={{ width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: on ? C.accent : C.borderStrong, backgroundColor: on ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                      {on ? <Ionicons name="checkmark" size={16} color={C.white} /> : null}
+                      {on ? <Ionicons name="checkmark" size={16} color={C.onAccent} /> : null}
                     </View>
                     <FoodThumb food={l.food} size={34} />
                     <View style={{ flex: 1 }}>

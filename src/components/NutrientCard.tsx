@@ -32,7 +32,7 @@ export function NutrientCard() {
       <Row style={{ justifyContent: 'space-between' }}>
         <Micro color={C.textDim}>{t('nutrition_today')}</Micro>
         <Pressable onPress={() => router.push('/foods?n=protein')} hitSlop={8}>
-          <Micro color={C.accent}>{`${t('find_sources')} ›`}</Micro>
+          <Micro color={C.accentText}>{`${t('find_sources')} ›`}</Micro>
         </Pressable>
       </Row>
       <MeterRow label={t('protein')} value={Math.round(totals.protein)} total={targets.proteinG} unit="g" color={C.violet} />

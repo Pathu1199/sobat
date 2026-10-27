@@ -99,7 +99,7 @@ export default function SettingsScreen() {
                   <Micro>{t('signed_in_as')}</Micro>
                   <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{auth.user.email}</Text>
                 </View>
-                {auth.isAdmin ? <Pill label={t('admin')} color={C.accent} textColor={C.white} /> : null}
+                {auth.isAdmin ? <Pill label={t('admin')} color={C.accent} textColor={C.onAccent} /> : null}
               </Row>
               <Row style={{ gap: 8, alignItems: 'center' }}>
                 <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: sync.status === 'synced' ? C.green : sync.status === 'error' || sync.status === 'blocked' ? C.red : sync.status === 'unconfigured' || sync.status === 'off' ? C.textFaint : C.amber }} />

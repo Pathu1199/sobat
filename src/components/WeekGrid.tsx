@@ -44,7 +44,7 @@ export function WeekGrid() {
                 <View style={{ position: 'absolute', left: 0, right: 0, bottom: Math.round((targets.kcal / maxKcal) * 76), height: 1, backgroundColor: C.borderStrong }} />
                 <View style={{ height: h, borderRadius: 6, backgroundColor: bandColor(d.kcalBand), opacity: d.logged ? 1 : 0.5 }} />
               </View>
-              <Text style={[MICRO, { color: isToday ? C.accent : C.textFaint }]}>{t(`wd_${weekdayOf(d.date)}`)}</Text>
+              <Text style={[MICRO, { color: isToday ? C.accentText : C.textFaint }]}>{t(`wd_${weekdayOf(d.date)}`)}</Text>
             </View>
           );
         })}

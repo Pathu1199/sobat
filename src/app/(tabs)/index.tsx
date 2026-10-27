@@ -184,7 +184,7 @@ export default function TodayScreen() {
         </Row>
         <Pressable onPress={() => router.push('/food?s=history')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <Micro>{`${dayMeals.length} ${dayMeals.length === 1 ? t('session_one') : t('session_many')}`}</Micro>
-          <Micro color={C.accent}>{` · ${t('history')} ›`}</Micro>
+          <Micro color={C.accentText}>{` · ${t('history')} ›`}</Micro>
         </Pressable>
       </Row>
       {!isToday ? (
@@ -193,7 +193,7 @@ export default function TodayScreen() {
           accessibilityRole="button"
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, opacity: pressed ? 0.7 : 1 })}>
           <Ionicons name="add-circle-outline" size={18} color={C.accent} />
-          <Small color={C.accent}>{fill(t('add_food_for'), { day: dayLabel })}</Small>
+          <Small color={C.accentText}>{fill(t('add_food_for'), { day: dayLabel })}</Small>
         </Pressable>
       ) : null}
       <TimingCard date={viewDate} />

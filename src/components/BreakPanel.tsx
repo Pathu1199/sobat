@@ -30,7 +30,7 @@ export function BreakPanel() {
       <Row style={{ justifyContent: 'space-between' }}>
         <Row style={{ gap: 8 }}>
           <Ionicons name="timer-outline" size={15} color={C.accent} />
-          <Micro color={C.accent}>{t('break_monitor')}</Micro>
+          <Micro color={C.accentText}>{t('break_monitor')}</Micro>
         </Row>
         <Micro>{`${t('screen_time')} ${formatMinutes(screen)}`}</Micro>
       </Row>

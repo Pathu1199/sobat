@@ -180,7 +180,7 @@ export function BreakOverlay() {
             }}
             accessibilityRole="button"
             style={{ backgroundColor: C.accent, paddingVertical: 12, paddingHorizontal: 28, borderRadius: 999 }}>
-            <Text style={{ color: C.white, fontSize: F.body, fontWeight: '500' }}>{t('break_done')}</Text>
+            <Text style={{ color: C.onAccent, fontSize: F.body, fontWeight: '500' }}>{t('break_done')}</Text>
           </Pressable>
         ) : (
           <View />

@@ -60,7 +60,7 @@ export function PlanCard() {
             <Small color={C.amber}>{t('plan_actual_gaining')}</Small>
           ) : (
             <Pressable onPress={() => router.push('/log')}>
-              <Small color={C.accent}>{t('plan_actual_none')}</Small>
+              <Small color={C.accentText}>{t('plan_actual_none')}</Small>
             </Pressable>
           )
         ) : null}

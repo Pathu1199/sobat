@@ -118,7 +118,7 @@ export default function SleepScreen() {
               <Row key={s.date} style={{ justifyContent: 'space-between' }}>
                 <Small>{s.date}</Small>
                 <Small>{formatMinutes(s.minutes)}</Small>
-                <Small color={s.score >= 70 ? C.accent : C.textDim}>{s.score}</Small>
+                <Small color={s.score >= 70 ? C.accentText : C.textDim}>{s.score}</Small>
               </Row>
             ))}
         </Card>
