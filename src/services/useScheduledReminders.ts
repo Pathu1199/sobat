@@ -11,7 +11,7 @@ import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useRecordOn } from '../store/useRecordOn';
 import { firebaseEnabled } from './firebase';
-import { cancel, scheduleAt, scheduleDaily, scheduledIds, setupAndroidChannel } from './notify';
+import { cancel, MEAL_CATEGORY, scheduleAt, scheduleDaily, scheduledIds, setMealCategory, setupAndroidChannel } from './notify';
 import { useAuth } from './useAuth';
 import { useMinute } from './useClock';
 import { useMantra } from './useMantra';
@@ -105,6 +105,14 @@ export function useScheduledReminders() {
       stale = true;
     };
   }, [known, active, sleepCheckin, water, dayReview, quietStartHour, quietEndHour, lang, breaksJson, mantraText]);
+
+  // "Ate as planned" on the meal-time prompt, in the person's language; registered before the prompts fire, kept current on a language change.
+  useEffect(() => {
+    if (Platform.OS === 'web' || !known || !active) return;
+    setMealCategory(makeT(lang)('menu_ate_planned')).catch(() => {
+      // Without the button the prompt still opens Today.
+    });
+  }, [known, active, lang]);
 
   // Slots done or skipped today (a meal the app filled in counts as eaten), as one string so the plan below only moves when the set does.
   const doneKey = useMemo(() => {
@@ -215,7 +223,7 @@ export function useScheduledReminders() {
           // A moment already past would fire at once; the next tick plans the rest.
           if (at.getTime() <= now) continue;
           try {
-            await scheduleAt(id, at, r.title, r.body);
+            await scheduleAt(id, at, r.title, r.body, { data: r.data, category: r.category === 'meal' ? MEAL_CATEGORY : undefined });
           } catch {
             // One refused reminder must not stop the rest.
           }

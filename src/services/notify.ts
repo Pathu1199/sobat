@@ -193,13 +193,13 @@ export async function scheduleRepeating(id: string, seconds: number, title: stri
   });
 }
 
-/** A one-off reminder at a clock time on a date. Fires with the app closed. */
-export async function scheduleAt(id: string, at: Date, title: string, body: string): Promise<void> {
+/** A one-off reminder at a clock time on a date. Fires with the app closed. `data` rides along for a tap; `category` adds the buttons registered under it. */
+export async function scheduleAt(id: string, at: Date, title: string, body: string, extra?: { data?: Record<string, string>; category?: string }): Promise<void> {
   const n = loadNative();
   if (!n) return;
   await n.scheduleNotificationAsync({
     identifier: id,
-    content: { title, body },
+    content: { title, body, ...(extra?.data ? { data: extra.data } : {}), ...(extra?.category ? { categoryIdentifier: extra.category } : {}) },
     trigger: { type: n.SchedulableTriggerInputTypes.DATE, date: at, channelId: 'sobat' },
   });
 }
@@ -230,4 +230,80 @@ export async function cancelAll(): Promise<void> {
   const n = loadNative();
   if (!n) return;
   await n.cancelAllScheduledNotificationsAsync();
+}
+
+/** The meal-time prompt's buttons. The docs: no ':' or '-' in a category id. */
+export const MEAL_CATEGORY = 'sobatmeal';
+/** "Ate as planned". A tap on the notification itself arrives as expo-notifications' DEFAULT_ACTION_IDENTIFIER. */
+export const ATE_ACTION = 'ate';
+
+/**
+ * Registers "Ate as planned" in the person's language. It opens the app,
+ * which logs the meal (useNotificationResponses): with the app killed, a
+ * button that leaves it closed reaches no listener on either platform
+ * without a background task, and a tap that logged nothing would break the
+ * calorie record.
+ */
+export async function setMealCategory(buttonTitle: string): Promise<void> {
+  const n = loadNative();
+  if (!n) return;
+  await n.setNotificationCategoryAsync(MEAL_CATEGORY, [{ identifier: ATE_ACTION, buttonTitle, options: { opensAppToForeground: true } }]);
+}
+
+/**
+ * A tap on a notification: on its body ('open') or on "Ate as planned"
+ * ('ate'), with the notification's id and data. `key` names this one tap on
+ * this one delivery, so the same tap read twice (at start and from the
+ * listener) is acted on once, while a reminder that comes back every day is
+ * a new tap each day.
+ */
+export type TapResponse = { id: string; action: 'open' | 'ate'; data: Record<string, unknown>; key: string };
+type NativeResponse = Parameters<Parameters<NativeModule['addNotificationResponseReceivedListener']>[0]>[0];
+
+function toTap(r: NativeResponse): TapResponse {
+  const id = r.notification.request.identifier;
+  const action = r.actionIdentifier === ATE_ACTION ? 'ate' : 'open';
+  return { id, action, data: r.notification.request.content.data ?? {}, key: `${id}|${action}|${r.notification.date}` };
+}
+
+/** Calls back on every tap while the app runs; returns the way to stop listening. Nothing on the web. */
+export function onTap(cb: (r: TapResponse) => void): () => void {
+  const n = loadNative();
+  if (!n) return () => {};
+  const sub = n.addNotificationResponseReceivedListener((r) => cb(toTap(r)));
+  return () => sub.remove();
+}
+
+/** The tap that opened the app, if one did and it has not been cleared. */
+export function lastTap(): TapResponse | null {
+  const n = loadNative();
+  if (!n) return null;
+  try {
+    const r = n.getLastNotificationResponse();
+    return r ? toTap(r) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Forgets the last tap once it has been acted on, so a remount does not act on it again. */
+export function clearLastTap(): void {
+  const n = loadNative();
+  if (!n) return;
+  try {
+    n.clearLastNotificationResponse();
+  } catch {
+    // Nothing to clear.
+  }
+}
+
+/** Takes a notification off the tray once its button has done its work. */
+export async function dismiss(id: string): Promise<void> {
+  const n = loadNative();
+  if (!n) return;
+  try {
+    await n.dismissNotificationAsync(id);
+  } catch {
+    // Already gone.
+  }
 }

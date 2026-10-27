@@ -1097,6 +1097,7 @@ const en: Dict = {
   rem_planweek_title: 'Plan next week', rem_planweek_body: 'Look over next week\'s menu and save it.',
   rem_report_title: 'Your week', rem_report_full: '{n} of {m} days complete', rem_report_avg: 'average {avg} kcal a day, goal {goal}',
   rem_report_weight: 'weight {kg} kg in {weeks} weeks',
+  prompt_logged: 'Logged as planned', prompt_already: 'Already on the record',
 };
 
 const mr: Dict = {
@@ -2198,6 +2199,7 @@ const mr: Dict = {
   rem_planweek_title: 'पुढच्या आठवड्याचं नियोजन', rem_planweek_body: 'पुढच्या आठवड्याचा मेन्यू पाहा आणि जतन करा.',
   rem_report_title: 'तुमचा आठवडा', rem_report_full: '{m} पैकी {n} दिवस पूर्ण', rem_report_avg: 'रोज सरासरी {avg} kcal, लक्ष्य {goal}',
   rem_report_weight: 'वजन {weeks} आठवड्यांत {kg} किलो',
+  prompt_logged: 'ठरल्याप्रमाणे नोंदलं', prompt_already: 'आधीच नोंदलेलं आहे',
 };
 
 const hi: Dict = {
@@ -3297,6 +3299,7 @@ const hi: Dict = {
   rem_planweek_title: 'अगले हफ़्ते की योजना', rem_planweek_body: 'अगले हफ़्ते का मेन्यू देखें और सहेजें.',
   rem_report_title: 'आपका हफ़्ता', rem_report_full: '{m} में से {n} दिन पूरे', rem_report_avg: 'रोज़ औसत {avg} kcal, लक्ष्य {goal}',
   rem_report_weight: 'वज़न {weeks} हफ़्तों में {kg} किलो',
+  prompt_logged: 'तय के मुताबिक दर्ज किया', prompt_already: 'पहले से दर्ज है',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

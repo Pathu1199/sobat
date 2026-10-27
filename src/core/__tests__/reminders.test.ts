@@ -14,6 +14,7 @@ import {
   promptOutcome,
   reportMonday,
   reportText,
+  tapPlan,
   tapRoute,
   weekReport,
   type ReminderInput,
@@ -351,6 +352,46 @@ describe('a tap on a notification', () => {
     expect(tapRoute({ kind: 'fill', date: '2026-02-30' }, '2026-10-12')).toBe('/');
     expect(tapRoute({ kind: 'planweek', date: 7 }, '2026-10-12')).toBe('/plan');
     expect(tapRoute({}, '2026-10-12')).toBe('/');
+  });
+
+  // A meal-time prompt for lunch on 12 October, tapped on its button or its body.
+  const prompt = { kind: 'slot', date: '2026-10-12', slotId: 'lunch' };
+  const tap = (action: 'open' | 'ate', o: { data?: Record<string, unknown>; today?: string; meals?: Meal[]; skips?: { id: string; date: string; slotId: string }[] } = {}) =>
+    tapPlan({ action, data: o.data ?? prompt, today: o.today ?? '2026-10-12', menuOn: (date) => ({ ...menu, date }), meals: o.meals ?? [], skips: o.skips ?? [] });
+
+  it('"Ate as planned" logs that date\'s slot while it is open and opens Today on that day; the body only opens the day', () => {
+    expect(tap('ate')).toEqual({ route: '/', ate: { date: '2026-10-12', slotId: 'lunch', outcome: { kind: 'log' } } });
+    expect(tap('open')).toEqual({ route: '/', ate: null });
+    // Tapped the next morning: yesterday's lunch, and Today opens on yesterday.
+    expect(tap('ate', { today: '2026-10-13' })).toEqual({ route: '/?date=2026-10-12', ate: { date: '2026-10-12', slotId: 'lunch', outcome: { kind: 'log' } } });
+  });
+
+  it('confirms the meal the app filled in meanwhile, and does nothing for a slot already eaten or skipped', () => {
+    expect(tap('ate', { meals: [lunch('auto')] }).ate?.outcome).toEqual({ kind: 'confirm', mealId: 'm1' });
+    expect(tap('ate', { meals: [lunch('manual')] }).ate?.outcome).toEqual({ kind: 'none' });
+    expect(tap('ate', { skips: [{ id: skipId('2026-10-12', 'lunch'), date: '2026-10-12', slotId: 'lunch' }] }).ate?.outcome).toEqual({ kind: 'none' });
+  });
+
+  it('never logs the meal twice: once the meal it logged is there, the same tap does nothing', () => {
+    expect(tap('ate', { meals: [lunch('plan')] }).ate?.outcome).toEqual({ kind: 'none' });
+  });
+
+  it('logs nothing into a day still to come, nor from a notification whose data is damaged or not a meal-time prompt', () => {
+    expect(tap('ate', { today: '2026-10-11' })).toEqual({ route: '/?date=2026-10-12', ate: null });
+    expect(tap('ate', { data: { ...prompt, date: '2026-02-30' } }).ate).toBeNull();
+    expect(tap('ate', { data: { kind: 'slot', date: '2026-10-12' } }).ate).toBeNull();
+    expect(tap('ate', { data: { kind: 'fill', date: '2026-10-12', slotId: 'lunch' } })).toEqual({ route: '/', ate: null });
+    expect(tap('ate', { data: {} })).toEqual({ route: '/', ate: null });
+  });
+
+  it('says what the button did in English, Marathi and Hindi, in plain words', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const words = makeT(lang);
+      for (const k of ['prompt_logged', 'prompt_already']) {
+        expect(words(k), `${lang} ${k}`).not.toBe(k);
+        expect(words(k), `${lang} ${k}`).not.toMatch(/[\u0966-\u096F\u2014{}]/);
+      }
+    }
   });
 });
 

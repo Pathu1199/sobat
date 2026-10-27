@@ -245,6 +245,29 @@ export function promptOutcome(input: { menu: DayMenu; meals: Meal[]; skips: Slot
   return there.length > 0 ? { kind: 'none' } : { kind: 'log' };
 }
 
+export type TapPlan = {
+  /** The page the tap opens (`tapRoute`). */
+  route: string;
+  /** What "Ate as planned" does to the prompt's slot (`promptOutcome`); null for a tap on the body, any other notification, or a day still to come. */
+  ate: { date: ISODate; slotId: string; outcome: PromptOutcome } | null;
+};
+
+/**
+ * What a tap on a notification does now, worked out on the store as it is
+ * when the tap arrives. The body opens the page the notification is about.
+ * "Ate as planned" on a meal-time prompt also acts on that date's slot: logs
+ * its planned meal while it is open, confirms the one the app filled in, or
+ * nothing once it is settled, so a tap that arrives twice never logs twice;
+ * and nothing is logged into a day still to come.
+ */
+export function tapPlan(input: { action: 'open' | 'ate'; data: Record<string, unknown>; today: ISODate; menuOn: (date: ISODate) => DayMenu; meals: Meal[]; skips: SlotSkip[] }): TapPlan {
+  const { data } = input;
+  const route = tapRoute(data, input.today);
+  if (input.action !== 'ate' || data.kind !== 'slot' || !isIsoDate(data.date) || typeof data.slotId !== 'string' || data.date > input.today) return { route, ate: null };
+  const outcome = promptOutcome({ menu: input.menuOn(data.date), meals: input.meals, skips: input.skips, slotId: data.slotId });
+  return { route, ate: { date: data.date, slotId: data.slotId, outcome } };
+}
+
 /** A reminder the OS repeats every day at one clock time, app closed or not. */
 export type DailyReminder = { id: string; hour: number; minute: number; title: string; body: string };
 

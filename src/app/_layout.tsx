@@ -19,6 +19,7 @@ import { useCoachMonitor } from '../services/useCoachMonitor';
 import { BreakMonitorProvider } from '../services/useBreakMonitor';
 import { usePhotoQueue } from '../services/usePhotoQueue';
 import { useScheduledReminders } from '../services/useScheduledReminders';
+import { useNotificationResponses } from '../services/useNotificationResponses';
 import { useSteps } from '../services/useSteps';
 import { useUsageTracker } from '../services/useUsageTracker';
 import { usePushSync } from '../services/usePushSync';
@@ -81,6 +82,7 @@ function Themed({ children }: { children: React.ReactNode }) {
 function AppShell() {
   useUsageTracker();
   useScheduledReminders();
+  useNotificationResponses();
   useSteps();
   usePhotoQueue();
   useWorkSchedule();
