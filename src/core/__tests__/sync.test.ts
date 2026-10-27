@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_STATE } from '../../store/defaults';
-import { applyCloud, bindStart, encodeSavedBase, forCloud, isPristine, landMerge, merge3, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
+import { applyCloud, bindStart, encodeSavedBase, forCloud, fromNewerApp, isPristine, landMerge, merge3, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
 import type { AppState, Meal } from '../types';
 
 const meal = (id: string, at: string, kcal = 300): Meal => ({
@@ -281,5 +281,29 @@ describe('binding to an account', () => {
 
   it('a store that could not be read is neither wiped nor claimed: what is on disk is not known to be anyone\'s', () => {
     expect(bindStart({ uid: 'b', owner: 'a', saved: null, loaded: false })).toEqual({ wipe: false, tag: false, base: null, modifiedTime: null });
+  });
+});
+
+describe('a file written by a newer build', () => {
+  // `fasting` stands for any key a later build adds and this one has never heard of.
+  const withKey = (s: CloudState, v: unknown) => ({ ...s, fasting: v }) as unknown as CloudState;
+  const fastingOf = (s: CloudState) => (s as unknown as Record<string, unknown>).fasting;
+  const plain = cloudOf(used([meal('a', '2026-10-10T08:00:00.000Z')]));
+
+  it('keeps keys this build does not know: dropping them would reach every device as a deletion', () => {
+    expect(fastingOf(merge3(withKey(plain, { on: true }), plain, withKey(plain, { on: true })))).toEqual({ on: true });
+    expect(fastingOf(merge3(null, plain, withKey(plain, { on: true })))).toEqual({ on: true });
+  });
+
+  it('merges such a key like any other value: changed elsewhere arrives, carried here and unchanged yields', () => {
+    expect(fastingOf(merge3(withKey(plain, { on: true }), withKey(plain, { on: true }), withKey(plain, { on: false })))).toEqual({ on: false });
+    expect(fastingOf(merge3(withKey(plain, { on: true }), withKey(plain, { on: false }), withKey(plain, { on: true })))).toEqual({ on: false });
+  });
+
+  it('is recognised by its version, so this build never writes over it', () => {
+    expect(fromNewerApp({ ...plain, version: 7 }, 6)).toBe(true);
+    expect(fromNewerApp({ ...plain, version: 6 }, 6)).toBe(false);
+    expect(fromNewerApp({ ...plain, version: 5 }, 6)).toBe(false);
+    expect(fromNewerApp({ ...plain, version: undefined as unknown as number }, 6)).toBe(false);
   });
 });

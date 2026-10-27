@@ -4,7 +4,7 @@ import type { AppState } from '../core/types';
 import { DEFAULT_ROUTINE, DINNER_SLOT } from '../core/routine';
 import { slotShare } from '../core/pattern';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
-import { DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER } from './defaults';
+import { DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER, STATE_VERSION } from './defaults';
 
 /** The shape break settings had in version 1. */
 type V1BreakSettings = {
@@ -123,7 +123,7 @@ export function migrateState(raw: unknown): AppState {
   return {
     ...EMPTY_STATE,
     ...(raw as Partial<AppState>),
-    version: 6,
+    version: STATE_VERSION,
     profile,
     settings,
     breakSettings,

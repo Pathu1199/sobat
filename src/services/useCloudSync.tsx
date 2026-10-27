@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
-import { bindStart, encodeSavedBase, forCloud, landMerge, merge3, readSavedBase, sameCloud, signOutPlan, type CloudState } from '../core/sync';
+import { bindStart, encodeSavedBase, forCloud, fromNewerApp, landMerge, merge3, readSavedBase, sameCloud, signOutPlan, type CloudState } from '../core/sync';
 import { CLOUD_BASE_KEY, useApp } from '../store/AppProvider';
-import { EMPTY_STATE } from '../store/defaults';
+import { EMPTY_STATE, STATE_VERSION } from '../store/defaults';
 import { CloudError, cloudConfigured, deleteData, getData, putData, type RemoteFile } from './cloud';
 import { authApi, useAuth } from './useAuth';
 
@@ -23,6 +23,8 @@ import { authApi, useAuth } from './useAuth';
  *
  * The base every merge is worked out against is saved beside the state, in
  * the same storage call, so a restart still knows which side changed what.
+ * A file written by a newer build is never merged or written over: this one
+ * would drop what it does not understand. The status says to update.
  */
 export type SyncStatus = 'unconfigured' | 'off' | 'syncing' | 'synced' | 'pending' | 'error' | 'blocked';
 
@@ -119,6 +121,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     async (pull: boolean, token: string, uid: string, live: () => boolean) => {
       const extra = { name: stateRef.current.profile.name || user?.name || undefined, platform: Platform.OS };
       for (let attempt = 0; attempt < MAX_ROUNDS; attempt++) {
+        if (base.current && fromNewerApp(base.current, STATE_VERSION)) throw new CloudError(426, 'update_app');
         const local = forCloud(stateRef.current);
         const changed = base.current === null || !sameCloud(local, base.current);
         let remote: RemoteFile;
@@ -140,6 +143,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         if (!changed && remote.modifiedTime === baseModifiedTime.current) return;
 
         const theirs = parseRemote(remote);
+        if (theirs && fromNewerApp(theirs, STATE_VERSION)) throw new CloudError(426, 'update_app');
         const merged = theirs ? merge3(base.current, local, theirs) : local;
         if (!sameCloud(merged, local)) {
           // Onto the state as it is when this lands, not as it was when the request went out.

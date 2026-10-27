@@ -17,7 +17,8 @@ export const DEVICE_SETTINGS = ['ollamaUrl', 'ollamaFallbackUrl', 'textModel', '
 type DeviceKey = (typeof DEVICE_SETTINGS)[number];
 
 /** Per-device caches that have no business in the account. */
-type LocalKey = 'chat' | 'photoQueue' | 'usage' | 'tips';
+const LOCAL_KEYS = ['chat', 'photoQueue', 'usage', 'tips'] as const;
+type LocalKey = (typeof LOCAL_KEYS)[number];
 
 export type CloudSettings = Omit<Settings, DeviceKey>;
 export type CloudState = Omit<AppState, LocalKey | 'settings'> & { settings: CloudSettings };
@@ -173,7 +174,29 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
     }
   }
 
+  // Keys this build does not know were written by a newer one. They are
+  // merged like any single value and never dropped: a dropped key would reach
+  // every other device as a deletion. A device that never had one has not
+  // changed it.
+  const known = new Set<string>([...COLLECTIONS.map((c) => c.key), ...SINGLETONS, ...LOCAL_KEYS]);
+  const l = local as unknown as AnyRecord;
+  const r = remote as unknown as AnyRecord;
+  for (const key of new Set([...Object.keys(l), ...Object.keys(r)])) {
+    if (known.has(key)) continue;
+    const mine = key in l && (base === null || stable(l[key]) !== stable((b as AnyRecord)[key]));
+    const v = mine ? l[key] : r[key];
+    if (v !== undefined) out[key] = v;
+  }
+
   return out as unknown as CloudState;
+}
+
+/**
+ * A file written by a build newer than this one. This build must not write
+ * over it: whatever it does not understand, it would drop or turn back.
+ */
+export function fromNewerApp(file: CloudState, supported: number): boolean {
+  return typeof file.version === 'number' && file.version > supported;
 }
 
 /**
