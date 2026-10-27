@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { GUIDE } from '../data/guide';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Card, Divider, Screen, Small } from '../ui/components';
+import { Btn, Card, Divider, Screen, Small } from '../ui/components';
 import { Logo } from '../ui/Logo';
 import { C, F, lh } from '../ui/theme';
 
@@ -14,6 +15,7 @@ export default function GuideScreen() {
   const lang = state.profile.lang;
   const t = makeT(lang);
   const sections = GUIDE[lang] ?? GUIDE.en;
+  const router = useRouter();
   const [open, setOpen] = useState<string>(sections[0]?.id ?? '');
 
   return (
@@ -22,10 +24,13 @@ export default function GuideScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 }}>
           <Logo size={36} />
           <View style={{ flex: 1 }}>
-            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('guide_title')}</Text>
+            <Text accessibilityRole="header" style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' }}>
+              {t('guide_title')}
+            </Text>
             <Small>{t('guide_sub')}</Small>
           </View>
         </View>
+        <Btn small tone="soft" label={t('show_tour')} onPress={() => router.push('/tour?from=settings')} />
       </Card>
       <Card>
         {sections.map((s, i) => {
@@ -41,7 +46,7 @@ export default function GuideScreen() {
                 <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name={s.icon as keyof typeof Ionicons.glyphMap} size={16} color={on ? C.accent : C.textDim} />
                 </View>
-                <Text style={{ flex: 1, color: C.text, fontSize: F.body, fontWeight: '500' }}>{s.title}</Text>
+                <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{s.title}</Text>
                 <Ionicons name={on ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />
               </Pressable>
               {on ? (

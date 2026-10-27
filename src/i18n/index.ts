@@ -1071,6 +1071,12 @@ const en: Dict = {
   progress_avg: 'Full days of the last 7: {avg} kcal a day on average, goal {goal}', progress_avg_none: 'No full day in the last 7 days yet.',
   progress_badges: '{n} of {of} badges', progress_climb_a11y: '{climb}: {level}, {points}, {badges}',
   nut_had_a11y: '{name}, a good source eaten today. Shows foods with it.', nut_none_a11y: '{name}, no good source eaten yet today. Shows foods with it.',
+  setup_step: 'Step {n} of 4', setup_lang_title: 'Choose your language', setup_about_title: 'About you', setup_weight_title: 'Your weight and goal',
+  setup_done_title: 'Your daily target', setup_eg: 'e.g. {n}', setup_back: 'Back', setup_range: 'Healthy for your height: {min} to {max} kg',
+  setup_bad_year: 'Write the year you were born in four digits. Sobat is for adults.', setup_bad_height: 'Height in centimetres, between 120 and 230.',
+  setup_bad_weight: 'Weight in kilograms, between 30 and 300.', setup_bad_goal: 'Choose a goal from {min} to 300 kg: {min} kg is the lowest healthy weight for your height.',
+  setup_target_line: 'Eat about {kcal} kcal a day, with about {protein} g of protein.', setup_goal_line: 'At {rate} kg a week you could reach {goal} kg around {date}.',
+  setup_hold_line: 'For now the plan keeps your weight where it is.',
 };
 
 const mr: Dict = {
@@ -2146,6 +2152,12 @@ const mr: Dict = {
   progress_avg: 'मागच्या 7 दिवसांतले पूर्ण दिवस: रोज सरासरी {avg} kcal, लक्ष्य {goal}', progress_avg_none: 'मागच्या 7 दिवसांत अजून एकही पूर्ण दिवस नाही.',
   progress_badges: '{of} पैकी {n} बॅज', progress_climb_a11y: '{climb}: {level}, {points}, {badges}',
   nut_had_a11y: '{name}, आज चांगला स्रोत खाल्ला. ते असलेले पदार्थ दाखवतो.', nut_none_a11y: '{name}, आज अजून चांगला स्रोत खाल्ला नाही. ते असलेले पदार्थ दाखवतो.',
+  setup_step: '4 पैकी पायरी {n}', setup_lang_title: 'तुमची भाषा निवडा', setup_about_title: 'तुमच्याबद्दल', setup_weight_title: 'तुमचं वजन आणि लक्ष्य',
+  setup_done_title: 'तुमचं रोजचं लक्ष्य', setup_eg: 'उदा. {n}', setup_back: 'मागे', setup_range: 'तुमच्या उंचीसाठी योग्य वजन: {min} ते {max} किलो',
+  setup_bad_year: 'जन्मवर्ष चार अंकांत लिहा. Sobat प्रौढांसाठी आहे.', setup_bad_height: 'उंची सेंटिमीटरमध्ये, 120 ते 230 दरम्यान.',
+  setup_bad_weight: 'वजन किलोमध्ये, 30 ते 300 दरम्यान.', setup_bad_goal: 'लक्ष्य {min} ते 300 किलो दरम्यान निवडा: तुमच्या उंचीसाठी {min} किलो हे सर्वात कमी योग्य वजन आहे.',
+  setup_target_line: 'रोज साधारण {kcal} kcal खा, त्यात साधारण {protein} ग्रॅ प्रथिने.', setup_goal_line: 'आठवड्याला {rate} किलो या वेगाने तुम्ही साधारण {date} पर्यंत {goal} किलो गाठू शकता.',
+  setup_hold_line: 'सध्या नियोजन तुमचं वजन आहे तसंच ठेवतं.',
 };
 
 const hi: Dict = {
@@ -3219,6 +3231,12 @@ const hi: Dict = {
   progress_avg: 'पिछले 7 दिनों के पूरे दिन: रोज़ औसत {avg} kcal, लक्ष्य {goal}', progress_avg_none: 'पिछले 7 दिनों में अभी कोई पूरा दिन नहीं.',
   progress_badges: '{of} में से {n} बैज', progress_climb_a11y: '{climb}: {level}, {points}, {badges}',
   nut_had_a11y: '{name}, आज अच्छा स्रोत खाया. जिन खानों में यह है, वे दिखाता है.', nut_none_a11y: '{name}, आज अभी कोई अच्छा स्रोत नहीं खाया. जिन खानों में यह है, वे दिखाता है.',
+  setup_step: '4 में से चरण {n}', setup_lang_title: 'अपनी भाषा चुनें', setup_about_title: 'आपके बारे में', setup_weight_title: 'आपका वज़न और लक्ष्य',
+  setup_done_title: 'आपका रोज़ का लक्ष्य', setup_eg: 'जैसे {n}', setup_back: 'पीछे', setup_range: 'आपकी ऊँचाई के लिए सही वज़न: {min} से {max} किलो',
+  setup_bad_year: 'जन्म का साल चार अंकों में लिखें. Sobat वयस्कों के लिए है.', setup_bad_height: 'ऊँचाई सेंटीमीटर में, 120 से 230 के बीच.',
+  setup_bad_weight: 'वज़न किलो में, 30 से 300 के बीच.', setup_bad_goal: 'लक्ष्य {min} से 300 किलो के बीच चुनें: आपकी ऊँचाई के लिए {min} किलो सबसे कम सही वज़न है.',
+  setup_target_line: 'रोज़ लगभग {kcal} kcal खाएँ, जिसमें लगभग {protein} ग्राम प्रोटीन हो.', setup_goal_line: 'हफ़्ते में {rate} किलो की रफ़्तार से आप लगभग {date} तक {goal} किलो तक पहुँच सकते हैं.',
+  setup_hold_line: 'अभी योजना आपका वज़न जैसा है वैसा रखती है.',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
