@@ -133,13 +133,18 @@ function isSwitches(v: unknown): v is Record<string, unknown> {
   return isRecord(v) && !Array.isArray(v);
 }
 
-/** Each known switch true or false, anything else its default; unknown keys are dropped, and anything not a record of switches gets the defaults. */
+/**
+ * Each known switch true or false. One that is missing takes its default; one
+ * stored as anything but a boolean reads off, so a corrupt value never turns
+ * anything on. Unknown keys are dropped, and anything not a record of switches
+ * gets the defaults.
+ */
 function upgradeSwitches<T extends Record<string, boolean>>(old: unknown, defaults: T): T {
   const out = { ...defaults };
   if (!isSwitches(old)) return out;
   for (const key of Object.keys(defaults) as (keyof T & string)[]) {
     const v = old[key];
-    if (typeof v === 'boolean') out[key] = v as T[keyof T & string];
+    if (v !== undefined) out[key] = (v === true) as T[keyof T & string];
   }
   return out;
 }
@@ -163,8 +168,10 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   if (!isPositive(s.walkGoalMin)) s.walkGoalMin = defaults.walkGoalMin;
   s.features = upgradeSwitches(raw.features, defaults.features);
   s.reminders = upgradeSwitches(raw.reminders, defaults.reminders);
-  // Someone who switched the app's reminders off before these switches existed does not get the meal-time prompt switched on by an update.
-  if (!isSwitches(raw.reminders) && raw.nudgesEnabled === false) s.reminders.mealPrompt = false;
+  // A meal-time prompt nobody set, or one that is not true or false, follows the app's reminders switch: someone who switched those
+  // off before these switches existed, or whose stored switch is corrupt, does not get the prompt switched on by an update.
+  const prompt = isSwitches(raw.reminders) ? raw.reminders.mealPrompt : undefined;
+  if (typeof prompt !== 'boolean') s.reminders.mealPrompt = raw.nudgesEnabled !== false;
   // A tab list or a card list from sync or an old file can never hide Today, ➕ or Me, or lose a card for good.
   s.tabs = normalizeTabs(s.tabs);
   s.todayCards = normalizeTodayCards(s.todayCards);

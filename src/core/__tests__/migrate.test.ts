@@ -653,10 +653,23 @@ describe('settings in an odd shape, from sync or an old file', () => {
     expect(settingsOf({ todayCards: { menu: true } }).todayCards).toEqual(DEFAULT_TODAY_CARDS);
   });
 
-  it('the feature and reminder switches: each known one true or false, anything else its default, unknown keys dropped', () => {
-    const s = settingsOf({ features: { mantra: true, breaks: 'yes', autoPlates: 1, dark: true }, reminders: { mealPrompt: null, planWeek: true, weeklyReport: [], extra: false } });
+  it('the feature and reminder switches: each known one true or false, one stored as anything else off, a missing one its default, unknown keys dropped', () => {
+    const s = settingsOf({ features: { mantra: true, breaks: 'yes', autoPlates: 1, dark: true }, reminders: { planWeek: true, weeklyReport: [], fillYesterday: 'true', extra: false } });
     expect(s.features).toEqual({ breaks: false, mantra: true, autoPlates: false });
+    // The meal-time prompt is missing and the app's reminders are on (v1's), so it takes its default, on.
     expect(s.reminders).toEqual({ mealPrompt: true, fillYesterday: false, planWeek: true, weeklyReport: false });
+  });
+
+  it('a corrupt switch never turns a reminder on: the meal-time prompt stored as anything but true or false follows the app\'s reminders switch', () => {
+    expect(settingsOf({ reminders: { mealPrompt: null }, nudgesEnabled: false }).reminders.mealPrompt).toBe(false);
+    expect(settingsOf({ reminders: { mealPrompt: 'yes', planWeek: true }, nudgesEnabled: false }).reminders).toEqual({ ...REMINDERS, mealPrompt: false, planWeek: true });
+    expect(settingsOf({ reminders: { mealPrompt: null } }).reminders.mealPrompt).toBe(true);
+    // A missing one does the same: on with the app's reminders on, off with them off.
+    expect(settingsOf({ reminders: { planWeek: true } }).reminders.mealPrompt).toBe(true);
+    expect(settingsOf({ reminders: { planWeek: true }, nudgesEnabled: false }).reminders.mealPrompt).toBe(false);
+    // One the person chose stays, whatever the other switch says.
+    expect(settingsOf({ reminders: { mealPrompt: true }, nudgesEnabled: false }).reminders.mealPrompt).toBe(true);
+    expect(settingsOf({ reminders: { mealPrompt: false } }).reminders.mealPrompt).toBe(false);
   });
 
   it('a list where the switches should be is not a record of switches: that group takes its defaults', () => {

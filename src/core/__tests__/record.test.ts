@@ -134,7 +134,7 @@ describe('recordStreak', () => {
     expect(streakOf([...before, ...fullDay(TODAY)])).toBe(3);
   });
 
-  it('skips on several days inside the run keep it going, each day counting for what was eaten', () => {
+  it('skips on several days inside the run keep it going: each of those days is full on what was eaten and skipped, and counts', () => {
     const skips = addSkip(addSkip(addSkip([], '2026-10-24', 'dinner'), '2026-10-25', 'morning'), TODAY, 'lunch');
     const meals = [
       meal('2026-10-24', 'morning'), meal('2026-10-24', 'lunch'),
@@ -142,6 +142,7 @@ describe('recordStreak', () => {
       ...fullDay('2026-10-26'),
       meal(TODAY, 'morning'), meal(TODAY, 'dinner'),
     ];
+    for (const d of ['2026-10-24', '2026-10-25', '2026-10-26', TODAY]) expect(rec(d, meals, { skips }), d).toEqual({ state: 'full', fromPlan: false });
     expect(recordStreak({ ...base, skips, menuOn: menu, meals })).toBe(4);
   });
 

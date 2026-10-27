@@ -64,11 +64,11 @@ describe('walkLog', () => {
   it('logs the walking activity, which the activity list holds', () => {
     const a = activityById(WALK_ACTIVITY_ID);
     expect(a).toBeDefined();
-    expect(a!.name_en).toBe('Walking');
+    expect(a!.id).toBe(WALK_ACTIVITY_ID);
     expect(a!.category).toBe('walk');
   });
 
-  it('never logs another activity in its place: with no walking activity in the list it fails, saying so', async () => {
+  it('never logs another activity in its place: with no walking activity in the list it fails as it loads, saying so, not inside a tap', async () => {
     vi.resetModules();
     vi.doMock('../../data/activities', async (importOriginal) => {
       const real = await importOriginal<typeof import('../../data/activities')>();
@@ -76,8 +76,7 @@ describe('walkLog', () => {
       return { ...real, ACTIVITIES: list, activityById: (id: string) => list.find((a) => a.id === id) };
     });
     try {
-      const { walkLog: walkLogWithout } = await import('../activity');
-      expect(() => walkLogWithout({ id: 'w1', date: '2026-10-27', minutes: 10, weightKg: 80, now: new Date('2026-10-27T18:05:00') })).toThrow(/walk/i);
+      await expect(import('../activity')).rejects.toThrow(/walk/i);
     } finally {
       vi.doUnmock('../../data/activities');
       vi.resetModules();

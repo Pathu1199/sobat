@@ -105,16 +105,20 @@ export function activitiesFor(flags: { lowImpactOnly?: boolean } = {}): Activity
 /** The activity the walk tile logs. */
 export const WALK_ACTIVITY_ID = 'walk';
 
+/** Walking, looked up once as this file loads: with no walking in the activity list the app fails right there, saying so, never inside a tap. */
+const WALK: Activity = (() => {
+  const walk = activityById(WALK_ACTIVITY_ID);
+  if (!walk) throw new Error(`The activity list has no walking activity ('${WALK_ACTIVITY_ID}') for the walk tile to log.`);
+  return walk;
+})();
+
 /**
  * A walk from the walk tile: an activity log like any other (walking, normal
  * effort, at the person's weight then), so its calories are earned back the
  * usual way. Today's is logged now; one added to an earlier day at its noon.
- * Never another activity in its place: with no walking in the activity list
- * this throws, as the list itself is wrong.
+ * Never another activity in its place.
  */
 export function walkLog(input: { id: string; date: ISODate; minutes: number; weightKg: number; now: Date }): ActivityLog {
-  const walk = activityById(WALK_ACTIVITY_ID);
-  if (!walk) throw new Error(`The activity list has no walking activity ('${WALK_ACTIVITY_ID}') for the walk tile to log.`);
   const at = input.date === toISODate(input.now) ? input.now : new Date(`${input.date}T12:00:00`);
-  return { id: input.id, date: input.date, at: at.toISOString(), activityId: walk.id, minutes: input.minutes, intensity: 1, kcal: kcalBurned(walk, 1, input.minutes, input.weightKg) };
+  return { id: input.id, date: input.date, at: at.toISOString(), activityId: WALK.id, minutes: input.minutes, intensity: 1, kcal: kcalBurned(WALK, 1, input.minutes, input.weightKg) };
 }
