@@ -212,13 +212,24 @@ export function readSavedBase(raw: string | null): SavedBase | null {
 }
 
 /**
- * Where the first sync after binding to an account starts from. A saved base
- * only describes the account it was saved for, and only the state it was
- * saved beside: if that state could not be read, it describes nothing here.
+ * Where the first sync after binding to an account starts from. Data another
+ * account left on the device is wiped before anything syncs, so none of it
+ * can reach this one, and the device is tagged as this account's at once,
+ * not after a sync that may never come. A saved base only describes the
+ * account it was saved for, and only the state it was saved beside: if that
+ * state could not be read, nothing on disk is known to be anyone's.
  */
-export function bindStart(o: { uid: string; owner: string | null; saved: SavedBase | null; loaded: boolean }): { base: CloudState | null; modifiedTime: string | null } {
-  if (!o.loaded || !o.saved || o.saved.uid !== o.uid) return { base: null, modifiedTime: null };
-  return { base: o.saved.base, modifiedTime: o.saved.modifiedTime };
+export function bindStart(o: { uid: string; owner: string | null; saved: SavedBase | null; loaded: boolean }): {
+  wipe: boolean;
+  tag: boolean;
+  base: CloudState | null;
+  modifiedTime: string | null;
+} {
+  if (!o.loaded) return { wipe: false, tag: false, base: null, modifiedTime: null };
+  const holder = o.owner ?? o.saved?.uid ?? null;
+  if (holder !== null && holder !== o.uid) return { wipe: true, tag: true, base: null, modifiedTime: null };
+  if (!o.saved || o.saved.uid !== o.uid) return { wipe: false, tag: true, base: null, modifiedTime: null };
+  return { wipe: false, tag: true, base: o.saved.base, modifiedTime: o.saved.modifiedTime };
 }
 
 /**

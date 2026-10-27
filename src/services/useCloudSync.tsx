@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { AppState as RNAppState, Platform } from 'react-native';
 import { bindStart, encodeSavedBase, forCloud, landMerge, merge3, readSavedBase, sameCloud, signOutPlan, type CloudState } from '../core/sync';
 import { CLOUD_BASE_KEY, useApp } from '../store/AppProvider';
+import { EMPTY_STATE } from '../store/defaults';
 import { CloudError, cloudConfigured, deleteData, getData, putData, type RemoteFile } from './cloud';
 import { authApi, useAuth } from './useAuth';
 
@@ -45,6 +46,9 @@ const PUSH_DELAY_MS = 3000;
 const PULL_EVERY_MS = 5 * 60 * 1000;
 const MAX_ROUNDS = 3;
 
+/** Thrown when the account changed while a request was out: its answer belongs to nobody on this device any more. */
+const ABANDONED = new Error('abandoned');
+
 const Ctx = createContext<CloudSync | null>(null);
 
 function parseRemote(file: RemoteFile): CloudState | null {
@@ -72,6 +76,9 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const base = useRef<CloudState | null>(null);
   const baseModifiedTime = useRef<string | null>(null);
   const boundUid = useRef<string | null>(null);
+  // Moves on at every bind and sign-out, so a request that went out for one
+  // session never lands in the next.
+  const epoch = useRef(0);
   const inFlight = useRef(false);
   const again = useRef(false);
   const stateRef = useRef(state);
@@ -105,10 +112,11 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   /**
    * One round: push if there are changes, pull if asked, merge whatever the
    * relay says is newer, and remember the result as the new base. Throws on
-   * anything the relay could not do.
+   * anything the relay could not do, and drops the answer if the account
+   * changed while the request was out.
    */
   const round = useCallback(
-    async (pull: boolean, token: string, uid: string) => {
+    async (pull: boolean, token: string, uid: string, live: () => boolean) => {
       const extra = { name: stateRef.current.profile.name || user?.name || undefined, platform: Platform.OS };
       for (let attempt = 0; attempt < MAX_ROUNDS; attempt++) {
         const local = forCloud(stateRef.current);
@@ -118,6 +126,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         if (changed && !pull && base.current !== null) {
           // The common case: push on top of the version we know.
           const res = await putData(token, JSON.stringify(local), baseModifiedTime.current, extra);
+          if (!live()) throw ABANDONED;
           if (res.ok) {
             settle(uid, local, res.modifiedTime);
             return;
@@ -125,6 +134,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
           remote = res.stale;
         } else {
           remote = await getData(token);
+          if (!live()) throw ABANDONED;
         }
 
         if (!changed && remote.modifiedTime === baseModifiedTime.current) return;
@@ -141,6 +151,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         const res = await putData(token, JSON.stringify(merged), remote.modifiedTime, extra);
+        if (!live()) throw ABANDONED;
         if (res.ok) {
           settle(uid, merged, res.modifiedTime);
           return;
@@ -156,8 +167,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   /** Run rounds until nothing is waiting. A call that lands mid-round queues one more. */
   const sync = useCallback(
     async (opts: { pull: boolean }) => {
-      const uid = boundUid.current;
-      if (!configured || !uid) return;
+      if (!configured || !boundUid.current) return;
       if (inFlight.current) {
         again.current = true;
         return;
@@ -167,16 +177,26 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       try {
         do {
           again.current = false;
+          // Read each time round: the account may have changed while the last round was out.
+          const uid = boundUid.current;
+          if (!uid) break;
+          const at = epoch.current;
+          const live = () => epoch.current === at;
           setStatus('syncing');
           try {
             const token = await authApi.idToken();
+            if (!live()) throw ABANDONED;
             if (!token) throw new CloudError(401, 'not_signed_in');
-            await round(pull, token, uid);
-            await AsyncStorage.setItem(OWNER_KEY, uid).catch(() => {});
+            await round(pull, token, uid, live);
             setStatus('synced');
             setError(null);
             setLastSyncAt(new Date().toISOString());
           } catch (e) {
+            // Whatever the new session asked for meanwhile is waiting in `again`, and starts with a pull.
+            if (e === ABANDONED) {
+              pull = true;
+              continue;
+            }
             fail(e);
             break;
           }
@@ -189,16 +209,21 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     [configured, round, fail],
   );
 
-  // Bind to the account: a different account than the device last held starts clean, then the first sync pulls.
+  // Bind to the account: a different account than the device last held
+  // starts clean, the device is tagged as this account's, then the first sync
+  // pulls. With sync not set up there is no first sync, but the tag still
+  // keeps one account's data from showing up under another.
   useEffect(() => {
-    if (!configured || !ready || !stateReady) return;
+    if (!ready || !stateReady) return;
     if (!user) {
+      epoch.current += 1;
       boundUid.current = null;
       base.current = null;
       baseModifiedTime.current = null;
+      if (pushTimer.current) clearTimeout(pushTimer.current);
       // Deliberate: the status mirrors the session, which only changes here.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStatus('off');
+      if (configured) setStatus('off');
       return;
     }
     if (boundUid.current === user.uid) return;
@@ -206,13 +231,20 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       const [owner, saved] = await Promise.all([AsyncStorage.getItem(OWNER_KEY).catch(() => null), AsyncStorage.getItem(CLOUD_BASE_KEY).catch(() => null)]);
       if (cancelled) return;
-      if (owner && owner !== user.uid) {
-        // Someone else's unsynced leftovers must not be merged into this account.
-        resetAll();
-        await AsyncStorage.removeItem(OWNER_KEY).catch(() => {});
-      }
-      // Loaded before the first merge: without it, deletions and edits made elsewhere since the last run would be undone.
+      // The base is loaded before the first merge: without it, deletions and edits made elsewhere since the last run would be undone.
       const start = bindStart({ uid: user.uid, owner, saved: readSavedBase(saved), loaded: storageError !== 'load' });
+      // Nothing still out for the last session may land from here on.
+      epoch.current += 1;
+      boundUid.current = null;
+      if (start.wipe) {
+        // Someone else's leftovers must not be merged into this account. The
+        // reset reaches the state on the next render; the first sync must not
+        // read the old one before then.
+        resetAll();
+        stateRef.current = EMPTY_STATE;
+      }
+      if (start.tag) await AsyncStorage.setItem(OWNER_KEY, user.uid).catch(() => {});
+      if (cancelled) return;
       boundUid.current = user.uid;
       base.current = start.base;
       baseModifiedTime.current = start.modifiedTime;
@@ -281,6 +313,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       const plan = signOutPlan({ configured, upToDate, force });
       if (plan === 'ask') return 'unsynced';
       const uid = user?.uid ?? null;
+      epoch.current += 1;
       boundUid.current = null;
       if (plan === 'wipe') {
         // Everything is in the account: hand the device back empty.

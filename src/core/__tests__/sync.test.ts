@@ -262,3 +262,24 @@ describe('a merge landing after edits made while the request was out', () => {
     expect(out.meals.map((m) => m.id)).toEqual(['a', 'r']);
   });
 });
+
+describe('binding to an account', () => {
+  const leftover = { uid: 'a', base: cloudOf(used([meal('x', '2026-10-10T08:00:00.000Z')])), modifiedTime: 't1' };
+
+  it('a device holding another account\'s data starts from nothing, with no base, before anything syncs', () => {
+    expect(bindStart({ uid: 'b', owner: 'a', saved: leftover, loaded: true })).toEqual({ wipe: true, tag: true, base: null, modifiedTime: null });
+  });
+
+  it('a base saved for another account marks the device as theirs even when the owner tag is missing', () => {
+    expect(bindStart({ uid: 'b', owner: null, saved: leftover, loaded: true }).wipe).toBe(true);
+  });
+
+  it('the same account, or a device nobody has claimed, keeps what is on it and is tagged at once', () => {
+    expect(bindStart({ uid: 'a', owner: 'a', saved: null, loaded: true })).toMatchObject({ wipe: false, tag: true });
+    expect(bindStart({ uid: 'a', owner: null, saved: null, loaded: true })).toMatchObject({ wipe: false, tag: true });
+  });
+
+  it('a store that could not be read is neither wiped nor claimed: what is on disk is not known to be anyone\'s', () => {
+    expect(bindStart({ uid: 'b', owner: 'a', saved: null, loaded: false })).toEqual({ wipe: false, tag: false, base: null, modifiedTime: null });
+  });
+});
