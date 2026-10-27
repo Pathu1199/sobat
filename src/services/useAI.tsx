@@ -1,8 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { chat, chatJSON, isMixedContent, resolveRoute, type AIRoute, type OllamaMessage } from '../ai/ollama';
-import { guardAdvice } from '../core/guardrails';
+import { asksAboutFasting, guardAdvice } from '../core/guardrails';
 import { KCAL_FLOOR } from '../core/nutrition';
+import { fastingReply } from '../core/offlineCoach';
+import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useAuth } from './useAuth';
 
@@ -18,7 +20,9 @@ import { useAuth } from './useAuth';
  * tried, blocked and logged sixty times an hour.
  *
  * `ask` returns model text that has already been through the guardrails for
- * this person's calorie floor, so no screen can forget to check it.
+ * this person's calorie floor, so no screen can forget to check it. Unsafe
+ * text is replaced, not annotated, and a question about fasting or skipping
+ * meals is answered by the code without asking the model at all.
  */
 export type AIState = { route: AIRoute; url: string; checking: boolean };
 export type AIBlocked = null | 'not_allowed' | 'mixed_content';
@@ -46,10 +50,12 @@ function pageProtocol(): string {
 }
 
 export function AIProvider({ children }: { children: React.ReactNode }) {
-  const { state } = useApp();
+  const { state, targets } = useApp();
   const { canUseAI } = useAuth();
   const { ollamaUrl, ollamaFallbackUrl, textModel, visionModel } = state.settings;
   const floor = KCAL_FLOOR[state.profile.sex];
+  const lang = state.profile.lang;
+  const kcalTarget = targets.kcal;
 
   // Which of the two addresses this page may even try.
   const protocol = pageProtocol();
@@ -91,7 +97,16 @@ export function AIProvider({ children }: { children: React.ReactNode }) {
     [blocked, ai.url, check, textModel],
   );
 
-  const ask = useCallback(async (messages: OllamaMessage[]) => guardAdvice(await askRaw(messages), floor).text.trim(), [askRaw, floor]);
+  const ask = useCallback(
+    async (messages: OllamaMessage[]) => {
+      const t = makeT(lang);
+      const last = messages[messages.length - 1];
+      if (last?.role === 'user' && asksAboutFasting(last.content)) return fastingReply(t, kcalTarget);
+      const words = { food: fill(t('guard_food'), { floor }), medical: t('guard_medical') };
+      return guardAdvice(await askRaw(messages), floor, words).text.trim();
+    },
+    [askRaw, floor, lang, kcalTarget],
+  );
 
   const askJSON = useCallback(
     async <T,>(messages: OllamaMessage[], schema: object, useVision = false): Promise<T> => {

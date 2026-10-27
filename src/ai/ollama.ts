@@ -1,3 +1,5 @@
+import { FOOD_PHOTO_SCHEMA } from './prompts';
+
 export type AIRoute = 'primary' | 'fallback' | 'offline' | 'checking';
 
 export type OllamaMessage = { role: 'system' | 'user' | 'assistant'; content: string; images?: string[] };
@@ -73,6 +75,9 @@ export async function chat(
     options: { temperature: opts.temperature ?? 0.6 },
   };
   if (opts.json) body.format = opts.json;
+  // qwen3 thinks out loud before answering unless told not to: slower, and the
+  // thinking can leak into the reply. `think` sits at the top level of /api/chat.
+  if (/^qwen3/i.test(model)) body.think = false;
 
   const res = await withTimeout(
     (signal) =>
@@ -86,13 +91,65 @@ export async function chat(
   );
   if (!res.ok) throw new Error(`Ollama returned HTTP ${res.status}`);
   const json = (await res.json()) as { message?: { content?: string } };
-  return json.message?.content ?? '';
+  const content = json.message?.content ?? '';
+  return opts.json ? content : plainText(content);
+}
+
+/**
+ * Chat replies are shown as plain text, so markdown asterisks would show up
+ * as asterisks. Bullets become "•"; an older Ollama that puts the thinking in
+ * the content gets it removed.
+ */
+export function plainText(reply: string): string {
+  return reply
+    .replace(/<think>[\s\S]*?<\/think>/g, '')
+    .replace(/^(\s*)\*\s+/gm, '$1• ')
+    .replace(/\*+/g, '')
+    .trim();
 }
 
 /** Ask for JSON and parse it, tolerating a model that wraps output in prose or fences. */
 export async function chatJSON<T>(url: string, model: string, messages: OllamaMessage[], schema: object): Promise<T> {
   const raw = await chat(url, model, messages, { json: schema, temperature: 0.2 });
-  return parseLooseJSON<T>(raw);
+  const parsed = parseLooseJSON<unknown>(raw);
+  return (schema === FOOD_PHOTO_SCHEMA ? cleanFoodPhoto(parsed) : parsed) as T;
+}
+
+export type FoodPhotoItem = { name_en: string; name_mr: string; portion: string; grams_est: number | null; confidence: number };
+export type FoodPhoto = { items: FoodPhotoItem[]; notes?: string };
+
+const PHOTO_GRAMS = { min: 20, max: 800 };
+
+/**
+ * The vision model's answer, made safe to use: items without a name are
+ * dropped, and grams are a number clamped to 20-800 or null when the model
+ * gave no number. Null lets the screens fall back to the food's normal
+ * portion, so "a plate" can never turn into NaN kcal in the day's budget.
+ */
+export function cleanFoodPhoto(raw: unknown): FoodPhoto {
+  const obj = raw && typeof raw === 'object' ? (raw as { items?: unknown; notes?: unknown }) : {};
+  const list = Array.isArray(obj.items) ? obj.items : [];
+  const items: FoodPhotoItem[] = [];
+  for (const it of list) {
+    if (!it || typeof it !== 'object') continue;
+    const v = it as Record<string, unknown>;
+    const name = typeof v.name_en === 'string' ? v.name_en.trim() : '';
+    if (!name) continue;
+    items.push({
+      name_en: name,
+      name_mr: typeof v.name_mr === 'string' ? v.name_mr : '',
+      portion: typeof v.portion === 'string' ? v.portion : '',
+      grams_est: photoGrams(v.grams_est),
+      confidence: typeof v.confidence === 'number' && Number.isFinite(v.confidence) ? Math.min(1, Math.max(0, v.confidence)) : 0.5,
+    });
+  }
+  return typeof obj.notes === 'string' ? { items, notes: obj.notes } : { items };
+}
+
+function photoGrams(v: unknown): number | null {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && /^\s*\d+(\.\d+)?\s*$/.test(v) ? Number(v) : NaN;
+  if (!Number.isFinite(n)) return null;
+  return Math.min(PHOTO_GRAMS.max, Math.max(PHOTO_GRAMS.min, Math.round(n)));
 }
 
 export function parseLooseJSON<T>(raw: string): T {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bmi, bmiBand, budget, dailyTargets, healthyWeightRange, kcalForGrams, mealTypeForHour, mealsRemaining, tdee, bmr, KCAL_FLOOR } from '../nutrition';
+import { bmi, bmiBand, budget, dailyTargets, healthyWeightRange, isAdultBirthYear, kcalForGrams, mealTypeForHour, mealsRemaining, tdee, bmr, KCAL_FLOOR } from '../nutrition';
 import { suggestMeals } from '../foods';
 import type { Profile } from '../types';
 
@@ -49,7 +49,8 @@ describe('dailyTargets', () => {
   });
 
   it('never drops below the calorie floor', () => {
-    const small: Profile = { ...varad, sex: 'female', weightKg: 48, heightCm: 150, activity: 'sedentary', rateKgPerWeek: 1 };
+    // Her goal must sit under her weight, or there is no deficit to floor.
+    const small: Profile = { ...varad, sex: 'female', weightKg: 48, goalWeightKg: 44, heightCm: 150, activity: 'sedentary', rateKgPerWeek: 1 };
     const t = dailyTargets(small, now);
     expect(t.kcal).toBeGreaterThanOrEqual(KCAL_FLOOR.female);
     expect(t.floored).toBe(true);
@@ -146,5 +147,70 @@ describe('suggestMeals dietary filters', () => {
   it('drops egg dishes when eggs are refused', () => {
     const ids = suggestMeals(foods as never, 900, { noEgg: true }).map((o) => o.food.id);
     expect(ids).not.toContain('egg-bhurji');
+  });
+});
+
+describe('dailyTargets never puts a deficit where it does not belong', () => {
+  it('holds at maintenance once the weight is at or under the goal', () => {
+    const t = dailyTargets({ ...varad, weightKg: 74, goalWeightKg: 75 }, now);
+    expect(t.kcal).toBe(Math.max(t.tdee, KCAL_FLOOR.male));
+    expect(t.deficit).toBeLessThanOrEqual(0);
+    expect(t.hold).toBe('at_goal');
+  });
+
+  it('holds at maintenance for an underweight BMI, whatever the goal says', () => {
+    // 50 kg at 172 cm is BMI 16.9.
+    const t = dailyTargets({ ...varad, weightKg: 50, goalWeightKg: 45 }, now);
+    expect(t.kcal).toBe(Math.max(t.tdee, KCAL_FLOOR.male));
+    expect(t.hold).toBe('underweight');
+  });
+
+  it('treats a goal under the healthy range as the bottom of the range', () => {
+    // Healthy minimum at 172 cm is 55 kg.
+    const atMin = dailyTargets({ ...varad, weightKg: 55, goalWeightKg: 45 }, now);
+    expect(atMin.hold).toBe('at_goal');
+    const above = dailyTargets({ ...varad, weightKg: 60, goalWeightKg: 45 }, now);
+    expect(above.hold).toBe(null);
+    expect(above.deficit).toBeGreaterThan(0);
+    expect(above.proteinG).toBe(Math.round(1.4 * 55));
+  });
+
+  it('gives maintenance to anyone under 18 or over 100', () => {
+    const teen = dailyTargets({ ...varad, birthYear: 2012 }, now);
+    expect(teen.hold).toBe('age');
+    expect(teen.kcal).toBe(Math.max(teen.tdee, KCAL_FLOOR.male));
+    const old = dailyTargets({ ...varad, birthYear: 1920 }, now);
+    expect(old.hold).toBe('age');
+  });
+
+  it('a two-digit birth year never gives a negative or nonsense BMR', () => {
+    const t = dailyTargets({ ...varad, birthYear: 98 }, now);
+    expect(t.bmr).toBeGreaterThan(1000);
+    expect(t.tdee).toBeGreaterThan(t.bmr);
+    expect(t.hold).toBe('age');
+    expect(t.kcal).toBe(Math.max(t.tdee, KCAL_FLOOR.male));
+  });
+
+  it('keeps the normal deficit for an ordinary adult above the goal', () => {
+    expect(dailyTargets(varad, now).hold).toBe(null);
+  });
+});
+
+describe('isAdultBirthYear', () => {
+  it('accepts a four-digit year that gives an age of 18 to 100', () => {
+    expect(isAdultBirthYear('1998', now)).toBe(true);
+    expect(isAdultBirthYear(' 1990 ', now)).toBe(true);
+    expect(isAdultBirthYear('2008', now)).toBe(true);
+    expect(isAdultBirthYear('1926', now)).toBe(true);
+  });
+
+  it('rejects two-digit years, minors, the very old and junk', () => {
+    expect(isAdultBirthYear('98', now)).toBe(false);
+    expect(isAdultBirthYear('2009', now)).toBe(false);
+    expect(isAdultBirthYear('1925', now)).toBe(false);
+    expect(isAdultBirthYear('', now)).toBe(false);
+    expect(isAdultBirthYear('19x8', now)).toBe(false);
+    // The draft reads the field with Number(), which cannot read Devanagari digits.
+    expect(isAdultBirthYear('१९९८', now)).toBe(false);
   });
 });
