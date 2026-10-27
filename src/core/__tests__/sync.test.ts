@@ -191,6 +191,35 @@ describe('three-way merge of single values', () => {
   });
 });
 
+describe('the day the store moved to this version', () => {
+  const P = '2026-10-24';
+  const P3 = '2026-10-27';
+  const device = (autoFillFrom: string | undefined, profile: Partial<AppState['profile']> = {}) =>
+    cloudOf(used([], { profile: { ...EMPTY_STATE.profile, name: 'V', onboarded: true, ...(autoFillFrom ? { autoFillFrom } : {}), ...profile } }));
+
+  it('is the later of the two devices\' days, whichever device merges and whichever changed the profile, so a lived day is never filled in again', () => {
+    const b = device(P);
+    // This device moved on P and has changed the goal since; the other moved on P+3.
+    const here = device(P, { goalWeightKg: 65 });
+    const there = device(P3);
+    expect(merge3(b, here, there).profile).toMatchObject({ goalWeightKg: 65, autoFillFrom: P3 });
+    expect(merge3(b, there, here).profile.autoFillFrom).toBe(P3);
+    expect(merge3(null, here, there).profile.autoFillFrom).toBe(P3);
+    expect(merge3(null, there, here).profile.autoFillFrom).toBe(P3);
+    // Merged on either device, then again, both end on the same day.
+    const once = merge3(b, here, there);
+    expect(merge3(once, there, once).profile.autoFillFrom).toBe(P3);
+    expect(merge3(once, once, here).profile.autoFillFrom).toBe(P3);
+  });
+
+  it('is kept when only one side has it, and left out when neither does', () => {
+    const none = device(undefined, { goalWeightKg: 65 });
+    expect(merge3(device(undefined), none, device(P)).profile.autoFillFrom).toBe(P);
+    expect(merge3(device(undefined), device(P), none).profile.autoFillFrom).toBe(P);
+    expect(merge3(device(undefined), none, device(undefined)).profile).not.toHaveProperty('autoFillFrom');
+  });
+});
+
 describe('signing out', () => {
   const ok = { configured: true, upToDate: true, force: false, loaded: true };
 
@@ -455,6 +484,18 @@ describe('a sync round', () => {
     expect(d.now().meals.map((m) => m.id)).toEqual(['a']);
   });
 
+  it('a record that is not a record at all, in a file at this version, is left out: the round goes on and writes the file back without it', async () => {
+    const good = cloudOf(used([v('a', 1)]));
+    const r = relay(null);
+    r.setRaw(JSON.stringify({ ...good, meals: [null, ...good.meals, 7], menus: [null], slotSkips: ['x'] }));
+    const d = device(used([v('a', 1), n]), r);
+    const out = await syncRound({ pull: true, base: good, modifiedTime: 'old', supported: STATE_VERSION, upgrade: same, io: d.io });
+    expect(out).not.toBeNull();
+    expect(r.file()?.meals.map((m) => m.id)).toEqual(['a', 'n']);
+    expect([r.file()?.menus, r.file()?.slotSkips]).toEqual([[], []]);
+    expect(d.now().meals.map((m) => m.id)).toEqual(['a', 'n']);
+  });
+
   it('nothing changed on either side: no write, and nothing new to remember', async () => {
     const base = cloudOf(used([v('a', 1)]));
     const r = relay(base);
@@ -623,6 +664,18 @@ describe('menus, skips and saved meals', () => {
     const withMeal = cloudOf(used([meal('a', '2026-10-27T08:00:00.000Z')], { menus: base.menus }));
     const noMeal = cloudOf(used([], { menus: base.menus }));
     expect(merge3(withMeal, noMeal, withMeal).meals).toEqual([]);
+  });
+
+  it('a day the app kept once it was lived, against a real edit of that date from another device: the edit wins, whichever side holds which', () => {
+    const kept: DayMenu = { ...menu('2026-10-26', 2, ''), frozen: true };
+    const edited = menu('2026-10-26', 4, '2026-10-27T09:00:00.000Z');
+    const here = cloudOf(used([], { menus: [...base.menus, kept] }));
+    const there = cloudOf(used([], { menus: [...base.menus, edited] }));
+    // Neither had the date when they last synced, no sync yet, or the kept day already in the account.
+    for (const [name, b] of [['before', base], ['none', null], ['kept', here]] as const) {
+      expect(merge3(b, here, there).menus.find((m) => m.date === '2026-10-26'), name).toEqual(edited);
+      expect(merge3(b, there, here).menus.find((m) => m.date === '2026-10-26'), name).toEqual(edited);
+    }
   });
 
   it('skips and saved meals merge record by record', () => {

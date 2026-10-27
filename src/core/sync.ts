@@ -114,9 +114,12 @@ export function isPristine(s: Pick<CloudState, 'profile' | 'meals'>): boolean {
   return !s.profile.onboarded && s.meals.length === 0;
 }
 
+const isObject = (v: unknown): v is AnyRecord => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** A list's records by id. Anything in it that is not a record (a null in a file) is left out: reading its id would fail every round. */
 function toMap(list: unknown, idOf: (r: AnyRecord) => string): Map<string, AnyRecord> {
   const m = new Map<string, AnyRecord>();
-  if (Array.isArray(list)) for (const r of list) m.set(idOf(r as AnyRecord), r as AnyRecord);
+  if (Array.isArray(list)) for (const r of list) if (isObject(r)) m.set(idOf(r), r);
   return m;
 }
 
@@ -204,6 +207,12 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
     }
   }
 
+  // Nothing on or before the day the store moved to this version (`autoFillFrom`) is filled in from the plan. Two devices
+  // that moved on different days keep the later, whichever side the profile came from: a day lived with nothing filled in
+  // is never filled in afterwards, and every device ends on the same day.
+  const moved = [local.profile?.autoFillFrom, remote.profile?.autoFillFrom].filter((d): d is string => typeof d === 'string').sort().pop();
+  if (moved && isObject(out.profile) && out.profile.autoFillFrom !== moved) out.profile = { ...out.profile, autoFillFrom: moved };
+
   // Keys this build does not know were written by a newer one. They are
   // merged like any single value and never dropped: a dropped key would reach
   // every other device as a deletion. A device that never had one has not
@@ -261,8 +270,6 @@ export type RoundIO = {
   /** False once the account changed: whatever comes back then belongs to nobody here. */
   live: () => boolean;
 };
-
-const isObject = (v: unknown): v is AnyRecord => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /**
  * The account's file as a state, or null when there is no file yet. A file

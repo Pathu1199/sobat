@@ -660,11 +660,11 @@ describe('settings in an odd shape, from sync or an old file', () => {
     expect(s.reminders).toEqual({ mealPrompt: true, fillYesterday: false, planWeek: true, weeklyReport: false });
   });
 
-  it('a corrupt switch never turns a reminder on: the meal-time prompt stored as anything but true or false follows the app\'s reminders switch', () => {
+  it('a corrupt switch never turns a reminder on: the meal-time prompt stored as anything but true or false reads off, whatever the app\'s reminders switch says', () => {
     expect(settingsOf({ reminders: { mealPrompt: null }, nudgesEnabled: false }).reminders.mealPrompt).toBe(false);
     expect(settingsOf({ reminders: { mealPrompt: 'yes', planWeek: true }, nudgesEnabled: false }).reminders).toEqual({ ...REMINDERS, mealPrompt: false, planWeek: true });
-    expect(settingsOf({ reminders: { mealPrompt: null } }).reminders.mealPrompt).toBe(true);
-    // A missing one does the same: on with the app's reminders on, off with them off.
+    for (const bad of [null, 'yes', 1, 'true', {}]) expect(settingsOf({ reminders: { mealPrompt: bad } }).reminders.mealPrompt, String(bad)).toBe(false);
+    // Only a missing one follows the app's reminders switch: on with them on, off with them off.
     expect(settingsOf({ reminders: { planWeek: true } }).reminders.mealPrompt).toBe(true);
     expect(settingsOf({ reminders: { planWeek: true }, nudgesEnabled: false }).reminders.mealPrompt).toBe(false);
     // One the person chose stays, whatever the other switch says.
@@ -795,6 +795,11 @@ describe('records in an odd shape, from sync or an old file', () => {
       { date: '2026-11-01', meals: [{ type: 'lunch', lines: [] }] },
       { date: '2026-11-02', meals: [{ id: 'lunch' }] },
       { date: '2026-11-03', meals: [{ id: 'lunch', lines: [null] }] },
+      // A meal with no type or no time cannot be placed in the day.
+      { date: '2026-11-04', meals: [{ id: 'lunch', lines: [] }] },
+      { date: '2026-11-05', meals: [{ id: 'lunch', type: 'lunch', lines: [] }] },
+      { date: '2026-11-06', meals: [{ id: 'lunch', time: '13:00', lines: [] }] },
+      { date: '2026-11-07', meals: [{ id: 'lunch', type: 3, time: null, lines: [] }] },
     ];
     const slotSkips = [skip, null, { id: 1, date: '2026-10-27', slotId: 'x' }, { id: 'a', date: '2026-10-27' }, { id: 'b', date: null, slotId: 'lunch' }];
     const savedMeals = [saved, null, { id: 's2', lines: [] }, { id: 's3', name: 'x' }, { id: 's4', name: 'y', lines: [7] }, { name: 'z', lines: [] }];

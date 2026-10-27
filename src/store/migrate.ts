@@ -168,10 +168,10 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   if (!isPositive(s.walkGoalMin)) s.walkGoalMin = defaults.walkGoalMin;
   s.features = upgradeSwitches(raw.features, defaults.features);
   s.reminders = upgradeSwitches(raw.reminders, defaults.reminders);
-  // A meal-time prompt nobody set, or one that is not true or false, follows the app's reminders switch: someone who switched those
-  // off before these switches existed, or whose stored switch is corrupt, does not get the prompt switched on by an update.
+  // A meal-time prompt nobody set follows the app's reminders switch: someone who switched those off before these switches
+  // existed does not get the prompt switched on by an update. One stored as anything but true or false reads off, as above.
   const prompt = isSwitches(raw.reminders) ? raw.reminders.mealPrompt : undefined;
-  if (typeof prompt !== 'boolean') s.reminders.mealPrompt = raw.nudgesEnabled !== false;
+  if (prompt === undefined) s.reminders.mealPrompt = raw.nudgesEnabled !== false;
   // A tab list or a card list from sync or an old file can never hide Today, ➕ or Me, or lose a card for good.
   s.tabs = normalizeTabs(s.tabs);
   s.todayCards = normalizeTodayCards(s.todayCards);
@@ -201,9 +201,14 @@ function isLines(v: unknown): v is unknown[] {
   return Array.isArray(v) && v.every(isRecord);
 }
 
-/** A date's menu as the app reads it: a date, and meals that each have an id and a list of lines. */
+/** A meal of a date's menu as the app reads it: an id, a type and a time to place it in the day by, and a list of lines. */
+function isMenuMeal(m: unknown): boolean {
+  return isRecord(m) && typeof m.id === 'string' && typeof m.type === 'string' && typeof m.time === 'string' && isLines(m.lines);
+}
+
+/** A date's menu as the app reads it: a date, and meals each in the shape `isMenuMeal` reads. */
 function isMenu(v: unknown): v is DayMenu {
-  return isRecord(v) && typeof v.date === 'string' && Array.isArray(v.meals) && v.meals.every((m) => isRecord(m) && typeof m.id === 'string' && isLines(m.lines));
+  return isRecord(v) && typeof v.date === 'string' && Array.isArray(v.meals) && v.meals.every(isMenuMeal);
 }
 
 function isSlotSkip(v: unknown): v is SlotSkip {
