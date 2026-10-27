@@ -198,6 +198,16 @@ describe('three-way merge of single values', () => {
     }
   });
 
+  it('two devices switching different reminders, or different parts of the app, both keep their switch, wherever the merge runs', () => {
+    const s = EMPTY_STATE.settings;
+    const b = cloudOf(used([]));
+    const phone = cloudOf(used([], { settings: { ...s, reminders: { ...s.reminders, water: true }, features: { ...s.features, mantra: true } } }));
+    const pc = cloudOf(used([], { settings: { ...s, reminders: { ...s.reminders, planWeek: true, mealPrompt: false }, features: { ...s.features, breaks: true } } }));
+    for (const out of [merge3(b, phone, pc).settings, merge3(b, pc, phone).settings]) {
+      expect([out.reminders.water, out.reminders.planWeek, out.reminders.mealPrompt, out.features.mantra, out.features.breaks]).toEqual([true, true, false, true, true]);
+    }
+  });
+
   it('a field taken out on one side stays out, and a field changed on both keeps this device\'s', () => {
     const b = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, chapterStart: '2026-10-01', weightKg: 90 } }));
     const local = cloudOf(used([], { profile: { ...EMPTY_STATE.profile, onboarded: true, weightKg: 89 } }));

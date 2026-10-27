@@ -1,19 +1,20 @@
 import React, { useMemo } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { newChapter } from '../core/chapter';
 import { formatDayMonthYear } from '../core/date';
 import { oneDecimal, shownWeight } from '../core/tileText';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
-import { Btn, Small } from '../ui/components';
+import { Btn, P, Small } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
-import { C, F, lh } from '../ui/theme';
+import { C } from '../ui/theme';
 
 /**
  * Me → "Start a new chapter", in plain words: the climb starts again today
  * from the weight Progress shows, Lost counts from there, the weekly challenge
- * and the streak start fresh, and nothing is deleted. A weigh-in more than
+ * and the streak start fresh, and nothing is deleted (the points and the
+ * badges stay). A weigh-in more than
  * thirty days old is named, so the person can weigh in first.
  */
 export function ChapterSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -27,7 +28,7 @@ export function ChapterSheet({ open, onClose }: { open: boolean; onClose: () => 
   return (
     <Sheet open={open} title={t('chapter_title')} onClose={onClose}>
       <View style={{ gap: 12 }}>
-        <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '400' }}>{fill(t('chapter_body'), { kg: oneDecimal(next.startWeightKg) })}</Text>
+        <P>{fill(t('chapter_body'), { kg: oneDecimal(next.startWeightKg) })}</P>
         {shown?.stale ? <Small color={C.amber}>{fill(t('chapter_stale'), { date: formatDayMonthYear(shown.asOf, lang) })}</Small> : null}
         <Btn
           label={t('chapter_confirm')}

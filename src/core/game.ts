@@ -1,14 +1,18 @@
-import type { ISODate, Meal, SleepLog, StepLog, WaterLog, WeightLog, WorkoutLog } from './types';
+import { chapterSince } from './chapter';
+import type { Targets } from './nutrition';
+import { shownPlan, type Plan } from './plan';
+import type { AppState, ISODate, Meal, Settings, SleepLog, StepLog, WaterLog, WeightLog, WorkoutLog } from './types';
 import { weekSummary } from './week';
 
 /**
  * The game around the climb: points for the things that move the weight,
  * camps reached on the way up, badges for firsts and streaks, and one
  * challenge a week. All derived from the logs, nothing stored, so it can
- * never disagree with the data. The streak is the record's (core/record.ts),
- * the one the streak tile shows: full days eaten at or above the safe
- * minimum, a day of meals all skipped ending the run. A badge already won
- * (celebrated) is kept.
+ * never disagree with the data. The streak is the record's (core/record.ts):
+ * full days eaten at or above the safe minimum, a day of meals all skipped
+ * ending the run. The streak tile shows it from a new chapter's first day;
+ * the points and the streak badges count it over the whole journey
+ * (`gameView`). A badge already won (celebrated) is kept.
  */
 export type GameInput = {
   today: ISODate;
@@ -195,4 +199,75 @@ export function nextWin(input: { earned: string[]; level: LevelKey; challenge: C
   if (input.waiting) return { seed: null, next: null };
   const seen = new Set(input.celebrated);
   return { seed: null, next: all.find((w) => !seen.has(w.id)) ?? null };
+}
+
+export type GameView = {
+  plan: Plan;
+  input: GameInput;
+  progress: number;
+  camps: { p: number; label: string }[];
+  trail: number[];
+  points: number;
+  level: Level;
+  badges: Badge[];
+  challenge: Challenge;
+};
+
+/**
+ * Everything the climb and the game show, from the store. Lost, To go, the
+ * mountain, its camps and its trail are the chapter's (`shownPlan`, the trail
+ * from the chapter's first day), and so is the weekly challenge; a chapter
+ * start after today is no chapter yet. Points and badges are the whole
+ * journey's: the kilo badges count from the very first start and the points
+ * and the streak badges count the streak over the whole journey (`lifetime`),
+ * so a new chapter takes none away; a badge already celebrated stays earned.
+ */
+export function gameView(o: {
+  state: Pick<AppState, 'profile' | 'weights' | 'meals' | 'water' | 'sleep' | 'steps' | 'workouts' | 'celebrated'> & { settings: Pick<Settings, 'waterGoalMl' | 'weighDay' | 'offDays'> };
+  targets: Targets;
+  today: ISODate;
+  /** The streak and the best run the streak tile shows, from the chapter's first day. */
+  streakDays: number;
+  bestStreakDays: number;
+  /** The streak and the best run over the whole journey, a chapter or not. */
+  lifetime: { streakDays: number; bestStreakDays: number };
+}): GameView {
+  const { state, targets, today } = o;
+  const plan = shownPlan(state.profile, state.weights, targets, today);
+  const since = chapterSince(state.profile.chapterStart, today);
+  const input: GameInput = {
+    today,
+    meals: state.meals,
+    water: state.water,
+    weights: state.weights,
+    sleep: state.sleep,
+    steps: state.steps,
+    workouts: state.workouts,
+    kcalTarget: targets.kcal,
+    waterGoalMl: state.settings.waterGoalMl,
+    startKg: plan.startKg,
+    goalKg: plan.goalKg,
+    offDays: state.settings.offDays,
+    since,
+    streakDays: o.streakDays,
+    bestStreakDays: o.bestStreakDays,
+    celebrated: state.celebrated,
+  };
+  const lifetime: GameInput = { ...input, startKg: state.profile.firstStartWeightKg ?? plan.startKg, since: undefined, ...o.lifetime };
+  const total = Math.max(0, plan.startKg - plan.goalKg);
+  const progress = total > 0 ? Math.min(1, Math.max(0, plan.lostKg / total)) : plan.toGoKg <= 0 ? 1 : 0;
+  const camps = total > 0 ? [0.25, 0.5, 0.75].map((p) => ({ p, label: `${Math.round((plan.startKg - total * p) * 10) / 10}` })) : [];
+  const trailWeights = since ? state.weights.filter((w) => w.date >= since) : state.weights;
+  const points = xp(lifetime);
+  return {
+    plan,
+    input,
+    progress,
+    camps,
+    trail: climbTrail(trailWeights, plan.startKg, plan.goalKg).map((t) => t.p),
+    points,
+    level: level(points),
+    badges: badges(lifetime),
+    challenge: weeklyChallenge(input, state.settings.weighDay),
+  };
 }

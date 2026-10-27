@@ -65,16 +65,30 @@ export const SINGLETONS = ['version', 'profile', 'settings', 'breakSettings', 'r
 /**
  * Single objects merged field by field, each field one value: merged whole, a
  * chapter started on the phone would lose to a language picked on the PC in
- * the same round. Inside a field the rule is the one for any single value.
+ * the same round. The settings' switches (`features`, `reminders`) are merged
+ * switch by switch the same way, so a reminder switched on on the phone and
+ * another on the PC both stay. Inside a field the rule is the one for any
+ * single value (`pick`).
  */
-const BY_FIELD = new Set<string>(['profile', 'settings']);
+const BY_FIELD = new Map<string, readonly string[]>([
+  ['profile', []],
+  ['settings', ['features', 'reminders']],
+]);
 
-/** Each field picked on its own against the base: this device's change wins, else the other side's; a field taken out on one side stays out. */
-function mergeFields(b: AnyRecord, l: AnyRecord, r: AnyRecord): AnyRecord {
+/** One value against the base: this device's change wins, else the other side's; changed nowhere, this device's. */
+function pick<T>(b: unknown, l: T, r: T): T {
+  const bv = stable(b);
+  if (stable(l) !== bv) return l;
+  if (stable(r) !== bv) return r;
+  return l;
+}
+
+/** Each field picked on its own against the base (`pick`), the `nested` ones key by key; a field taken out on one side stays out. */
+function mergeFields(b: AnyRecord, l: AnyRecord, r: AnyRecord, nested: readonly string[] = []): AnyRecord {
   const out: AnyRecord = {};
   for (const f of new Set([...Object.keys(l), ...Object.keys(r)])) {
-    const bv = stable(b[f]);
-    const v = stable(l[f]) !== bv ? l[f] : stable(r[f]) !== bv ? r[f] : l[f];
+    const [bv, lv, rv] = [b[f], l[f], r[f]];
+    const v = nested.includes(f) && isObject(bv) && isObject(lv) && isObject(rv) ? mergeFields(bv, lv, rv) : pick(bv, lv, rv);
     if (v !== undefined) out[f] = v;
   }
   return out;
@@ -210,7 +224,6 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
       out.version = Math.max(Number(local.version ?? 0), Number(remote.version ?? 0));
       continue;
     }
-    const bv = stable(b[key]);
     const lv = local[key];
     const rv = remote[key];
     const bk = b[key];
@@ -218,13 +231,9 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
       // Unknown history: keep what this device has, fall back to the account's.
       out[key] = lv !== undefined && lv !== null ? lv : rv;
     } else if (BY_FIELD.has(key) && isObject(lv) && isObject(rv) && isObject(bk)) {
-      out[key] = mergeFields(bk, lv, rv);
-    } else if (stable(lv) !== bv) {
-      out[key] = lv;
-    } else if (stable(rv) !== bv) {
-      out[key] = rv;
+      out[key] = mergeFields(bk, lv, rv, BY_FIELD.get(key));
     } else {
-      out[key] = lv;
+      out[key] = pick(bk, lv, rv);
     }
   }
 

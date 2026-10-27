@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { chapterDays, gameView, newChapter, shownPlan } from '../chapter';
-import { dailyTargets } from '../nutrition';
-import { planFrom } from '../plan';
+import { chapterDays, chapterSince, chapterStreaks, newChapter } from '../chapter';
+import { gameView, nextWin } from '../game';
+import type { DayMenu } from '../menu';
+import { dailyTargets, KCAL_FLOOR } from '../nutrition';
+import { planFrom, shownPlan } from '../plan';
+import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
+import { addDays } from '../date';
 import { shownWeight } from '../tileText';
-import type { Profile } from '../types';
+import type { Meal, Profile } from '../types';
 
 describe('newChapter', () => {
   const weights = [
@@ -48,6 +52,15 @@ describe('chapterDays', () => {
   it('a start that is not a date (a damaged file) limits nothing', () => {
     expect(chapterDays('soon', '2026-10-28', 90)).toBe(90);
     expect(chapterDays('2026-02-30', '2026-10-28', 90)).toBe(90);
+  });
+
+  it('a chapter is there from its first day on, never before it, and never from a start that is not a date', () => {
+    expect(chapterSince('2026-10-20', '2026-10-28')).toBe('2026-10-20');
+    expect(chapterSince('2026-10-28', '2026-10-28')).toBe('2026-10-28');
+    // A start still to come (a clock ahead on another device) is no chapter yet.
+    expect(chapterSince('2026-10-29', '2026-10-28')).toBeUndefined();
+    expect(chapterSince('2026-02-30', '2026-10-28')).toBeUndefined();
+    expect(chapterSince(undefined, '2026-10-28')).toBeUndefined();
   });
 });
 
@@ -105,7 +118,7 @@ describe('gameView', () => {
     celebrated: [],
     settings: { waterGoalMl: 3000, weighDay: 0, offDays: [] },
   };
-  const view = (p: Profile) => gameView({ state: { ...state, profile: p }, targets, today: TODAY, streakDays: 3, bestStreakDays: 3 });
+  const view = (p: Profile) => gameView({ state: { ...state, profile: p }, targets, today: TODAY, streakDays: 3, bestStreakDays: 3, lifetime: { streakDays: 3, bestStreakDays: 3 } });
   const chapter = { ...profile, ...newChapter(profile, weights.filter((w) => w.date <= '2026-10-25'), '2026-10-26') };
 
   it('counts Lost, To go and the climb from the chapter\'s start, at the weight Progress shows', () => {
@@ -125,13 +138,68 @@ describe('gameView', () => {
     expect(view(chapter).challenge.n).toBe(3);
   });
 
-  it('keeps points and the kilo badges counting from the very first start, so a new chapter takes none away', () => {
-    const before = view(profile);
-    const after = view(chapter);
+  it('keeps the kilo badges counting from the very first start, so a new chapter takes none away', () => {
+    const kg = (g: ReturnType<typeof view>) => Object.fromEntries(g.badges.map((b) => [b.key, b.earned]));
+    expect(kg(view(profile)).kg_5).toBe(true);
+    expect(kg(view(chapter)).kg_5).toBe(true);
+  });
+
+  it('ignores a chapter start after today (a clock ahead on another device): the challenge and the trail are as without one', () => {
+    const ahead = { ...profile, chapterStart: '2026-11-05' };
+    expect(view(ahead).challenge.n).toBe(view(profile).challenge.n);
+    expect(view(ahead).trail).toEqual(view(profile).trail);
+  });
+});
+
+describe('the streak at a new chapter', () => {
+  const TODAY = '2026-10-28';
+  const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
+  const routine: Routine = { ...DEFAULT_ROUTINE, enabled: true, slots: [slot('morning', 'breakfast', '08:30', 25), slot('lunch', 'lunch', '13:00', 40), slot('dinner', 'dinner', '20:00', 35)] };
+  const line = { foodId: 'chapati', unit: 'piece', qty: 2 };
+  const menu = (date: string): DayMenu => ({
+    date,
+    editedAt: '',
+    meals: [
+      { id: 'morning', type: 'breakfast', time: '08:30', lines: [line] },
+      { id: 'lunch', type: 'lunch', time: '13:00', lines: [line] },
+      { id: 'dinner', type: 'dinner', time: '20:00', lines: [line] },
+    ],
+  });
+  const meal = (date: string, slotId: string): Meal => ({ id: `${date}-${slotId}`, at: new Date(`${date}T12:00:00`).toISOString(), date, type: 'lunch', slotId, items: [], kcal: 600, protein: 10 });
+  // Sixty full days in a row, up to yesterday.
+  const meals = Array.from({ length: 60 }, (_, i) => addDays(TODAY, -60 + i)).flatMap((d) => ['morning', 'lunch', 'dinner'].map((id) => meal(d, id)));
+  const record = { today: TODAY, routine, meals, skips: [], offDays: [] as number[], floor: KCAL_FLOOR.male, menuOn: menu };
+  const profile: Profile = { name: 'V', sex: 'male', birthYear: 1990, heightCm: 172, weightKg: 84.5, activity: 'sedentary', goalWeightKg: 75, rateKgPerWeek: 0.5, lang: 'en', onboarded: true, startWeightKg: 92 };
+  const targets = dailyTargets(profile, new Date(`${TODAY}T12:00:00`));
+  const state = { profile, weights: [{ date: '2026-10-27', kg: 84.5 }], meals, water: [], sleep: [], steps: [], workouts: [], celebrated: [], settings: { waterGoalMl: 3000, weighDay: 0, offDays: [] } };
+  const game = (p: Profile) => {
+    const s = chapterStreaks({ ...record, chapterStart: p.chapterStart });
+    return { s, g: gameView({ state: { ...state, profile: p }, targets, today: TODAY, streakDays: s.days, bestStreakDays: s.best, lifetime: { streakDays: s.lifetimeDays, bestStreakDays: s.lifetimeBest } }) };
+  };
+  const chapter = { ...profile, ...newChapter(profile, state.weights, TODAY) };
+
+  it('starts the streak shown and the best run again from the chapter\'s first day', () => {
+    expect(game(profile).s).toEqual({ days: 60, best: 60, lifetimeDays: 60, lifetimeBest: 60 });
+    expect(game(chapter).s).toEqual({ days: 0, best: 0, lifetimeDays: 60, lifetimeBest: 60 });
+  });
+
+  it('keeps the points of a sixty-day streak from before the chapter, and its streak badges', () => {
+    const before = game(profile).g;
+    const after = game(chapter).g;
     expect(after.points).toBe(before.points);
-    const kg = (g: typeof before) => Object.fromEntries(g.badges.map((b) => [b.key, b.earned]));
-    expect(kg(before).kg_5).toBe(true);
-    expect(kg(after).kg_5).toBe(true);
-    expect(after.badges.filter((b) => b.earned).length).toBe(before.badges.filter((b) => b.earned).length);
+    const earned = (g: typeof after) => g.badges.filter((b) => b.earned).map((b) => b.key);
+    expect(earned(after)).toEqual(earned(before));
+    expect(earned(after)).toEqual(expect.arrayContaining(['streak_7', 'streak_30']));
+  });
+
+  it('a seven-day badge never celebrated before the chapter is still celebrated after it', () => {
+    const { g } = game(chapter);
+    const ids = nextWin({ earned: g.badges.filter((b) => b.earned).map((b) => b.key), level: g.level.key, challenge: g.challenge, celebrated: null }).seed!;
+    const celebrated = ids.filter((id) => id !== 'badge:streak_7');
+    expect(nextWin({ earned: g.badges.filter((b) => b.earned).map((b) => b.key), level: g.level.key, challenge: g.challenge, celebrated }).next?.id).toBe('badge:streak_7');
+  });
+
+  it('a chapter start after today limits nothing', () => {
+    expect(game({ ...profile, chapterStart: '2026-11-05' }).s).toEqual({ days: 60, best: 60, lifetimeDays: 60, lifetimeBest: 60 });
   });
 });

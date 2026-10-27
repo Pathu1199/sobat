@@ -803,9 +803,10 @@ describe('the day a store moved to this version', () => {
     expect(s.now().profile.goalWeightKg).toBe(75);
     expect(s.now().profile.autoFillFrom).toBe('2026-10-27');
     expect(s.written[0].profile.goalWeightKg).toBe(75);
-    // Stamped on the round's day instead, the stamp reads as changed here; merged whole, this device's whole profile would
-    // win. The profile merges field by field, so only the stamp does and the goal changed there is still kept.
+    // Stamped on the round's day instead, the file's stamp is a day later than this device's, and the later day wins: every day
+    // up to the round's is then never filled in. The goal changed there is kept either way, as the profile merges field by field.
     const stale = await syncWith(remote, { local, base: base6 as unknown as CloudState, modifiedTime: 't0' });
+    expect(stale.now().profile.autoFillFrom).toBe('2026-10-28');
     expect(stale.now().profile.goalWeightKg).toBe(75);
   });
 

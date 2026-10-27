@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
-import { dailyTipPrompt, factsFrom, systemPrompt } from '../ai/prompts';
+import { dailyTipPrompt, factsFrom, journeyFact, systemPrompt } from '../ai/prompts';
+import { chapterSince } from '../core/chapter';
 import { intakeFact, lowIntake } from '../core/intake';
-import { planFrom } from '../core/plan';
+import { shownPlan } from '../core/plan';
 import { routineFacts } from '../core/routine';
 import { contextFor, toPromptLines } from '../core/memory';
 import { KCAL_FLOOR } from '../core/nutrition';
@@ -55,9 +56,9 @@ export function TipCard() {
       waterGoalMl: app.state.settings.waterGoalMl,
       streak: app.streakDays,
     });
-    // The plan and the routine, so the tip speaks to this person's week, not a generic one.
-    const plan = planFrom(app.state.profile, app.state.weights, app.targets, app.today);
-    facts.push(`Weight journey: lost ${plan.lostKg} kg since the first weigh-in, ${plan.toGoKg} kg to go, stage "${plan.stage}".`);
+    // The plan and the routine, so the tip speaks to this person's week, not a generic one. Lost is the one Progress shows.
+    const plan = shownPlan(app.state.profile, app.state.weights, app.targets, app.today);
+    facts.push(journeyFact(plan, chapterSince(app.state.profile.chapterStart, app.today)));
     facts.push(...routineFacts(app.state.routine, app.foods, app.today, app.state.meals.filter((m) => m.date === app.today), app.spentToday));
     const intake = intakeFact(lowIntake({ meals: app.state.meals, today: app.today, target: app.targets.kcal, floor: KCAL_FLOOR[app.state.profile.sex], offDays: app.state.settings.offDays ?? [] }));
     if (intake) facts.push(intake);

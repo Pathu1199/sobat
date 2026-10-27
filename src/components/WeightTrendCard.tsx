@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { shownPlan } from '../core/chapter';
+import { shownPlan } from '../core/plan';
 import { formatDayMonthYear } from '../core/date';
 import { oneDecimal, shortDecimal, shownWeight, signedKg } from '../core/tileText';
 import { weightPoints } from '../core/tiles';

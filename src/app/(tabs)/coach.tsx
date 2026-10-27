@@ -16,7 +16,7 @@ import { HELPLINES, isCrisisText } from '../../core/guardrails';
 import { intakeFact, lowIntake } from '../../core/intake';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
 import { KCAL_FLOOR, mealTypeForHour } from '../../core/nutrition';
-import { planFrom } from '../../core/plan';
+import { shownPlan } from '../../core/plan';
 import { pattern, settledSlotIds, slotStates } from '../../core/pattern';
 import { journey, journeyFacts } from '../../core/review';
 import { avoidedFoodIds, bhajiFor, routineFacts } from '../../core/routine';
@@ -127,7 +127,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
 
     // No model: answer from the numbers, at once.
     if (!aiLive) {
-      const plan = planFrom(app.state.profile, app.state.weights, app.targets, app.today);
+      const plan = shownPlan(app.state.profile, app.state.weights, app.targets, app.today);
       const review = journey({
         today: app.today,
         meals: app.state.meals,
@@ -212,7 +212,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
         );
       }
       // Two weeks of the person's own numbers, so "why am I not losing" is answered from evidence.
-      const plan = planFrom(app.state.profile, app.state.weights, app.targets, app.today);
+      const plan = shownPlan(app.state.profile, app.state.weights, app.targets, app.today);
       const review = journey({
         today: app.today,
         meals: app.state.meals,

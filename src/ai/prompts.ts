@@ -1,6 +1,7 @@
 import type { Budget } from '../core/nutrition';
 import type { Decision } from '../core/decide';
-import type { Lang } from '../core/types';
+import type { Plan } from '../core/plan';
+import type { ISODate, Lang } from '../core/types';
 
 const LANG_NAME: Record<Lang, string> = { en: 'simple English', mr: 'simple Marathi (Devanagari)', hi: 'simple Hindi (Devanagari)' };
 
@@ -44,6 +45,11 @@ export function factsFrom(input: {
   if (input.sleepMinutes) f.push(`Last night's sleep: ${Math.floor(input.sleepMinutes / 60)}h ${input.sleepMinutes % 60}m.`);
   if (input.moodScore) f.push(`Mood today: ${input.moodScore} out of 5.`);
   return f;
+}
+
+/** The weight journey in one fact, Lost counted from the chapter start once there is a chapter (`chapterSince`), as Progress counts it. */
+export function journeyFact(plan: Pick<Plan, 'lostKg' | 'toGoKg' | 'stage'>, chapter: ISODate | undefined): string {
+  return `Weight journey: lost ${plan.lostKg} kg since ${chapter ? 'the chapter start' : 'the first weigh-in'}, ${plan.toGoKg} kg to go, stage "${plan.stage}".`;
 }
 
 /** The rules already decided what to do. The model only puts it into words. */

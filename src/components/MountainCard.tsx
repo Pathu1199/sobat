@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { gameView } from '../core/chapter';
+import { gameView } from '../core/game';
 import { motivationKey } from '../core/plan';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -13,11 +13,11 @@ import { C, F } from '../ui/theme';
 /**
  * Everything the game needs, from the store (`gameView`). Shared with the
  * Journey screen and Progress. Lost, To go and the climb are the chapter's, at
- * the weight Progress shows; the streak is the record's, as the streak tile
- * shows it; points and badges are the whole journey's.
+ * the weight Progress shows; points and badges are the whole journey's, the
+ * streak badges and the points counting the streak over the whole journey.
  */
 export function useGame() {
-  const { state, targets, today, streakDays, bestStreakDays } = useApp();
+  const { state, targets, today, streakDays, bestStreakDays, lifetimeStreakDays, lifetimeBestStreakDays } = useApp();
   return useMemo(
     () =>
       gameView({
@@ -36,8 +36,9 @@ export function useGame() {
         today,
         streakDays,
         bestStreakDays,
+        lifetime: { streakDays: lifetimeStreakDays, bestStreakDays: lifetimeBestStreakDays },
       }),
-    [state.profile, state.weights, state.meals, state.water, state.sleep, state.steps, state.workouts, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, state.celebrated, streakDays, bestStreakDays, targets, today],
+    [state.profile, state.weights, state.meals, state.water, state.sleep, state.steps, state.workouts, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, state.celebrated, streakDays, bestStreakDays, lifetimeStreakDays, lifetimeBestStreakDays, targets, today],
   );
 }
 

@@ -14,8 +14,7 @@ import { addMemory, makeMemory, prune as pruneMemory, removeMemory, type MemoryT
 import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
 import { slotStates } from '../core/pattern';
-import { recordStreak, STREAK_LOOKBACK_DAYS } from '../core/record';
-import { chapterDays } from '../core/chapter';
+import { chapterStreaks } from '../core/chapter';
 import {
   addMenuLine,
   alignMenus,
@@ -49,7 +48,7 @@ import {
   type DayMenu,
   type MenuFit,
 } from '../core/menu';
-import { bestStreak, waterMlOn } from '../core/tileText';
+import { waterMlOn } from '../core/tileText';
 import { withWaterAdded, withWaterRemoved } from '../core/tiles';
 import { isOffDay } from '../core/week';
 import { stripSince } from '../core/weekStrip';
@@ -86,6 +85,10 @@ type Ctx = {
   streakDays: number;
   /** The longest run of full days in the streak's window (from a new chapter's first day at most), by the streak's own rule: the streak tile's "Best". */
   bestStreakDays: number;
+  /** The streak over the whole journey, a new chapter or not (still within the streak's own window): only the points and the streak badges count it. */
+  lifetimeStreakDays: number;
+  /** The best run over the whole journey, by the same rule: only the streak badges count it. */
+  lifetimeBestStreakDays: number;
   setProfile: (p: Partial<Profile>) => void;
   setSettings: (s: Partial<Settings>) => void;
   addMeal: (m: Meal) => void;
@@ -349,13 +352,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // change, so a memo that reads it (the streak, the best run) is not worked out again for a bottle of water.
   const menuOn = useCallback((date: ISODate) => viewMenu(date, state.menus, state.routine, today, planFoods, fit), [state.menus, state.routine, today, planFoods, fit]);
 
-  // A new chapter starts the streak again: the streak and the best run look back no further than the chapter's first day.
-  const streakWindow = chapterDays(state.profile.chapterStart, today, STREAK_LOOKBACK_DAYS);
   // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run before then.
   // A full day eaten under the safe minimum neither counts nor ends the run; a full day with nothing eaten (under 50 kcal) ends it, today too.
-  const streakDays = useMemo(
+  // A new chapter starts the streak shown and the best run again from its first day; the points and the streak badges keep the whole
+  // journey's (`chapterStreaks`). Worked out once here for every tile and screen that shows them.
+  const streaks = useMemo(
     () =>
-      recordStreak({
+      chapterStreaks({
         today,
         routine: state.routine,
         meals: state.meals,
@@ -363,25 +366,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         offDays: state.settings.offDays ?? [],
         floor: fit.floor,
         menuOn,
-        limit: streakWindow,
+        chapterStart: state.profile.chapterStart,
       }),
-    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, fit.floor, menuOn, streakWindow],
+    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, fit.floor, menuOn, state.profile.chapterStart],
   );
-  // The best run in the same window, on the same inputs and by the same rule, worked out once here for every tile that shows it.
-  const bestStreakDays = useMemo(
-    () =>
-      bestStreak({
-        today,
-        routine: state.routine,
-        meals: state.meals,
-        skips: state.slotSkips,
-        offDays: state.settings.offDays ?? [],
-        floor: fit.floor,
-        menuOn,
-        days: streakWindow,
-      }),
-    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, fit.floor, menuOn, streakWindow],
-  );
+  const { days: streakDays, best: bestStreakDays, lifetimeDays: lifetimeStreakDays, lifetimeBest: lifetimeBestStreakDays } = streaks;
 
   // Planned meals fill themselves 90 minutes after their slot, and today is noted as a day the app was open: checked once the
   // store is loaded, then every minute (which also catches midnight) and whenever the app comes back to the front. Never while
@@ -449,6 +438,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       waterToday,
       streakDays,
       bestStreakDays,
+      lifetimeStreakDays,
+      lifetimeBestStreakDays,
       tipToday: tipRecord?.text ?? null,
       screenMinutesToday,
       stepsToday: state.steps.find((x) => x.date === today)?.count ?? 0,
@@ -688,7 +679,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, menuOn, streakDays, bestStreakDays, patternMealsLeft, weekPlan]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, menuOn, streakDays, bestStreakDays, lifetimeStreakDays, lifetimeBestStreakDays, patternMealsLeft, weekPlan]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

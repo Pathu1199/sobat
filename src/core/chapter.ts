@@ -1,16 +1,17 @@
 import { daysBetween, isIsoDate } from './date';
-import { badges, climbTrail, level, weeklyChallenge, xp, type Badge, type Challenge, type GameInput, type Level } from './game';
-import type { Targets } from './nutrition';
-import { planFrom, type Plan } from './plan';
-import { shownWeight } from './tileText';
-import type { AppState, ISODate, Profile, Settings, WeightLog } from './types';
+import type { DayMenu } from './menu';
+import { recordStreak, STREAK_LOOKBACK_DAYS } from './record';
+import type { Routine } from './routine';
+import { bestStreak, shownWeight } from './tileText';
+import type { ISODate, Meal, Profile, SlotSkip, WeightLog } from './types';
 
 /**
  * A new chapter: the climb starts again from the weight Progress shows (the
  * weight smoothed over a week, `shownWeight`, so Lost reads 0 on the first
- * day) and today, and the weekly challenge, the streak and the best run count
- * from that day. The very first start is kept, so the kilo badges still count
- * the whole journey. Nothing is deleted. Pure.
+ * day) and today, and the weekly challenge, the streak shown and the best run
+ * count from that day. The very first start is kept, so the kilo badges still
+ * count the whole journey, and the points and the streak badges count the
+ * streak of the whole journey. Nothing is deleted. Pure.
  */
 export function newChapter(
   profile: Pick<Profile, 'weightKg' | 'startWeightKg' | 'firstStartWeightKg'>,
@@ -27,89 +28,56 @@ export function newChapter(
 }
 
 /**
- * How many days back from today, today included, the streak may look: no
- * further than the chapter's first day, and never more than `max`. A start
- * that is not a date (a damaged file) or still to come limits nothing.
+ * The chapter's first day, while there is a chapter: a real date, on or
+ * before today. A start that is not a date (a damaged file) or still to come
+ * (a clock ahead on another device) is no chapter, and limits nothing.
  */
+export function chapterSince(start: unknown, today: ISODate): ISODate | undefined {
+  return isIsoDate(start) && start <= today ? start : undefined;
+}
+
+/** How many days back from today, today included, the streak may look: no further than the chapter's first day, and never more than `max`. */
 export function chapterDays(start: ISODate | undefined, today: ISODate, max: number): number {
-  if (!isIsoDate(start) || start > today) return max;
-  const days = daysBetween(start, today) + 1;
-  return Math.min(max, days);
+  const since = chapterSince(start, today);
+  return since ? Math.min(max, daysBetween(since, today) + 1) : max;
 }
 
-/**
- * The plan read at the weight Progress shows (smoothed over a week,
- * `shownWeight`) rather than the latest weigh-in alone, from the start weight
- * of the chapter: Lost, To go and the goal's date agree with the weight on the
- * Weight tile and the trend card. With no weigh-in it is the plan as it was.
- */
-export function shownPlan(profile: Profile, weights: WeightLog[], targets: Targets, today: ISODate): Plan {
-  return planFrom(profile, weights, targets, today, shownWeight(weights, today)?.kg);
-}
-
-export type GameView = {
-  plan: Plan;
-  input: GameInput;
-  progress: number;
-  camps: { p: number; label: string }[];
-  trail: number[];
-  points: number;
-  level: Level;
-  badges: Badge[];
-  challenge: Challenge;
+export type ChapterStreaks = {
+  /** Full record days in a row, from the chapter's first day at most: the streak tile's number. */
+  days: number;
+  /** The best run in the same window: the streak tile's "Best". */
+  best: number;
+  /** The same two over the whole journey (the streak's own window), a chapter or not: the points and the streak badges count these. */
+  lifetimeDays: number;
+  lifetimeBest: number;
 };
 
 /**
- * Everything the climb and the game show, from the store. Lost, To go, the
- * mountain, its camps and its trail are the chapter's (`shownPlan`, the trail
- * from the chapter's first day), and so is the weekly challenge. Points and
- * badges are the whole journey's: the kilo badges count from the very first
- * start, so a new chapter takes none away. The streak is the store's, the one
- * the streak tile shows, and a badge already celebrated stays earned.
+ * The streak and the best run twice over: from the chapter's first day, as
+ * the streak tile shows them, and over the whole journey, which the points and
+ * the streak badges count, so a new chapter takes none of them away. Both by
+ * the record's one rule (`recordStreak`, `bestStreak`). Each date's menu is
+ * read once for all four.
  */
-export function gameView(o: {
-  state: Pick<AppState, 'profile' | 'weights' | 'meals' | 'water' | 'sleep' | 'steps' | 'workouts' | 'celebrated'> & { settings: Pick<Settings, 'waterGoalMl' | 'weighDay' | 'offDays'> };
-  targets: Targets;
+export function chapterStreaks(input: {
   today: ISODate;
-  streakDays: number;
-  bestStreakDays: number;
-}): GameView {
-  const { state, targets, today } = o;
-  const plan = shownPlan(state.profile, state.weights, targets, today);
-  const since = isIsoDate(state.profile.chapterStart) ? state.profile.chapterStart : undefined;
-  const input: GameInput = {
-    today,
-    meals: state.meals,
-    water: state.water,
-    weights: state.weights,
-    sleep: state.sleep,
-    steps: state.steps,
-    workouts: state.workouts,
-    kcalTarget: targets.kcal,
-    waterGoalMl: state.settings.waterGoalMl,
-    startKg: plan.startKg,
-    goalKg: plan.goalKg,
-    offDays: state.settings.offDays,
-    since,
-    streakDays: o.streakDays,
-    bestStreakDays: o.bestStreakDays,
-    celebrated: state.celebrated,
+  routine: Routine;
+  meals: Meal[];
+  skips: SlotSkip[];
+  offDays: number[];
+  floor: number;
+  menuOn: (date: ISODate) => DayMenu | null;
+  chapterStart?: ISODate;
+}): ChapterStreaks {
+  const menus = new Map<ISODate, DayMenu | null>();
+  const menuOn = (date: ISODate) => {
+    if (!menus.has(date)) menus.set(date, input.menuOn(date));
+    return menus.get(date) ?? null;
   };
-  const lifetime: GameInput = { ...input, startKg: state.profile.firstStartWeightKg ?? plan.startKg, since: undefined };
-  const total = Math.max(0, plan.startKg - plan.goalKg);
-  const progress = total > 0 ? Math.min(1, Math.max(0, plan.lostKg / total)) : plan.toGoKg <= 0 ? 1 : 0;
-  const camps = total > 0 ? [0.25, 0.5, 0.75].map((p) => ({ p, label: `${Math.round((plan.startKg - total * p) * 10) / 10}` })) : [];
-  const trailWeights = since ? state.weights.filter((w) => w.date >= since) : state.weights;
-  const points = xp(lifetime);
-  return {
-    plan,
-    input,
-    progress,
-    camps,
-    trail: climbTrail(trailWeights, plan.startKg, plan.goalKg).map((t) => t.p),
-    points,
-    level: level(points),
-    badges: badges(lifetime),
-    challenge: weeklyChallenge(input, state.settings.weighDay),
-  };
+  const record = { today: input.today, routine: input.routine, meals: input.meals, skips: input.skips, offDays: input.offDays, floor: input.floor, menuOn };
+  const window = chapterDays(input.chapterStart, input.today, STREAK_LOOKBACK_DAYS);
+  const lifetimeDays = recordStreak({ ...record, limit: STREAK_LOOKBACK_DAYS });
+  const lifetimeBest = bestStreak({ ...record, days: STREAK_LOOKBACK_DAYS });
+  if (window === STREAK_LOOKBACK_DAYS) return { days: lifetimeDays, best: lifetimeBest, lifetimeDays, lifetimeBest };
+  return { days: recordStreak({ ...record, limit: window }), best: bestStreak({ ...record, days: window }), lifetimeDays, lifetimeBest };
 }
