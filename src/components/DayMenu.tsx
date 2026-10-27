@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { slotBefore, undoSteps } from '../core/addSheet';
-import { amountText, stepFoodLine } from '../core/basket';
+import { amountText, stepFoodLine, withKcal } from '../core/basket';
 import { draftKey, fillUndoSteps, offersDayConfirm, planNote, recordTone, rowLines, rowOffers, stepDraft, type DayView, type MenuRow, type RowLine } from '../core/dayView';
 import { itemName } from '../core/foods';
 import type { DayMenu as Menu } from '../core/menu';
@@ -12,7 +12,7 @@ import { slotLabel, type PlanLine } from '../core/routine';
 import type { ISODate, Meal } from '../core/types';
 import { runUndo } from '../core/undo';
 import { isOffDay } from '../core/week';
-import { fill, makeT } from '../i18n';
+import { fill, makeT, numberText } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, Btn, Card, Divider, Row, SectionHeader } from '../ui/components';
@@ -146,7 +146,9 @@ export function DayMenu({
         <Text numberOfLines={2} style={strong}>
           {l.name}
         </Text>
-        <Text numberOfLines={1} style={small}>{`${amountText(l.qty, l.measure)} · ${l.kcal} kcal`}</Text>
+        {/* Wraps rather than cuts, the calories kept whole (withKcal): at text size 1.25 in Marathi "3 × 1 वाटी (150 ग्रॅ) ·" is
+            about 129 points and "210 kcal" 59, beside the stepper's 136 on a 375 point phone. */}
+        <Text style={small}>{withKcal(amountText(l.qty, l.measure), l.kcal)}</Text>
       </>
     );
     return (
@@ -287,7 +289,7 @@ export function DayMenu({
             row.lines.map((l) => (
               <View key={l.idx}>
                 <Text style={strong}>{l.name}</Text>
-                <Text style={small}>{`${amountText(l.qty, l.measure)} · ${l.kcal} kcal`}</Text>
+                <Text style={small}>{withKcal(amountText(l.qty, l.measure), l.kcal)}</Text>
               </View>
             ))
           ) : (
@@ -320,7 +322,7 @@ export function DayMenu({
 
   return (
     <Card>
-      <SectionHeader title={t('menu_title')} meta={view.mode === 'future' ? fill(t('menu_planned_of'), { kcal: view.plannedKcal, goal: targets.kcal }) : undefined} />
+      <SectionHeader title={t('menu_title')} meta={view.mode === 'future' ? fill(t('menu_planned_of'), { kcal: numberText(view.plannedKcal), goal: numberText(targets.kcal) }) : undefined} />
       {isOffDay(state.settings.offDays, date) ? <Text style={small}>{t('menu_day_off')}</Text> : null}
       {view.missing > 0 ? (
         <Text style={{ color: C.amber, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{fill(t(view.missing === 1 ? 'menu_missing_one' : 'menu_missing'), { n: view.missing })}</Text>
@@ -334,8 +336,8 @@ export function DayMenu({
       ) : null}
       {note === 'suggested' || note === 'suggested_low' ? (
         <View style={{ gap: 4 }}>
-          <Text style={small}>{fill(t('plan_suggested'), { kcal: view.plannedKcal })}</Text>
-          {note === 'suggested_low' ? <Text style={{ color: C.amber, fontSize: F.small, lineHeight: lh(F.small) }}>{fill(t('plan_suggested_floor'), { floor })}</Text> : null}
+          <Text style={small}>{fill(t('plan_suggested'), { kcal: numberText(view.plannedKcal) })}</Text>
+          {note === 'suggested_low' ? <Text style={{ color: C.amber, fontSize: F.small, lineHeight: lh(F.small) }}>{fill(t('plan_suggested_floor'), { floor: numberText(floor) })}</Text> : null}
           {note === 'suggested_low' ? openPlan : null}
         </View>
       ) : null}

@@ -280,6 +280,16 @@ export function amountText(count: number, measure: string): string {
   return n === '1' ? measure : `${n} × ${measure}`;
 }
 
+/**
+ * An amount with its calories after it, "3 × 1 वाटी (150 ग्रॅ) · 210 kcal",
+ * for a line that may wrap but is never cut off: the calories and their unit
+ * are held together, and to the amount before the dot, so a line too long for
+ * its place breaks after the dot and the calories start the next line whole.
+ */
+export function withKcal(words: string, kcal: number): string {
+  return `${words}\u00A0· ${kcal}\u00A0kcal`;
+}
+
 const FRACTIONS: Record<string, string> = { '0.25': '¼', '0.5': '½', '0.75': '¾' };
 
 /** A count as people write it: 2, ½, 1½, ¾; anything else as it is (1.33). */

@@ -56,7 +56,7 @@ export function CustomFoodForm({ initialName, onSaved, onCancel }: { initialName
         {
           unit: 'serving',
           label_en: `1 serving (${Math.round(gramsN)} g)`,
-          label_mr: `१ वाटी (${Math.round(gramsN)} ग्रॅ)`,
+          label_mr: `1 वाटी (${Math.round(gramsN)} ग्रॅ)`,
           label_hi: `1 सर्विंग (${Math.round(gramsN)} ग्राम)`,
           grams: Math.round(gramsN),
         },

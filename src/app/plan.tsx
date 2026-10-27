@@ -17,7 +17,7 @@ import { defaultPlanWeek, planRowTone, planWeekRows, weekAverage, withReviewedWe
 import { avoidedFoodIds, slotLabel, weekdayOf } from '../core/routine';
 import { isOffDay } from '../core/week';
 import { balanceDay, lineInfo, swapsFor } from '../core/weekPlan';
-import { fill, makeT } from '../i18n';
+import { fill, makeT, numberText } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Divider, Micro, Row, Screen, Small, Toggle } from '../ui/components';
@@ -153,7 +153,7 @@ function PlanWeek() {
                   aria-selected={selected}
                   accessibilityLabel={
                     dish
-                      ? fill(t('planweek_row_a11y'), { day: dayLabel, dish: foodName(dish, lang), kcal: r.kcal, status: statusWord(r) })
+                      ? fill(t('planweek_row_a11y'), { day: dayLabel, dish: foodName(dish, lang), kcal: numberText(r.kcal), status: statusWord(r) })
                       : fill(t('planweek_row_none_a11y'), { day: dayLabel, status: statusWord(r) })
                   }
                   style={({ pressed }) => ({
@@ -178,7 +178,7 @@ function PlanWeek() {
                   </Text>
                   {dish ? (
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={[small, { color: C.text, fontWeight: '500' }]}>{`${r.kcal} kcal`}</Text>
+                      <Text style={[small, { color: C.text, fontWeight: '500' }]}>{`${numberText(r.kcal)} kcal`}</Text>
                       <Row style={{ gap: 4 }}>
                         {r.status === 'on' ? <Ionicons name="checkmark-circle" size={F.small} color={C.accentText} /> : null}
                         <Text style={[small, { color: tone }]}>{statusWord(r)}</Text>
@@ -191,7 +191,7 @@ function PlanWeek() {
           })}
         </View>
         {average ? (
-          <Small color={Math.abs(average.diff) <= targets.kcal * 0.05 ? C.textDim : C.amber}>{fill(t('planweek_average'), { avg: average.avg, goal: targets.kcal })}</Small>
+          <Small color={Math.abs(average.diff) <= targets.kcal * 0.05 ? C.textDim : C.amber}>{fill(t('planweek_average'), { avg: numberText(average.avg), goal: numberText(targets.kcal) })}</Small>
         ) : null}
       </Card>
 

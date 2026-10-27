@@ -3,6 +3,7 @@ import foodsJson from '../../data/foods.json';
 import {
   addLine,
   amountText,
+  withKcal,
   basketFromItems,
   basketFromLines,
   basketItems,
@@ -240,6 +241,16 @@ describe('amountText: how many of a measure', () => {
     expect(amountText(1.5, '1 katori (150 g)')).toBe('1½ × 1 katori (150 g)');
     expect(amountText(2, '1 piece (40 g)')).toBe('2 × 1 piece (40 g)');
     expect(amountText(0.5, '1 katori (150 g)')).toBe('½ × 1 katori (150 g)');
+  });
+});
+
+describe('withKcal: an amount with its calories, never cut off', () => {
+  it('keeps the calories and their unit together, so a line too long for its place wraps before them and never between them', () => {
+    expect(withKcal('3 × 1 वाटी (150 ग्रॅ)', 210)).toBe('3 × 1 वाटी (150 ग्रॅ)\u00A0· 210\u00A0kcal');
+    // The one place the line may break near the end is after the dot: the calories then start the next line, whole.
+    const line = withKcal('2 × 1 चमचा (मोठा) (15 ग्रॅ)', 1050);
+    expect(line.endsWith('· 1050\u00A0kcal')).toBe(true);
+    expect(line.slice(line.lastIndexOf(' ') + 1)).toBe('1050\u00A0kcal');
   });
 });
 

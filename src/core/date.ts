@@ -1,3 +1,4 @@
+import { latinDigits } from '../i18n';
 import type { ISODate, Lang } from './types';
 
 export function toISODate(d: Date = new Date()): ISODate {
@@ -87,14 +88,16 @@ export function localDate(iso: string): ISODate {
   return toISODate(new Date(iso));
 }
 
-const LOCALE: Record<Lang, string> = { en: 'en-IN', mr: 'mr-IN', hi: 'hi-IN' };
+// Marathi dates are asked for in Latin digits, as every number in the app is written, and any Devanagari digit an engine
+// still writes is turned into one (latinDigits), so a date never sits in other digits beside the numbers next to it.
+const LOCALE: Record<Lang, string> = { en: 'en-IN', mr: 'mr-IN-u-nu-latn', hi: 'hi-IN-u-nu-latn' };
 
 /** "Sat 26 Sep" in the chosen language. Falls back to the ISO date if Intl is missing. */
 export function formatDayLabel(date: ISODate, lang: Lang): string {
   try {
     const d = new Date(date + 'T12:00:00');
     const s = d.toLocaleDateString(LOCALE[lang] ?? 'en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
-    return s && s !== 'Invalid Date' ? s : date;
+    return s && s !== 'Invalid Date' ? latinDigits(s) : date;
   } catch {
     return date;
   }
@@ -104,7 +107,7 @@ export function formatDayLabel(date: ISODate, lang: Lang): string {
 export function formatDayMonth(date: ISODate, lang: Lang): string {
   try {
     const s = new Date(date + 'T12:00:00').toLocaleDateString(LOCALE[lang] ?? 'en-IN', { day: 'numeric', month: 'short' });
-    return s && s !== 'Invalid Date' ? s : date;
+    return s && s !== 'Invalid Date' ? latinDigits(s) : date;
   } catch {
     return date;
   }
@@ -114,7 +117,7 @@ export function formatDayMonth(date: ISODate, lang: Lang): string {
 export function formatDayMonthYear(date: ISODate, lang: Lang): string {
   try {
     const s = new Date(date + 'T12:00:00').toLocaleDateString(LOCALE[lang] ?? 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    return s && s !== 'Invalid Date' ? s : date;
+    return s && s !== 'Invalid Date' ? latinDigits(s) : date;
   } catch {
     return date;
   }
@@ -124,7 +127,7 @@ export function formatDayMonthYear(date: ISODate, lang: Lang): string {
 export function formatMonthYear(date: ISODate, lang: Lang): string {
   try {
     const s = new Date(date + 'T12:00:00').toLocaleDateString(LOCALE[lang] ?? 'en-IN', { month: 'long', year: 'numeric' });
-    return s && s !== 'Invalid Date' ? s : date.slice(0, 7);
+    return s && s !== 'Invalid Date' ? latinDigits(s) : date.slice(0, 7);
   } catch {
     return date.slice(0, 7);
   }

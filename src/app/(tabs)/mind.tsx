@@ -237,7 +237,7 @@ function Grounding({ lang }: { lang: any }) {
   const t = makeT(lang);
   const prompts =
     lang === 'mr'
-      ? ['५ गोष्टी बघा', '४ गोष्टींना स्पर्श करा', '३ आवाज ऐका', '२ वास घ्या', '१ चव घ्या']
+      ? ['5 गोष्टी बघा', '4 गोष्टींना स्पर्श करा', '3 आवाज ऐका', '2 वास घ्या', '1 चव घ्या']
       : lang === 'hi'
         ? ['5 चीज़ें देखें', '4 चीज़ें छुएँ', '3 आवाज़ें सुनें', '2 गंध लें', '1 स्वाद लें']
         : ['Name 5 things you can see', 'Touch 4 things', 'Hear 3 sounds', 'Smell 2 things', 'Taste 1 thing'];

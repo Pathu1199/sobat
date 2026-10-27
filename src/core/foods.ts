@@ -1,17 +1,19 @@
 import Fuse from 'fuse.js';
-import { t } from '../i18n';
+import { latinDigits, t } from '../i18n';
 import { kcalForGrams } from './nutrition';
 import type { Diet, FoodItem, ISODate, Lang, Meal, MealItem } from './types';
 
+// The food database writes Marathi names and measures in Devanagari digits ("१ नग (४० ग्रॅ)"); they are shown in the digits of
+// the count beside them ("3 × 1 नग (40 ग्रॅ)"), as every number in the app is written. A food of the person's own too.
 export function foodName(food: FoodItem, lang: Lang): string {
-  if (lang === 'mr') return food.name_mr || food.name_en;
-  if (lang === 'hi') return food.name_hi || food.name_en;
+  if (lang === 'mr') return latinDigits(food.name_mr || food.name_en);
+  if (lang === 'hi') return latinDigits(food.name_hi || food.name_en);
   return food.name_en;
 }
 
 export function portionLabel(p: FoodItem['portions'][number], lang: Lang): string {
-  if (lang === 'mr') return p.label_mr || p.label_en;
-  if (lang === 'hi') return p.label_hi || p.label_en;
+  if (lang === 'mr') return latinDigits(p.label_mr || p.label_en);
+  if (lang === 'hi') return latinDigits(p.label_hi || p.label_en);
   return p.label_en;
 }
 
@@ -223,5 +225,5 @@ export function findFoods(foods: FoodItem[], query: string, limit = 30): FoodIte
 export function itemName(item: Pick<MealItem, 'foodId' | 'name_en' | 'name_mr'>, foods: FoodItem[], lang: Lang): string {
   const f = item.foodId ? foods.find((x) => x.id === item.foodId) : undefined;
   if (f) return foodName(f, lang);
-  return lang === 'mr' ? item.name_mr || item.name_en : item.name_en;
+  return lang === 'mr' ? latinDigits(item.name_mr || item.name_en) : item.name_en;
 }

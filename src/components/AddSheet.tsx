@@ -366,7 +366,8 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
           <OneTapRow
             icon="refresh"
             title={title}
-            sub={`${yesterdayItems.map((it) => itemName(it, foods, lang)).join(', ')} · ${yesterdayItems.reduce((a, it) => a + it.kcal, 0)} kcal`}
+            sub={yesterdayItems.map((it) => itemName(it, foods, lang)).join(', ')}
+            kcal={yesterdayItems.reduce((a, it) => a + it.kcal, 0)}
             label={into ? fill(t('add_food_named'), { food: title }) : title}
             onPress={repeatYesterday}
           />

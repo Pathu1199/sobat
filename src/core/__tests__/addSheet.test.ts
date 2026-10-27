@@ -381,6 +381,6 @@ describe('plannedSummary: the foods of eating as planned', () => {
   });
 
   it("in the person's language; a food that is gone, or an amount of nothing, is left out as it is when logged", () => {
-    expect(plannedSummary([{ foodId: 'poha', unit: 'katori', qty: 1.5 }, { foodId: 'no-such-food', unit: 'katori', qty: 1 }, { foodId: 'chapati', unit: 'piece', qty: 0 }], foods, 'mr')).toBe(`${food('poha').name_mr} 1½ × १ वाटी (१५० ग्रॅ)`);
+    expect(plannedSummary([{ foodId: 'poha', unit: 'katori', qty: 1.5 }, { foodId: 'no-such-food', unit: 'katori', qty: 1 }, { foodId: 'chapati', unit: 'piece', qty: 0 }], foods, 'mr')).toBe(`${food('poha').name_mr} 1½ × 1 वाटी (150 ग्रॅ)`);
   });
 });

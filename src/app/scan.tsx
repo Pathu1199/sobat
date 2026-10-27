@@ -67,8 +67,8 @@ export default function ScanScreen() {
         carbs_100g: Math.round((n.carbohydrates_100g ?? 0) * 10) / 10,
         fat_100g: Math.round((n.fat_100g ?? 0) * 10) / 10,
         portions: [
-          { unit: 'serving', label_en: `1 serving (${grams} g)`, label_mr: `१ सर्विंग (${grams} ग्रॅ)`, label_hi: `1 सर्विंग (${grams} ग्राम)`, grams },
-          { unit: 'piece', label_en: '100 g', label_mr: '१०० ग्रॅ', label_hi: '100 ग्राम', grams: 100 },
+          { unit: 'serving', label_en: `1 serving (${grams} g)`, label_mr: `1 सर्विंग (${grams} ग्रॅ)`, label_hi: `1 सर्विंग (${grams} ग्राम)`, grams },
+          { unit: 'piece', label_en: '100 g', label_mr: '100 ग्रॅ', label_hi: '100 ग्राम', grams: 100 },
         ],
         default_portion: 'serving',
         tags: ['packaged'],

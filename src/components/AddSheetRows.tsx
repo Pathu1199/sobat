@@ -12,6 +12,25 @@ import { C, F, lh, S } from '../ui/theme';
 import { FoodThumb } from './FoodDetailSheet';
 
 /**
+ * The small line under a row's name: its words, then the calories in a text
+ * of their own that never shrinks, so a line too long for the row cuts the
+ * words short and never the calories.
+ */
+function SubLine({ words, kcal }: { words: string; kcal: number }) {
+  const faint = { color: C.textFaint, fontSize: F.small, lineHeight: lh(F.small) } as const;
+  return (
+    <View style={{ flexDirection: 'row', minWidth: 0 }}>
+      {words ? (
+        <Text numberOfLines={1} style={[faint, { flexShrink: 1 }]}>
+          {words}
+        </Text>
+      ) : null}
+      <Text numberOfLines={1} style={[faint, { flexShrink: 0 }]}>{words ? ` · ${kcal} kcal` : `${kcal} kcal`}</Text>
+    </View>
+  );
+}
+
+/**
  * One food in the add sheet. Not in the meal yet: its usual portion and
  * calories, and a + a finger wide. In the meal: how many of which measure and
  * the line's calories, a − / + with any count and a grams box under it; − at
@@ -65,9 +84,7 @@ export function FoodRow({
             <Text numberOfLines={2} style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
               {name}
             </Text>
-            <Text numberOfLines={1} style={{ color: C.textFaint, fontSize: F.small, lineHeight: lh(F.small) }}>
-              {sub}
-            </Text>
+            <SubLine words={measure} kcal={kcal} />
           </View>
         </Pressable>
         {line ? null : (
@@ -150,13 +167,16 @@ export function PlannedCard({ title, summary, kcal, lang, onAte, onChange }: { t
   );
 }
 
-/** One row that logs in one tap: the same as yesterday, or a saved meal. A screen reader hears what the tap does and the words under it, calories included. */
-export function OneTapRow({ icon, title, sub, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string; label: string; onPress: () => void }) {
+/**
+ * One row that logs in one tap: the same as yesterday, or a saved meal. A screen reader hears what the tap does and the words
+ * under it, calories included. With `kcal`, the calories follow the words in a text of their own and are never cut off.
+ */
+export function OneTapRow({ icon, title, sub, kcal, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string; kcal?: number; label: string; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${sub}`}
+      accessibilityLabel={kcal === undefined ? `${label}, ${sub}` : `${label}, ${sub} · ${kcal} kcal`}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch, paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}>
       <View style={{ width: 40, height: 40, borderRadius: 11, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name={icon} size={18} color={C.accentText} />
@@ -165,9 +185,13 @@ export function OneTapRow({ icon, title, sub, label, onPress }: { icon: keyof ty
         <Text numberOfLines={1} style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
           {title}
         </Text>
-        <Text numberOfLines={1} style={{ color: C.textFaint, fontSize: F.small, lineHeight: lh(F.small) }}>
-          {sub}
-        </Text>
+        {kcal === undefined ? (
+          <Text numberOfLines={1} style={{ color: C.textFaint, fontSize: F.small, lineHeight: lh(F.small) }}>
+            {sub}
+          </Text>
+        ) : (
+          <SubLine words={sub} kcal={kcal} />
+        )}
       </View>
       <Ionicons name="add-circle-outline" size={22} color={C.accentText} />
     </Pressable>

@@ -86,7 +86,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
   // and, while the PC answers, a few that need a model.
   const offlineQuick =
     lang === 'mr'
-      ? ['आता काय खाऊ?', 'किती कॅलरी बाकी?', '३०० kcal मध्ये काय खाऊ?', 'माझे वजन का कमी होत नाही?', 'आज खूप खाल्ले', 'प्रथिने कशी वाढवू?', 'पाणी किती प्यायचे?', 'झोप लागत नाही', 'व्यायामाचा कंटाळा', 'पूर्ण दिवसाचा प्लॅन दे']
+      ? ['आता काय खाऊ?', 'किती कॅलरी बाकी?', '300 kcal मध्ये काय खाऊ?', 'माझे वजन का कमी होत नाही?', 'आज खूप खाल्ले', 'प्रथिने कशी वाढवू?', 'पाणी किती प्यायचे?', 'झोप लागत नाही', 'व्यायामाचा कंटाळा', 'पूर्ण दिवसाचा प्लॅन दे']
       : lang === 'hi'
         ? ['अभी क्या खाऊँ?', 'कितनी कैलोरी बाकी?', '300 kcal में क्या खाऊँ?', 'मेरा वज़न क्यों नहीं घट रहा?', 'आज ज़्यादा खा लिया', 'प्रोटीन कैसे बढ़ाऊँ?', 'पानी कितना पिऊँ?', 'नींद नहीं आती', 'कसरत का मन नहीं', 'पूरे दिन का प्लान दो']
         : ['What should I eat now?', 'How many calories are left?', 'What fits in 300 kcal?', 'Why is my weight not dropping?', 'I overate today', 'How do I get more protein?', 'How much water should I drink?', 'I cannot sleep', 'No motivation to exercise', 'Give me a full-day plan'];

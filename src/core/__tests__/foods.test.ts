@@ -224,13 +224,13 @@ describe('measureName', () => {
 
   it("names one of the food's own portions in the chosen language", () => {
     expect(measureName(poha, 'katori', 'en')).toBe('1 katori (150 g)');
-    expect(measureName(poha, 'plate', 'mr')).toBe('१ ताट (२०० ग्रॅ)');
+    expect(measureName(poha, 'plate', 'mr')).toBe('1 ताट (200 ग्रॅ)');
     expect(measureName(poha, 'katori', 'hi')).toBe('1 कटोरी (150 ग्राम)');
   });
 
   it('names a household measure the food does not have from the word list, in the chosen language', () => {
     expect(measureName(poha, 'spoon_big', 'en')).toBe('1 big spoon ≈ 15 g');
-    expect(measureName(poha, 'spoon_big', 'mr')).toBe('१ मोठा चमचा ≈ १५ ग्रॅ');
+    expect(measureName(poha, 'spoon_big', 'mr')).toBe('1 मोठा चमचा ≈ 15 ग्रॅ');
     expect(measureName(poha, 'spoon_big', 'hi')).toBe('1 बड़ा चम्मच ≈ 15 ग्राम');
   });
 });

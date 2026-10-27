@@ -136,6 +136,45 @@ describe('weight', () => {
   });
 });
 
+describe('the short line in Marathi and Hindi', () => {
+  // Measured at text size 1.25 (15 points), Devanagari runs at most about 7 points a character that takes room (a nukta or
+  // a virama joins the letter beside it and adds none), and a tile's words have 135 points on a 375 point phone and 128 on
+  // a 360 one: 18 such characters is the most that keeps clear of the edge ("3 आठवड्यांत −10.5" is 16, about 116 points).
+  const MAX = 18;
+  const room = (text: string) => text.replace(/[\u093C\u094D]/g, '').length;
+  const w = (date: string, kg: number) => ({ date, kg });
+  const longest = [
+    waterWords(0, 5000, 500),
+    waterWords(2500, 3000, 500),
+    waterWords(3000, 3000, 500),
+    walkWords(0, 120),
+    sleepWords(null, 450),
+    weightWords([w('2026-10-06', 110), w('2026-10-27', 99.5)], 80, '2026-10-27'),
+    weightWords([w('2026-10-20', 110), w('2026-10-27', 99.5)], 80, '2026-10-27'),
+    weightWords([w('2026-09-01', 110)], 105.5, '2026-10-27'),
+    streakWords(90, 90),
+    breatheWords(null),
+    breatheWords(0),
+    breatheWords(BREATHE_HALF_MS),
+  ];
+
+  it('fits the tile at the largest text size, the weight change too, so its meaning is never cut off', () => {
+    for (const lang of ['mr', 'hi'] as const) {
+      for (const words of longest) {
+        const line = shownWords(words, makeT(lang)).line;
+        expect(room(line), `${lang}: ${line}`).toBeLessThanOrEqual(MAX);
+      }
+    }
+  });
+
+  it('keeps the change and its weeks in the words; the kilos are the number\'s unit just above', () => {
+    const three = shownWords(weightWords([w('2026-10-06', 110), w('2026-10-27', 99.5)], 80, '2026-10-27'), makeT('mr')).line;
+    expect(three).toContain('−10.5');
+    expect(three).toContain('3');
+    expect(shownWords(weightWords([w('2026-10-20', 99), w('2026-10-27', 98.4)], 80, '2026-10-27'), makeT('hi')).line).toContain('−0.6');
+  });
+});
+
 describe('streak', () => {
   it('shows the streak in days, one day singular, and the best never below today', () => {
     expect(streakWords(5, 12)).toEqual({ parts: [{ num: '5', unitKey: 'tile_unit_days' }], line: { key: 'tile_best', params: { n: 12 } } });

@@ -4,7 +4,7 @@ import { burnedOn, eatBack } from '../core/activity';
 import type { DayMode, DayView } from '../core/dayView';
 import { caloriesLeft } from '../core/todayLayout';
 import { isOffDay } from '../core/week';
-import { fill, makeT } from '../i18n';
+import { fill, makeT, numberText } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Micro } from '../ui/components';
 import { C, F, lh } from '../ui/theme';
@@ -26,7 +26,8 @@ export function CaloriesLeft({ mode, view, suggested }: { mode: DayMode; view: D
   const offDay = isOffDay(state.settings.offDays, view.date);
   const dayEarned = eatBack(burnedOn(state.activities ?? [], view.date));
   const w = caloriesLeft({ mode, targets, view, budget, suggested, offDay, dayEarned });
-  const n = (x: number) => x.toLocaleString();
+  // Latin digits and a comma for thousands on every device, as the rest of the app writes numbers, whatever the phone's language.
+  const n = numberText;
   const label = w.label ? t(w.label) : null;
   const earned = w.earned > 0 ? ` · +${n(w.earned)} ${t('earned_short')}` : '';
   const line = `${fill(t(w.line.key), { planned: n(w.line.kcal), eaten: n(w.line.kcal), goal: n(w.line.goal) })}${earned}`;
