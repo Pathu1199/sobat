@@ -34,6 +34,11 @@ export function dequeue(queue: QueuedPhoto[], id: string): QueuedPhoto[] {
   return queue.filter((p) => p.id !== id);
 }
 
+/** Whether a photo is still waiting here: one taken out while the model was reading it (a reset, its account put aside) adds no meal. */
+export function isQueued(queue: QueuedPhoto[], id: string): boolean {
+  return queue.some((p) => p.id === id);
+}
+
 export function markFailed(queue: QueuedPhoto[], id: string, error: string): QueuedPhoto[] {
   return queue
     .map((p) => (p.id === id ? { ...p, attempts: p.attempts + 1, lastError: error } : p))

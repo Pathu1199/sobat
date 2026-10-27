@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { answerOffline, parseQuestion, type OfflineCtx } from '../offlineCoach';
+import { answerOffline, OPTION_MIN_KCAL, parseQuestion, type OfflineCtx } from '../offlineCoach';
 
 describe('parseQuestion', () => {
   it('reads the question in English, Marathi and Hindi', () => {
@@ -53,6 +53,31 @@ describe('answerOffline', () => {
     expect(a.text).toContain('[verdict_working]');
     expect(a.text).toContain('[oc_evidence]');
   });
+  it('says to tap an option only when there is one to tap', () => {
+    expect(answerOffline('what should I eat now', ctx, t).text).toContain('[oc_tap_option]');
+    const none = answerOffline('what should I eat now', { ...ctx, optionsFor: () => [] }, t);
+    expect(none.options).toEqual([]);
+    expect(none.text).not.toContain('[oc_tap_option]');
+  });
+
+  it('with 150 kcal left and the plate on now smaller than any option, sizes the options by what is left, as before', () => {
+    const asked: number[] = [];
+    const sized = (plateKcal: number): OfflineCtx => ({
+      ...ctx,
+      budget: { ...ctx.budget, remaining: 150 },
+      dayPlan: { ...ctx.dayPlan, slots: [{ ...ctx.dayPlan.slots[0], budget: plateKcal }] },
+      optionsFor: (max) => (asked.push(max), ctx.optionsFor(max)),
+    });
+    const a = answerOffline('what should I eat now', sized(OPTION_MIN_KCAL - 10), t);
+    expect(asked).toEqual([150]);
+    expect(a.options).toHaveLength(1);
+    expect(a.text).toContain('[oc_tap_option]');
+    // A plate the smallest option fits still sizes them.
+    asked.length = 0;
+    answerOffline('what should I eat now', sized(OPTION_MIN_KCAL), t);
+    expect(asked).toEqual([OPTION_MIN_KCAL]);
+  });
+
   it('says stop when nothing is left', () => {
     const a = answerOffline('kay khau', { ...ctx, budget: { ...ctx.budget, remaining: 20 } }, t);
     expect(a.text).toContain('[oc_stop]');

@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCoach } from '../../components/useCoach';
 import { useMinute } from '../../services/useWorkSchedule';
 import { dayPlan } from '../../core/dayPlan';
-import { answerOffline } from '../../core/offlineCoach';
+import { answerOffline, OPTION_MIN_KCAL } from '../../core/offlineCoach';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { factsFrom, memoryExtractionPrompt, MEMORY_SCHEMA, systemPrompt } from '../../ai/prompts';
@@ -174,7 +174,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
           kcalTarget: app.targets.kcal,
           proteinTarget: app.targets.proteinG,
           optionsFor: (max) =>
-            suggestMeals(app.foods, max, { ...diet, minKcal: 40 })
+            suggestMeals(app.foods, max, { ...diet, minKcal: OPTION_MIN_KCAL })
               .filter((o) => !avoided.has(o.food.id))
               .slice(0, 3)
               .map((o) => ({ foodId: o.food.id, name_en: o.food.name_en, name_mr: o.food.name_mr, grams: o.grams, kcal: o.kcal, protein: o.protein })),

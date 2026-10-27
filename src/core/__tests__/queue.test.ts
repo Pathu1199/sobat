@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dequeue, enqueue, markFailed, MAX_ATTEMPTS, MAX_QUEUED, nextToProcess, pendingCount, type QueuedPhoto } from '../queue';
+import { dequeue, enqueue, isQueued, markFailed, MAX_ATTEMPTS, MAX_QUEUED, nextToProcess, pendingCount, type QueuedPhoto } from '../queue';
 
 function photo(id: string, attempts = 0): QueuedPhoto {
   return { id, uri: `file://${id}`, at: '', date: '2026-09-26', attempts };
@@ -61,5 +61,14 @@ describe('nextToProcess and pendingCount', () => {
     const q = [photo('a', MAX_ATTEMPTS), photo('b')];
     expect(nextToProcess(q)!.id).toBe('b');
     expect(pendingCount(q)).toBe(1);
+  });
+});
+
+describe('isQueued', () => {
+  it('tells whether a photo is still waiting, so one taken out while the model was reading it adds no meal', () => {
+    const q = [photo('a'), photo('b')];
+    expect(isQueued(q, 'a')).toBe(true);
+    expect(isQueued(dequeue(q, 'a'), 'a')).toBe(false);
+    expect(isQueued([], 'a')).toBe(false);
   });
 });

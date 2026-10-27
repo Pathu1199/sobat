@@ -28,8 +28,7 @@ export type Advice = {
 
 export type CoachInput = {
   today: ISODate;
-  hour: number;
-  /** Minutes after midnight, as `useMinute` gives them: the meal clock reads this. */
+  /** Minutes after midnight, as `useMinute` gives them: the one clock the coach reads, the hour included. */
   nowMinutes: number;
   budget: Budget;
   meals: Meal[];
@@ -46,16 +45,18 @@ export type CoachInput = {
   /** Slots eaten (a meal the app filled in from the plan counts as eaten as planned) or skipped today. */
   settledSlotIds: string[];
   /** The plate the day plan laid for the slot that is on now, if any. */
-  nextPlate?: { id?: string; type: MealType; budget: number; kcal: number; names: string[] } | null;
+  nextPlate?: { id: string; type: MealType; budget: number; kcal: number; names: string[] } | null;
 };
 
 const ORDER: Record<Urgency, number> = { now: 0, soon: 1, note: 2 };
 
 export function coachAdvice(input: CoachInput): Advice[] {
-  const { hour, budget: b } = input;
+  const { budget: b } = input;
   const out: Advice[] = [];
   const todayMeals = input.meals.filter((m) => m.date === input.today);
   const nowMin = input.nowMinutes;
+  // The hour comes off the same clock as the meals, so the two never disagree around the hour.
+  const hour = Math.floor(nowMin / 60);
   const slots = pattern(input.routine);
   const settled = new Set(input.settledSlotIds);
   const cur = slotAt(input.routine, nowMin);

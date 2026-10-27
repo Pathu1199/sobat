@@ -10,8 +10,8 @@ const meal = (type: Meal['type'], hour: number, kcal: number): Meal => ({ id: ty
 const budget = (consumed: number, target = 1700): Budget => ({ target, consumed, remaining: target - consumed, earned: 0, perMeal: 500, mealsLeft: 2, proteinTarget: 110, proteinConsumed: 20, proteinLeft: 90, pct: consumed / target });
 /** The four meals of the day: breakfast 08:30, lunch 13:00, snack 16:00, dinner 20:30. */
 const routine: Routine = { ...DEFAULT_ROUTINE, enabled: true, slots: DEFAULT_SLOTS };
-/** The clock as the app gives it: the hour, and the minutes after midnight. */
-const clock = (hour: number, minute: number) => ({ hour, nowMinutes: hour * 60 + minute });
+/** The clock as the app gives it: minutes after midnight. The coach reads the hour off the same clock. */
+const clock = (hour: number, minute: number) => ({ nowMinutes: hour * 60 + minute });
 
 const base: CoachInput = {
   today: TODAY,
@@ -98,6 +98,22 @@ describe('coachAdvice', () => {
     const a = coachAdvice({ ...base, ...clock(10, 40), settledSlotIds: ['breakfast'] });
     expect(a.find((x) => x.key === 'coach_next_meal')?.params).toMatchObject({ slot: 'lunch', at: '13:00' });
     expect(a.filter((x) => x.params.slot === 'dinner' || x.params.meal === 'dinner' || x.key === 'coach_late_dinner')).toEqual([]);
+  });
+
+  it('reads the hour off the same clock as the meals: bedtime is said from 22:00, not at 21:59', () => {
+    const at = (hour: number, minute: number) => coachAdvice({ ...base, ...clock(hour, minute), settledSlotIds: ['breakfast', 'lunch', 'snack', 'dinner'], budget: budget(1600) }).map((x) => x.key);
+    expect(at(21, 59)).not.toContain('coach_bedtime');
+    expect(at(22, 0)).toContain('coach_bedtime');
+  });
+
+  it('a 20:30 dinner at 20:45, inside its grace, still gets its plate; at 21:16, past it, only the late-dinner call', () => {
+    const plate = { id: 'dinner', type: 'dinner' as const, budget: 450, kcal: 430, names: ['Bhakri', 'Pithla'] };
+    const evening = (hour: number, minute: number) => coachAdvice({ ...base, ...clock(hour, minute), settledSlotIds: ['breakfast', 'lunch', 'snack'], budget: budget(1100), nextPlate: plate });
+    expect(evening(20, 45).filter((x) => x.params.slot === 'dinner')).toEqual([expect.objectContaining({ key: 'coach_meal_plate', urgency: 'soon', params: expect.objectContaining({ slot: 'dinner', kcal: 450 }) })]);
+    const late = evening(21, 16);
+    expect(late.filter((x) => x.params.slot === 'dinner')).toEqual([expect.objectContaining({ key: 'coach_late_dinner', urgency: 'now', params: { slot: 'dinner', kcal: 450 } })]);
+    expect(late.map((x) => x.key)).not.toContain('coach_meal_plate');
+    expect(late.map((x) => x.key)).not.toContain('coach_meal_due');
   });
 
   it('calls a dinner past its grace once, as late, with its plate and its slot', () => {

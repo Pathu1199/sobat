@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
 import type { BreakSettings } from '../core/breaks';
-import { slotStates } from '../core/pattern';
+import { settledSlotIds, slotStates } from '../core/pattern';
 import { DAILY_IDS, dailyReminders, LONG_BREAK_ID, lastLogDate, plannedReminders, type Reminder } from '../core/reminders';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -97,9 +97,7 @@ export function useScheduledReminders() {
   const doneKey = useMemo(() => {
     if (!routine.enabled) return '';
     const todayMeals = app.state.meals.filter((m) => m.date === today);
-    return slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skippedSlots: app.skippedToday })
-      .filter((s) => s.status === 'done' || s.status === 'skipped')
-      .map((s) => s.slot.id)
+    return settledSlotIds(slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skippedSlots: app.skippedToday }))
       .sort()
       .join(',');
   }, [routine, app.state.meals, today, app.targets.kcal, hour, app.skippedToday]);

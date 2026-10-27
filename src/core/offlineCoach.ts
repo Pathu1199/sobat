@@ -90,13 +90,16 @@ export type OfflineCtx = {
   stepsToday: number;
   kcalTarget: number;
   proteinTarget: number;
-  /** Foods that fit a given number of calories, best protein first. */
+  /** Foods that fit a given number of calories, best protein first; none smaller than OPTION_MIN_KCAL. */
   optionsFor: (kcalMax: number) => ChatOption[];
   foodName: (foodId: string) => string;
   mealName: (m: MealType) => string;
 };
 
 type T = (k: string) => string;
+
+/** The smallest option offered: a portion under this is not worth suggesting. */
+export const OPTION_MIN_KCAL = 40;
 
 /** The code-written answer to "does fasting help?": the same words with the PC on or off. */
 export function fastingReply(t: T, kcalTarget: number): string {
@@ -139,8 +142,10 @@ export function answerOffline(question: string, ctx: OfflineCtx, t: T): { text: 
       const plate = plateLine(ctx, t, slot);
       if (plate) lines.push(plate);
       if (b.proteinConsumed < b.proteinTarget * 0.5) lines.push(f(t('oc_protein_push'), { g: Math.round(b.proteinTarget - b.proteinConsumed) }));
-      options = ctx.optionsFor(Math.min(left, slot?.budget ?? Math.max(300, b.perMeal)));
-      lines.push(t('oc_tap_option'));
+      // Sized to that plate; with no plate, or one smaller than any option, to a meal's worth of what is left, as before.
+      const size = slot && slot.budget >= OPTION_MIN_KCAL ? slot.budget : Math.max(300, b.perMeal);
+      options = ctx.optionsFor(Math.min(left, size));
+      if (options.length > 0) lines.push(t('oc_tap_option'));
       break;
     }
     case 'fits_kcal': {

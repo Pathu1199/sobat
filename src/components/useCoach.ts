@@ -33,7 +33,6 @@ export function useCoach(nowMinutes: number): Advice[] {
     const slot = plan.slots.find((s) => s.id === plan.nowId) ?? plan.slots[0];
     return coachAdvice({
       today,
-      hour,
       nowMinutes,
       budget,
       meals: state.meals,

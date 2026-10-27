@@ -4,7 +4,7 @@ import { toISODate } from '../core/date';
 import { defaultPortion, resolveByName, toMealItem } from '../core/foods';
 import { skippedOn } from '../core/menu';
 import { slotForMealAt } from '../core/pattern';
-import { MAX_ATTEMPTS, nextToProcess } from '../core/queue';
+import { isQueued, MAX_ATTEMPTS, nextToProcess } from '../core/queue';
 import type { MealItem } from '../core/types';
 import { loadPhoto, removePhoto } from './photoStore';
 import { useAI } from './useAI';
@@ -59,6 +59,9 @@ export function usePhotoQueue() {
         );
         // The model can take a while: meals, skips and foods added meanwhile count, so read the store as it is now.
         const latest = appRef.current;
+        // A photo no longer queued here (a reset, or its account's data put aside) adds nothing. Its bytes stay:
+        // a put-aside account wants them back, and the clean-up on load drops any nobody holds.
+        if (!isQueued(latest.state.photoQueue, photo.id)) return;
         const items: MealItem[] = (result.items ?? []).map((v) => {
           const match = resolveByName(latest.foods, v.name_en);
           const grams = Math.max(20, Math.round(v.grams_est || (match ? (defaultPortion(match)?.grams ?? 100) : 100)));
