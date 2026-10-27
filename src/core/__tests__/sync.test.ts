@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_STATE } from '../../store/defaults';
-import { applyCloud, forCloud, isPristine, merge3, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
+import { applyCloud, bindStart, encodeSavedBase, forCloud, isPristine, merge3, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
 import type { AppState, Meal } from '../types';
 
 const meal = (id: string, at: string, kcal = 300): Meal => ({
@@ -191,5 +191,49 @@ describe('signing out', () => {
   it('changes still waiting: asks, and signing out anyway keeps them on the device', () => {
     expect(signOutPlan({ configured: true, upToDate: false, force: false })).toBe('ask');
     expect(signOutPlan({ configured: true, upToDate: false, force: true })).toBe('keep');
+  });
+});
+
+describe('after a restart', () => {
+  const a = meal('a', '2026-10-10T08:00:00.000Z');
+  const b = meal('b', '2026-10-10T13:00:00.000Z');
+  const synced = cloudOf(used([a, b]));
+  const saved = readSavedBase(encodeSavedBase({ uid: 'u1', base: synced, modifiedTime: 't1' }));
+
+  it('the base saved beside the state comes back for the same account', () => {
+    expect(saved).toEqual({ uid: 'u1', base: synced, modifiedTime: 't1' });
+    expect(bindStart({ uid: 'u1', owner: 'u1', saved, loaded: true })).toMatchObject({ base: synced, modifiedTime: 't1' });
+  });
+
+  it('a meal deleted on another device while this one was closed stays deleted', () => {
+    const start = bindStart({ uid: 'u1', owner: 'u1', saved, loaded: true });
+    expect(merge3(start.base, synced, cloudOf(used([b]))).meals.map((m) => m.id)).toEqual(['b']);
+  });
+
+  it('an edit made on another device while this one was closed is not reverted', () => {
+    const start = bindStart({ uid: 'u1', owner: 'u1', saved, loaded: true });
+    expect(merge3(start.base, synced, cloudOf(used([{ ...a, kcal: 450 }, b]))).meals.find((m) => m.id === 'a')?.kcal).toBe(450);
+  });
+
+  it('is not used for another account, nor when the stored state could not be read', () => {
+    expect(bindStart({ uid: 'u2', owner: 'u2', saved, loaded: true }).base).toBeNull();
+    expect(bindStart({ uid: 'u1', owner: 'u1', saved, loaded: false }).base).toBeNull();
+  });
+
+  it('a damaged record is ignored', () => {
+    expect(readSavedBase(null)).toBeNull();
+    expect(readSavedBase('{')).toBeNull();
+    expect(readSavedBase(JSON.stringify({ uid: 'u1', modifiedTime: 't1' }))).toBeNull();
+  });
+
+  it('a device holding nothing never deletes the account\'s records, whatever base it was left with', () => {
+    // A reset device whose old base is still about must not read as "everything was deleted here".
+    expect(merge3(synced, cloudOf({ ...EMPTY_STATE }), synced).meals.map((m) => m.id)).toEqual(['a', 'b']);
+  });
+
+  it('a device that synced before onboarding still keeps what it changed since', () => {
+    const fresh = cloudOf({ ...EMPTY_STATE });
+    const picked = cloudOf({ ...EMPTY_STATE, profile: { ...EMPTY_STATE.profile, lang: 'mr' } });
+    expect(merge3(fresh, picked, fresh).profile.lang).toBe('mr');
   });
 });

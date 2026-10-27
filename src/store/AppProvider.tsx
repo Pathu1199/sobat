@@ -24,6 +24,8 @@ import { EMPTY_STATE } from './defaults';
 import { migrateState } from './migrate';
 
 const KEY = 'sobat.state.v1';
+/** The account file the stored state was last merged with. Only ever written in the same call as the state, and removed with it. */
+export const CLOUD_BASE_KEY = 'sobat.state.v1.cloudBase';
 
 const FOODS = foodsJson as unknown as FoodItem[];
 const EXERCISES = exercisesJson as unknown as Exercise[];
@@ -87,6 +89,8 @@ type Ctx = {
   tipToday: string | null;
   screenMinutesToday: number;
   resetAll: () => void;
+  /** Keep the sync base beside the state: written with the next save of the state, in the same storage call. */
+  saveCloudBase: (json: string) => void;
   exportJSON: () => string;
   /** 'load': the stored state could not be read and nothing will be written over it. 'save': the last write failed. */
   storageError: 'load' | 'save' | null;
@@ -105,6 +109,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState<'load' | 'save' | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The sync base waiting to go out with the next save. A base on disk that is
+  // newer than the state beside it would read the missing records as deleted here.
+  const pendingBase = useRef<string | null>(null);
+  const [baseTick, setBaseTick] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -131,12 +139,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!ready || storageError === 'load') return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
+    // Taken now, beside the state this render holds, not whatever is pending when the timer fires.
+    const base = pendingBase.current;
     saveTimer.current = setTimeout(() => {
-      AsyncStorage.setItem(KEY, JSON.stringify(state))
-        .then(() => setStorageError((e) => (e === 'save' ? null : e)))
+      const pairs: [string, string][] = [[KEY, JSON.stringify(state)]];
+      if (base !== null) pairs.push([CLOUD_BASE_KEY, base]);
+      AsyncStorage.multiSet(pairs)
+        .then(() => {
+          if (pendingBase.current === base) pendingBase.current = null;
+          setStorageError((e) => (e === 'save' ? null : e));
+        })
         .catch(() => setStorageError('save'));
     }, 250);
-  }, [state, ready, storageError]);
+  }, [state, ready, storageError, baseTick]);
+
+  const saveCloudBase = useCallback((json: string) => {
+    pendingBase.current = json;
+    setBaseTick((n) => n + 1);
+  }, []);
 
   // Not `toISODate()` at render time: nothing would re-render at midnight and
   // the whole app would keep working against yesterday.
@@ -301,15 +321,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setTip: (text) =>
         update((s) => ({ ...s, tips: [...s.tips.filter((t) => t.date !== today).slice(-30), { date: today, text, lang: s.profile.lang }] })),
       resetAll: () => {
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        pendingBase.current = null;
         setState(EMPTY_STATE);
         // A deliberate reset is the one time an unreadable store may be replaced.
         setStorageError(null);
-        AsyncStorage.removeItem(KEY).catch(() => {});
+        AsyncStorage.multiRemove([KEY, CLOUD_BASE_KEY]).catch(() => {});
       },
+      saveCloudBase,
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

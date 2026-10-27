@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
-import { applyCloud, forCloud, merge3, sameCloud, signOutPlan, type CloudState } from '../core/sync';
-import { useApp } from '../store/AppProvider';
+import { applyCloud, bindStart, encodeSavedBase, forCloud, merge3, readSavedBase, sameCloud, signOutPlan, type CloudState } from '../core/sync';
+import { CLOUD_BASE_KEY, useApp } from '../store/AppProvider';
 import { CloudError, cloudConfigured, deleteData, getData, putData, type RemoteFile } from './cloud';
 import { authApi, useAuth } from './useAuth';
 
@@ -19,6 +19,9 @@ import { authApi, useAuth } from './useAuth';
  *
  * A failed push is shown as failed. Nothing on the device is ever thrown
  * away until it is known to have reached the account.
+ *
+ * The base every merge is worked out against is saved beside the state, in
+ * the same storage call, so a restart still knows which side changed what.
  */
 export type SyncStatus = 'unconfigured' | 'off' | 'syncing' | 'synced' | 'pending' | 'error' | 'blocked';
 
@@ -56,7 +59,7 @@ function parseRemote(file: RemoteFile): CloudState | null {
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const app = useApp();
   const { user, ready } = useAuth();
-  const { state, ready: stateReady, importState, resetAll } = app;
+  const { state, ready: stateReady, storageError, importState, resetAll, saveCloudBase } = app;
 
   const configured = cloudConfigured();
   const [status, setStatus] = useState<SyncStatus>(configured ? 'off' : 'unconfigured');
@@ -65,7 +68,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
 
   // The file as this device last saw it, and which version that was. Read
   // only inside callbacks and effects, never for rendering: the status
-  // carries what the screen needs.
+  // carries what the screen needs. Loaded from disk at bind, saved by settle.
   const base = useRef<CloudState | null>(null);
   const baseModifiedTime = useRef<string | null>(null);
   const boundUid = useRef<string | null>(null);
@@ -89,13 +92,23 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     setError(e instanceof Error ? e.message : String(e));
   }, []);
 
+  /** The account now holds `file` at `modifiedTime`: remember it, here and on disk beside the state. */
+  const settle = useCallback(
+    (uid: string, file: CloudState, modifiedTime: string | null) => {
+      base.current = file;
+      baseModifiedTime.current = modifiedTime;
+      saveCloudBase(encodeSavedBase({ uid, base: file, modifiedTime }));
+    },
+    [saveCloudBase],
+  );
+
   /**
    * One round: push if there are changes, pull if asked, merge whatever the
    * relay says is newer, and remember the result as the new base. Throws on
    * anything the relay could not do.
    */
   const round = useCallback(
-    async (pull: boolean, token: string) => {
+    async (pull: boolean, token: string, uid: string) => {
       const extra = { name: stateRef.current.profile.name || user?.name || undefined, platform: Platform.OS };
       for (let attempt = 0; attempt < MAX_ROUNDS; attempt++) {
         const local = forCloud(stateRef.current);
@@ -106,8 +119,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
           // The common case: push on top of the version we know.
           const res = await putData(token, JSON.stringify(local), baseModifiedTime.current, extra);
           if (res.ok) {
-            base.current = local;
-            baseModifiedTime.current = res.modifiedTime;
+            settle(uid, local, res.modifiedTime);
             return;
           }
           remote = res.stale;
@@ -124,14 +136,12 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         }
         if (theirs && sameCloud(merged, theirs)) {
           // The account already has exactly this; nothing to write.
-          base.current = merged;
-          baseModifiedTime.current = remote.modifiedTime;
+          settle(uid, merged, remote.modifiedTime);
           return;
         }
         const res = await putData(token, JSON.stringify(merged), remote.modifiedTime, extra);
         if (res.ok) {
-          base.current = merged;
-          baseModifiedTime.current = res.modifiedTime;
+          settle(uid, merged, res.modifiedTime);
           return;
         }
         // Someone wrote again in the meantime; go round with their newest.
@@ -139,13 +149,14 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       }
       throw new CloudError(409, 'kept_changing');
     },
-    [importState, user?.name],
+    [importState, settle, user?.name],
   );
 
   /** Run rounds until nothing is waiting. A call that lands mid-round queues one more. */
   const sync = useCallback(
     async (opts: { pull: boolean }) => {
-      if (!configured || !boundUid.current) return;
+      const uid = boundUid.current;
+      if (!configured || !uid) return;
       if (inFlight.current) {
         again.current = true;
         return;
@@ -159,8 +170,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
           try {
             const token = await authApi.idToken();
             if (!token) throw new CloudError(401, 'not_signed_in');
-            await round(pull, token);
-            await AsyncStorage.setItem(OWNER_KEY, boundUid.current).catch(() => {});
+            await round(pull, token, uid);
+            await AsyncStorage.setItem(OWNER_KEY, uid).catch(() => {});
             setStatus('synced');
             setError(null);
             setLastSyncAt(new Date().toISOString());
@@ -192,22 +203,24 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     if (boundUid.current === user.uid) return;
     let cancelled = false;
     (async () => {
-      const owner = await AsyncStorage.getItem(OWNER_KEY).catch(() => null);
+      const [owner, saved] = await Promise.all([AsyncStorage.getItem(OWNER_KEY).catch(() => null), AsyncStorage.getItem(CLOUD_BASE_KEY).catch(() => null)]);
       if (cancelled) return;
       if (owner && owner !== user.uid) {
         // Someone else's unsynced leftovers must not be merged into this account.
         resetAll();
         await AsyncStorage.removeItem(OWNER_KEY).catch(() => {});
       }
+      // Loaded before the first merge: without it, deletions and edits made elsewhere since the last run would be undone.
+      const start = bindStart({ uid: user.uid, owner, saved: readSavedBase(saved), loaded: storageError !== 'load' });
       boundUid.current = user.uid;
-      base.current = null;
-      baseModifiedTime.current = null;
+      base.current = start.base;
+      baseModifiedTime.current = start.modifiedTime;
       await sync({ pull: true });
     })();
     return () => {
       cancelled = true;
     };
-  }, [configured, ready, stateReady, user, sync, resetAll]);
+  }, [configured, ready, stateReady, storageError, user, sync, resetAll]);
 
   // Push a moment after changes settle. Nothing is pushed before the first
   // pull has set a base, so a fresh sign-in never overwrites the account.

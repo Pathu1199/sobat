@@ -140,11 +140,12 @@ function mergeCollection(idOf: (r: AnyRecord) => string, base: unknown, local: u
  * Three-way merge. `base` is the file as this device last saw it; null means
  * this device has never synced. With no base there is nothing to say which
  * side changed, so a record present on both sides is taken from the device
- * (what the person is looking at), and a device that was never used takes
- * the account's copy wholesale.
+ * (what the person is looking at). A device holding nothing takes the
+ * account's copy wholesale: never used, or reset with an old base still
+ * about, its emptiness is not a deletion.
  */
 export function merge3(base: CloudState | null, local: CloudState, remote: CloudState): CloudState {
-  if (base === null && isPristine(local)) return remote;
+  if (isPristine(local) && (base === null || !isPristine(base))) return remote;
   const b = (base ?? {}) as Partial<CloudState>;
   const out = {} as AnyRecord;
 
@@ -173,6 +174,41 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
   }
 
   return out as unknown as CloudState;
+}
+
+/**
+ * The account file as this device last saw it, and which version that was:
+ * the base every merge is worked out against. Kept on disk beside the state
+ * so a restart still knows which side changed what; without it, every record
+ * deleted or edited on another device since would come back as it is here.
+ */
+export type SavedBase = { uid: string; base: CloudState; modifiedTime: string | null };
+
+export function encodeSavedBase(s: SavedBase): string {
+  return JSON.stringify(s);
+}
+
+export function readSavedBase(raw: string | null): SavedBase | null {
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw) as Partial<SavedBase> | null;
+    const b = v?.base as Partial<CloudState> | undefined;
+    if (!v || typeof v.uid !== 'string' || !b || typeof b !== 'object' || !b.profile || !Array.isArray(b.meals)) return null;
+    if (v.modifiedTime !== null && typeof v.modifiedTime !== 'string') return null;
+    return { uid: v.uid, base: v.base as CloudState, modifiedTime: v.modifiedTime };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Where the first sync after binding to an account starts from. A saved base
+ * only describes the account it was saved for, and only the state it was
+ * saved beside: if that state could not be read, it describes nothing here.
+ */
+export function bindStart(o: { uid: string; owner: string | null; saved: SavedBase | null; loaded: boolean }): { base: CloudState | null; modifiedTime: string | null } {
+  if (!o.loaded || !o.saved || o.saved.uid !== o.uid) return { base: null, modifiedTime: null };
+  return { base: o.saved.base, modifiedTime: o.saved.modifiedTime };
 }
 
 /**
