@@ -125,7 +125,7 @@ export default function ScanScreen() {
             </Text>
           </Row>
           <Micro>{`${n.protein} g ${t('protein')} · ${found.kcal_100g} kcal / 100 g`}</Micro>
-          <Btn label={t('done')} onPress={() => router.replace('/log')} />
+          <Btn label={t('done')} onPress={() => router.dismissTo('/')} />
           <Btn
             tone="ghost"
             label={t('scan_barcode')}

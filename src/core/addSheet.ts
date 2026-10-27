@@ -1,8 +1,9 @@
-import type { BasketLine } from './basket';
+import { basketFromLines, linesFromBasket, type BasketLine } from './basket';
 import { addDays } from './date';
 import { toMealItem } from './foods';
 import { currentSlot, type SlotState } from './pattern';
 import type { PlanLine } from './routine';
+import { stable } from './sync';
 import type { FoodItem, ISODate, Meal, MealItem } from './types';
 import { lineInfo, type PlanMeal } from './weekPlan';
 
@@ -95,6 +96,45 @@ export function startSlot(input: { asked?: string; ids: readonly string[]; isTod
  */
 export function startLines(input: { lines?: PlanLine[]; mode: 'log' | 'plan'; planned: PlanLine[] }): PlanLine[] {
   return input.lines ?? (input.mode === 'plan' ? input.planned : []);
+}
+
+/**
+ * Changing a menu, the meal of each slot the person has worked on is kept
+ * while they move between the slot chips: leaving a slot keeps its meal as it
+ * was left, coming back brings it back, and a slot not opened yet starts from
+ * its planned foods. Nothing is dropped without a word.
+ */
+export function switchDraft(input: {
+  drafts: Record<string, BasketLine[]>;
+  /** The slot being left, with the meal as it is now. */
+  from: string | undefined;
+  basket: BasketLine[];
+  to: string;
+  /** The planned foods of the slot opened. */
+  planned: PlanLine[];
+  foods: FoodItem[];
+}): { drafts: Record<string, BasketLine[]>; basket: BasketLine[] } {
+  const drafts = input.from === undefined ? input.drafts : { ...input.drafts, [input.from]: input.basket };
+  return { drafts, basket: drafts[input.to] ?? basketFromLines(input.planned, input.foods) };
+}
+
+/**
+ * What Save writes when a menu is being changed: the day's meals, each slot's
+ * as it was left in the sheet. A slot opened but not changed keeps its lines
+ * exactly as they were. Null when nothing changes, so nothing is written and
+ * nothing says it was saved.
+ */
+export function menuSave(meals: PlanMeal[], drafts: Record<string, BasketLine[]>, foods: FoodItem[]): PlanMeal[] | null {
+  let changed = false;
+  const next = meals.map((m) => {
+    const draft = drafts[m.id];
+    if (!draft || stable(draft) === stable(basketFromLines(m.lines, foods))) return m;
+    const lines = linesFromBasket(draft, foods);
+    if (stable(lines) === stable(m.lines)) return m;
+    changed = true;
+    return { ...m, lines };
+  });
+  return changed ? next : null;
 }
 
 export type SlotLinePart = { key: string; params: Record<string, string | number> };

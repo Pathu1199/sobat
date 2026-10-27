@@ -18,7 +18,8 @@ import { useKeyboardUp } from './useKeyboardUp';
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
   const wide = useBreakpoint() !== 'mobile';
   const insets = useSafeAreaInsets();
-  const keyboardUp = useKeyboardUp();
+  // Listens to the keyboard only while open: a closed sheet stays mounted on many screens.
+  const keyboardUp = useKeyboardUp(open);
   return (
     <Modal visible={open} transparent animationType={wide ? 'fade' : 'slide'} onRequestClose={onClose}>
       <KeyboardAvoidingView behavior={Platform.OS === 'web' ? undefined : 'padding'} style={{ flex: 1, backgroundColor: C.scrim }}>

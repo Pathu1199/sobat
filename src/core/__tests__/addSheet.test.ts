@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { addRows, filledIn, offersPlanned, repeatItems, sheetMode, slotLine, startLines, startSlot, yesterdayIn } from '../addSheet';
-import { slotPreview, type BasketLine } from '../basket';
+import { addRows, filledIn, menuSave, offersPlanned, repeatItems, sheetMode, slotLine, startLines, startSlot, switchDraft, yesterdayIn } from '../addSheet';
+import { addLine, basketFromLines, lineOf, setCount, slotPreview, type BasketLine } from '../basket';
 import { kcalForGrams } from '../nutrition';
 import { slotStates } from '../pattern';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { FoodItem, Meal, MealItem } from '../types';
+import type { PlanMeal } from '../weekPlan';
 
 const line = (foodId: string): BasketLine => ({ foodId, unit: 'katori', gramsPerUnit: 150, count: 1 });
 const base = { mode: 'log' as const, query: '', results: [] as string[], basket: [] as BasketLine[], planned: true, yesterday: true, saved: ['s1'], recents: ['poha', 'chapati'] };
@@ -218,5 +219,45 @@ describe('filledIn: what a meal logged in a slot replaces', () => {
     const auto = meal('auto-2026-10-28-lunch', '2026-10-28', 'lunch', 'auto');
     const meals = [auto, meal('m1', '2026-10-28', 'lunch', 'manual'), meal('p1', '2026-10-28', 'lunch', 'plan'), meal('auto-2026-10-27-lunch', '2026-10-27', 'lunch', 'auto'), meal('auto-2026-10-28-dinner', '2026-10-28', 'dinner', 'auto'), meal('x', '2026-10-28', undefined, 'auto')];
     expect(filledIn(meals, '2026-10-28', 'lunch')).toEqual([auto]);
+  });
+});
+
+describe('changing a menu, slot by slot', () => {
+  const pohaLine = (qty: number) => ({ foodId: 'poha', unit: 'katori', qty });
+  const plan: PlanMeal[] = [
+    { id: 'breakfast', type: 'breakfast', time: '08:30', lines: [pohaLine(1), pohaLine(1)] },
+    { id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] },
+    { id: 'dinner', type: 'dinner', time: '20:30', lines: [] },
+  ];
+  const plannedOf = (id: string) => basketFromLines(plan.find((m) => m.id === id)!.lines, foods);
+
+  it('leaving a slot keeps its meal as it was left, and coming back brings it back', () => {
+    const changed = setCount(plannedOf('breakfast'), 'poha', 3);
+    const away = switchDraft({ drafts: {}, from: 'breakfast', basket: changed, to: 'lunch', planned: plan[1].lines, foods });
+    expect(away.basket).toEqual(plannedOf('lunch'));
+    const back = switchDraft({ drafts: away.drafts, from: 'lunch', basket: away.basket, to: 'breakfast', planned: plan[0].lines, foods });
+    expect(back.basket).toEqual(changed);
+  });
+
+  it('a slot not opened yet starts from its planned foods', () => {
+    expect(switchDraft({ drafts: {}, from: undefined, basket: [], to: 'lunch', planned: plan[1].lines, foods }).basket).toEqual(plannedOf('lunch'));
+  });
+
+  it('Save writes every slot changed, each with its own foods', () => {
+    const drafts = { breakfast: setCount(plannedOf('breakfast'), 'poha', 3), dinner: addLine([], lineOf(food('chapati'))) };
+    const out = menuSave(plan, drafts, foods)!;
+    expect(out.map((m) => m.lines)).toEqual([[pohaLine(3)], plan[1].lines, [{ foodId: 'chapati', unit: 'piece', qty: 1 }]]);
+  });
+
+  it('nothing changed is nothing to write, and a slot opened but left alone keeps its lines exactly as they were', () => {
+    expect(menuSave(plan, {}, foods)).toBeNull();
+    expect(menuSave(plan, { breakfast: plannedOf('breakfast'), lunch: plannedOf('lunch') }, foods)).toBeNull();
+    const out = menuSave(plan, { breakfast: plannedOf('breakfast'), dinner: addLine([], lineOf(food('chapati'))) }, foods)!;
+    expect(out[0]).toBe(plan[0]);
+  });
+
+  it('a change undone before Save is nothing to write', () => {
+    const undone = setCount(setCount(plannedOf('lunch'), 'chapati', 3), 'chapati', 2);
+    expect(menuSave(plan, { lunch: undone }, foods)).toBeNull();
   });
 });

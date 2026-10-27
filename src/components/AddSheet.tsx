@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import React, { createContext, useContext, useDeferredValue, useMemo, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addRows, filledIn, offersPlanned, repeatItems, sheetMode, slotLine, startLines, startSlot, yesterdayIn, type AddRow } from '../core/addSheet';
+import { addRows, filledIn, menuSave, offersPlanned, repeatItems, sheetMode, slotLine, startLines, startSlot, switchDraft, yesterdayIn, type AddRow } from '../core/addSheet';
 import { addLine, basketFromLines, basketMeal, basketTotals, formatQty, itemsMeal, lineOf, linesFromBasket, putLine, setCount, setGrams, slotPreview, stepCount, type BasketLine } from '../core/basket';
 import { addDays } from '../core/date';
 import { findFoods, foodName, itemName, recentFoodIds } from '../core/foods';
@@ -123,6 +123,8 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   const slot: PlanMeal | undefined = menu.meals.find((m) => m.id === slotId) ?? menu.meals[0];
   // The foods handed over; else, changing a menu, the slot's planned foods, so Save never drops them.
   const [basket, setBasket] = useState<BasketLine[]>(() => basketFromLines(startLines({ lines: request.lines, mode, planned: slot?.lines ?? [] }), foods));
+  // Changing a menu: the meals of the other slots worked on, as they were left, so moving between slots drops nothing.
+  const [drafts, setDrafts] = useState<Record<string, BasketLine[]>>({});
   const slotName = (m: Pick<PlanMeal, 'id' | 'type'>) => {
     const s = state.routine.slots.find((x) => x.id === m.id);
     return (s && slotLabel(s, lang)) || t(m.type);
@@ -162,8 +164,12 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   function pickSlot(id: string) {
     if (id === slot?.id) return;
     setSlotId(id);
-    // Changing a menu edits the chosen slot's own foods: they come in, and changes not saved to the last slot go.
-    if (mode === 'plan') setBasket(basketFromLines(menu.meals.find((m) => m.id === id)?.lines ?? [], foods));
+    // Changing a menu edits the chosen slot's own foods; the slot left keeps its changes until Save writes them all.
+    if (mode === 'plan') {
+      const next = switchDraft({ drafts, from: slot?.id, basket, to: id, planned: menu.meals.find((m) => m.id === id)?.lines ?? [], foods });
+      setDrafts(next.drafts);
+      setBasket(next.basket);
+    }
   }
 
   function addFood(food: FoodItem) {
@@ -237,9 +243,13 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   function save() {
     if (!slot) return;
     if (mode === 'plan') {
-      app.editMenuMeal(menu, { ...slot, lines: linesFromBasket(basket, foods) });
-      fb.haptic('success');
-      fb.notify(t('add_menu_saved'));
+      // Every slot changed here is written at once; with nothing changed nothing is written, and nothing says it was saved.
+      const meals = menuSave(menu.meals, { ...drafts, [slot.id]: basket }, foods);
+      if (meals) {
+        app.editMenuDay(menu, meals);
+        fb.haptic('success');
+        fb.notify(t('add_menu_saved'));
+      }
       onClose();
       return;
     }
@@ -434,7 +444,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
                   <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
                     {fill(t(totals.items === 1 ? 'add_bar_one' : 'add_bar'), { n: totals.items, kcal: totals.kcal })}
                   </Text>
-                  <Btn label={mode === 'plan' ? t('add_save_menu') : t('save')} onPress={save} style={{ minWidth: 120 }} />
+                  <Btn label={mode === 'plan' ? t('add_save_menu') : t('save')} onPress={save} disabled={!slot} style={{ minWidth: 120 }} />
                 </View>
               ) : null}
             </>
