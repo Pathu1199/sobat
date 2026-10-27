@@ -55,6 +55,8 @@ export type Settings = {
   features: { breaks: boolean; mantra: boolean; autoPlates: boolean };
   /** Which reminders go out. Only the meal-time prompt is on by default. */
   reminders: { mealPrompt: boolean; fillYesterday: boolean; planWeek: boolean; weeklyReport: boolean };
+  /** Mondays of the weeks the person looked over and saved on the plan screen, newest first. */
+  reviewedWeeks?: ISODate[];
   /** When the last Google Drive backup was written, ISO time. */
   driveBackupAt?: string;
   /** What the food list may show. 'veg' hides meat, fish and eggs. */

@@ -167,6 +167,10 @@ describe('a future day', () => {
     expect(hi.rows[1].lines[0].measure).toBe(measureName(chapati, 'piece', 'hi'));
     expect(v.rows[1].lines[0].measure).toBe(measureName(chapati, 'piece', 'en'));
   });
+
+  it('plan-only shows any date as plan, today included, so the plan screen can edit it', () => {
+    expect(states(view(TODAY, [], { planOnly: true }))).toEqual(['plan', 'plan', 'plan', 'plan']);
+  });
 });
 
 describe('what each row offers', () => {
