@@ -18,8 +18,9 @@ type IconName = keyof typeof Ionicons.glyphMap;
 /**
  * Replaces the bottom bar on wide screens with the same list in the same
  * order (core/bar.ts): Today, the person's extra tabs, Add food, and Me. Each
- * page is a link, the one open marked as the current page. The break timer
- * shows only while screen breaks are switched on.
+ * page is a link, the one open marked as the current page; holding one opens
+ * Customize, as holding a tab on the bar does. The break timer shows only
+ * while screen breaks are switched on.
  */
 export function Sidebar() {
   const router = useRouter();
@@ -69,11 +70,13 @@ export function Sidebar() {
             <Pressable
               key={item.key}
               onPress={() => router.navigate(href as never)}
+              onLongPress={() => router.push('/customize' as never)}
               accessibilityRole="link"
               // The web says "current page"; the phone, which has no aria-current, says "selected".
               aria-current={active ? 'page' : undefined}
               aria-selected={Platform.OS === 'web' ? undefined : active || undefined}
               accessibilityLabel={t(item.labelKey)}
+              accessibilityHint={t('cust_hint')}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch, paddingHorizontal: 12, borderRadius: S.radiusSm, backgroundColor: active ? C.cardAlt : 'transparent', borderWidth: S.hairline, borderColor: active ? C.border : 'transparent' }}>
               <Ionicons name={item.icon as IconName} size={18} color={active ? C.accentText : C.textFaint} />
               <Text style={{ color: active ? C.text : C.textDim, fontSize: F.body, lineHeight: lh(F.body), fontWeight: active ? '500' : '400' }}>{t(item.labelKey)}</Text>

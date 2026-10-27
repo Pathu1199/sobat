@@ -1,3 +1,4 @@
+import { daysBetween } from './date';
 import type { ISODate } from './types';
 
 /**
@@ -90,10 +91,6 @@ function scoreFor(m: MemoryItem): number {
 
 export function removeMemory(list: MemoryItem[], id: string): MemoryItem[] {
   return list.filter((m) => m.id !== id);
-}
-
-function daysBetween(a: ISODate, b: ISODate): number {
-  return Math.round((new Date(b + 'T12:00:00').getTime() - new Date(a + 'T12:00:00').getTime()) / 86400000);
 }
 
 /**

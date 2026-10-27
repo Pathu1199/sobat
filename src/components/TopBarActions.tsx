@@ -51,24 +51,27 @@ export function TopBarActions({ streak }: { streak?: number }) {
   );
 }
 
+/** A 44 pt round icon button. `ref` reaches the button itself, so a page can put the focus back on it. */
 export function IconButton({
   name,
   label,
   onPress,
   disabled,
+  ref,
 }: {
   name: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  ref?: React.Ref<View>;
 }) {
   return (
     <Pressable
+      ref={ref}
       onPress={disabled ? undefined : onPress}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
-      hitSlop={4}
       style={({ pressed }) => ({
         width: 44,
         height: 44,

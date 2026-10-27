@@ -20,6 +20,22 @@ export function toggleTab(tabs: unknown, id: TabId): { tabs: TabId[]; full: bool
   return { tabs: [...now, id], full: false };
 }
 
+/** The open "which one should it replace?" question: the tab asked about, and the bar as it was when it was asked. */
+export type ReplaceQuestion = { id: TabId; tabs: TabId[] };
+
+/**
+ * The tab the question is about, while it still stands: the bar is the one it
+ * was asked about and still full. Sync may change the bar while the question
+ * is open; any change ends it, so a reply never replaces a tab the person did
+ * not see.
+ */
+export function askingNow(q: ReplaceQuestion | null, tabs: unknown): TabId | null {
+  if (!q) return null;
+  const now = normalizeTabs(tabs);
+  const same = now.length === q.tabs.length && now.every((x, i) => x === q.tabs[i]);
+  return same && toggleTab(now, q.id).full ? q.id : null;
+}
+
 /** `id` in the place of `out`. */
 export function replaceTab(tabs: unknown, out: TabId, id: TabId): TabId[] {
   return normalizeTabs(normalizeTabs(tabs).map((x) => (x === out ? id : x)));
@@ -59,6 +75,21 @@ export function moveCard(cards: unknown, id: TodayCardId, by: -1 | 1, hidden: To
 export function cardsShown(cards: unknown, mantraOn: boolean): { on: CardSetting[]; off: CardSetting[] } {
   const shown = normalizeTodayCards(cards).filter((c) => c.id !== 'mantra' || mantraOn);
   return { on: shown.filter((c) => c.on), off: shown.filter((c) => !c.on) };
+}
+
+/**
+ * After a card moved: its place among the cards shown ("place 2 of 3"), and
+ * which of its buttons keeps the focus: the one pressed, or the other one when
+ * the card reached the end where the pressed one no longer works. Null for a
+ * card that is off or not there.
+ */
+export function afterMove(cards: unknown, id: TodayCardId, by: -1 | 1, mantraOn: boolean): { n: number; m: number; focus: 'up' | 'down' } | null {
+  const on = cardsShown(cards, mantraOn).on;
+  const i = on.findIndex((c) => c.id === id);
+  if (i < 0) return null;
+  const last = on.length - 1;
+  const focus = by < 0 ? (i > 0 ? 'up' : 'down') : i < last ? 'down' : 'up';
+  return { n: i + 1, m: on.length, focus };
 }
 
 /** Progress as the one extra tab, and the menu, the coach line and the water and walk cards on Today. */

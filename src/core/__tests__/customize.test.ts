@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardsShown, defaultCustomize, moveCard, replaceTab, toggleCard, toggleTab } from '../customize';
+import { afterMove, askingNow, cardsShown, defaultCustomize, moveCard, replaceTab, toggleCard, toggleTab } from '../customize';
 import { DEFAULT_TODAY_CARDS } from '../tabs';
 
 const onIds = (cards: { id: string; on: boolean }[]) => cards.filter((c) => c.on).map((c) => c.id);
@@ -22,6 +22,19 @@ describe('extra tabs', () => {
     expect(toggleTab('x', 'coach')).toEqual({ tabs: ['progress', 'coach'], full: false });
     // A tab already on the bar cannot come in twice.
     expect(replaceTab(['progress', 'coach'], 'progress', 'coach')).toEqual(['coach']);
+  });
+
+  it('the question stands only while the tabs are the ones it was asked about and still full', () => {
+    const asked = { id: 'sleep' as const, tabs: ['progress', 'coach'] as ('progress' | 'coach')[] };
+    expect(askingNow(asked, ['progress', 'coach'])).toBe('sleep');
+    expect(askingNow(null, ['progress', 'coach'])).toBeNull();
+    // Sync changed the bar while the question was open: it goes away, whatever the change.
+    expect(askingNow(asked, ['progress'])).toBeNull();
+    expect(askingNow(asked, ['progress', 'plan'])).toBeNull();
+    expect(askingNow(asked, ['coach', 'progress'])).toBeNull();
+    expect(askingNow(asked, ['progress', 'sleep'])).toBeNull();
+    // A damaged list from sync is cleaned before it is compared.
+    expect(askingNow(asked, ['progress', 'coach', 'nope'])).toBe('sleep');
   });
 });
 
@@ -67,6 +80,27 @@ describe("Today's cards", () => {
     expect(cardsShown(cards, false).on.map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk']);
     expect(cardsShown(DEFAULT_TODAY_CARDS, true).off.map((c) => c.id)).toEqual(['weight', 'sleep', 'steps', 'climb', 'mantra']);
     expect(cardsShown(DEFAULT_TODAY_CARDS, false).off.map((c) => c.id)).toEqual(['weight', 'sleep', 'steps', 'climb']);
+  });
+
+  it('after a move says the card\'s new place among those shown, and which of its buttons keeps the focus', () => {
+    const cards = moveCard(DEFAULT_TODAY_CARDS, 'waterWalk', -1);
+    // Moved up to the middle: up is still there, so the focus stays on it.
+    expect(afterMove(cards, 'waterWalk', -1, true)).toEqual({ n: 2, m: 3, focus: 'up' });
+    // Moved up to the top: up is gone there, so the focus goes to its down button.
+    expect(afterMove(moveCard(cards, 'waterWalk', -1), 'waterWalk', -1, true)).toEqual({ n: 1, m: 3, focus: 'down' });
+    // Moved down to the bottom: down is gone, so up.
+    expect(afterMove(DEFAULT_TODAY_CARDS, 'waterWalk', 1, true)).toEqual({ n: 3, m: 3, focus: 'up' });
+    expect(afterMove(moveCard(DEFAULT_TODAY_CARDS, 'menu', 1), 'menu', 1, true)).toEqual({ n: 2, m: 3, focus: 'down' });
+    // The day's line, on but not shown, is not counted.
+    const withLine = [
+      { id: 'menu' as const, on: true },
+      { id: 'mantra' as const, on: true },
+      { id: 'coach' as const, on: true },
+    ];
+    expect(afterMove(withLine, 'coach', 1, false)).toEqual({ n: 2, m: 2, focus: 'up' });
+    expect(afterMove(withLine, 'coach', 1, true)).toEqual({ n: 3, m: 3, focus: 'up' });
+    // A card that is off or gone has no place.
+    expect(afterMove(DEFAULT_TODAY_CARDS, 'climb', 1, true)).toBeNull();
   });
 
   it('resets to the default tabs and cards, as copies', () => {

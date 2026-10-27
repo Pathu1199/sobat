@@ -1,5 +1,5 @@
 import { breakStats, type BreakLog } from './breaks';
-import { addDays, lastNDates, localHour } from './date';
+import { addDays, daysBetween, lastNDates, localHour } from './date';
 import { DAY_ENDS_AT_HOUR } from './nudge';
 import { expectedKcalByMinute, openedKcalByMinute, pattern, windowsCloseAt, type PatternSlot } from './pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS } from './routine';
@@ -152,7 +152,7 @@ export function timeWeightedKg(logs: WeightLog[], from: ISODate, to: ISODate): n
   let weight = 0;
   for (const [date, kg] of dailyKg(logs)) {
     if (date < from || date > to) continue;
-    const w = Math.round((Date.parse(`${date}T12:00:00`) - Date.parse(`${from}T12:00:00`)) / 86400000) + 1;
+    const w = daysBetween(from, date) + 1;
     sum += kg * w;
     weight += w;
   }
@@ -213,11 +213,6 @@ export function weightTrend(
     span30: c30?.days ?? null,
     asOf: last,
   };
-}
-
-/** Whole days from `from` to `to`. */
-function daysBetween(from: ISODate, to: ISODate): number {
-  return Math.round((Date.parse(`${to}T12:00:00`) - Date.parse(`${from}T12:00:00`)) / 86400000);
 }
 
 export type Correlation = { key: string; strength: number; params: Record<string, string | number> };

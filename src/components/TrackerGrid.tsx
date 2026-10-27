@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { WaterSheet } from './WaterSheet';
 import { WeightSheet } from './WeightSheet';
-import { addDays, formatMinutes } from '../core/date';
+import { addDays, daysBetween, formatMinutes } from '../core/date';
 import { fill, makeT } from '../i18n';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
@@ -31,7 +31,7 @@ export function TrackerGrid() {
   const sleepFresh = !!sleep && (sleep.date === today || sleep.date === addDays(today, -1));
   const meals = state.meals.filter((m) => m.date === today).length;
   const lastWeight = [...state.weights].sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0];
-  const daysSinceWeigh = lastWeight ? Math.round((new Date(today + 'T12:00:00').getTime() - new Date(lastWeight.date + 'T12:00:00').getTime()) / 86400000) : null;
+  const daysSinceWeigh = lastWeight ? daysBetween(lastWeight.date, today) : null;
   // Empty tiles say what to do next rather than what is missing.
   const mealHint = app.hour < 11 ? t('empty_log_breakfast') : app.hour < 17 ? t('empty_log_lunch') : t('empty_log_dinner');
   const weighHint = fill(t('empty_weigh_on'), { day: t(`wd_${state.settings.weighDay}`) });

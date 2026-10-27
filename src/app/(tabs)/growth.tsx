@@ -7,7 +7,7 @@ import { breakStats } from '../../core/breaks';
 import { formatDayLabel, formatMinutes } from '../../core/date';
 import { changePct, isImprovement, summarize, type Metric, type Period } from '../../core/growth';
 import { breakStreak, findPatterns, weeklyStats } from '../../core/insights';
-import { weightChangeLine } from '../../core/tileText';
+import { weekWeightChange } from '../../core/tileText';
 import { hourlyProfile, longestStretchMinutes, minutesOn } from '../../core/usage';
 import { fill, makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
@@ -242,8 +242,8 @@ export default function GrowthScreen({ embedded }: { embedded?: boolean } = {}) 
     </View>
   );
 
-  // The week's weight change says the weeks it really spans: for someone who skipped a week it compares two weeks.
-  const weekChange = week.trend && week.trend.change7 !== null && week.trend.span7 !== null ? { kg: week.trend.change7, line: weightChangeLine(week.trend.change7, week.trend.span7) } : null;
+  // The week's weight change says the weeks it really spans (for someone who skipped a week it compares two), and none once the latest weigh-in is a month old.
+  const weekChange = weekWeightChange(week.trend, app.today);
 
   const weekCard = (
     <View style={{ gap: 10 }}>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { formatDayLabel, formatDayMonth, formatDayMonthYear, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
+import { daysBetween, formatDayLabel, formatDayMonth, formatDayMonthYear, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
 describe('local time from ISO strings', () => {
@@ -160,5 +160,16 @@ describe('dates with the year', () => {
       expect(d, lang).not.toBe(formatDayMonthYear('2027-03-14', 'en'));
       expect(formatMonthYear('2026-10-01', lang), lang).toMatch(/2026/);
     }
+  });
+});
+
+describe('daysBetween', () => {
+  it('counts whole days from one date to another, across a month, a year and a clock change', () => {
+    expect(daysBetween('2026-10-01', '2026-10-04')).toBe(3);
+    expect(daysBetween('2026-10-04', '2026-10-01')).toBe(-3);
+    expect(daysBetween('2026-10-28', '2026-10-28')).toBe(0);
+    expect(daysBetween('2026-12-30', '2027-01-02')).toBe(3);
+    expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2);
+    expect(daysBetween('2024-02-28', '2024-03-01')).toBe(2);
   });
 });

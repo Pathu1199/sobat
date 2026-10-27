@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Platform, Text, View } from 'react-native';
 import { IconButton } from '../components/TopBarActions';
 import { extraItem } from '../core/bar';
-import { cardsShown, defaultCustomize, moveCard, replaceTab, toggleCard, toggleTab } from '../core/customize';
+import { afterMove, askingNow, cardsShown, defaultCustomize, moveCard, replaceTab, toggleCard, toggleTab, type ReplaceQuestion } from '../core/customize';
 import { normalizeTabs, TAB_IDS } from '../core/tabs';
 import type { TabId, TodayCardId } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
+import { useAnnounce } from '../ui/announce';
 import { Btn, Card, Divider, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
 import { C, F, lh, S } from '../ui/theme';
 
@@ -20,8 +21,10 @@ type IconName = keyof typeof Ionicons.glyphMap;
  * left fixed at the top; the others switched on or off and moved up or down
  * with buttons, which a screen reader, a keyboard and a mouse all use alike).
  * The day's line is offered while it is switched on in Settings. Reset puts
- * the default back, with Undo. Holding a tab on the bar and Me's Customize
- * row both open it.
+ * the default back, with Undo. Holding a tab on the bar or in the sidebar,
+ * and Me's Customize row, open it. A screen reader hears the replace question
+ * as it opens and each card's new place after a move, and the focus stays on
+ * the moved card's button.
  */
 export default function CustomizeScreen() {
   const app = useApp();
@@ -33,17 +36,32 @@ export default function CustomizeScreen() {
   const cards = cardsShown(s.todayCards, mantraOn);
   // The day's line, while it is switched off in Settings, is not on the page: moving steps over it.
   const hidden: TodayCardId[] = mantraOn ? [] : ['mantra'];
-  const [asking, setAsking] = useState<TabId | null>(null);
+  const [question, setQuestion] = useState<ReplaceQuestion | null>(null);
+  // The question goes away by itself if sync changes the bar while it is open.
+  const asking = askingNow(question, s.tabs);
+  const { announce, region } = useAnnounce();
+  // Each card's up and down buttons, so the focus can go back to the one moved.
+  const moveButtons = useRef(new Map<string, View>());
+  const [moved, setMoved] = useState<{ id: TodayCardId; focus: 'up' | 'down' } | null>(null);
   const tabName = (id: TabId) => t(extraItem(id).labelKey);
   const cardName = (id: TodayCardId) => t(`cust_card_${id}`);
+
+  // After a move the card's button may have been taken out of the page and put back: the focus goes back to it.
+  useEffect(() => {
+    const button = moved ? moveButtons.current.get(`${moved.id}:${moved.focus}`) : undefined;
+    if (!button) return;
+    if (Platform.OS === 'web') (button as unknown as { focus?: () => void }).focus?.();
+    else AccessibilityInfo.sendAccessibilityEvent(button, 'focus');
+  }, [moved]);
 
   function tapTab(id: TabId) {
     const r = toggleTab(s.tabs, id);
     if (r.full) {
-      setAsking(id);
+      setQuestion({ id, tabs: r.tabs });
+      announce(fill(t('cust_replace_q'), { tab: tabName(id) }));
       return;
     }
-    setAsking(null);
+    setQuestion(null);
     app.setSettings({ tabs: r.tabs });
     fb.haptic('light');
   }
@@ -51,7 +69,7 @@ export default function CustomizeScreen() {
   function replace(out: TabId) {
     if (!asking) return;
     app.setSettings({ tabs: replaceTab(s.tabs, out, asking) });
-    setAsking(null);
+    setQuestion(null);
     fb.haptic('light');
   }
 
@@ -60,23 +78,41 @@ export default function CustomizeScreen() {
     fb.haptic('light');
   }
 
+  function move(id: TodayCardId, by: -1 | 1) {
+    const next = moveCard(s.todayCards, id, by, hidden);
+    setCards(next);
+    const place = afterMove(next, id, by, mantraOn);
+    if (!place) return;
+    setMoved({ id, focus: place.focus });
+    announce(fill(t('cust_moved'), { card: cardName(id), n: place.n, m: place.m }));
+  }
+
   function reset() {
     const before = { tabs: s.tabs, todayCards: s.todayCards };
     app.setSettings(defaultCustomize());
-    setAsking(null);
+    setQuestion(null);
     fb.notify(t('cust_reset_done'), { label: t('undo'), onPress: () => app.setSettings(before) });
   }
 
+  // "always there" is written out, not only given as a label: the web reads no label on a plain row.
   const locked = (icon: IconName, label: string) => (
     <View accessible accessibilityLabel={`${label}, ${t('cust_locked')}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch }}>
       <Ionicons name={icon} size={20} color={C.textDim} />
       <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{label}</Text>
+      <Small color={C.textDim}>{t('cust_locked')}</Small>
       <Ionicons name="lock-closed-outline" size={16} color={C.textDim} />
     </View>
   );
 
+  const keepButton = (id: TodayCardId, dir: 'up' | 'down') => (button: View | null) => {
+    const key = `${id}:${dir}`;
+    if (button) moveButtons.current.set(key, button);
+    else moveButtons.current.delete(key);
+  };
+
   return (
     <Screen>
+      {region}
       <View style={{ gap: 10 }}>
         <SectionHeader title={t('cust_tabs')} />
         <Card>
@@ -93,7 +129,7 @@ export default function CustomizeScreen() {
             </View>
           ))}
           {asking ? (
-            <View style={{ gap: 8, padding: 12, borderRadius: S.radiusSm, borderWidth: 1, borderColor: C.accent }} accessibilityLiveRegion="polite">
+            <View style={{ gap: 8, padding: 12, borderRadius: S.radiusSm, borderWidth: 1, borderColor: C.accent }}>
               <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body) }}>{fill(t('cust_replace_q'), { tab: tabName(asking) })}</Text>
               <Row style={{ gap: 8, flexWrap: 'wrap' }}>
                 {tabs.map((id) => (
@@ -106,7 +142,7 @@ export default function CustomizeScreen() {
                     onPress={() => replace(id)}
                   />
                 ))}
-                <Btn small tone="ghost" label={t('cancel')} onPress={() => setAsking(null)} />
+                <Btn small tone="ghost" label={t('cancel')} onPress={() => setQuestion(null)} />
               </Row>
             </View>
           ) : null}
@@ -125,15 +161,17 @@ export default function CustomizeScreen() {
                   <Toggle title={cardName(c.id)} desc={t('cust_on_today')} on onToggle={() => setCards(toggleCard(s.todayCards, c.id))} />
                 </View>
                 <IconButton
+                  ref={keepButton(c.id, 'up')}
                   name="chevron-up"
                   label={fill(t('cust_move_up'), { card: cardName(c.id) })}
-                  onPress={() => setCards(moveCard(s.todayCards, c.id, -1, hidden))}
+                  onPress={() => move(c.id, -1)}
                   disabled={i === 0}
                 />
                 <IconButton
+                  ref={keepButton(c.id, 'down')}
                   name="chevron-down"
                   label={fill(t('cust_move_down'), { card: cardName(c.id) })}
-                  onPress={() => setCards(moveCard(s.todayCards, c.id, 1, hidden))}
+                  onPress={() => move(c.id, 1)}
                   disabled={i === cards.on.length - 1}
                 />
               </View>

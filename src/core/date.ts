@@ -13,6 +13,11 @@ export function isIsoDate(v: unknown): v is ISODate {
   return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && addDays(v, 0) === v;
 }
 
+/** Whole days from `from` to `to`, negative when `to` comes first. Counted noon to noon, so a clock change never shortens a day. */
+export function daysBetween(from: ISODate, to: ISODate): number {
+  return Math.round((Date.parse(`${to}T12:00:00`) - Date.parse(`${from}T12:00:00`)) / 86400000);
+}
+
 export function addDays(date: ISODate, n: number): ISODate {
   const d = new Date(date + 'T12:00:00');
   d.setDate(d.getDate() + n);

@@ -25,6 +25,7 @@ import {
   waterMlOn,
   waterWords,
   weightChangeLine,
+  weekWeightChange,
   weightWords,
   shownWeight,
 } from '../tileText';
@@ -160,6 +161,18 @@ describe('weight', () => {
     expect(weightChangeLine(-0.5, 10)).toEqual({ key: 'tile_weight_change_1', params: { kg: '−0.5' } });
     expect(weightChangeLine(0.4, 11)).toEqual({ key: 'tile_weight_change', params: { kg: '+0.4', weeks: 2 } });
     expect(weightChangeLine(-3, 42)).toEqual({ key: 'tile_weight_change', params: { kg: '−3.0', weeks: 6 } });
+  });
+
+  it('gives Charts the week\'s change with its weeks, and none once the latest weigh-in is more than thirty days old', () => {
+    const recent = weightTrend([w('2026-10-13', 81), w('2026-10-20', 80.3)], '2026-10-27');
+    expect(weekWeightChange(recent, '2026-10-27')).toEqual({ kg: -0.7, line: { key: 'tile_weight_change_1', params: { kg: '−0.7' } } });
+    const old = weightTrend([w('2026-08-13', 81), w('2026-08-20', 80.3)], '2026-10-27');
+    expect(old!.change7).toBe(-0.7);
+    expect(weekWeightChange(old, '2026-10-27')).toBeNull();
+    // Seen nearer the time, the same weigh-ins show it.
+    expect(weekWeightChange(old, '2026-09-19')).not.toBeNull();
+    expect(weekWeightChange(weightTrend([w('2026-10-20', 80)], '2026-10-27'), '2026-10-27')).toBeNull();
+    expect(weekWeightChange(null, '2026-10-27')).toBeNull();
   });
 
   it('says Gained, never a negative Lost, for someone who weighs more than at the start', () => {

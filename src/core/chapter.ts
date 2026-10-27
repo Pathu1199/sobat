@@ -1,4 +1,4 @@
-import { isIsoDate } from './date';
+import { daysBetween, isIsoDate } from './date';
 import { badges, climbTrail, level, weeklyChallenge, xp, type Badge, type Challenge, type GameInput, type Level } from './game';
 import type { Targets } from './nutrition';
 import { planFrom, type Plan } from './plan';
@@ -33,7 +33,7 @@ export function newChapter(
  */
 export function chapterDays(start: ISODate | undefined, today: ISODate, max: number): number {
   if (!isIsoDate(start) || start > today) return max;
-  const days = Math.round((Date.parse(`${today}T12:00:00`) - Date.parse(`${start}T12:00:00`)) / 86400000) + 1;
+  const days = daysBetween(start, today) + 1;
   return Math.min(max, days);
 }
 

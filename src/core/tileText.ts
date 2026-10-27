@@ -113,6 +113,12 @@ export function shownWeight(weights: WeightLog[], today: ISODate): { kg: number;
   return { kg: trend.current, change, asOf: trend.asOf, stale };
 }
 
+/** The week's change in weight for Charts, with the weeks it really spans; none once the latest weigh-in is more than thirty days old, as Progress leaves it out. */
+export function weekWeightChange(trend: { change7: number | null; span7: number | null; asOf: ISODate } | null, today: ISODate): { kg: number; line: TileLine } | null {
+  if (!trend || trend.change7 === null || trend.span7 === null || weightIsStale(trend.asOf, today)) return null;
+  return { kg: trend.change7, line: weightChangeLine(trend.change7, trend.span7) };
+}
+
 /** The weight shown (`shownWeight`, the dash before the first weigh-in), and its change or, with none to show, the goal. */
 export function weightWords(weights: WeightLog[], goalKg: number, today: ISODate): TileWords {
   const shown = shownWeight(weights, today);

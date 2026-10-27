@@ -1,4 +1,4 @@
-import { addDays } from './date';
+import { addDays, daysBetween } from './date';
 import type { Targets } from './nutrition';
 import type { ISODate, Profile, WeightLog } from './types';
 
@@ -31,10 +31,6 @@ export type Plan = {
 };
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
-
-function daysBetween(a: ISODate, b: ISODate): number {
-  return Math.round((new Date(b + 'T12:00:00').getTime() - new Date(a + 'T12:00:00').getTime()) / 86400000);
-}
 
 /** Slope of the last `windowDays` of weights, kg per week. Needs two logs at least a week apart. */
 export function actualRateKgPerWeek(logs: WeightLog[], today: ISODate, windowDays = 30): number | null {

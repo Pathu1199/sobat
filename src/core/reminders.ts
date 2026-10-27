@@ -47,10 +47,6 @@ const AWAY_HOUR = 9;
 const AWAY_FIRST = 2;
 const AWAY_LAST = 4;
 
-export function daysBetween(a: ISODate, b: ISODate): number {
-  return Math.round((Date.parse(`${b}T12:00:00`) - Date.parse(`${a}T12:00:00`)) / 86400000);
-}
-
 /** Days since the last log that count: off days are neither logged nor missed. */
 export function missedDays(lastLogDate: ISODate, date: ISODate, offDays: number[]): number {
   let n = 0;

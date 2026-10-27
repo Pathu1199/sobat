@@ -26,6 +26,7 @@ export default function Journey() {
   const [weighOpen, setWeighOpen] = useState(false);
   const weights = [...state.weights].sort((a, b) => b.date.localeCompare(a.date));
   const earned = g.badges.filter((b) => b.earned);
+  const lost = lostWords(g.plan.lostKg);
 
   return (
     <Screen>
@@ -36,7 +37,7 @@ export default function Journey() {
         </Row>
         <Mountain tall progress={g.progress} startLabel={`${g.plan.startKg} kg`} nowLabel={`${g.plan.currentKg} kg`} goalLabel={`${g.plan.goalKg} kg`} camps={g.camps} trail={g.trail} />
         <Row style={{ gap: 18 }}>
-          <Stat label={t(lostWords(g.plan.lostKg).key)} value={lostWords(g.plan.lostKg).kg} unit="kg" color={g.plan.lostKg > 0 ? C.cyan : undefined} />
+          <Stat label={t(lost.key)} value={lost.kg} unit="kg" color={g.plan.lostKg > 0 ? C.cyan : undefined} />
           <Stat label={t('plan_to_go')} value={`${g.plan.toGoKg}`} unit="kg" />
           <Stat label={t('plan_goal')} value={`${g.plan.goalKg}`} unit="kg" />
         </Row>

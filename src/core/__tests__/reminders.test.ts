@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BREAK_SETTINGS } from '../breaks';
-import { DAILY_IDS, dailyReminders, daysAway, daysBetween, lastLogDate, missedDays, plannedReminders } from '../reminders';
+import { daysBetween } from '../date';
+import { DAILY_IDS, dailyReminders, daysAway, lastLogDate, missedDays, plannedReminders } from '../reminders';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { Meal } from '../types';
 
