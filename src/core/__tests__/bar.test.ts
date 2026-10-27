@@ -3,7 +3,7 @@
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { barItems, hrefOf, isIsoDate, meRows, routeAt, sectionFromLink, viewedDate } from '../bar';
+import { addSlot, barItems, hrefOf, meRows, routeAt, sectionFromLink, viewedDate } from '../bar';
 import { TAB_IDS } from '../tabs';
 
 /** The screens expo-router can open: the files under src/app and under src/app/(tabs), by name without the extension. */
@@ -31,6 +31,12 @@ describe('barItems', () => {
     expect(barItems(['me', 'today', 'body', 'coach', 'sleep']).map((i) => i.key)).toEqual(['today', 'body', 'add', 'coach', 'me']);
   });
 
+  it('➕ sits over the empty slot in the middle of the tab list: its place and how many slots there are', () => {
+    expect(addSlot(barItems(['progress']))).toEqual({ index: 1, count: 4 });
+    expect(addSlot(barItems([]))).toEqual({ index: 1, count: 3 });
+    expect(addSlot(barItems(['progress', 'coach']))).toEqual({ index: 2, count: 5 });
+  });
+
   it('every tab the bar can show has its screen file under src/app/(tabs)', () => {
     expect(TAB_SCREENS).toContain('index');
     for (const id of TAB_IDS) {
@@ -47,16 +53,6 @@ describe('the addresses of the tabs', () => {
     expect(hrefOf('progress')).toBe('/progress');
     expect(routeAt('/')).toBe('index');
     expect(routeAt('/sleep-tab')).toBe('sleep-tab');
-  });
-});
-
-describe('isIsoDate', () => {
-  it('takes a date written YYYY-MM-DD and nothing else', () => {
-    expect(isIsoDate('2026-10-27')).toBe(true);
-    expect(isIsoDate('2026-10-7')).toBe(false);
-    expect(isIsoDate('27-10-2026')).toBe(false);
-    expect(isIsoDate(['2026-10-27'])).toBe(false);
-    expect(isIsoDate(undefined)).toBe(false);
   });
 });
 

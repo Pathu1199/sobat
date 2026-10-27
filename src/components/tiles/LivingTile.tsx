@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Pressable, Text, View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
+import { Platform, Pressable, Text, View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
 import Svg from 'react-native-svg';
 import { C, lh, textScale } from '../../ui/theme';
 import { ART_FIT, ART_H, ART_W, TILE_LINE_GAP, TILE_RADIUS, TILE_SIDE, TILE_TOP, tileMinHeight, tileType } from '../../ui/tileGeometry';
-import type { ShownWords } from '../../ui/tileWords';
+import { tileRole, type ShownWords } from '../../ui/tileWords';
 
 export { shownWords, type ShownWords } from '../../ui/tileWords';
 
@@ -31,8 +31,9 @@ export function TileArt({ children }: { children: React.ReactNode }) {
  * bottom 42% and never reaches the words; `behind` is the one exception, drawn
  * under the words across the whole tile (the water tank). The tile grows
  * taller than square only when the text size needs the room. Each tracker
- * brings its art, its words and its tap; a tile with no tap is not a button,
- * just the tile, read by a screen reader as one phrase.
+ * brings its art, its words and its tap; a tile with no tap and no hold is
+ * not a button, just the tile, read by a screen reader as one phrase (its
+ * label), on the web too (`tileRole`).
  */
 export function LivingTile({
   icon,
@@ -56,8 +57,9 @@ export function LivingTile({
   done?: boolean;
   art?: React.ReactNode;
   behind?: (size: TileSize) => React.ReactNode;
-  /** The tap; without one the tile is not a button. */
+  /** The tap; without it and without a hold the tile is not a button. */
   onPress?: () => void;
+  /** The hold; a tile with only a hold is still a button, so the hold works. */
   onLongPress?: () => void;
   label: string;
   /** What a tap or a hold does, said by a screen reader; only for a tile that has one. */
@@ -109,9 +111,10 @@ export function LivingTile({
       </View>
     </>
   );
-  if (!onPress) {
+  const role = tileRole({ tap: Boolean(onPress), hold: Boolean(onLongPress) }, Platform.OS);
+  if (role !== 'button') {
     return (
-      <View onLayout={onLayout} accessible accessibilityRole="text" accessibilityLabel={label} style={frame(false)}>
+      <View onLayout={onLayout} accessible accessibilityRole={role} accessibilityLabel={label} style={frame(false)}>
         {inside}
       </View>
     );

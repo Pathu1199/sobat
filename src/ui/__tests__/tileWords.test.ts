@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_VALUE, sleepWords, waterWords, weightWords } from '../../core/tileText';
 import { makeT } from '../../i18n';
 import type { Lang } from '../../core/types';
-import { addedText, bottleLabel, shownWords } from '../tileWords';
+import { addedText, bottleLabel, shownWords, tileRole } from '../tileWords';
 
 const LANGS: Lang[] = ['en', 'mr', 'hi'];
 
@@ -53,5 +53,20 @@ describe('the line under the tiles, and the bottle sizes', () => {
     expect(bottleLabel(1000, makeT('en'))).toBe('1 L');
     expect(bottleLabel(1500, makeT('en'))).toBe('1.5 L');
     expect(bottleLabel(1000, makeT('hi'))).toBe('1 ली');
+  });
+});
+
+describe('how a screen reader takes a tile', () => {
+  it('a tile with a tap, or with only a hold, is a button, so the hold is never lost', () => {
+    expect(tileRole({ tap: true, hold: false }, 'ios')).toBe('button');
+    expect(tileRole({ tap: true, hold: true }, 'web')).toBe('button');
+    expect(tileRole({ tap: false, hold: true }, 'android')).toBe('button');
+    expect(tileRole({ tap: false, hold: true }, 'web')).toBe('button');
+  });
+
+  it('a tile with neither is read as one phrase: text on a phone, and on the web an image with its label, since the web drops a label on plain text', () => {
+    expect(tileRole({ tap: false, hold: false }, 'ios')).toBe('text');
+    expect(tileRole({ tap: false, hold: false }, 'android')).toBe('text');
+    expect(tileRole({ tap: false, hold: false }, 'web')).toBe('image');
   });
 });

@@ -7,6 +7,11 @@ export function toISODate(d: Date = new Date()): ISODate {
   return `${y}-${m}-${day}`;
 }
 
+/** A date written YYYY-MM-DD, the way Today's ?date= and the add page's carry one. */
+export function isIsoDate(v: unknown): v is ISODate {
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+}
+
 export function addDays(date: ISODate, n: number): ISODate {
   const d = new Date(date + 'T12:00:00');
   d.setDate(d.getDate() + n);

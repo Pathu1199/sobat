@@ -30,3 +30,15 @@ export function addedText(a: Added, t: (key: string) => string): string {
 export function bottleLabel(ml: number, t: (key: string) => string): string {
   return ml >= 1000 ? `${ml / 1000} ${t('tile_unit_l')}` : `${ml} ${t('tile_unit_ml')}`;
 }
+
+/**
+ * How a screen reader takes a tile. With a tap or a hold it is a button (a
+ * hold alone still makes it one, so the hold is never dropped). With neither
+ * it is the tile read as one phrase, its label: text on a phone, and on the
+ * web an image, because the web drops a label given to plain text, and an
+ * image is read by its label alone, the words and art inside it as one.
+ */
+export function tileRole(has: { tap: boolean; hold: boolean }, os: string): 'button' | 'text' | 'image' {
+  if (has.tap || has.hold) return 'button';
+  return os === 'web' ? 'image' : 'text';
+}

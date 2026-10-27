@@ -1,3 +1,4 @@
+import { isIsoDate } from './date';
 import { normalizeTabs } from './tabs';
 import type { ISODate, TabId } from './types';
 
@@ -30,6 +31,16 @@ export function barItems(tabs: unknown): BarItem[] {
   return [...around.slice(0, middle), ADD, ...around.slice(middle)];
 }
 
+/**
+ * Where ➕ sits: the bar's tab list leaves an empty slot at ➕'s place, and ➕
+ * is laid over it, outside the list, so the list holds only tabs. Its index
+ * among the bar's items and how many items there are: it starts at
+ * index / count of the width and is 1 / count wide.
+ */
+export function addSlot(items: BarItem[]): { index: number; count: number } {
+  return { index: items.findIndex((i) => i.route === null), count: items.length };
+}
+
 /** A sheet a Me row opens over Me instead of a page: the saved meals, or this week's grocery list. */
 export type MeSheet = 'savedMeals' | 'grocery';
 export type MeRow = { key: string; icon: string; labelKey: string; subKey?: string; href?: string; sheet?: MeSheet };
@@ -59,11 +70,6 @@ export function hrefOf(route: string): string {
 /** The tab route at an address: the root is Today. */
 export function routeAt(pathname: string): string {
   return pathname === '/' ? (TODAY.route as string) : pathname.replace(/^\//, '');
-}
-
-/** A date written YYYY-MM-DD, the way Today's ?date= and the add page's carry one. */
-export function isIsoDate(v: unknown): v is ISODate {
-  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
 }
 
 /**

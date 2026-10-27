@@ -8,9 +8,8 @@ import { FoodDetailSheet, FoodThumb, type Chosen } from '../../components/FoodDe
 import { SuggestSheet } from '../../components/SuggestSheet';
 import { swapText } from '../../components/RoutineCard';
 import { IconButton } from '../../components/TopBarActions';
-import { isIsoDate } from '../../core/bar';
 import { formatQty } from '../../core/basket';
-import { addDays, formatDayLabel, lastNDates, localHHMM } from '../../core/date';
+import { addDays, formatDayLabel, isIsoDate, lastNDates, localHHMM } from '../../core/date';
 import { newId } from '../../core/id';
 import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, toMealItem, type DishStyle } from '../../core/foods';
 import { skippedOn } from '../../core/menu';
