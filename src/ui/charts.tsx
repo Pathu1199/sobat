@@ -91,6 +91,8 @@ export function BarChart({
   const h = height;
   const slot = (w - pad * 2) / data.length;
   const barW = Math.max(2, Math.min(slot * 0.62, 22));
+  // A label sits centred on its bar and may be wider than the bar, so a two-digit day shows in full when 30 bars are thin.
+  const labelW = Math.max(slot, 3 * F.small);
   const y = (v: number) => pad + (1 - v / max) * (h - pad * 2);
 
   return (
@@ -119,12 +121,17 @@ export function BarChart({
         })}
       </Svg>
       {labels && labels.length === data.length ? (
-        <View style={{ flexDirection: 'row', paddingHorizontal: pad, marginTop: 4 }}>
-          {labels.map((l, i) => (
-            <Text key={data[i].date} style={[MICRO, { color: C.textFaint, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
-              {l}
-            </Text>
-          ))}
+        <View style={{ height: MICRO.lineHeight, marginTop: 4 }}>
+          {labels.map((l, i) =>
+            l ? (
+              <Text
+                key={data[i].date}
+                style={[MICRO, { color: C.textFaint, position: 'absolute', left: pad + slot * i + slot / 2 - labelW / 2, width: labelW, textAlign: 'center' }]}
+                numberOfLines={1}>
+                {l}
+              </Text>
+            ) : null,
+          )}
         </View>
       ) : null}
       {target !== undefined ? (

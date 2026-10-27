@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { F, lh, MICRO, scaledSizes, TEXT_SCALES } from '../theme';
+import { afterEach, describe, expect, it } from 'vitest';
+import { applyTextScale, F, lh, MICRO, scaledSizes, TEXT_SCALES } from '../theme';
 
 describe('type scale', () => {
   it('has four sizes at scale 1: number 44, title 20, body 16, small 13', () => {
@@ -14,6 +14,22 @@ describe('type scale', () => {
 
   it('labels are small, medium weight, normal case and untracked', () => {
     expect(MICRO).toEqual({ fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' });
+  });
+});
+
+describe('applyTextScale', () => {
+  afterEach(() => applyTextScale(1));
+
+  it('moves F and the label style to the scaled sizes, and back at scale 1', () => {
+    applyTextScale(1.25);
+    expect(F).toEqual({ number: 55, title: 25, body: 20, small: 16 });
+    expect(MICRO.fontSize).toBe(16);
+    expect(MICRO.lineHeight).toBe(lh(F.small));
+    expect(MICRO.lineHeight).toBe(23);
+    applyTextScale(1);
+    expect(F).toEqual({ number: 44, title: 20, body: 16, small: 13 });
+    expect(MICRO.fontSize).toBe(13);
+    expect(MICRO.lineHeight).toBe(19);
   });
 });
 

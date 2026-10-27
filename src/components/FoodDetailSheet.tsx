@@ -10,7 +10,7 @@ import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Btn, Divider, Micro, Pill, Row, Small } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
-import { C, F, S } from '../ui/theme';
+import { C, F, lh, S } from '../ui/theme';
 
 const QTYS = [0.5, 1, 1.5, 2, 3];
 
@@ -106,7 +106,7 @@ export function FoodDetailSheet({
         <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <View>
             <Micro>{t('calories')}</Micro>
-            <Text style={{ color: C.text, fontSize: F.number - 6, fontWeight: '500' }}>
+            <Text style={{ color: C.text, fontSize: F.number, lineHeight: lh(F.number, true), fontWeight: '500' }}>
               {n.kcal}
               <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> kcal</Text>
             </Text>

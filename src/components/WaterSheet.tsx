@@ -7,7 +7,7 @@ import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, Divider, Micro, Row, Small } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 
 /** Amounts people actually drink in, so "how much did I have" has an honest answer. */
 const AMOUNTS: { key: string; ml: number; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -34,7 +34,7 @@ export function WaterSheet({ open, onClose }: { open: boolean; onClose: () => vo
   return (
     <Sheet open={open} title={t('water')} onClose={onClose}>
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <Text style={{ color: waterToday >= goal ? C.green : C.text, fontSize: F.number - 8, fontWeight: '500' }}>
+        <Text style={{ color: waterToday >= goal ? C.green : C.text, fontSize: F.number, lineHeight: lh(F.number, true), fontWeight: '500' }}>
           {(waterToday / 1000).toFixed(2)}
           <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${goal / 1000} L`}</Text>
         </Text>

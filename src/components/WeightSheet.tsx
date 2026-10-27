@@ -9,7 +9,7 @@ import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Divider, Field, Micro, Pill, Row, Small } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 
 const RATES = [0.25, 0.5, 0.75, 1];
 
@@ -59,7 +59,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <View>
           <Micro>{todayEntry ? t('today_short') : t('weight_carried')}</Micro>
-          <Text style={{ color: C.text, fontSize: F.number - 8, fontWeight: '500' }}>
+          <Text style={{ color: C.text, fontSize: F.number, lineHeight: lh(F.number, true), fontWeight: '500' }}>
             {last ? last.kg : state.profile.weightKg}
             <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> {t('unit_kg')}</Text>
           </Text>
