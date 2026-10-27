@@ -57,3 +57,22 @@ export function useClock(): Clock {
 
   return clock;
 }
+
+export function nowMinutes(d: Date = new Date()): number {
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+/** Minutes since midnight, re-read on the minute. For countdowns and "what is on now". */
+export function useMinute(): number {
+  const [m, setM] = useState(() => nowMinutes());
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      setM(nowMinutes());
+      timer = setTimeout(tick, msToNextMinute());
+    };
+    timer = setTimeout(tick, msToNextMinute());
+    return () => clearTimeout(timer);
+  }, []);
+  return m;
+}

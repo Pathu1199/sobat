@@ -5,6 +5,7 @@ import { defaultPortion, foodName, suggestMeals, toMealItem } from '../core/food
 import { newId } from '../core/id';
 import { dietFrom } from '../core/memory';
 import { mealTypeForHour } from '../core/nutrition';
+import { OPTION_MIN_KCAL } from '../core/offlineCoach';
 import { avoidedFoodIds } from '../core/routine';
 import { recipeFor, type Recipe } from '../data/recipes';
 import { fill, makeT } from '../i18n';
@@ -31,9 +32,9 @@ export function SuggestSheet({ open, onClose }: { open: boolean; onClose: () => 
   const [onlyRecipes, setOnlyRecipes] = useState(false);
 
   const list = useMemo(() => {
-    const avoided = avoidedFoodIds({ ...state.routine, enabled: true });
+    const avoided = avoidedFoodIds(state.routine);
     const room = Math.max(120, budget.remaining);
-    const all = suggestMeals(foods, room, { ...dietFrom(state.memory), minKcal: 40 }).filter((o) => !avoided.has(o.food.id));
+    const all = suggestMeals(foods, room, { ...dietFrom(state.memory), minKcal: OPTION_MIN_KCAL }).filter((o) => !avoided.has(o.food.id));
     return onlyRecipes ? all.filter((o) => recipeFor(o.food.id)) : all;
   }, [foods, state.routine, state.memory, budget.remaining, onlyRecipes]);
 

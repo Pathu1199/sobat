@@ -4,7 +4,7 @@ import { toISODate } from '../core/date';
 import { defaultPortion, resolveByName, toMealItem } from '../core/foods';
 import { skippedOn } from '../core/menu';
 import { slotForMealAt } from '../core/pattern';
-import { isQueued, MAX_ATTEMPTS, nextToProcess } from '../core/queue';
+import { dropBytesAfterFailure, isQueued, nextToProcess } from '../core/queue';
 import type { MealItem } from '../core/types';
 import { loadPhoto, removePhoto } from './photoStore';
 import { useAI } from './useAI';
@@ -80,7 +80,7 @@ export function usePhotoQueue() {
 
         if (items.length === 0) {
           latest.failPhoto(photo.id, 'nothing recognised');
-          if (photo.attempts + 1 >= MAX_ATTEMPTS) await removePhoto(photo.id);
+          if (dropBytesAfterFailure(latest.state.photoQueue, photo)) await removePhoto(photo.id);
           return;
         }
 
@@ -105,8 +105,10 @@ export function usePhotoQueue() {
         latest.unqueuePhoto(photo.id);
         await removePhoto(photo.id);
       } catch (e) {
-        store.failPhoto(photo.id, String(e));
-        if (photo.attempts + 1 >= MAX_ATTEMPTS) await removePhoto(photo.id);
+        // Read the store as it is now: a photo whose account's data was put aside while the model ran keeps its bytes.
+        const latest = appRef.current;
+        latest.failPhoto(photo.id, String(e));
+        if (dropBytesAfterFailure(latest.state.photoQueue, photo)) await removePhoto(photo.id);
       } finally {
         working.current = false;
       }

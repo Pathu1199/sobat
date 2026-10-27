@@ -61,6 +61,7 @@ export type SpendLog = {
 };
 
 export type Routine = {
+  /** True on every store since version 7 (store/migrate.ts): the pattern is always on, and nothing reads this. */
   enabled: boolean;
   walk: boolean;
   /** Bhaji choices per weekday, index 0 = Sunday as `Date.getDay()` counts. The first is the default. */
@@ -358,7 +359,6 @@ export function pruneSpend(logs: SpendLog[], today: ISODate, keepDays = 120): Sp
 
 /** The routine in plain sentences, for the coach's context. */
 export function routineFacts(routine: Routine, foods: FoodItem[], date: ISODate, todayMeals: Meal[], spentToday: number): string[] {
-  if (!routine.enabled) return [];
   const name = (id: string) => foods.find((f) => f.id === id)?.name_en ?? id;
   const facts: string[] = [];
   const bhaji = bhajiFor(routine, date);
@@ -500,11 +500,6 @@ export function slotStatus(slot: RoutineSlot, nowMinutes: number, logged: boolea
 /** Older builds kept a skipped slot as a done-key with this prefix; version 7 moves them to `slotSkips`. */
 export const SKIP_PREFIX = 'skip_';
 
-/** The done-key older builds wrote for a slot skipped for the day. */
-export function skipKey(slot: RoutineSlot): string {
-  return `${SKIP_PREFIX}${slot.id}`;
-}
-
 /** Slots whose prompt moment (time + grace) fell inside this tick. */
 export function slotsDueBetween(routine: Routine, fromMinutes: number, toMinutes: number): RoutineSlot[] {
   return routine.slots.filter((s) => {
@@ -515,5 +510,5 @@ export function slotsDueBetween(routine: Routine, fromMinutes: number, toMinutes
 
 /** Foods the routine says to stay away from, for filtering suggestions. */
 export function avoidedFoodIds(routine: Routine): Set<string> {
-  return new Set(routine.enabled ? routine.avoid.flatMap((r) => r.foodIds) : []);
+  return new Set(routine.avoid.flatMap((r) => r.foodIds));
 }

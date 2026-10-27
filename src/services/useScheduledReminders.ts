@@ -8,6 +8,7 @@ import { useApp } from '../store/AppProvider';
 import { firebaseEnabled } from './firebase';
 import { cancel, scheduleAt, scheduleDaily, scheduledIds, setupAndroidChannel } from './notify';
 import { useAuth } from './useAuth';
+import { useMinute } from './useClock';
 import { useMantra } from './useMantra';
 
 /** Everything planned a week ahead carries this, so it can be told apart from the daily ones. */
@@ -58,7 +59,8 @@ export function useScheduledReminders() {
   const routine = app.state.routine;
   // By value: a sync landing rebuilds this object unchanged, and must not re-register the day's reminders.
   const breaksJson = JSON.stringify(app.state.breakSettings);
-  const { today, hour } = app;
+  const { today } = app;
+  const minute = useMinute();
   const { known, active } = useReminderGate();
 
   // The daily ones: whatever the plan does not hold is cancelled, so a sign-out
@@ -95,12 +97,11 @@ export function useScheduledReminders() {
 
   // Slots done or skipped today, as one string so the memo below only moves when the set does.
   const doneKey = useMemo(() => {
-    if (!routine.enabled) return '';
     const todayMeals = app.state.meals.filter((m) => m.date === today);
-    return settledSlotIds(slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skippedSlots: app.skippedToday }))
+    return settledSlotIds(slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday }))
       .sort()
       .join(',');
-  }, [routine, app.state.meals, today, app.targets.kcal, hour, app.skippedToday]);
+  }, [routine, app.state.meals, today, app.targets.kcal, minute, app.skippedToday]);
   const lastLog = useMemo(() => lastLogDate(app.state.meals, today), [app.state.meals, today]);
 
   // The slot prompts follow the meal-time prompt's switch and the absence lines the app's reminders switch, so either one on plans something.
@@ -108,7 +109,7 @@ export function useScheduledReminders() {
     if (Platform.OS === 'web' || !active || (!nudgesEnabled && !mealPrompt)) return [];
     return plannedReminders({
       today,
-      nowMinutes: hour * 60,
+      nowMinutes: minute,
       routine,
       mealPrompt,
       nudgesEnabled,
@@ -121,18 +122,21 @@ export function useScheduledReminders() {
       lang,
       t: makeT(lang),
     });
-  }, [active, nudgesEnabled, mealPrompt, onboardedOn, today, hour, routine, doneKey, lastLog, offDays, quietStartHour, quietEndHour, lang]);
+  }, [active, nudgesEnabled, mealPrompt, onboardedOn, today, minute, routine, doneKey, lastLog, offDays, quietStartHour, quietEndHour, lang]);
+  // By value: the list is worked out again every minute, and only a real change is taken to the OS.
+  const wantedJson = JSON.stringify(wanted);
 
   // Runs once the store and the session are known, whoever is there: after a sign-out or a reset `wanted` is
   // empty and the planned week is cancelled. Never on a store that failed to load, whose empty state is not the person's.
   useEffect(() => {
     if (Platform.OS === 'web' || !known) return;
     let stale = false;
+    const list = JSON.parse(wantedJson) as Reminder[];
     chain = chain
       .then(async () => {
         if (stale) return;
         const have = (await scheduledIds()).filter((id) => id.startsWith(PLANNED));
-        const want = new Map(wanted.map((r) => [osId(r), r]));
+        const want = new Map(list.map((r) => [osId(r), r]));
         for (const id of have) {
           if (stale) return;
           if (!want.has(id)) await cancel(id);
@@ -157,5 +161,5 @@ export function useScheduledReminders() {
     return () => {
       stale = true;
     };
-  }, [wanted, known]);
+  }, [wantedJson, known]);
 }

@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import { msToNextMinute } from '../core/date';
 import { slotStates } from '../core/pattern';
 import { slotLabel, slotsDueBetween } from '../core/routine';
 import { orderedBlocks, startedBetween, toMinutes } from '../core/schedule';
@@ -9,26 +8,11 @@ import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useFeedback } from './feedback';
 import { cancel, notifyNow, scheduleDaily, scheduledIds } from './notify';
+import { useMinute } from './useClock';
 import { useReminderGate } from './useScheduledReminders';
 
-export function nowMinutes(d: Date = new Date()): number {
-  return d.getHours() * 60 + d.getMinutes();
-}
-
-/** Minutes since midnight, re-read on the minute. For countdowns and "what is on now". */
-export function useMinute(): number {
-  const [m, setM] = useState(() => nowMinutes());
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    const tick = () => {
-      setM(nowMinutes());
-      timer = setTimeout(tick, msToNextMinute());
-    };
-    timer = setTimeout(tick, msToNextMinute());
-    return () => clearTimeout(timer);
-  }, []);
-  return m;
-}
+// The minute clock lives beside the hour clock, where the store can read it too; the screens still import it from here.
+export { nowMinutes, useMinute } from './useClock';
 
 const PREFIX = 'sobat-sched-';
 

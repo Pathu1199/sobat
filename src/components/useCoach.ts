@@ -24,7 +24,7 @@ export function useCoach(nowMinutes: number): Advice[] {
       remaining: budget.remaining,
       hour,
       foods,
-      avoided: avoidedFoodIds({ ...state.routine, enabled: true }),
+      avoided: avoidedFoodIds(state.routine),
       preferred: bhajiFor(state.routine, today),
       slots: pattern(state.routine),
       loggedSlotIds: settled,

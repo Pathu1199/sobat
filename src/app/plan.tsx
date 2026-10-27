@@ -60,7 +60,7 @@ export default function PlanScreen() {
     const s = state.routine.slots.find((x) => x.id === meal.id);
     return (s && slotLabel(s, lang)) || t(meal.type);
   };
-  const avoided = useMemo(() => avoidedFoodIds({ ...state.routine, enabled: true }), [state.routine]);
+  const avoided = useMemo(() => avoidedFoodIds(state.routine), [state.routine]);
   const floor = KCAL_FLOOR[state.profile.sex];
 
   // This week's menus, Sunday first as this screen has always read them; an edit is written to its own date.

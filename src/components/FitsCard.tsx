@@ -41,7 +41,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
   }, [state.routine, state.meals, today, app.targets.kcal, minute, app.skippedToday]);
 
   const plan = useMemo(() => {
-    const base = { foods, avoided: avoidedFoodIds({ ...state.routine, enabled: true }), preferred: bhajiFor(state.routine, today), seed, slots };
+    const base = { foods, avoided: avoidedFoodIds(state.routine), preferred: bhajiFor(state.routine, today), seed, slots };
     return mode === 'day' ? fullDayPlan({ ...base, remaining: app.targets.kcal }) : dayPlan({ ...base, remaining: budget.remaining, hour, loggedSlotIds, nowMinutes: minute });
   }, [mode, app.targets.kcal, budget.remaining, hour, loggedSlotIds, minute, foods, state.routine, today, seed, slots]);
 

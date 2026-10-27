@@ -39,6 +39,16 @@ export function isQueued(queue: QueuedPhoto[], id: string): boolean {
   return queue.some((p) => p.id === id);
 }
 
+/**
+ * Whether a photo's bytes go after an attempt the model failed on: it was the
+ * photo's last, and the photo is still queued here. One taken out meanwhile
+ * (its account's data put aside) keeps them: that account wants them back, and
+ * the clean-up on load drops any nobody holds.
+ */
+export function dropBytesAfterFailure(queue: QueuedPhoto[], photo: QueuedPhoto): boolean {
+  return photo.attempts + 1 >= MAX_ATTEMPTS && isQueued(queue, photo.id);
+}
+
 export function markFailed(queue: QueuedPhoto[], id: string, error: string): QueuedPhoto[] {
   return queue
     .map((p) => (p.id === id ? { ...p, attempts: p.attempts + 1, lastError: error } : p))

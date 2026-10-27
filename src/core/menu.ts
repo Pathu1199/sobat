@@ -48,7 +48,7 @@ export type MenuFit = { target: number; floor: number; avoided: Set<string> };
  * The target counts the person's age, so it can change at a new year.
  */
 export function fitFor(profile: Profile, routine: Routine, now?: Date): MenuFit {
-  return { target: dailyTargets(profile, now).kcal, floor: KCAL_FLOOR[profile.sex], avoided: avoidedFoodIds({ ...routine, enabled: true }) };
+  return { target: dailyTargets(profile, now).kcal, floor: KCAL_FLOOR[profile.sex], avoided: avoidedFoodIds(routine) };
 }
 
 // The fitted day of each weekday, worked out once per fit, pattern and food list: the streak alone reads sixty dates.

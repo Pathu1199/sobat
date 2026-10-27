@@ -6,7 +6,7 @@ import { mondayOf, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
 import { newId } from '../core/id';
 import { prunePhotos } from '../services/photoStore';
-import { useClock } from '../services/useClock';
+import { useClock, useMinute } from '../services/useClock';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
 import { parkedPhotoIds, switchStored } from '../core/accounts';
 import { burnedOn, eatBack, walkLog } from '../core/activity';
@@ -320,6 +320,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Not `toISODate()` at render time: nothing would re-render at midnight and
   // the whole app would keep working against yesterday.
   const { date: today, hour } = useClock();
+  const minute = useMinute();
   const update = useCallback((fn: (s: AppState) => AppState) => setState((s) => fn(s)), []);
   const planFoods = useMemo(() => allFoods(state.customFoods), [state.customFoods]);
   // A day nobody wrote shows the app's suggestion fitted to the person's target, never under the safe minimum, without the foods they avoid.
@@ -363,6 +364,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, [ready]);
 
+  // The meals left today are the pattern's slots not yet eaten or skipped, read at this minute; a pattern with no slots leaves
+  // it to the fixed windows. A number of its own, so the minute ticking over rebuilds nothing else.
+  const patternMealsLeft = useMemo(() => {
+    const states = slotStates({
+      routine: state.routine,
+      target: dailyTargets(state.profile).kcal,
+      meals: state.meals.filter((m) => m.date === today),
+      nowMinutes: minute,
+      skippedSlots: skippedOn(state.slotSkips, today),
+    });
+    return states.length > 0 ? states.filter((x) => x.status === 'now' || x.status === 'missed' || x.status === 'later').length : undefined;
+  }, [state.routine, state.profile, state.meals, state.slotSkips, today, minute]);
+
+  // This week as the plan screen reads it, worked out only when what it shows changes: a bottle of water rebuilds no week.
+  const weekPlan = useMemo(
+    () => weekPlanView(viewWeek(mondayOf(today), state.menus, state.routine, today, planFoods, fit)),
+    [today, state.menus, state.routine, planFoods, fit],
+  );
+
   const value = useMemo<Ctx>(() => {
     const targets = dailyTargets(state.profile);
     const todayMeals = state.meals.filter((m) => m.date === today);
@@ -370,16 +390,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const burnedToday = burnedOn(state.activities ?? [], today);
     const actionsDoneToday = state.actionsDone.filter((a) => a.date === today).map((a) => a.key);
     const skippedToday = skippedOn(state.slotSkips, today);
-    // With the pattern on, the meals left are its slots still to eat, not the fixed windows; a pattern with no slots falls back to the windows.
-    const patternStates = state.routine.enabled ? slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes: hour * 60, skippedSlots: skippedToday }) : [];
-    const mealsLeftOverride =
-      patternStates.length > 0 ? patternStates.filter((x) => x.status === 'now' || x.status === 'missed' || x.status === 'later').length : undefined;
-    const budget = calcBudget(targets, totals, hour, eatBack(burnedToday), mealsLeftOverride);
+    const budget = calcBudget(targets, totals, hour, eatBack(burnedToday), patternMealsLeft);
     const waterToday = waterMlOn(state.water, today);
     const screenMinutesToday = minutesOn(state.usage, today);
     // A tip is only today's if it was also written in the language now selected.
     const tipRecord = state.tips.find((t) => t.date === today && t.lang === state.profile.lang);
-    const thisWeek = viewWeek(mondayOf(today), state.menus, state.routine, today, planFoods, fit);
 
     return {
       ready,
@@ -510,7 +525,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const meals = slotsChanged ? withoutOrphanedAuto(s.meals, routine, today) : s.meals;
           return { ...s, routine, menus, meals };
         }),
-      weekPlan: weekPlanView(thisWeek),
+      weekPlan,
       setWeekPlan: (plan) =>
         update((s) => {
           // The week as the screen showed it, fitted the same way, so only the days that changed are written.
@@ -617,7 +632,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, streakDays]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, streakDays, patternMealsLeft, weekPlan]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

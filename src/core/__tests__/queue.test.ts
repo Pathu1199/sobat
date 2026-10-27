@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dequeue, enqueue, isQueued, markFailed, MAX_ATTEMPTS, MAX_QUEUED, nextToProcess, pendingCount, type QueuedPhoto } from '../queue';
+import { dequeue, dropBytesAfterFailure, enqueue, isQueued, markFailed, MAX_ATTEMPTS, MAX_QUEUED, nextToProcess, pendingCount, type QueuedPhoto } from '../queue';
 
 function photo(id: string, attempts = 0): QueuedPhoto {
   return { id, uri: `file://${id}`, at: '', date: '2026-09-26', attempts };
@@ -70,5 +70,16 @@ describe('isQueued', () => {
     expect(isQueued(q, 'a')).toBe(true);
     expect(isQueued(dequeue(q, 'a'), 'a')).toBe(false);
     expect(isQueued([], 'a')).toBe(false);
+  });
+});
+
+describe('a photo the model failed on', () => {
+  it('has its bytes dropped after its last attempt, and only while it is still queued here: a photo whose account was put aside keeps them', () => {
+    const last = photo('a', MAX_ATTEMPTS - 1);
+    expect(dropBytesAfterFailure([last], last)).toBe(true);
+    expect(dropBytesAfterFailure([], last)).toBe(false);
+    expect(dropBytesAfterFailure([photo('b', MAX_ATTEMPTS - 1)], last)).toBe(false);
+    // Attempts left: the bytes stay for the next one.
+    expect(dropBytesAfterFailure([photo('a')], photo('a'))).toBe(false);
   });
 });

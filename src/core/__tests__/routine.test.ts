@@ -207,7 +207,12 @@ describe('avoidHits', () => {
     const rule = ruleForFood(FOODS.find((f) => f.id === 'gulab-jamun') ?? FOODS[0]);
     expect(rule.foodIds).toHaveLength(1);
     expect(avoidedFoodIds({ ...DEFAULT_ROUTINE, enabled: true, avoid: [rule] }).has(rule.foodIds[0])).toBe(true);
-    expect(avoidedFoodIds(DEFAULT_ROUTINE).size).toBe(0);
+    expect(avoidedFoodIds(NEUTRAL_ROUTINE).size).toBe(0);
+  });
+
+  it('reads the avoid list whatever switch an older build stored: the pattern is always on', () => {
+    const rule = ruleForFood(FOODS.find((f) => f.id === 'gulab-jamun') ?? FOODS[0]);
+    expect(avoidedFoodIds({ ...DEFAULT_ROUTINE, enabled: false, avoid: [rule] }).has(rule.foodIds[0])).toBe(true);
   });
 });
 
@@ -302,8 +307,10 @@ describe('the neutral routine', () => {
     expect(DEFAULT_SLOTS.every((s) => s.options.length === 1 && s.options[0].length === 0)).toBe(true);
   });
 
-  it('says nothing when the routine is off', () => {
-    expect(routineFacts(DEFAULT_ROUTINE, FOODS, MON, [], 0)).toEqual([]);
+  it('tells the coach the pattern whatever switch an older build stored: the pattern is always on', () => {
+    const off = routineFacts({ ...DEFAULT_ROUTINE, enabled: false }, FOODS, MON, [], 0);
+    expect(off.length).toBeGreaterThan(0);
+    expect(off).toEqual(routineFacts({ ...DEFAULT_ROUTINE, enabled: true }, FOODS, MON, [], 0));
   });
 
   it('has no bhaji week until some day of the week has a bhaji', () => {
