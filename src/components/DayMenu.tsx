@@ -1,0 +1,316 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Pressable, Text, View } from 'react-native';
+import { slotBefore, undoSteps, type UndoStep } from '../core/addSheet';
+import { amountText, stepCount } from '../core/basket';
+import { fillUndoSteps, offersDayConfirm, planNote, rowOffers, type DayView, type MenuRow, type RowLine } from '../core/dayView';
+import { itemName } from '../core/foods';
+import type { DayMenu as Menu } from '../core/menu';
+import { KCAL_FLOOR } from '../core/nutrition';
+import { slotLabel } from '../core/routine';
+import type { ISODate, Meal } from '../core/types';
+import { isOffDay } from '../core/week';
+import { fill, makeT } from '../i18n';
+import { useFeedback } from '../services/feedback';
+import { useApp } from '../store/AppProvider';
+import { Bar, Btn, Card, Divider, Row, SectionHeader } from '../ui/components';
+import { QtyStepper } from '../ui/QtyStepper';
+import { C, F, lh, S } from '../ui/theme';
+import { useAddSheet } from './AddSheet';
+
+/** A chip that is a finger tall on every platform: the box itself is 44, the pill sits in its middle. */
+function Chip({ label, a11y, onPress }: { label: string; a11y?: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y ?? label} style={{ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start' }}>
+      {({ pressed }) => (
+        <View style={{ paddingVertical: 7, paddingHorizontal: 13, borderRadius: 999, borderWidth: S.hairline, borderColor: C.border, backgroundColor: C.cardAlt, opacity: pressed ? 0.8 : 1 }}>
+          <Text style={{ color: C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{label}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+/**
+ * The day's menu, one row per slot (core/dayView.ts decides each row's state
+ * and what it offers). Today: eaten slots ticked on one line, the slot whose
+ * turn it is open with Ate as planned and Change, later slots one line. A
+ * past day says how many meals are missing with "2 of 3 meals", and fills
+ * each open slot as planned, with something else, or as skipped, with − / +
+ * on each planned food; an empty day fills from the plan in one tap, with
+ * Undo. A future day is the plan itself and logs nothing: − / + and Change
+ * edit that date's menu, and the total against the goal updates at once.
+ * Meals the app filled in carry a "from plan" chip until they are confirmed,
+ * one by one or with "Day looks right" (a past day, or today from 21:00). A
+ * free day and a day before the person started are not judged. Every log
+ * from here has an Undo that puts the slot back as it was, its skip too.
+ */
+export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view: DayView; menu: Menu; onOpenMeal: (m: Meal) => void }) {
+  const app = useApp();
+  const fb = useFeedback();
+  const router = useRouter();
+  const addSheet = useAddSheet();
+  const { state, targets, hour } = app;
+  const lang = state.profile.lang;
+  const t = makeT(lang);
+  const small = { color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) } as const;
+  const strong = { color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' } as const;
+
+  const title = (row: MenuRow) => {
+    const s = state.routine.slots.find((x) => x.id === row.slotId);
+    return (s && slotLabel(s, lang)) || t(row.type);
+  };
+  const plannedLines = (row: MenuRow) => menu.meals.find((m) => m.id === row.slotId)?.lines ?? [];
+
+  /** Each step of an Undo through the store, so a meal put back lifts the skip taking one away may have marked. */
+  function undo(steps: UndoStep[]) {
+    for (const step of steps) {
+      if (step.kind === 'remove') app.removeMeal(step.id);
+      else if (step.kind === 'add') app.addMeal(step.meal);
+      else if (step.kind === 'skip') app.skipSlot(step.date, step.slotId);
+      else app.unskipSlot(step.date, step.slotId);
+    }
+  }
+
+  function stepLine(row: MenuRow, l: RowLine, by: 1 | -1) {
+    const line = plannedLines(row)[l.idx];
+    if (!line) return;
+    const qty = stepCount(line.qty, line.unit, by);
+    app.editMenuLine(menu, row.slotId, l.idx, qty > 0 ? { ...line, qty } : null);
+    fb.haptic('light');
+  }
+
+  // Ate as planned (today's slot) and Ate this (an open slot): logged from the plan with calories from the database, never on a
+  // date after today (the store refuses, and a future day offers neither). Undo puts the slot back exactly as it was.
+  function atePlanned(row: MenuRow) {
+    const before = slotBefore(state, date, row.slotId);
+    const id = app.addMealFromPlan(date, row.slotId);
+    fb.haptic('success');
+    fb.notify(fill(t('toast_meal_saved'), { kcal: row.plannedKcal }), {
+      label: t('undo'),
+      onPress: () => undo(undoSteps({ id, date, slotId: row.slotId, ...before })),
+    });
+  }
+
+  function fillDay() {
+    const steps = fillUndoSteps(view);
+    app.fillDayFromPlan(date);
+    fb.haptic('success');
+    fb.notify(t('menu_day_filled'), { label: t('undo'), onPress: () => undo(steps) });
+  }
+
+  const head = (row: MenuRow, right?: string) => (
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+      <Text style={[strong, { flex: 1 }]}>
+        {title(row)}
+        <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400' }}>{`  ${row.time}`}</Text>
+      </Text>
+      {right ? <Text style={[small, { fontWeight: '500' }]}>{right}</Text> : null}
+    </View>
+  );
+
+  const stepperLine = (row: MenuRow, l: RowLine) => (
+    <View key={l.idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={2} style={strong}>
+          {l.name}
+        </Text>
+        <Text numberOfLines={1} style={small}>{`${amountText(l.qty, l.measure)} · ${l.kcal} kcal`}</Text>
+      </View>
+      <QtyStepper value={l.qtyText} onMinus={() => stepLine(row, l, -1)} onPlus={() => stepLine(row, l, 1)} minusLabel={fill(t('qty_less'), { food: l.name })} plusLabel={fill(t('qty_more'), { food: l.name })} />
+    </View>
+  );
+
+  /** The row's buttons, as core/dayView.ts `rowOffers` gives them. */
+  function offers(row: MenuRow) {
+    const slot = title(row);
+    const btn = (o: ReturnType<typeof rowOffers>[number]) => {
+      if (o === 'planned') return <Btn key={o} small label={t('menu_ate_planned')} accessibilityLabel={fill(t('menu_ate_this_a11y'), { slot })} onPress={() => atePlanned(row)} style={{ flexGrow: 1 }} />;
+      if (o === 'ate_this') return <Btn key={o} small label={t('menu_ate_this')} accessibilityLabel={fill(t('menu_ate_this_a11y'), { slot })} onPress={() => atePlanned(row)} style={{ flexGrow: 1 }} />;
+      if (o === 'change')
+        return (
+          <Btn
+            key={o}
+            small
+            tone="soft"
+            label={t('menu_change')}
+            accessibilityLabel={fill(t('menu_change_a11y'), { slot })}
+            onPress={() => addSheet.open({ date, slotId: row.slotId, lines: plannedLines(row), mode: row.state === 'plan' ? 'plan' : 'log' })}
+            style={{ flexGrow: 1 }}
+          />
+        );
+      if (o === 'add')
+        return (
+          <Btn
+            key={o}
+            small
+            tone="soft"
+            label={row.state === 'plan' ? t('menu_add_plan') : t('add_food')}
+            accessibilityLabel={fill(t('menu_add_a11y'), { slot })}
+            onPress={() => addSheet.open(row.state === 'plan' ? { date, slotId: row.slotId, mode: 'plan' } : { date, slotId: row.slotId })}
+            style={{ flexGrow: 1 }}
+          />
+        );
+      if (o === 'ate_other')
+        return <Btn key={o} small tone="soft" label={t('menu_ate_other')} accessibilityLabel={fill(t('menu_ate_other_a11y'), { slot })} onPress={() => addSheet.open({ date, slotId: row.slotId })} style={{ flexGrow: 1 }} />;
+      return (
+        <Btn
+          key={o}
+          small
+          tone="ghost"
+          label={t('menu_skipped')}
+          accessibilityLabel={fill(t('menu_skip_a11y'), { slot })}
+          onPress={() => {
+            // Quietly: skipping is an honest record, never praised.
+            app.skipSlot(date, row.slotId);
+            fb.haptic('light');
+          }}
+          style={{ flexGrow: 1 }}
+        />
+      );
+    };
+    const list = rowOffers(row);
+    return list.length > 0 ? <Row style={{ gap: 6, flexWrap: 'wrap' }}>{list.map(btn)}</Row> : null;
+  }
+
+  function renderRow(row: MenuRow) {
+    if (row.state === 'done') {
+      const names = (m: Meal) => m.items.map((it) => itemName(it, app.planFoods, lang)).join(', ');
+      return (
+        <View style={{ paddingVertical: 4 }}>
+          {row.meals.map((m, i) => (
+            <Pressable
+              key={m.id}
+              onPress={() => onOpenMeal(m)}
+              accessibilityRole="button"
+              accessibilityLabel={fill(t('menu_done_a11y'), { slot: title(row), foods: names(m), kcal: m.kcal })}
+              accessibilityHint={t('menu_open_meal')}
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: S.touch, opacity: pressed ? 0.7 : 1 })}>
+              {i === 0 ? <Ionicons name="checkmark-circle" size={20} color={C.accentText} /> : <View style={{ width: 20 }} />}
+              <View style={{ flex: 1, minWidth: 0 }}>
+                {i === 0 ? (
+                  <Text numberOfLines={1} style={strong}>
+                    {title(row)}
+                  </Text>
+                ) : null}
+                {names(m) ? (
+                  <Text numberOfLines={1} style={small}>
+                    {names(m)}
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={[small, { fontWeight: '500' }]}>{`${m.kcal} kcal`}</Text>
+            </Pressable>
+          ))}
+          {row.autoIds.length > 0 ? (
+            <Chip
+              label={t('menu_from_plan')}
+              a11y={fill(t('menu_confirm_a11y'), { slot: title(row) })}
+              onPress={() => {
+                row.autoIds.forEach((id) => app.confirmMeal(id));
+                fb.haptic('light');
+              }}
+            />
+          ) : null}
+        </View>
+      );
+    }
+    if (row.state === 'skipped') {
+      return (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: S.touch }}>
+          <Ionicons name="remove-circle-outline" size={20} color={C.textFaint} />
+          <Text style={[small, { flex: 1, fontSize: F.body, lineHeight: lh(F.body) }]}>{`${title(row)} · ${t('slot_skipped')}`}</Text>
+          <Pressable
+            onPress={() => app.unskipSlot(date, row.slotId)}
+            accessibilityRole="button"
+            accessibilityLabel={fill(t('menu_unskip_a11y'), { slot: title(row) })}
+            style={({ pressed }) => ({ minHeight: S.touch, minWidth: S.touch, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: pressed ? C.accentSoft : 'transparent' })}>
+            <Text style={{ color: C.accentText, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{t('undo')}</Text>
+          </Pressable>
+        </View>
+      );
+    }
+    if (row.state === 'current') {
+      return (
+        <View style={{ gap: 8, padding: 12, marginVertical: 4, borderRadius: S.radiusSm, borderWidth: 1, borderColor: C.accent, backgroundColor: C.accentDim }}>
+          {head(row, row.lines.length > 0 ? `${row.plannedKcal} kcal` : undefined)}
+          {row.lines.length > 0 ? (
+            row.lines.map((l) => (
+              <View key={l.idx}>
+                <Text style={strong}>{l.name}</Text>
+                <Text style={small}>{`${amountText(l.qty, l.measure)} · ${l.kcal} kcal`}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={small}>{t('menu_nothing_planned')}</Text>
+          )}
+          {offers(row)}
+        </View>
+      );
+    }
+    if (row.state === 'later') {
+      return <View style={{ paddingVertical: 10 }}>{head(row, row.lines.length > 0 ? fill(t('menu_planned_kcal'), { kcal: row.plannedKcal }) : t('menu_nothing_planned'))}</View>;
+    }
+    // Open (a past day, or a slot today passed with nothing in it) and plan (a future day): each planned food with − / +,
+    // which edit that date's menu, so Ate this logs the amounts shown.
+    return (
+      <View style={{ gap: 8, paddingVertical: 8 }}>
+        {head(row, row.lines.length > 0 ? `${row.plannedKcal} kcal` : t('menu_nothing_planned'))}
+        {row.lines.map((l) => stepperLine(row, l))}
+        {offers(row)}
+      </View>
+    );
+  }
+
+  const floor = KCAL_FLOOR[state.profile.sex];
+  const note = view.mode === 'future' ? planNote({ kcal: view.plannedKcal, target: targets.kcal, floor, suggested: app.isSuggestedMenu(menu), hasPlan: view.required > 0 }) : null;
+  const openPlan = <Chip label={t('menu_open_plan')} onPress={() => router.push('/food?s=plan')} />;
+
+  return (
+    <Card>
+      <SectionHeader title={t('menu_title')} meta={view.mode === 'future' ? fill(t('menu_planned_of'), { kcal: view.plannedKcal, goal: targets.kcal }) : undefined} />
+      {isOffDay(state.settings.offDays, date) ? <Text style={small}>{t('menu_day_off')}</Text> : null}
+      {view.missing > 0 ? (
+        <Text style={{ color: C.amber, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{fill(t(view.missing === 1 ? 'menu_missing_one' : 'menu_missing'), { n: view.missing })}</Text>
+      ) : null}
+      {view.mode === 'past' && view.judged && view.required > 0 ? (
+        <View style={{ gap: 6 }}>
+          <Bar value={view.settled} max={view.required} color={view.settled === view.required ? C.accent : C.amber} />
+          <Text style={small}>{fill(t('menu_record'), { n: view.settled, of: view.required })}</Text>
+        </View>
+      ) : null}
+      {note === 'suggested' || note === 'suggested_low' ? (
+        <View style={{ gap: 4 }}>
+          <Text style={small}>{fill(t('plan_suggested'), { kcal: view.plannedKcal })}</Text>
+          {note === 'suggested_low' ? <Text style={{ color: C.amber, fontSize: F.small, lineHeight: lh(F.small) }}>{fill(t('plan_suggested_floor'), { floor })}</Text> : null}
+          {note === 'suggested_low' ? openPlan : null}
+        </View>
+      ) : null}
+      {note === 'low' ? (
+        <View style={{ gap: 4 }}>
+          <Text style={{ color: C.red, fontSize: F.small, lineHeight: lh(F.small) }}>{t('menu_plan_low')}</Text>
+          {openPlan}
+        </View>
+      ) : null}
+      {view.rows.map((row, i) => (
+        <View key={row.slotId}>
+          {i > 0 ? <Divider /> : null}
+          {renderRow(row)}
+        </View>
+      ))}
+      {view.canFill ? <Btn tone="soft" label={t('menu_fill_day')} onPress={fillDay} /> : null}
+      {offersDayConfirm(view, hour) ? (
+        <Btn
+          tone="soft"
+          label={t('menu_day_right')}
+          onPress={() => {
+            app.confirmDay(date);
+            fb.haptic('success');
+            fb.notify(t('menu_day_confirmed'));
+          }}
+        />
+      ) : null}
+    </Card>
+  );
+}

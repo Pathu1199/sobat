@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { dayMode, dayView } from '../dayView';
-import type { DayMenu } from '../menu';
+import type { UndoStep } from '../addSheet';
+import { dayMode, dayView, fillUndoSteps, offersDayConfirm, planNote, rowOffers, type MenuRow } from '../dayView';
+import { measureName } from '../foods';
+import { fillFromPlan, planFillId, removeSkip, withMealAdded, withMealRemoved, type DayMenu, type MealState } from '../menu';
+import { DEFAULT_ROUTINE } from '../routine';
 import type { FoodItem, Meal } from '../types';
 import { lineInfo } from '../weekPlan';
 
@@ -158,6 +161,107 @@ describe('a future day', () => {
     const kcal = (foodId: string, unit: string, qty: number) => lineInfo({ foodId, unit, qty }, foods)!.kcal;
     expect(v.plannedKcal).toBe(kcal('poha', 'katori', 1) + kcal('chapati', 'piece', 2) + kcal('moong-dal', 'katori', 0.5) + kcal('chapati', 'piece', 2));
     const hi = dayView({ date: '2026-10-29', today: TODAY, menu: menu('2026-10-29'), meals: [], skippedIds: [], currentId: null, foods, lang: 'hi', offDay: false });
-    expect(hi.rows[1].lines[0].name).toBe(foods.find((f) => f.id === 'chapati')!.name_hi);
+    const chapati = foods.find((f) => f.id === 'chapati')!;
+    expect(hi.rows[1].lines[0].name).toBe(chapati.name_hi);
+    // Each food's measure is named in the person's language, as the add sheet names it.
+    expect(hi.rows[1].lines[0].measure).toBe(measureName(chapati, 'piece', 'hi'));
+    expect(v.rows[1].lines[0].measure).toBe(measureName(chapati, 'piece', 'en'));
+  });
+});
+
+describe('what each row offers', () => {
+  const row = (state: MenuRow['state'], lines: number, planned = lines > 0) => {
+    const r = view('2026-10-25', []).rows[1];
+    return { ...r, state, lines: r.lines.slice(0, lines), planned };
+  };
+
+  it('the slot whose turn it is: Ate as planned and Change; with nothing planned only a way to add food, never Ate as planned', () => {
+    expect(rowOffers(row('current', 2))).toEqual(['planned', 'change']);
+    expect(rowOffers(row('current', 0))).toEqual(['add']);
+    // A food planned there that has left the database gives nothing to log as planned either.
+    expect(rowOffers(row('current', 0, true))).toEqual(['add']);
+  });
+
+  it('an open slot: Ate this, Ate other and Skipped; with nothing planned, only Ate other', () => {
+    expect(rowOffers(row('open', 2))).toEqual(['ate_this', 'ate_other', 'skip']);
+    expect(rowOffers(row('open', 0))).toEqual(['ate_other']);
+    // Still one of the day's meals, so it can be marked skipped, but nothing to log as planned.
+    expect(rowOffers(row('open', 0, true))).toEqual(['ate_other', 'skip']);
+  });
+
+  it('a future day only changes the plan: nothing is logged into the future', () => {
+    expect(rowOffers(row('plan', 2))).toEqual(['change']);
+    expect(rowOffers(row('plan', 0))).toEqual(['add']);
+  });
+
+  it('done, skipped and later rows have no buttons of this kind', () => {
+    expect([rowOffers(row('done', 2)), rowOffers(row('skipped', 2)), rowOffers(row('later', 2))]).toEqual([[], [], []]);
+  });
+});
+
+describe('"Day looks right"', () => {
+  const filledToday = view(TODAY, [meal(TODAY, 'breakfast', 'breakfast', '08:30', 300, 'auto')], { currentId: 'lunch' });
+  const filledPast = view('2026-10-25', [meal('2026-10-25', 'breakfast', 'breakfast', '08:30', 300, 'auto')]);
+
+  it('today, from 21:00, while meals filled in from the plan are unconfirmed', () => {
+    expect([offersDayConfirm(filledToday, 20), offersDayConfirm(filledToday, 21), offersDayConfirm(filledToday, 23)]).toEqual([false, true, true]);
+  });
+
+  it('a past day at any hour; never with nothing to confirm, and never on a future day', () => {
+    expect(offersDayConfirm(filledPast, 9)).toBe(true);
+    expect(offersDayConfirm(view('2026-10-25', [meal('2026-10-25', 'breakfast', 'breakfast', '08:30', 300)]), 22)).toBe(false);
+    expect(offersDayConfirm(view('2026-10-29', []), 22)).toBe(false);
+  });
+});
+
+describe("a future day's line under its total", () => {
+  const base = { target: 1800, floor: 1200, hasPlan: true };
+
+  it("the app's own suggestion is named as one, neutral, and points to Balance only under the safe minimum", () => {
+    expect(planNote({ ...base, kcal: 1500, suggested: true })).toBe('suggested');
+    expect(planNote({ ...base, kcal: 1100, suggested: true })).toBe('suggested_low');
+  });
+
+  it("the person's own plan too low for the day is said plainly; enough says nothing", () => {
+    expect(planNote({ ...base, kcal: 1100, suggested: false })).toBe('low');
+    expect(planNote({ ...base, kcal: 1400, suggested: false })).toBe('low');
+    expect(planNote({ ...base, kcal: 1750, suggested: false })).toBeNull();
+  });
+
+  it('a day with nothing planned has no total to call low', () => {
+    expect(planNote({ ...base, kcal: 0, suggested: false, hasPlan: false })).toBeNull();
+  });
+});
+
+describe('"Fill this day from plan" and its Undo', () => {
+  const undo = (s: MealState, steps: UndoStep[], now: Date): MealState =>
+    steps.reduce<MealState>((acc, step) => {
+      const next =
+        step.kind === 'remove'
+          ? withMealRemoved(acc, step.id, now)
+          : step.kind === 'add'
+            ? withMealAdded(acc, step.meal, 1600, now)
+            : { meals: acc.meals, slotSkips: step.kind === 'unskip' ? removeSkip(acc.slotSkips, step.date, step.slotId) : acc.slotSkips };
+      return { ...acc, ...next };
+    }, s);
+
+  it('logs every planned slot under ids the Undo knows, and the Undo, through the store, leaves the day as it was, nothing skipped', () => {
+    const d = '2026-10-20';
+    const now = new Date('2026-10-27T15:00:00');
+    const v = view(d, []);
+    expect(v.canFill).toBe(true);
+    const filled = fillFromPlan({ now, menu: menu(d), meals: [], skips: [], foods, offDay: false });
+    expect(filled.map((m) => m.id)).toEqual(['breakfast', 'lunch', 'dinner'].map((id) => planFillId(d, id)));
+    const before: MealState = { routine: DEFAULT_ROUTINE, menus: [menu(d)], meals: [], slotSkips: [] };
+    const logged = filled.reduce<MealState>((acc, m) => ({ ...acc, ...withMealAdded(acc, m, 1600, now) }), before);
+    expect(logged.meals).toHaveLength(3);
+    // Taking the meals away alone would leave an old day's slots skipped.
+    expect(filled.reduce<MealState>((acc, m) => ({ ...acc, ...withMealRemoved(acc, m.id, now) }), logged).slotSkips).toHaveLength(3);
+    const back = undo(logged, fillUndoSteps(v), now);
+    expect([back.meals, back.slotSkips]).toEqual([[], []]);
+  });
+
+  it('has no Undo to offer for a day it does not fill', () => {
+    expect(fillUndoSteps(view('2026-10-25', [meal('2026-10-25', 'breakfast', 'breakfast', '08:40', 300)]))).toEqual([]);
   });
 });

@@ -395,6 +395,11 @@ export function outsideRecord(date: ISODate, offDay: boolean, startDate?: ISODat
   return offDay || (startDate !== undefined && date < startDate);
 }
 
+/** The id of the meal "Fill this day from plan" logs in a slot, so its Undo can take that meal away again. */
+export function planFillId(date: ISODate, slotId: string): string {
+  return `plan-${date}-${slotId}`;
+}
+
 /**
  * "Fill this day from plan": every open slot of an older day, the kind the
  * app was never open on, logged as planned. Nothing for a date after today,
@@ -405,7 +410,7 @@ export function fillFromPlan(input: { now: Date; menu: DayMenu; meals: Meal[]; s
   if (outsideRecord(menu.date, input.offDay, input.startDate)) return [];
   const out: Meal[] = [];
   for (const slot of openSlots(menu, input.meals, input.skips)) {
-    const meal = mealFromLines({ id: `plan-${menu.date}-${slot.id}`, date: menu.date, slot, lines: slot.lines, foods: input.foods, source: 'plan', now: input.now });
+    const meal = mealFromLines({ id: planFillId(menu.date, slot.id), date: menu.date, slot, lines: slot.lines, foods: input.foods, source: 'plan', now: input.now });
     if (meal) out.push(meal);
   }
   return out;

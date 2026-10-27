@@ -1040,6 +1040,15 @@ const en: Dict = {
   menu_ate_planned: 'Ate as planned', menu_change: 'Change',
   strip_full: 'All meals logged', strip_missing: 'Meals missing', strip_today: 'Today, still going', strip_planned: 'Planned', strip_off: 'Free day', strip_none: 'Before you started',
   strip_from_plan: 'filled in from the plan', strip_prev_week: 'Previous week', strip_next_week: 'Next week',
+  menu_title: 'Menu', menu_planned_of: 'Planned {kcal} of {goal}', menu_day_off: 'A free day: nothing is judged.',
+  menu_missing: '{n} meals missing', menu_missing_one: '1 meal missing', menu_record: '{n} of {of} meals',
+  menu_plan_low: 'Too little for one day. Add food, or balance the day in the diet plan.', menu_open_plan: 'Open the diet plan',
+  menu_fill_day: 'Fill this day from plan', menu_day_filled: 'Day filled in from the plan', menu_day_right: 'Day looks right', menu_day_confirmed: 'Day confirmed',
+  menu_from_plan: 'From plan · tap to confirm', menu_confirm_a11y: 'Confirm {slot}: eaten as planned', menu_nothing_planned: 'Nothing planned', menu_planned_kcal: '{kcal} kcal planned',
+  menu_ate_this: 'Ate this', menu_ate_other: 'Ate other', menu_skipped: 'Skipped', menu_add_plan: 'Add food',
+  menu_ate_this_a11y: 'Ate {slot} as planned', menu_ate_other_a11y: 'Ate something else for {slot}', menu_skip_a11y: 'Mark {slot} as skipped',
+  menu_change_a11y: 'Change {slot}', menu_add_a11y: 'Add food to {slot}', menu_unskip_a11y: 'Undo the skip of {slot}',
+  menu_done_a11y: '{slot}: {foods}, {kcal} kcal', menu_open_meal: 'Opens the meal to change or remove it.',
 };
 
 const mr: Dict = {
@@ -2084,6 +2093,15 @@ const mr: Dict = {
   menu_ate_planned: 'ठरवल्याप्रमाणे खाल्लं', menu_change: 'बदला',
   strip_full: 'सर्व जेवणं नोंदली', strip_missing: 'काही जेवणं राहिली', strip_today: 'आज, सुरू आहे', strip_planned: 'ठरवलेलं', strip_off: 'मोकळा दिवस', strip_none: 'सुरुवातीआधी',
   strip_from_plan: 'नियोजनावरून भरलेलं', strip_prev_week: 'मागचा आठवडा', strip_next_week: 'पुढचा आठवडा',
+  menu_title: 'मेन्यू', menu_planned_of: '{goal} पैकी {kcal} ठरवलं', menu_day_off: 'मोकळा दिवस: काहीही मोजलं जात नाही.',
+  menu_missing: '{n} जेवणं राहिली', menu_missing_one: '1 जेवण राहिलं', menu_record: '{of} पैकी {n} जेवणं',
+  menu_plan_low: 'एका दिवसासाठी खूप कमी. पदार्थ जोडा, किंवा आहार नियोजनात दिवस संतुलित करा.', menu_open_plan: 'आहार नियोजन उघडा',
+  menu_fill_day: 'हा दिवस नियोजनावरून भरा', menu_day_filled: 'दिवस नियोजनावरून भरला', menu_day_right: 'दिवस बरोबर आहे', menu_day_confirmed: 'दिवस पक्का केला',
+  menu_from_plan: 'नियोजनावरून · पक्कं करायला दाबा', menu_confirm_a11y: '{slot} ठरवल्याप्रमाणे खाल्लं, पक्कं करा', menu_nothing_planned: 'काही ठरवलेलं नाही', menu_planned_kcal: '{kcal} kcal ठरवलं',
+  menu_ate_this: 'हेच खाल्लं', menu_ate_other: 'दुसरं खाल्लं', menu_skipped: 'वगळलं', menu_add_plan: 'पदार्थ जोडा',
+  menu_ate_this_a11y: '{slot} ठरवल्याप्रमाणे खाल्लं', menu_ate_other_a11y: '{slot} ला दुसरं काही खाल्लं', menu_skip_a11y: '{slot} वगळलं म्हणून नोंदवा',
+  menu_change_a11y: '{slot} बदला', menu_add_a11y: '{slot} मध्ये पदार्थ जोडा', menu_unskip_a11y: '{slot} वगळणं मागे घ्या',
+  menu_done_a11y: '{slot}: {foods}, {kcal} kcal', menu_open_meal: 'जेवण बदलायला किंवा काढायला उघडते.',
 };
 
 const hi: Dict = {
@@ -3126,6 +3144,15 @@ const hi: Dict = {
   menu_ate_planned: 'प्लान के मुताबिक़ खाया', menu_change: 'बदलें',
   strip_full: 'सारे खाने दर्ज', strip_missing: 'कुछ खाने बाकी', strip_today: 'आज, जारी है', strip_planned: 'तय', strip_off: 'छुट्टी का दिन', strip_none: 'शुरुआत से पहले',
   strip_from_plan: 'प्लान से भरा', strip_prev_week: 'पिछला हफ़्ता', strip_next_week: 'अगला हफ़्ता',
+  menu_title: 'मेन्यू', menu_planned_of: '{goal} में से {kcal} तय', menu_day_off: 'छुट्टी का दिन: कुछ नहीं आँका जाता.',
+  menu_missing: '{n} खाने बाकी', menu_missing_one: '1 खाना बाकी', menu_record: '{of} में से {n} खाने',
+  menu_plan_low: 'एक दिन के लिए बहुत कम. खाना जोड़ें, या डाइट प्लान में दिन संतुलित करें.', menu_open_plan: 'डाइट प्लान खोलें',
+  menu_fill_day: 'यह दिन प्लान से भरें', menu_day_filled: 'दिन प्लान से भरा', menu_day_right: 'दिन ठीक है', menu_day_confirmed: 'दिन पक्का किया',
+  menu_from_plan: 'प्लान से · पक्का करने के लिए दबाएँ', menu_confirm_a11y: '{slot} प्लान के मुताबिक़ खाया, पक्का करें', menu_nothing_planned: 'कुछ तय नहीं', menu_planned_kcal: '{kcal} kcal तय',
+  menu_ate_this: 'यही खाया', menu_ate_other: 'कुछ और खाया', menu_skipped: 'छोड़ा', menu_add_plan: 'खाना जोड़ें',
+  menu_ate_this_a11y: '{slot} प्लान के मुताबिक़ खाया', menu_ate_other_a11y: '{slot} में कुछ और खाया', menu_skip_a11y: '{slot} छोड़ा हुआ दर्ज करें',
+  menu_change_a11y: '{slot} बदलें', menu_add_a11y: '{slot} में खाना जोड़ें', menu_unskip_a11y: '{slot} छोड़ना वापस लें',
+  menu_done_a11y: '{slot}: {foods}, {kcal} kcal', menu_open_meal: 'खाना बदलने या हटाने के लिए खोलता है.',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

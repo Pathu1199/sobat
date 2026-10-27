@@ -1,9 +1,11 @@
+import type { UndoStep } from './addSheet';
 import { formatQty } from './basket';
-import { foodName } from './foods';
-import { menuSlots, outsideRecord, type DayMenu } from './menu';
+import { foodName, measureName } from './foods';
+import { menuSlots, outsideRecord, planFillId, type DayMenu } from './menu';
+import { DAY_ENDS_AT_HOUR } from './nudge';
 import { slotOf } from './pattern';
 import type { FoodItem, ISODate, Lang, Meal, MealType } from './types';
-import { lineInfo } from './weekPlan';
+import { dayStatus, lineInfo } from './weekPlan';
 
 /**
  * The day's menu as Today shows it, one row per slot of that date's menu.
@@ -18,8 +20,8 @@ import { lineInfo } from './weekPlan';
  */
 export type DayMode = 'past' | 'today' | 'future';
 export type RowState = 'done' | 'skipped' | 'current' | 'open' | 'later' | 'plan';
-/** One planned food: `idx` is its place in the menu meal, so − / + edits the right line. */
-export type RowLine = { idx: number; foodId: string; name: string; qty: number; qtyText: string; unit: string; grams: number; kcal: number; protein: number };
+/** One planned food: `idx` is its place in the menu meal, so − / + edits the right line; `measure` names one of its measures ("1 katori (150 g)"). */
+export type RowLine = { idx: number; foodId: string; name: string; qty: number; qtyText: string; unit: string; measure: string; grams: number; kcal: number; protein: number };
 export type MenuRow = {
   slotId: string;
   type: MealType;
@@ -36,6 +38,7 @@ export type MenuRow = {
   autoIds: string[];
 };
 export type DayView = {
+  date: ISODate;
   mode: DayMode;
   rows: MenuRow[];
   /** Slots with something planned. */
@@ -89,7 +92,19 @@ export function dayView(input: {
     const lines: RowLine[] = [];
     s.meal.lines.forEach((line, idx) => {
       const info = lineInfo(line, input.foods, input.lang);
-      if (info) lines.push({ idx, foodId: line.foodId, name: foodName(info.food, input.lang), qty: line.qty, qtyText: formatQty(line.qty), unit: info.unit, grams: info.grams, kcal: info.kcal, protein: info.protein });
+      if (info)
+        lines.push({
+          idx,
+          foodId: line.foodId,
+          name: foodName(info.food, input.lang),
+          qty: line.qty,
+          qtyText: formatQty(line.qty),
+          unit: info.unit,
+          measure: measureName(info.food, info.unit, input.lang),
+          grams: info.grams,
+          kcal: info.kcal,
+          protein: info.protein,
+        });
     });
     const meals = bySlot.get(s.id) ?? [];
     const state: RowState = mode === 'future' ? 'plan' : meals.length > 0 ? 'done' : skipped.has(s.id) ? 'skipped' : 'open';
@@ -117,6 +132,7 @@ export function dayView(input: {
   const required = rows.filter((r) => r.planned);
   const settled = required.filter((r) => r.state === 'done' || r.state === 'skipped').length;
   return {
+    date: input.date,
     mode,
     rows,
     required: required.length,
@@ -130,4 +146,63 @@ export function dayView(input: {
     autoIds: rows.flatMap((r) => r.autoIds),
     canFill: mode === 'past' && judged && required.length > 0 && dayMeals.length === 0 && rows.every((r) => r.state !== 'skipped'),
   };
+}
+
+/** A button a row of the day's menu offers (the words are DayMenu's). */
+export type RowOffer = 'planned' | 'change' | 'add' | 'ate_this' | 'ate_other' | 'skip';
+
+/**
+ * The buttons a row offers. The slot whose turn it is: Ate as planned and
+ * Change, or only a way to add food when nothing it plans can be logged. An
+ * open slot (a past day, or one today passed empty): Ate this when there is
+ * something to log as planned, Ate other, and Skipped while it is one of the
+ * day's meals. A future day changes its plan and never logs: Change, or add
+ * food to an empty slot. Done, skipped and later rows have none of these.
+ */
+export function rowOffers(row: Pick<MenuRow, 'state' | 'lines' | 'planned'>): RowOffer[] {
+  const has = row.lines.length > 0;
+  if (row.state === 'current') return has ? ['planned', 'change'] : ['add'];
+  if (row.state === 'plan') return has ? ['change'] : ['add'];
+  if (row.state !== 'open') return [];
+  const out: RowOffer[] = has ? ['ate_this', 'ate_other'] : ['ate_other'];
+  if (row.planned) out.push('skip');
+  return out;
+}
+
+/** "Day looks right", which confirms every meal the app filled in that day: a past day, or today from 21:00, while there is one to confirm. */
+export function offersDayConfirm(view: Pick<DayView, 'mode' | 'autoIds'>, hour: number): boolean {
+  if (view.autoIds.length === 0) return false;
+  return view.mode === 'past' || (view.mode === 'today' && hour >= DAY_ENDS_AT_HOUR);
+}
+
+/** The line under a future day's total. */
+export type PlanNote = 'suggested' | 'suggested_low' | 'low' | null;
+
+/**
+ * The line under a future day's total against the goal. The app's own
+ * suggestion for a day nobody wrote is named as one, in a neutral tone, and
+ * points to Balance only when it is under the safe minimum; the person's own
+ * plan too low for a day (`dayStatus` 'low') is said plainly, with the way to
+ * the diet plan. A day with nothing planned has no total to call low.
+ */
+export function planNote(input: { kcal: number; target: number; floor: number; suggested: boolean; hasPlan: boolean }): PlanNote {
+  if (!input.hasPlan) return null;
+  if (input.suggested) return input.kcal < input.floor ? 'suggested_low' : 'suggested';
+  return dayStatus(input.kcal, input.target, input.floor) === 'low' ? 'low' : null;
+}
+
+/**
+ * The Undo of "Fill this day from plan", from the day as it was before: each
+ * meal it logged taken away (by the id `fillFromPlan` gives it) and its slot
+ * left open, not skipped, as every slot was on a day that could be filled.
+ * Nothing for a day that cannot be filled.
+ */
+export function fillUndoSteps(view: Pick<DayView, 'date' | 'canFill' | 'rows'>): UndoStep[] {
+  if (!view.canFill) return [];
+  return view.rows
+    .filter((r) => r.lines.length > 0)
+    .flatMap((r): UndoStep[] => [
+      { kind: 'remove', id: planFillId(view.date, r.slotId) },
+      { kind: 'unskip', date: view.date, slotId: r.slotId },
+    ]);
 }
