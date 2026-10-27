@@ -5,18 +5,15 @@ import { Pressable, Text, View } from 'react-native';
 import { useGame } from '../components/MountainCard';
 import { BADGE_ICON } from '../core/game';
 import { WeightSheet } from '../components/WeightSheet';
-import { StreakTile } from '../components/tiles/StreakTile';
-import { TileRow } from '../components/tiles/TileRow';
-import { WeightTile } from '../components/tiles/WeightTile';
 import { formatDayLabel } from '../core/date';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, Card, Divider, Micro, Pill, Row, Screen, SectionHeader, Small } from '../ui/components';
 import { Mountain } from '../ui/Mountain';
-import { C, F } from '../ui/theme';
+import { C, F, S } from '../ui/theme';
 
-/** The whole climb: the mountain, the camps, every weigh-in, the level, the week's challenge and every badge. */
+/** The whole climb: the mountain, the camps, every weigh-in, the level, the week's challenge and every badge. Progress opens it from its climb row; the Weight and Streak tiles are on Progress. */
 export default function Journey() {
   const app = useApp();
   const router = useRouter();
@@ -31,10 +28,6 @@ export default function Journey() {
 
   return (
     <Screen>
-      <TileRow>
-        <WeightTile />
-        <StreakTile />
-      </TileRow>
       <Card rail={C.cyan}>
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro color={C.textDim}>{t('journey_title')}</Micro>
@@ -52,7 +45,7 @@ export default function Journey() {
           <Small color={C.textDim}>{fill(t('plan_daily'), { kcal: g.plan.dailyKcal, p: g.plan.proteinG })}</Small>
           <Small color={C.textFaint}>{fill(t('journey_weigh_hint'), { day: t(`wd_${state.settings.weighDay}`) })}</Small>
         </View>
-        <Pressable onPress={() => setWeighOpen(true)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: pressed ? 0.7 : 1 })}>
+        <Pressable onPress={() => setWeighOpen(true)} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: S.touch, alignSelf: 'flex-start', opacity: pressed ? 0.7 : 1 })}>
           <Ionicons name="scale-outline" size={16} color={C.accent} />
           <Small color={C.accentText}>{t('journey_add_weight')}</Small>
         </Pressable>
@@ -131,7 +124,7 @@ export default function Journey() {
         })}
       </Card>
 
-      <Pressable onPress={() => router.push('/progress?s=charts')} style={{ alignSelf: 'center', paddingVertical: 6 }}>
+      <Pressable onPress={() => router.push('/growth')} accessibilityRole="button" style={{ alignSelf: 'center', minHeight: S.touch, justifyContent: 'center' }}>
         <Micro color={C.accentText}>{`${t('growth')} ›`}</Micro>
       </Pressable>
       <WeightSheet open={weighOpen} onClose={() => setWeighOpen(false)} />

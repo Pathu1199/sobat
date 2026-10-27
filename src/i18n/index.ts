@@ -1064,6 +1064,13 @@ const en: Dict = {
   plan_suggested_floor_here: 'This is low, under the safe minimum of {floor} kcal a day. Tap Balance to target below.',
   menu_plan_low_here: 'Too little for one day. Add food, or tap Balance to target below.',
   grocery_sub_week: 'What the plan for {week} needs, grouped for the market', grocery_half_range: '{from} to {to}',
+  progress_trend: 'Weight, smoothed', progress_change_3w: '{kg} kg in 3 weeks', progress_change_none: 'Weigh in over three weeks to see the change.',
+  progress_last_weighin: 'Last weigh-in {date}. Weigh in to see the change.',
+  progress_goal_by: 'Goal {goal} kg around {date}', progress_goal: 'Goal {goal} kg', progress_goal_reached: 'Goal reached', progress_no_weight: 'No weigh-in yet. Tap Weight to add one.',
+  progress_logged: 'Full days', progress_logged_value: '{n} of 7', progress_prev_month: 'Previous month', progress_next_month: 'Next month', progress_day_hint: 'Opens this day on Today.',
+  progress_avg: 'Full days of the last 7: {avg} kcal a day on average, goal {goal}', progress_avg_none: 'No full day in the last 7 days yet.',
+  progress_badges: '{n} of {of} badges', progress_climb_a11y: '{climb}: {level}, {points}, {badges}',
+  nut_had_a11y: '{name}, a good source eaten today. Shows foods with it.', nut_none_a11y: '{name}, no good source eaten yet today. Shows foods with it.',
 };
 
 const mr: Dict = {
@@ -2132,6 +2139,13 @@ const mr: Dict = {
   plan_suggested_floor_here: 'हे कमी आहे, दिवसाला किमान {floor} kcal सुरक्षित मर्यादेखाली. खाली "लक्ष्याप्रमाणे जुळवा" दाबा.',
   menu_plan_low_here: 'एका दिवसासाठी खूप कमी. पदार्थ जोडा, किंवा खाली "लक्ष्याप्रमाणे जुळवा" दाबा.',
   grocery_sub_week: '{week} च्या प्लॅनला काय लागेल, बाजाराप्रमाणे गट', grocery_half_range: '{from} ते {to}',
+  progress_trend: 'वजन, सरासरी', progress_change_3w: '3 आठवड्यांत {kg} किलो', progress_change_none: 'बदल दिसण्यासाठी तीन आठवडे वजन नोंदवा.',
+  progress_last_weighin: 'शेवटचं वजन {date}. बदल दिसण्यासाठी वजन नोंदवा.',
+  progress_goal_by: 'लक्ष्य {goal} किलो, साधारण {date}', progress_goal: 'लक्ष्य {goal} किलो', progress_goal_reached: 'लक्ष्य गाठलं', progress_no_weight: 'अजून वजन नोंदलं नाही. नोंदवण्यासाठी वजनावर टॅप करा.',
+  progress_logged: 'पूर्ण दिवस', progress_logged_value: '7 पैकी {n}', progress_prev_month: 'मागचा महिना', progress_next_month: 'पुढचा महिना', progress_day_hint: 'हा दिवस आजच्या पानावर उघडतो.',
+  progress_avg: 'मागच्या 7 दिवसांतले पूर्ण दिवस: रोज सरासरी {avg} kcal, लक्ष्य {goal}', progress_avg_none: 'मागच्या 7 दिवसांत अजून एकही पूर्ण दिवस नाही.',
+  progress_badges: '{of} पैकी {n} बॅज', progress_climb_a11y: '{climb}: {level}, {points}, {badges}',
+  nut_had_a11y: '{name}, आज चांगला स्रोत खाल्ला. ते असलेले पदार्थ दाखवतो.', nut_none_a11y: '{name}, आज अजून चांगला स्रोत खाल्ला नाही. ते असलेले पदार्थ दाखवतो.',
 };
 
 const hi: Dict = {
@@ -3198,6 +3212,13 @@ const hi: Dict = {
   plan_suggested_floor_here: 'यह कम है, रोज़ के {floor} kcal की सुरक्षित न्यूनतम सीमा से नीचे. नीचे "लक्ष्य के हिसाब से मिलाएँ" दबाएँ.',
   menu_plan_low_here: 'एक दिन के लिए बहुत कम. खाना जोड़ें, या नीचे "लक्ष्य के हिसाब से मिलाएँ" दबाएँ.',
   grocery_sub_week: '{week} के प्लान को क्या चाहिए, बाज़ार के हिसाब से', grocery_half_range: '{from} से {to}',
+  progress_trend: 'वज़न, औसत', progress_change_3w: '3 हफ़्तों में {kg} किलो', progress_change_none: 'बदलाव देखने के लिए तीन हफ़्ते वज़न दर्ज करें.',
+  progress_last_weighin: 'आख़िरी वज़न {date}. बदलाव देखने के लिए वज़न दर्ज करें.',
+  progress_goal_by: 'लक्ष्य {goal} किलो, लगभग {date}', progress_goal: 'लक्ष्य {goal} किलो', progress_goal_reached: 'लक्ष्य पूरा', progress_no_weight: 'अभी वज़न दर्ज नहीं. दर्ज करने के लिए वज़न पर टैप करें.',
+  progress_logged: 'पूरे दिन', progress_logged_value: '7 में से {n}', progress_prev_month: 'पिछला महीना', progress_next_month: 'अगला महीना', progress_day_hint: 'यह दिन आज वाले पन्ने पर खोलता है.',
+  progress_avg: 'पिछले 7 दिनों के पूरे दिन: रोज़ औसत {avg} kcal, लक्ष्य {goal}', progress_avg_none: 'पिछले 7 दिनों में अभी कोई पूरा दिन नहीं.',
+  progress_badges: '{of} में से {n} बैज', progress_climb_a11y: '{climb}: {level}, {points}, {badges}',
+  nut_had_a11y: '{name}, आज अच्छा स्रोत खाया. जिन खानों में यह है, वे दिखाता है.', nut_none_a11y: '{name}, आज अभी कोई अच्छा स्रोत नहीं खाया. जिन खानों में यह है, वे दिखाता है.',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

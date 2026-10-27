@@ -70,7 +70,7 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
             <Text numberOfLines={1} style={{ color: d.selected || d.isToday ? C.accentText : C.text, fontSize: F.body, lineHeight: lh(F.body, true), fontWeight: '500', fontVariant: ['tabular-nums'] }}>
               {d.day}
             </Text>
-            <Dot mark={d.mark} light={d.light} />
+            <StripDot mark={d.mark} light={d.light} />
           </Pressable>
         ))}
       </View>
@@ -81,9 +81,10 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
 /**
  * Teal for full, amber for missing, a ring for planned and today, grey for a day of meals all skipped; nothing for an off day or
  * a day before the start. A day still holding meals filled in from the plan is a ring with a dot in its middle, in the same
- * colour: told apart by its shape, so it keeps 3:1 where the strip is drawn (ui/stripGeometry.ts `stripDot`).
+ * colour: told apart by its shape, so it keeps 3:1 where the strip is drawn (ui/stripGeometry.ts `stripDot`). Progress's calendar
+ * draws the same dot.
  */
-function Dot({ mark, light }: { mark: StripDay['mark']; light: boolean }) {
+export function StripDot({ mark, light }: { mark: StripDay['mark']; light: boolean }) {
   const dot = stripDot(mark, light);
   const size = { width: STRIP_DOT_SIZE, height: STRIP_DOT_SIZE };
   if (dot.kind === 'none') return <View style={size} />;

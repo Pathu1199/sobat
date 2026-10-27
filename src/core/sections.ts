@@ -9,7 +9,7 @@ export function linkOf(s: unknown): string | undefined {
 }
 
 /**
- * The section a ?s= link opens on a page with sections (Food, Body, Progress):
+ * The section a ?s= link opens on a page with sections (Food, Body):
  * a link takes effect only when it changes from the last one seen, so a param
  * left in the address never pulls back a section picked by hand. Null when
  * nothing new is asked for or the name is not one of the sections.
