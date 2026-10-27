@@ -4,7 +4,7 @@ import { mondayOf, toISODate } from '../core/date';
 import { addSkip, menusFromTemplate, settleAuto, type DayMenu } from '../core/menu';
 import { slotShare } from '../core/pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
-import { stable } from '../core/sync';
+import { forCloud, stable, type CloudState } from '../core/sync';
 import { DEFAULT_TODAY_CARDS, normalizeTabs } from '../core/tabs';
 import type { AppState, Meal, SavedMeal, SlotSkip } from '../core/types';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
@@ -213,4 +213,12 @@ export function migrateState(raw: unknown, now: Date = new Date()): AppState {
     slotSkips,
     savedMeals: Array.isArray(raw.savedMeals) ? (raw.savedMeals as SavedMeal[]) : [],
   };
+}
+
+/**
+ * How a sync round brings an account file from an older build up to this one: the store's own migration at the round's
+ * moment `at`, minus the caches and machine settings it fills in for a device.
+ */
+export function upgradeFile(at: Date): (file: CloudState) => CloudState {
+  return (file) => forCloud(migrateState(file, at));
 }

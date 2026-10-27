@@ -341,6 +341,8 @@ describe('a file written by a newer build', () => {
 describe('a sync round', () => {
   const v = (id: string, kcal: number) => meal(id, '2026-10-10T08:00:00.000Z', kcal);
   const n = meal('n', '2026-10-10T12:00:00.000Z');
+  /** For rounds whose files are all at this version: nothing to bring up. */
+  const same = (f: CloudState) => f;
 
   /** The relay: refuses a write built on a version that is not the newest, and lets another device write in before a given put. */
   function relay(initial: CloudState | null, before: Record<number, CloudState> = {}) {
@@ -387,7 +389,7 @@ describe('a sync round', () => {
     // Another device sets r to 100 before this device's first write, then to 999 before its second.
     const r = relay(base, { 0: cloudOf(used([v('r', 100)])), 1: cloudOf(used([v('r', 999)])) });
     const d = device(used([v('r', 50), n]), r);
-    const out = await syncRound({ pull: false, base, modifiedTime: 't0', supported: STATE_VERSION, io: d.io });
+    const out = await syncRound({ pull: false, base, modifiedTime: 't0', supported: STATE_VERSION, upgrade: same, io: d.io });
     expect(r.file()?.meals.map((m) => [m.id, m.kcal])).toEqual([['r', 999], ['n', 300]]);
     expect(d.now().meals.find((m) => m.id === 'r')?.kcal).toBe(999);
     expect(out && sameCloud(out.base, r.file() as CloudState)).toBe(true);
@@ -403,7 +405,7 @@ describe('a sync round', () => {
         return r.get();
       },
     });
-    await syncRound({ pull: true, base, modifiedTime: 'old', supported: STATE_VERSION, io: d.io });
+    await syncRound({ pull: true, base, modifiedTime: 'old', supported: STATE_VERSION, upgrade: same, io: d.io });
     expect(d.now().meals.map((m) => m.id)).toEqual(['a', 'r', 'n']);
   });
 
@@ -411,7 +413,7 @@ describe('a sync round', () => {
     const newer = { ...cloudOf(used([v('a', 1)])), version: STATE_VERSION + 1 };
     const r = relay(newer);
     const d = device(used([v('b', 1)]), r);
-    await expect(syncRound({ pull: true, base: null, modifiedTime: null, supported: STATE_VERSION, io: d.io })).rejects.toEqual(new RoundStop('update_app'));
+    await expect(syncRound({ pull: true, base: null, modifiedTime: null, supported: STATE_VERSION, upgrade: same, io: d.io })).rejects.toEqual(new RoundStop('update_app'));
     expect(r.file()).toEqual(newer);
     expect(d.now().meals.map((m) => m.id)).toEqual(['b']);
   });
@@ -421,7 +423,7 @@ describe('a sync round', () => {
       const r = relay(null);
       r.setRaw(raw);
       const d = device(used([v('b', 1)]), r);
-      await expect(syncRound({ pull: true, base: cloudOf(used([v('b', 1)])), modifiedTime: 't0', supported: STATE_VERSION, io: d.io })).rejects.toEqual(new RoundStop('unreadable'));
+      await expect(syncRound({ pull: true, base: cloudOf(used([v('b', 1)])), modifiedTime: 't0', supported: STATE_VERSION, upgrade: same, io: d.io })).rejects.toEqual(new RoundStop('unreadable'));
       expect(d.now().meals.map((m) => m.id)).toEqual(['b']);
     }
   });
@@ -436,7 +438,7 @@ describe('a sync round', () => {
         return r.get();
       },
     });
-    await expect(syncRound({ pull: true, base: cloudOf(used([v('a', 1)])), modifiedTime: 'old', supported: STATE_VERSION, io: d.io })).rejects.toEqual(new RoundStop('abandoned'));
+    await expect(syncRound({ pull: true, base: cloudOf(used([v('a', 1)])), modifiedTime: 'old', supported: STATE_VERSION, upgrade: same, io: d.io })).rejects.toEqual(new RoundStop('abandoned'));
     expect(d.now().meals.map((m) => m.id)).toEqual(['a']);
   });
 
@@ -444,7 +446,7 @@ describe('a sync round', () => {
     const base = cloudOf(used([v('a', 1)]));
     const r = relay(base);
     const d = device(used([v('a', 1)]), r);
-    expect(await syncRound({ pull: true, base, modifiedTime: 't0', supported: STATE_VERSION, io: d.io })).toBeNull();
+    expect(await syncRound({ pull: true, base, modifiedTime: 't0', supported: STATE_VERSION, upgrade: same, io: d.io })).toBeNull();
   });
 
   it('gives up when the file keeps changing under it', async () => {
@@ -452,7 +454,7 @@ describe('a sync round', () => {
     // Three tries, four writes: each one beaten by another device.
     const r = relay(base, { 0: cloudOf(used([v('a', 2)])), 1: cloudOf(used([v('a', 3)])), 2: cloudOf(used([v('a', 4)])), 3: cloudOf(used([v('a', 5)])) });
     const d = device(used([v('a', 1), n]), r);
-    await expect(syncRound({ pull: false, base, modifiedTime: 't0', supported: STATE_VERSION, io: d.io })).rejects.toEqual(new RoundStop('kept_changing'));
+    await expect(syncRound({ pull: false, base, modifiedTime: 't0', supported: STATE_VERSION, upgrade: same, io: d.io })).rejects.toEqual(new RoundStop('kept_changing'));
   });
 
   describe('an account file from an older build', () => {
@@ -486,6 +488,7 @@ describe('a sync round', () => {
       const d = device({ ...EMPTY_STATE }, r, { put: c.put });
       const { seen, upgrade } = upgrader();
       const out = await syncRound({ pull: true, base: null, modifiedTime: null, supported: STATE_VERSION, upgrade, io: d.io });
+      expect(seen.length).toBeGreaterThan(0);
       expect(seen.every((f) => f.version === STATE_VERSION - 1)).toBe(true);
       expect(c.puts).toBe(1);
       expect(r.file()?.version).toBe(STATE_VERSION);
@@ -588,12 +591,25 @@ describe('menus, skips and saved meals', () => {
     expect(qtyOn(merge3(base, edited, app), '2026-10-28')).toBe(4);
   });
 
-  it('a date gone on one side and edited on the other: this device\'s side, as for every record', () => {
-    // A missing menu has no stamp to compare, so the rule every record follows decides: what this device did stays.
+  it('a date gone on one side and edited on the other keeps the edit, whichever side made it', () => {
+    // Menus are never deleted, so a date missing on one side is one that device never had, not one it took out.
     const gone = cloudOf(used([], { menus: [menu('2026-10-29', 2, '')] }));
     const edited = cloudOf(used([], { menus: [menu('2026-10-28', 4, '2026-10-27T09:00:00.000Z'), menu('2026-10-29', 2, '')] }));
-    expect(qtyOn(merge3(base, gone, edited), '2026-10-28')).toBeUndefined();
+    expect(qtyOn(merge3(base, gone, edited), '2026-10-28')).toBe(4);
     expect(qtyOn(merge3(base, edited, gone), '2026-10-28')).toBe(4);
+  });
+
+  it('a date one side never had keeps the menu the other side holds, edited or not', () => {
+    const gone = cloudOf(used([], { menus: [menu('2026-10-29', 2, '')] }));
+    expect(qtyOn(merge3(base, base, gone), '2026-10-28')).toBe(2);
+    expect(qtyOn(merge3(base, gone, base), '2026-10-28')).toBe(2);
+    // With no base at all it is the same: a date only one side has is kept.
+    expect(qtyOn(merge3(null, base, gone), '2026-10-28')).toBe(2);
+    expect(qtyOn(merge3(null, gone, base), '2026-10-28')).toBe(2);
+    // Every other record still goes when one side took it out: a meal is not a menu.
+    const withMeal = cloudOf(used([meal('a', '2026-10-27T08:00:00.000Z')], { menus: base.menus }));
+    const noMeal = cloudOf(used([], { menus: base.menus }));
+    expect(merge3(withMeal, noMeal, withMeal).meals).toEqual([]);
   });
 
   it('skips and saved meals merge record by record', () => {

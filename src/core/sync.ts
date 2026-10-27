@@ -10,8 +10,9 @@ import type { AppState, Settings } from './types';
  * this device knew the file to be in (`base`): a record this device changed is
  * kept, a record only the other side changed is taken, and anything neither
  * touched stays. A day's menu says when it was last edited, so when both sides
- * changed the same date the newer edit wins, wherever it was made. Pure, so
- * every case has a test.
+ * changed the same date the newer edit wins, wherever it was made; and since
+ * nothing ever takes a menu out, a date one side does not have is one it never
+ * had, never one it deleted. Pure, so every case has a test.
  */
 
 /** Settings that describe this machine, not the person: never synced. */
@@ -27,8 +28,11 @@ export type CloudState = Omit<AppState, LocalKey | 'settings'> & { settings: Clo
 
 type AnyRecord = Record<string, unknown>;
 
-/** The record arrays, each with the field that identifies one record, and for some the field that says when it was last edited. */
-export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => string; stampOf?: (r: AnyRecord) => string }[] = [
+/**
+ * The record arrays, each with the field that identifies one record, for some the field that says when it was last edited,
+ * and whether its records are never deleted, so one missing on a side is kept from the other whatever the base held.
+ */
+export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => string; stampOf?: (r: AnyRecord) => string; neverDeleted?: true }[] = [
   { key: 'meals', idOf: (r) => String(r.id) },
   { key: 'water', idOf: (r) => String(r.id) },
   { key: 'weights', idOf: (r) => String(r.date) },
@@ -43,8 +47,11 @@ export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => strin
   { key: 'actionsDone', idOf: (r) => `${r.date}:${r.key}` },
   { key: 'activities', idOf: (r) => String(r.id) },
   { key: 'spend', idOf: (r) => String(r.id) },
-  // One menu per date. A menu the app wrote has an empty stamp, so any real edit beats it.
-  { key: 'menus', idOf: (r) => String(r.date), stampOf: (r) => String(r.editedAt ?? '') },
+  // One menu per date. A menu the app wrote has an empty stamp, so any real edit beats it. Nothing takes a date's menu out
+  // (a reset empties the whole device, which then takes the account's file whole), so a date missing on one side is one
+  // that side never had: a device whose store moved to this version in another week has other weeks' menus from the old
+  // template, and another device's edit to this week must not read as undone there.
+  { key: 'menus', idOf: (r) => String(r.date), stampOf: (r) => String(r.editedAt ?? ''), neverDeleted: true },
   { key: 'slotSkips', idOf: (r) => String(r.id) },
   { key: 'savedMeals', idOf: (r) => String(r.id) },
 ];
@@ -113,7 +120,12 @@ function timeOf(r: AnyRecord): string {
   return String(r.at ?? r.date ?? '');
 }
 
-function mergeCollection(idOf: (r: AnyRecord) => string, base: unknown, local: unknown, remote: unknown, stampOf?: (r: AnyRecord) => string): AnyRecord[] {
+function mergeCollection(
+  { idOf, stampOf, neverDeleted }: Pick<(typeof COLLECTIONS)[number], 'idOf' | 'stampOf' | 'neverDeleted'>,
+  base: unknown,
+  local: unknown,
+  remote: unknown,
+): AnyRecord[] {
   const b = toMap(base, idOf);
   const l = toMap(local, idOf);
   const r = toMap(remote, idOf);
@@ -121,6 +133,8 @@ function mergeCollection(idOf: (r: AnyRecord) => string, base: unknown, local: u
     const bs = stable(b.get(k));
     const lv = l.get(k);
     const rv = r.get(k);
+    // A record that is never deleted and is on one side only: that side has it, the other never did.
+    if (neverDeleted && (!lv || !rv)) return lv ?? rv;
     const mine = stable(lv) !== bs;
     const theirs = stable(rv) !== bs;
     // Changed on both sides, and the records say when: the newer edit wins, wherever it was made.
@@ -142,7 +156,7 @@ function mergeCollection(idOf: (r: AnyRecord) => string, base: unknown, local: u
     const v = pick(k);
     if (v !== undefined) out.push(v);
   }
-  // Records deleted on both sides are simply absent; those only in base were deleted on one side.
+  // Records deleted on both sides are simply absent; those only in base were deleted on one side, unless they are never deleted.
   const hasTime = out.some((x) => x.at !== undefined || x.date !== undefined);
   return hasTime ? [...out].sort((x, y) => timeOf(x).localeCompare(timeOf(y))) : out;
 }
@@ -161,8 +175,8 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
   const b = (base ?? {}) as Partial<CloudState>;
   const out = {} as AnyRecord;
 
-  for (const { key, idOf, stampOf } of COLLECTIONS) {
-    out[key] = mergeCollection(idOf, b[key], local[key], remote[key], stampOf);
+  for (const c of COLLECTIONS) {
+    out[c.key] = mergeCollection(c, b[c.key], local[c.key], remote[c.key]);
   }
 
   for (const key of SINGLETONS) {
@@ -283,7 +297,7 @@ export async function syncRound(o: {
    * Brings a file from an older build up to this one: the store's migration, handed in because this module cannot reach
    * it. The file and the base both go through it, so it must give the same answer for the same file all round.
    */
-  upgrade?: (file: CloudState) => CloudState;
+  upgrade: (file: CloudState) => CloudState;
   io: RoundIO;
   tries?: number;
 }): Promise<{ base: CloudState; modifiedTime: string | null } | null> {
@@ -321,8 +335,8 @@ export async function syncRound(o: {
     // An older file, and the base it is merged against, go through this build's migration first. Merged as they are, the
     // file's version would be lost to this one and its migration skipped, and this device's own migration would read as
     // an edit made here and win over a change another older device made since.
-    const theirs = raw && older(raw) && o.upgrade ? o.upgrade(raw) : raw;
-    const from = base && older(base) && o.upgrade ? o.upgrade(base) : base;
+    const theirs = raw && older(raw) ? o.upgrade(raw) : raw;
+    const from = base && older(base) ? o.upgrade(base) : base;
     const merged = theirs ? merge3(from, local, theirs) : local;
     if (!sameCloud(merged, local)) io.land(local, merged);
     // The account already has exactly this; nothing to write. Compared with the file as it is, so an older one is written

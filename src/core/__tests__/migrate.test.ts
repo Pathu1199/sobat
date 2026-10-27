@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { migrateState } from '../../store/migrate';
+import { migrateState, upgradeFile } from '../../store/migrate';
 import { EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { allowance, pattern } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE } from '../routine';
-import { forCloud, landMerge, RoundStop, syncRound, type CloudState } from '../sync';
+import { menuFor, setMenuLine } from '../menu';
+import { landMerge, RoundStop, syncRound, type CloudState } from '../sync';
 import type { AppState } from '../types';
 
 // A realistic v1 blob: the shape the app has been writing until now.
@@ -375,7 +376,7 @@ describe('migrateState', () => {
 
 /**
  * One sync round on this device against an account holding `file`, landed the way the store lands it (the merge, then the
- * migration), with the upgrade the app hands every round. Returns the device after it and every file written.
+ * migration), with the very upgrade the app hands every round. Returns the device after it and every file written.
  */
 async function syncWith(file: unknown, o: { local?: AppState; base?: CloudState | null; modifiedTime?: string | null } = {}) {
   let now: AppState = o.local ?? { ...EMPTY_STATE };
@@ -387,7 +388,7 @@ async function syncWith(file: unknown, o: { local?: AppState; base?: CloudState 
       base,
       modifiedTime,
       supported: STATE_VERSION,
-      upgrade: (f) => forCloud(migrateState(f, NOW)),
+      upgrade: upgradeFile(NOW),
       io: {
         readNow: async () => now,
         land: (local, merged) => {
@@ -442,6 +443,9 @@ describe('an account file from before version 7 arriving on a device that was ne
     expect(s.written[0].version).toBe(STATE_VERSION);
     expect(s.written[0].routine.slots).toEqual(DEFAULT_SLOTS);
     expect(s.written[0].settings.reminders.mealPrompt).toBe(false);
+    // The migration fills in this device's caches and machine settings; none of them reach the account.
+    expect(s.written[0].settings).not.toHaveProperty('ollamaUrl');
+    for (const key of ['chat', 'usage', 'photoQueue', 'tips']) expect(s.written[0]).not.toHaveProperty(key);
     // The next round finds the account as it left it: nothing is written again.
     expect(await s.round(s.out!.base, s.out!.modifiedTime)).toBeNull();
     expect(s.written).toHaveLength(1);
@@ -483,5 +487,98 @@ describe('an account file from before version 7 merged on a device already on ve
     expect(s.now().meals.map((m) => m.id)).toEqual(['m1', 'm2']);
     expect(s.written[0].routine.avoid).toEqual(avoid);
     expect(s.written[0].version).toBe(STATE_VERSION);
+  });
+});
+
+describe('this week\'s menus on devices whose stores moved to version 7 in different weeks', () => {
+  // The relay was down for weeks, so every device brought its own store up in whatever week it was opened, and each has
+  // that week's menus from the template; the round brings the base up at NOW, which gives this week's.
+  const twoWeeksAgo = new Date('2026-10-14T10:00:00');
+  const lastWeek = new Date('2026-10-21T10:00:00');
+  const THU = '2026-10-29';
+  const lunch = (qty: number) => [{ id: 'lunch', type: 'lunch' as const, time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty }] }];
+  // The file a version-6 build last wrote: the pattern in use and a planned week, a different lunch each day.
+  const base6 = { ...accountFile(250), routine: { ...DEFAULT_ROUTINE, enabled: true }, weekPlan: { days: Array.from({ length: 7 }, (_, d) => ({ meals: lunch(d + 1) })) } };
+  const qtyOn = (menus: AppState['menus'], date: string) => menuFor(date, menus)?.meals.find((m) => m.id === 'lunch')?.lines[0]?.qty;
+
+  /** The account file every device below shares; a write built on a version that is not the newest is refused. */
+  function sharedAccount() {
+    let current = { state: JSON.stringify(base6), modifiedTime: 't0' };
+    let writes = 0;
+    return {
+      file: () => JSON.parse(current.state) as CloudState,
+      get: async () => current,
+      put: async (s: CloudState, at: string | null) => {
+        if (at !== current.modifiedTime) return { ok: false as const, stale: current };
+        current = { state: JSON.stringify(s), modifiedTime: `t${++writes}` };
+        return { ok: true as const, modifiedTime: current.modifiedTime };
+      },
+    };
+  }
+
+  /** A device whose store moved to version 7 at `movedAt` and that last saw the account as the version-6 file. */
+  function deviceOn(account: ReturnType<typeof sharedAccount>, movedAt: Date) {
+    let now = migrateState(base6, movedAt);
+    let seen: { base: CloudState; modifiedTime: string | null } = { base: base6 as unknown as CloudState, modifiedTime: 't0' };
+    return {
+      now: () => now,
+      edit: (fn: (s: AppState) => AppState) => {
+        now = fn(now);
+      },
+      round: async (pull: boolean) => {
+        const out = await syncRound({
+          pull,
+          base: seen.base,
+          modifiedTime: seen.modifiedTime,
+          supported: STATE_VERSION,
+          upgrade: upgradeFile(NOW),
+          io: {
+            readNow: async () => now,
+            land: (local, merged) => {
+              now = migrateState(landMerge(now, local, merged), NOW);
+            },
+            get: account.get,
+            put: account.put,
+            live: () => true,
+          },
+        });
+        if (out) seen = out;
+      },
+    };
+  }
+
+  it('an edit to this Thursday made on a device that moved two weeks ago reaches the account and a device that moved last week', async () => {
+    const account = sharedAccount();
+    const first = deviceOn(account, twoWeeksAgo);
+    await first.round(true);
+    // The first device now shows this week as planned, Thursday being the template's Thursday.
+    expect(qtyOn(first.now().menus, THU)).toBe(5);
+    const nine = { foodId: 'chapati', unit: 'piece', qty: 9 };
+    first.edit((s) => ({ ...s, menus: setMenuLine(s.menus, menuFor(THU, s.menus)!, 'lunch', 0, nine, new Date('2026-10-28T09:00:00')) }));
+    expect(qtyOn(first.now().menus, THU)).toBe(9);
+    await first.round(false);
+    const second = deviceOn(account, lastWeek);
+    const had = [...first.now().menus, ...second.now().menus].map((m) => m.date);
+    await second.round(true);
+    expect(qtyOn(account.file().menus, THU)).toBe(9);
+    expect(qtyOn(second.now().menus, THU)).toBe(9);
+    // Nothing either device had is gone: their own weeks stay, in the account and on the second device.
+    for (const date of had) {
+      expect(menuFor(date, account.file().menus)).not.toBeNull();
+      expect(menuFor(date, second.now().menus)).not.toBeNull();
+    }
+  });
+
+  it('a device that moved this week keeps this week\'s menus after one that moved two weeks ago wrote the file', async () => {
+    const account = sharedAccount();
+    await deviceOn(account, twoWeeksAgo).round(true);
+    const current = deviceOn(account, NOW);
+    const week = current.now().menus;
+    expect(week).toHaveLength(7);
+    await current.round(true);
+    for (const m of week) {
+      expect(menuFor(m.date, current.now().menus)).toEqual(m);
+      expect(menuFor(m.date, account.file().menus)).toEqual(m);
+    }
   });
 });
