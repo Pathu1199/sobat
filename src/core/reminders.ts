@@ -1,3 +1,4 @@
+import type { BreakSettings } from './breaks';
 import { addDays } from './date';
 import { inQuietHours } from './nudge';
 import { pattern } from './pattern';
@@ -80,6 +81,69 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
     }
   }
   return out.sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)));
+}
+
+/** A reminder the OS repeats every day at one clock time, app closed or not. */
+export type DailyReminder = { id: string; hour: number; minute: number; title: string; body: string };
+
+export type DailyInput = {
+  /** False on a device that is signed out or reset: reminders belong to a person. */
+  active: boolean;
+  nudgesEnabled: boolean;
+  /** The pattern prompts its own dinner slot. */
+  routineEnabled: boolean;
+  quietStartHour: number;
+  quietEndHour: number;
+  /** The day's line; empty when there is none. */
+  mantra: string;
+  breaks: BreakSettings;
+  nowMs: number;
+  t: (key: string) => string;
+};
+
+export const DAILY_IDS = { sleep: 'sobat-sleep-checkin', mantra: 'sobat-mantra', water: 'sobat-water', dinner: 'sobat-dinner', review: 'sobat-day-review' } as const;
+/** Every long-break reminder's id starts with this; older builds used it alone, for one repeating notification. */
+export const LONG_BREAK_ID = 'sobat-long-break';
+
+/** The daily reminders this device should hold. Anything registered and not in here is to be cancelled. */
+export function dailyReminders(input: DailyInput): DailyReminder[] {
+  if (!input.active || !input.nudgesEnabled) return [];
+  const { t } = input;
+  const out: DailyReminder[] = [];
+  // Morning check-in, while last night is still fresh.
+  out.push({ id: DAILY_IDS.sleep, hour: 7, minute: 30, title: t('sleep_checkin'), body: t('bed_time') });
+  // The day's line, at eight. Re-registered daily so it is that day's line.
+  if (input.mantra) out.push({ id: DAILY_IDS.mantra, hour: 8, minute: 0, title: t('mantra_title'), body: input.mantra });
+  // A single mid-afternoon water prompt; the in-app engine handles the rest.
+  out.push({ id: DAILY_IDS.water, hour: 15, minute: 0, title: t('add_water'), body: t('act_drink_water') });
+  // Dinner, earlier than the quiet hours start. With the pattern on, the dinner slot's own prompt does this.
+  if (!input.routineEnabled) out.push({ id: DAILY_IDS.dinner, hour: Math.max(18, input.quietStartHour - 3), minute: 30, title: t('dinner'), body: t('act_light_dinner') });
+  // The day recap, just before things wind down.
+  out.push({ id: DAILY_IDS.review, hour: 21, minute: 30, title: t('day_review'), body: t('write_review') });
+  return [...out, ...longBreaks(input)];
+}
+
+/**
+ * The phone cannot blank its own screen, so a long break is a notification.
+ * A repeating one cannot keep to quiet hours, so instead there is one daily
+ * reminder per interval across the waking day, counted from the end of the
+ * night, and none in the break's quiet hours or the app's. A work schedule
+ * picks days, which a daily reminder cannot: none then.
+ */
+function longBreaks(input: DailyInput): DailyReminder[] {
+  const br = input.breaks;
+  const paused = br.pausedUntilMs !== null && input.nowMs < br.pausedUntilMs;
+  if (!br.enabled || !br.long.enabled || paused || br.schedule !== null) return [];
+  const every = Math.max(15, br.long.everyMinutes);
+  const from = br.quietStartHour === br.quietEndHour ? 0 : br.quietEndHour * 60;
+  const out: DailyReminder[] = [];
+  for (let m = from + every; m < from + 1440; m += every) {
+    const at = m % 1440;
+    const hour = Math.floor(at / 60);
+    if (inQuietHours(hour, br.quietStartHour, br.quietEndHour) || inQuietHours(hour, input.quietStartHour, input.quietEndHour)) continue;
+    out.push({ id: `${LONG_BREAK_ID}@${hhmm(at)}`, hour, minute: at % 60, title: input.t('brk_long'), body: input.t('brk_long_hint') });
+  }
+  return out;
 }
 
 /** The most recent day on or before today with a meal logged; null when there is none. */
