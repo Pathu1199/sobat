@@ -1,5 +1,5 @@
 import { ACTIVITIES, activityById, type Activity } from '../data/activities';
-import { lastNDates } from './date';
+import { lastNDates, toISODate } from './date';
 import type { ActivityLog, ISODate } from './types';
 
 /**
@@ -100,4 +100,18 @@ export function activeDates(logs: ActivityLog[], today: ISODate, n = 365): Set<I
 /** Activities that suit the body: high-impact ones hidden when a knee, back or heart flag is set. */
 export function activitiesFor(flags: { lowImpactOnly?: boolean } = {}): Activity[] {
   return flags.lowImpactOnly ? ACTIVITIES.filter((a) => a.impact === 'low') : ACTIVITIES;
+}
+
+/** The activity the walk tile logs. */
+export const WALK_ACTIVITY_ID = 'walk';
+
+/**
+ * A walk from the walk tile: an activity log like any other (walking, normal
+ * effort, at the person's weight then), so its calories are earned back the
+ * usual way. Today's is logged now; one added to an earlier day at its noon.
+ */
+export function walkLog(input: { id: string; date: ISODate; minutes: number; weightKg: number; now: Date }): ActivityLog {
+  const walk = ACTIVITIES.find((a) => a.id === WALK_ACTIVITY_ID) ?? ACTIVITIES[0];
+  const at = input.date === toISODate(input.now) ? input.now : new Date(`${input.date}T12:00:00`);
+  return { id: input.id, date: input.date, at: at.toISOString(), activityId: walk.id, minutes: input.minutes, intensity: 1, kcal: kcalBurned(walk, 1, input.minutes, input.weightKg) };
 }

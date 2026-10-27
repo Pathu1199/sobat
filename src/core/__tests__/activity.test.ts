@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ACTIVITIES, activityById } from '../../data/activities';
-import { activitiesFor, eatBack, fatGrams, kcalBurned, weekActivity } from '../activity';
+import { activitiesFor, burnedOn, eatBack, fatGrams, kcalBurned, walkLog, weekActivity } from '../activity';
 import type { ActivityLog } from '../types';
 
 const walk = activityById('walk')!;
@@ -43,5 +43,21 @@ describe('activity', () => {
     expect(activitiesFor({ lowImpactOnly: true }).every((a) => a.impact === 'low')).toBe(true);
     expect(activitiesFor({ lowImpactOnly: true }).some((a) => a.id === 'run')).toBe(false);
     expect(run.impact).toBe('high');
+  });
+});
+
+describe('walkLog', () => {
+  it('a walk tap is a normal-effort walk that the earned calories count the usual way', () => {
+    const now = new Date('2026-10-27T18:05:00');
+    const log = walkLog({ id: 'w1', date: '2026-10-27', minutes: 10, weightKg: 80, now });
+    expect(log).toMatchObject({ id: 'w1', date: '2026-10-27', activityId: 'walk', minutes: 10, intensity: 1, kcal: kcalBurned(walk, 1, 10, 80) });
+    expect(log.at).toBe(now.toISOString());
+    expect(burnedOn([log], '2026-10-27')).toBe(log.kcal);
+    expect(eatBack(burnedOn([log, { ...log, id: 'w2' }], '2026-10-27'))).toBe(eatBack(2 * log.kcal));
+  });
+
+  it('a walk added to an earlier day is placed at noon of that day', () => {
+    const log = walkLog({ id: 'w1', date: '2026-10-25', minutes: 10, weightKg: 80, now: new Date('2026-10-27T18:05:00') });
+    expect(log.at).toBe(new Date('2026-10-25T12:00:00').toISOString());
   });
 });
