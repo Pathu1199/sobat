@@ -238,21 +238,26 @@ export function RoutineCard() {
         </View>
       ) : null}
 
-      <Divider />
-      <Pressable onPress={() => setSpendOpen(true)} accessibilityRole="button" style={({ pressed }) => ({ gap: 7, opacity: pressed ? 0.7 : 1 })}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <BiText en={t('routine_budget')} alt={lang === 'en' ? undefined : t('routine_budget')} size={F.small} color={C.textDim} weight="400" />
-          <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>
-            {`₹${app.spentToday}`}
-            <Text style={{ color: C.textFaint, fontWeight: '500' }}>{` / ₹${routine.budgetMin}–${routine.budgetMax}`}</Text>
-          </Text>
-        </Row>
-        <Bar value={app.spentToday} max={routine.budgetMax} color={spendColor} marker={routine.budgetMin / Math.max(1, routine.budgetMax)} />
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Small color={spendColor}>{spendNote}</Small>
-          <Micro color={C.accentText}>{`+ ${t('routine_add_spend')}`}</Micro>
-        </Row>
-      </Pressable>
+      {/* No budget set, nothing to measure the spend against. */}
+      {routine.budgetMax > 0 ? (
+        <>
+          <Divider />
+          <Pressable onPress={() => setSpendOpen(true)} accessibilityRole="button" style={({ pressed }) => ({ gap: 7, opacity: pressed ? 0.7 : 1 })}>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <BiText en={t('routine_budget')} alt={lang === 'en' ? undefined : t('routine_budget')} size={F.small} color={C.textDim} weight="400" />
+              <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>
+                {`₹${app.spentToday}`}
+                <Text style={{ color: C.textFaint, fontWeight: '500' }}>{` / ₹${routine.budgetMin}–${routine.budgetMax}`}</Text>
+              </Text>
+            </Row>
+            <Bar value={app.spentToday} max={routine.budgetMax} color={spendColor} marker={routine.budgetMin / Math.max(1, routine.budgetMax)} />
+            <Row style={{ justifyContent: 'space-between' }}>
+              <Small color={spendColor}>{spendNote}</Small>
+              <Micro color={C.accentText}>{`+ ${t('routine_add_spend')}`}</Micro>
+            </Row>
+          </Pressable>
+        </>
+      ) : null}
 
       <SlotSheet state={openSlot} planLines={openSlot ? (planDay?.meals.find((m) => m.id === openSlot.slot.id)?.lines ?? []) : []} bhaji={bhaji} onClose={() => setOpenSlot(null)} />
       <SpendSheet open={spendOpen} onClose={() => setSpendOpen(false)} />

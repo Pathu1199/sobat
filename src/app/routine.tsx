@@ -20,7 +20,7 @@ function nameOf(id: string, foods: FoodItem[], lang: Lang): string {
   return f ? foodName(f, lang) : id;
 }
 
-/** Edit the routine: weekly bhaji, the avoid list, the budget, and whether it shows at all. */
+/** Edit the routine: the walk, weekly bhaji, the meals, the avoid list and the budget. */
 export default function RoutineScreen() {
   const app = useApp();
   const { foods } = app;
@@ -50,8 +50,8 @@ export default function RoutineScreen() {
   function commitBudget(minS: string, maxS: string) {
     const min = parseInt(minS, 10);
     const max = parseInt(maxS, 10);
-    // Only a sensible pair is saved; half-typed numbers just wait.
-    if (Number.isFinite(min) && Number.isFinite(max) && min > 0 && max >= min && max < 100000) {
+    // Only a sensible pair is saved; half-typed numbers just wait. 0 to 0 is no budget at all.
+    if (Number.isFinite(min) && Number.isFinite(max) && min >= 0 && max >= min && max < 100000) {
       app.setRoutine({ budgetMin: min, budgetMax: max });
     }
   }
@@ -59,8 +59,6 @@ export default function RoutineScreen() {
   return (
     <Screen>
       <Card>
-        <Toggle title={t('pattern_follow')} desc={t('pattern_follow_desc')} on={routine.enabled} onToggle={() => app.setRoutine({ enabled: !routine.enabled })} />
-        <Divider />
         <Toggle title={t('routine_walk_toggle')} desc={t('routine_walk')} on={routine.walk} onToggle={() => app.setRoutine({ walk: !routine.walk })} />
       </Card>
 

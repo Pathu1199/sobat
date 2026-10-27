@@ -130,9 +130,8 @@ export function useApp(): Ctx {
  */
 function withMeal(s: AppState, m: Meal, target: number, now: Date): AppState {
   const today = toISODate(now);
-  const meal = s.routine.enabled
-    ? withSlot(m, { routine: s.routine, target, meals: s.meals.filter((x) => x.date === today), skippedSlots: skippedOn(s.slotSkips, today), now })
-    : m;
+  // The pattern is always on, so every meal finds its slot.
+  const meal = withSlot(m, { routine: s.routine, target, meals: s.meals.filter((x) => x.date === today), skippedSlots: skippedOn(s.slotSkips, today), now });
   const slotSkips = meal.slotId ? removeSkip(s.slotSkips, meal.date, meal.slotId) : s.slotSkips;
   return { ...s, meals: [...s.meals, meal], slotSkips };
 }
@@ -370,7 +369,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }),
       setRoutine: (r) =>
         update((s) => {
-          const routine = { ...s.routine, ...r };
+          // The pattern is always on: a menu is a list of slots.
+          const routine = { ...s.routine, ...r, enabled: true };
           // The plan is written against the slots; when they change, it follows.
           const slotsChanged = r.slots !== undefined && r.slots !== s.routine.slots;
           const weekPlan = slotsChanged && s.weekPlan ? alignWeekPlan(s.weekPlan, routine, [...FOODS, ...s.customFoods]) : s.weekPlan;

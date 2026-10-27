@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_STATE } from '../../store/defaults';
+import { EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { applyCloud, bindStart, encodeSavedBase, forCloud, fromNewerApp, inAccount, isPristine, landMerge, merge3, RoundStop, syncRound, type AccountFile, type RoundIO, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
 import type { AppState, Meal } from '../types';
 
@@ -386,7 +386,7 @@ describe('a sync round', () => {
     // Another device sets r to 100 before this device's first write, then to 999 before its second.
     const r = relay(base, { 0: cloudOf(used([v('r', 100)])), 1: cloudOf(used([v('r', 999)])) });
     const d = device(used([v('r', 50), n]), r);
-    const out = await syncRound({ pull: false, base, modifiedTime: 't0', supported: 6, io: d.io });
+    const out = await syncRound({ pull: false, base, modifiedTime: 't0', supported: STATE_VERSION, io: d.io });
     expect(r.file()?.meals.map((m) => [m.id, m.kcal])).toEqual([['r', 999], ['n', 300]]);
     expect(d.now().meals.find((m) => m.id === 'r')?.kcal).toBe(999);
     expect(out && sameCloud(out.base, r.file() as CloudState)).toBe(true);
@@ -402,15 +402,15 @@ describe('a sync round', () => {
         return r.get();
       },
     });
-    await syncRound({ pull: true, base, modifiedTime: 'old', supported: 6, io: d.io });
+    await syncRound({ pull: true, base, modifiedTime: 'old', supported: STATE_VERSION, io: d.io });
     expect(d.now().meals.map((m) => m.id)).toEqual(['a', 'r', 'n']);
   });
 
   it('a file written by a newer build is neither merged nor written over', async () => {
-    const newer = { ...cloudOf(used([v('a', 1)])), version: 7 };
+    const newer = { ...cloudOf(used([v('a', 1)])), version: STATE_VERSION + 1 };
     const r = relay(newer);
     const d = device(used([v('b', 1)]), r);
-    await expect(syncRound({ pull: true, base: null, modifiedTime: null, supported: 6, io: d.io })).rejects.toEqual(new RoundStop('update_app'));
+    await expect(syncRound({ pull: true, base: null, modifiedTime: null, supported: STATE_VERSION, io: d.io })).rejects.toEqual(new RoundStop('update_app'));
     expect(r.file()).toEqual(newer);
     expect(d.now().meals.map((m) => m.id)).toEqual(['b']);
   });
@@ -420,7 +420,7 @@ describe('a sync round', () => {
       const r = relay(null);
       r.setRaw(raw);
       const d = device(used([v('b', 1)]), r);
-      await expect(syncRound({ pull: true, base: cloudOf(used([v('b', 1)])), modifiedTime: 't0', supported: 6, io: d.io })).rejects.toEqual(new RoundStop('unreadable'));
+      await expect(syncRound({ pull: true, base: cloudOf(used([v('b', 1)])), modifiedTime: 't0', supported: STATE_VERSION, io: d.io })).rejects.toEqual(new RoundStop('unreadable'));
       expect(d.now().meals.map((m) => m.id)).toEqual(['b']);
     }
   });
@@ -435,7 +435,7 @@ describe('a sync round', () => {
         return r.get();
       },
     });
-    await expect(syncRound({ pull: true, base: cloudOf(used([v('a', 1)])), modifiedTime: 'old', supported: 6, io: d.io })).rejects.toEqual(new RoundStop('abandoned'));
+    await expect(syncRound({ pull: true, base: cloudOf(used([v('a', 1)])), modifiedTime: 'old', supported: STATE_VERSION, io: d.io })).rejects.toEqual(new RoundStop('abandoned'));
     expect(d.now().meals.map((m) => m.id)).toEqual(['a']);
   });
 
@@ -443,7 +443,7 @@ describe('a sync round', () => {
     const base = cloudOf(used([v('a', 1)]));
     const r = relay(base);
     const d = device(used([v('a', 1)]), r);
-    expect(await syncRound({ pull: true, base, modifiedTime: 't0', supported: 6, io: d.io })).toBeNull();
+    expect(await syncRound({ pull: true, base, modifiedTime: 't0', supported: STATE_VERSION, io: d.io })).toBeNull();
   });
 
   it('gives up when the file keeps changing under it', async () => {
@@ -451,6 +451,6 @@ describe('a sync round', () => {
     // Three tries, four writes: each one beaten by another device.
     const r = relay(base, { 0: cloudOf(used([v('a', 2)])), 1: cloudOf(used([v('a', 3)])), 2: cloudOf(used([v('a', 4)])), 3: cloudOf(used([v('a', 5)])) });
     const d = device(used([v('a', 1), n]), r);
-    await expect(syncRound({ pull: false, base, modifiedTime: 't0', supported: 6, io: d.io })).rejects.toEqual(new RoundStop('kept_changing'));
+    await expect(syncRound({ pull: false, base, modifiedTime: 't0', supported: STATE_VERSION, io: d.io })).rejects.toEqual(new RoundStop('kept_changing'));
   });
 });

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { migrateState } from '../../store/migrate';
 import { EMPTY_STATE } from '../../store/defaults';
 import { allowance, pattern } from '../pattern';
-import { DEFAULT_ROUTINE } from '../routine';
+import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE } from '../routine';
 
 // A realistic v1 blob: the shape the app has been writing until now.
 const v1 = {
@@ -18,6 +18,9 @@ const v1 = {
   breakSettings: { enabled: true, workMinutes: 20, breakSeconds: 60, allowSkip: true, quietStartHour: 22, quietEndHour: 7 },
   tips: [], photoQueue: [], steps: [], actionsDone: [],
 };
+
+// A Wednesday; its week runs from Monday 26 October to Sunday 1 November.
+const NOW = new Date('2026-10-28T10:00:00');
 
 describe('migrateState', () => {
   it('carries the old interval and length into the micro break', () => {
@@ -60,7 +63,7 @@ describe('migrateState', () => {
 
   it('marks the result as the current version and is idempotent', () => {
     const once = migrateState(v1);
-    expect(once.version).toBe(6);
+    expect(once.version).toBe(7);
     const twice = migrateState(once);
     expect(twice).toEqual(once);
   });
@@ -77,7 +80,8 @@ describe('migrateState', () => {
     expect(s.spend).toEqual([]);
     // A routine saved before a field existed keeps its edits and gains the new field.
     const edited = migrateState({ ...v1, routine: { enabled: false, budgetMin: 150 }, spend: [{ id: 's', date: '2026-09-26', at: '', category: 'fruit', rupees: 300, spreadDays: 7 }] });
-    expect(edited.routine.enabled).toBe(false);
+    // Since version 7 the pattern is always on: a menu is a list of slots.
+    expect(edited.routine.enabled).toBe(true);
     expect(edited.routine.budgetMin).toBe(150);
     expect(edited.routine.budgetMax).toBe(EMPTY_STATE.routine.budgetMax);
     expect(edited.spend).toHaveLength(1);
@@ -90,13 +94,13 @@ describe('migrateState', () => {
     expect(migrateState(v1).settings.ollamaUrl).toBe('http://192.168.1.10:11434');
   });
 
-  it('switches an older store\'s routine off once, and leaves a version-3 store alone', () => {
-    expect(migrateState({ ...v1, routine: { ...EMPTY_STATE.routine, enabled: true } }).routine.enabled).toBe(false);
-    expect(migrateState({ ...v1, version: 3, routine: { ...EMPTY_STATE.routine, enabled: true } }).routine.enabled).toBe(true);
+  it('version 7: the pattern is always on, whatever the store said', () => {
+    expect(migrateState({ ...v1, routine: { ...DEFAULT_ROUTINE, enabled: false, slots: DEFAULT_ROUTINE.slots.slice(1) } }).routine.enabled).toBe(true);
+    expect(migrateState({ ...v1, version: 7, routine: { ...DEFAULT_ROUTINE, enabled: false } }).routine.enabled).toBe(true);
   });
 
   it('gives routine meals saved without a time their default time', () => {
-    const old = { ...v1, routine: { ...EMPTY_STATE.routine, slots: EMPTY_STATE.routine.slots.map(({ time: _t, ...s }) => s) } };
+    const old = { ...v1, routine: { ...DEFAULT_ROUTINE, enabled: true, slots: DEFAULT_ROUTINE.slots.map(({ time: _t, ...s }) => s) } };
     const s = migrateState(old);
     expect(s.routine.slots.find((x) => x.id === 'bhel')?.time).toBe('18:30');
     expect(s.routine.slots.find((x) => x.id === 'lunch')?.time).toBe('13:00');
@@ -124,8 +128,8 @@ describe('migrateState', () => {
         })),
       },
     };
-    const out = migrateState(v5);
-    expect(out.version).toBe(6);
+    const out = migrateState(v5, NOW);
+    expect(out.version).toBe(7);
     expect(out.routine.slots.every((s) => typeof s.share === 'number')).toBe(true);
     expect(out.routine.slots.find((s) => s.id === 'lunch')!.share).toBe(35);
     expect(out.routine.slots.some((s) => s.type === 'dinner')).toBe(true);
@@ -133,7 +137,7 @@ describe('migrateState', () => {
     expect(day.meals.find((m) => m.id === 'bhel')!.lines[0].qty).toBe(2);
     expect(day.meals.find((m) => m.id === 'dinner')!.lines[0].foodId).toBe('chapati');
     expect(day.meals.map((m) => m.id)).toContain('fruit');
-    expect(migrateState(out)).toEqual(out);
+    expect(migrateState(out, NOW)).toEqual(out);
   });
 
   it('version 6: a default routine without shares gets the same allowances as a fresh one, not the per-type defaults', () => {
@@ -141,7 +145,7 @@ describe('migrateState', () => {
       version: 5,
       profile: { ...EMPTY_STATE.profile, onboarded: true },
       meals: [],
-      routine: { ...DEFAULT_ROUTINE, slots: DEFAULT_ROUTINE.slots.filter((s) => s.type !== 'dinner').map((s) => ({ ...s, share: undefined })) },
+      routine: { ...DEFAULT_ROUTINE, enabled: true, slots: DEFAULT_ROUTINE.slots.filter((s) => s.type !== 'dinner').map((s) => ({ ...s, share: undefined })) },
     };
     const kcal = (r: typeof DEFAULT_ROUTINE) => Object.fromEntries(pattern(r).map((p) => [p.id, allowance(1600, p)]));
     const migrated = kcal(migrateState(v5).routine);
@@ -187,5 +191,111 @@ describe('migrateState', () => {
     expect(again.settings.bottleMl).toBe(1000);
     expect(again.settings.tabs).toEqual(['coach', 'sleep']);
     expect(again.settings.features.mantra).toBe(true);
+  });
+
+  it('version 7: the week plan becomes this week\'s menus, date by date, with Sunday at index 0', () => {
+    const days = Array.from({ length: 7 }, (_, d) => ({ meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: d + 1 }] }] }));
+    const out = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile, onboarded: true }, meals: [], routine: { ...DEFAULT_ROUTINE, enabled: true }, weekPlan: { days } }, NOW);
+    expect(out.menus.map((m) => m.date)).toEqual(['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01']);
+    const lunchQty = (date: string) => out.menus.find((m) => m.date === date)!.meals.find((m) => m.id === 'lunch')!.lines[0].qty;
+    expect(lunchQty('2026-10-26')).toBe(2); // Monday is index 1
+    expect(lunchQty('2026-11-01')).toBe(1); // Sunday is index 0
+    expect(out.menus.every((m) => m.editedAt === '')).toBe(true);
+  });
+
+  it('version 7: a date that already has a menu keeps it', () => {
+    const days = Array.from({ length: 7 }, () => ({ meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] }] }));
+    const mine = { date: '2026-10-28', editedAt: '2026-10-27T18:00:00.000Z', meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 4 }] }] };
+    const out = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...DEFAULT_ROUTINE, enabled: true }, weekPlan: { days }, menus: [mine] }, NOW);
+    expect(out.menus.find((m) => m.date === '2026-10-28')).toEqual(mine);
+    expect(out.menus).toHaveLength(7);
+  });
+
+  it('version 7: someone who never used the pattern starts from the four meals of the day; a planned or used routine keeps its slots', () => {
+    const never = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...DEFAULT_ROUTINE, enabled: false } }, NOW);
+    expect(never.routine.slots.map((s) => s.id)).toEqual(['breakfast', 'lunch', 'snack', 'dinner']);
+    const planned = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...DEFAULT_ROUTINE, enabled: false }, weekPlan: { days: Array.from({ length: 7 }, () => ({ meals: [] })) } }, NOW);
+    expect(planned.routine.slots.map((s) => s.id)).toContain('bhel');
+    const used = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...DEFAULT_ROUTINE, enabled: true } }, NOW);
+    expect(used.routine.slots.map((s) => s.id)).toContain('bhel');
+    const none = migrateState({ version: 7, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...DEFAULT_ROUTINE, slots: [] } }, NOW);
+    expect(none.routine.slots).toEqual(DEFAULT_SLOTS);
+  });
+
+  it('version 7: skip keys move to slot skips with their dates, and other done-keys stay', () => {
+    const out = migrateState({ ...v1, actionsDone: [{ date: '2026-10-28', key: 'skip_lunch' }, { date: '2026-10-28', key: 'weigh_later' }, { date: '2026-10-27', key: 'skip_dinner' }] }, NOW);
+    expect(out.slotSkips).toEqual([
+      { id: '2026-10-28:lunch', date: '2026-10-28', slotId: 'lunch' },
+      { id: '2026-10-27:dinner', date: '2026-10-27', slotId: 'dinner' },
+    ]);
+    expect(out.actionsDone).toEqual([{ date: '2026-10-28', key: 'weigh_later' }]);
+  });
+
+  it('version 7: nothing logged is touched, and a second load changes nothing', () => {
+    const logs = {
+      meals: [{ id: 'm1', at: '2026-10-27T07:30:00.000Z', date: '2026-10-27', type: 'lunch', items: [], kcal: 520, protein: 18 }],
+      water: [{ id: 'w1', at: '2026-10-27T05:00:00.000Z', date: '2026-10-27', ml: 250 }],
+      weights: [{ date: '2026-10-25', kg: 98.4 }],
+      sleep: [{ date: '2026-10-27', bed: '23:00', wake: '06:30', quality: 4, wakeups: 0, energy: 4, minutes: 450, score: 80 }],
+      activities: [{ id: 'a1', date: '2026-10-27', at: '2026-10-27T01:00:00.000Z', activityId: 'walk', minutes: 30, intensity: 1, kcal: 150 }],
+    };
+    const once = migrateState({ ...v1, ...logs }, NOW);
+    expect(once.meals).toEqual(logs.meals);
+    expect(once.water).toEqual(logs.water);
+    expect(once.weights).toEqual(logs.weights);
+    expect(once.sleep).toEqual(logs.sleep);
+    expect(once.activities).toEqual(logs.activities);
+    expect(migrateState(once, NOW)).toEqual(once);
+  });
+
+  it('a new person starts with the four meals of the day and nothing about anyone else\'s life', () => {
+    const r = EMPTY_STATE.routine;
+    expect(r.enabled).toBe(true);
+    expect(r.walk).toBe(false);
+    expect(r.week).toEqual([[], [], [], [], [], [], []]);
+    expect(r.avoid).toEqual([]);
+    expect(r.budgetMin).toBe(0);
+    expect(r.budgetMax).toBe(0);
+    expect(r.overrides).toEqual({});
+    expect(r.slots).toEqual(DEFAULT_SLOTS);
+    expect(r.slots.map((s) => s.id)).toEqual(['breakfast', 'lunch', 'snack', 'dinner']);
+    expect(r.slots.some((s) => s.withBhaji)).toBe(false);
+    expect(r).toEqual(NEUTRAL_ROUTINE);
+    // A copy: no two states share the arrays a person edits.
+    expect(r.week).not.toBe(NEUTRAL_ROUTINE.week);
+    expect(r.week[0]).not.toBe(NEUTRAL_ROUTINE.week[0]);
+    expect(r.slots).not.toBe(DEFAULT_SLOTS);
+    expect(r.avoid).not.toBe(NEUTRAL_ROUTINE.avoid);
+  });
+
+  it('version 7: an old store that never used the shipped example routine gets the neutral one, not its bhaji, avoid list, budget or walk', () => {
+    const old = { ...v1, version: 6, routine: { ...DEFAULT_ROUTINE, overrides: { '2026-10-20': ['palak-bhaji'] } } };
+    const r = migrateState(old, NOW).routine;
+    expect(r).toEqual(NEUTRAL_ROUTINE);
+    // A store from before the routine existed is the same.
+    expect(migrateState({ ...v1, version: 2, routine: { ...DEFAULT_ROUTINE } }, NOW).routine).toEqual(NEUTRAL_ROUTINE);
+  });
+
+  it('version 7: a routine someone switched on, planned or edited keeps its bhaji week, avoid list, budget and walk exactly', () => {
+    const mine = { ...DEFAULT_ROUTINE, budgetMin: 120, budgetMax: 150, overrides: { '2026-10-28': ['bhindi-bhaji'] } };
+    const keeps = (r: typeof DEFAULT_ROUTINE) => {
+      expect(r.week).toEqual(DEFAULT_ROUTINE.week);
+      expect(r.avoid).toEqual(DEFAULT_ROUTINE.avoid);
+      expect(r.budgetMin).toBe(120);
+      expect(r.budgetMax).toBe(150);
+      expect(r.walk).toBe(true);
+      expect(r.overrides).toEqual({ '2026-10-28': ['bhindi-bhaji'] });
+      expect(r.slots.map((s) => s.id)).toEqual(DEFAULT_ROUTINE.slots.map((s) => s.id));
+    };
+    keeps(migrateState({ version: 6, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...mine, enabled: true } }, NOW).routine);
+    keeps(migrateState({ version: 6, profile: { ...EMPTY_STATE.profile }, meals: [], routine: mine, weekPlan: { days: Array.from({ length: 7 }, () => ({ meals: [] })) } }, NOW).routine);
+    const edited = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...mine, slots: DEFAULT_ROUTINE.slots.map((s) => (s.id === 'tea' ? { ...s, time: '16:15' } : s)) } }, NOW).routine;
+    keeps(edited);
+    expect(edited.slots.find((s) => s.id === 'tea')!.time).toBe('16:15');
+    // A version-7 store that emptied its slots gets the four meals back and keeps the rest.
+    const emptied = migrateState({ version: 7, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...mine, slots: [] } }, NOW).routine;
+    expect(emptied.slots).toEqual(DEFAULT_SLOTS);
+    expect(emptied.avoid).toEqual(DEFAULT_ROUTINE.avoid);
+    expect(emptied.budgetMax).toBe(150);
   });
 });

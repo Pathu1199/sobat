@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS } from '../core/breaks';
-import { DEFAULT_ROUTINE } from '../core/routine';
+import { NEUTRAL_ROUTINE } from '../core/routine';
 import { DEFAULT_SCHEDULE } from '../core/schedule';
 import { DEFAULT_TABS, DEFAULT_TODAY_CARDS } from '../core/tabs';
 import type { AppState, Profile, Settings } from '../core/types';
@@ -60,7 +60,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 /** The newest shape of the stored state this build knows. A file written by a later one is left for that build to change. */
-export const STATE_VERSION = 6;
+export const STATE_VERSION = 7;
 
 export const EMPTY_STATE: AppState = {
   version: STATE_VERSION,
@@ -85,7 +85,15 @@ export const EMPTY_STATE: AppState = {
   actionsDone: [],
   slotSkips: [],
   savedMeals: [],
-  routine: DEFAULT_ROUTINE,
+  // A new person's pattern is the four meals of the day, always on, and nothing about anyone else's life:
+  // no bhaji week, avoid list, budget or walk. A copy, so no two states share the lists a person edits.
+  routine: {
+    ...NEUTRAL_ROUTINE,
+    week: NEUTRAL_ROUTINE.week.map((d) => [...d]),
+    avoid: [...NEUTRAL_ROUTINE.avoid],
+    overrides: { ...NEUTRAL_ROUTINE.overrides },
+    slots: NEUTRAL_ROUTINE.slots.map((s) => ({ ...s, options: s.options.map((o) => o.map((l) => ({ ...l }))) })),
+  },
   spend: [],
   schedule: DEFAULT_SCHEDULE,
   weekPlan: null,

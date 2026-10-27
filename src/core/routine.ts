@@ -1,4 +1,5 @@
 import { addDays } from './date';
+import { MEAL_WINDOWS } from './nutrition';
 import { defaultPortion, toMealItem } from './foods';
 import { tokenize } from './memory';
 import type { FoodItem, ISODate, Lang, Meal, MealItem, MealType } from './types';
@@ -94,7 +95,7 @@ export const DINNER_SLOT: RoutineSlot = {
 };
 
 export const DEFAULT_ROUTINE: Routine = {
-  // Off until the person turns it on: Today should show what they ate, not a plan they did not ask for.
+  // How older stores saved it. Since version 7 every loaded store has the pattern on (store/migrate.ts).
   enabled: false,
   walk: true,
   week: [
@@ -351,15 +352,19 @@ export function routineFacts(routine: Routine, foods: FoodItem[], date: ISODate,
   const name = (id: string) => foods.find((f) => f.id === id)?.name_en ?? id;
   const facts: string[] = [];
   const bhaji = bhajiFor(routine, date);
+  // A week with no bhaji on any day is not a bhaji routine; say nothing about it.
+  const keepsBhaji = bhaji.length > 0 || routine.week.some((d) => d.length > 0);
   const day = new Date(date + 'T12:00:00').toLocaleDateString('en-IN', { weekday: 'long' });
-  facts.push(
-    bhaji.length > 0
-      ? `Their routine: today (${day}) the bhaji is ${bhaji.map(name).join(' or ')}, cooked in a kadhai with little oil.`
-      : `Their routine: today (${day}) has no fixed bhaji.`,
-  );
+  if (keepsBhaji) {
+    facts.push(
+      bhaji.length > 0
+        ? `Their routine: today (${day}) the bhaji is ${bhaji.map(name).join(' or ')}, cooked in a kadhai with little oil.`
+        : `Their routine: today (${day}) has no fixed bhaji.`,
+    );
+  }
   for (const s of routine.slots) {
-    const opts = s.options.map((o) => o.map((l) => `${l.qty} ${l.unit} ${name(l.foodId)}`).join(' + ')).join(' or ');
-    facts.push(`Routine ${s.label_en}: ${opts}${s.withBhaji ? ' with the day’s bhaji' : ''}.`);
+    const opts = s.options.filter((o) => o.length > 0).map((o) => o.map((l) => `${l.qty} ${l.unit} ${name(l.foodId)}`).join(' + ')).join(' or ');
+    facts.push(`Routine ${s.label_en}: ${opts || 'nothing fixed'}${s.withBhaji && keepsBhaji ? ' with the day’s bhaji' : ''}.`);
   }
   if (routine.walk) facts.push('They walk every morning and do no heavy exercise.');
   if (routine.avoid.length > 0) {
@@ -369,7 +374,7 @@ export function routineFacts(routine: Routine, foods: FoodItem[], date: ISODate,
         '.',
     );
   }
-  facts.push(`They live in a PG. Daily food budget ₹${routine.budgetMin} to ₹${routine.budgetMax}; spent about ₹${spentToday} today.`);
+  if (routine.budgetMax > 0) facts.push(`Daily food budget ₹${routine.budgetMin} to ₹${routine.budgetMax}; spent about ₹${spentToday} today.`);
   const hits = avoidHits(todayMeals.flatMap((m) => m.items), routine.avoid);
   if (hits.length > 0) facts.push(`Eaten today despite the avoid list: ${hits.map((h) => h.name).join(', ')}. Be kind about it.`);
   return facts;
@@ -421,6 +426,42 @@ export const SLOT_EARLY_MIN = 30;
 
 const TYPE_TIME: Record<MealType, string> = { breakfast: '08:30', lunch: '13:00', snack: '16:00', dinner: '20:30' };
 
+const DEFAULT_SLOT_NAMES: Record<MealType, Pick<RoutineSlot, 'label_en' | 'label_mr' | 'label_hi'>> = {
+  breakfast: { label_en: 'Breakfast', label_mr: 'नाश्ता', label_hi: 'नाश्ता' },
+  lunch: { label_en: 'Lunch', label_mr: 'दुपारचे जेवण', label_hi: 'दोपहर का खाना' },
+  snack: { label_en: 'Snack', label_mr: 'खाऊ', label_hi: 'स्नैक' },
+  dinner: { label_en: 'Dinner', label_mr: 'रात्रीचे जेवण', label_hi: 'रात का खाना' },
+};
+
+/**
+ * The slots a person starts with when they have none of their own: the four
+ * meals of the day at their usual times, sharing the day the way the old
+ * fixed meal windows did. Seeding these is all the windows are still for.
+ * No bhaji in any of them: a bhaji week is something a person sets up.
+ */
+export const DEFAULT_SLOTS: RoutineSlot[] = MEAL_WINDOWS.map((w) => ({
+  id: w.type,
+  type: w.type,
+  time: TYPE_TIME[w.type],
+  share: Math.round(w.share * 100),
+  ...DEFAULT_SLOT_NAMES[w.type],
+  options: [[]],
+  withBhaji: false,
+}));
+
+/** What a new person starts with: the four meals of the day and nothing about anyone else's life. */
+export const NEUTRAL_ROUTINE: Routine = {
+  ...DEFAULT_ROUTINE,
+  enabled: true,
+  walk: false,
+  week: [[], [], [], [], [], [], []],
+  avoid: [],
+  budgetMin: 0,
+  budgetMax: 0,
+  overrides: {},
+  slots: DEFAULT_SLOTS,
+};
+
 /** The slot's time, or a sensible one for its meal when none was set (older stores). */
 export function slotTime(slot: RoutineSlot): string {
   return slot.time && /^([01]\d|2[0-3]):[0-5]\d$/.test(slot.time) ? slot.time : TYPE_TIME[slot.type];
@@ -443,9 +484,12 @@ export function slotStatus(slot: RoutineSlot, nowMinutes: number, logged: boolea
   return 'later';
 }
 
-/** The done-key that records a slot skipped for the day. */
+/** Older builds kept a skipped slot as a done-key with this prefix; version 7 moves them to `slotSkips`. */
+export const SKIP_PREFIX = 'skip_';
+
+/** The done-key older builds wrote for a slot skipped for the day. */
 export function skipKey(slot: RoutineSlot): string {
-  return `skip_${slot.id}`;
+  return `${SKIP_PREFIX}${slot.id}`;
 }
 
 /** Slots whose prompt moment (time + grace) fell inside this tick. */

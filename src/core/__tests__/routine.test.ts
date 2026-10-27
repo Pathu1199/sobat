@@ -5,6 +5,8 @@ import {
   avoidHits,
   bhajiFor,
   DEFAULT_ROUTINE,
+  DEFAULT_SLOTS,
+  NEUTRAL_ROUTINE,
   planItems,
   planKcal,
   pruneSpend,
@@ -241,6 +243,62 @@ describe('routineFacts', () => {
     expect(facts).toContain('₹170');
     expect(facts).toContain('₹120');
     expect(facts).toContain('Eaten today despite the avoid list: Cashews');
+    expect(facts).toContain('Daily food budget ₹170 to ₹200; spent about ₹120 today.');
+    expect(facts).toContain('with the day’s bhaji');
+    // Where the person lives is theirs to say, not the app's.
+    expect(facts).not.toContain('PG');
+  });
+
+  it('tells the coach nothing about a budget, a bhaji or a PG that the person never set', () => {
+    const facts = routineFacts(NEUTRAL_ROUTINE, FOODS, MON, [], 0).join('\n');
+    expect(facts).not.toContain('PG');
+    expect(facts.toLowerCase()).not.toContain('budget');
+    expect(facts.toLowerCase()).not.toContain('bhaji');
+    expect(facts).not.toContain('walk');
+    expect(facts).not.toContain('avoid');
+    // The four meals of the day are still there, without a dangling empty list.
+    expect(facts).toContain('Routine Breakfast: nothing fixed.');
+    expect(facts).toContain('Routine Dinner: nothing fixed.');
+  });
+
+  it('mentions the bhaji only when some day has one, and the budget only when there is one', () => {
+    const noWeek = { ...DEFAULT_ROUTINE, enabled: true, avoid: [], week: [[], [], [], [], [], [], []] };
+    const facts = routineFacts(noWeek, FOODS, MON, [], 50).join('\n');
+    expect(facts.toLowerCase()).not.toContain('bhaji');
+    expect(facts).toContain('Routine Lunch: 2 piece Chapati');
+    expect(facts).toContain('budget ₹170 to ₹200');
+    // A bhaji picked for today counts, even with nothing on the weekly plan.
+    const picked = routineFacts({ ...noWeek, overrides: { [MON]: ['palak-bhaji'] } }, FOODS, MON, [], 0).join('\n');
+    expect(picked).toContain('the bhaji is Palak Bhaji');
+    expect(picked).toContain('with the day’s bhaji');
+    // Another day's bhaji on the week is enough to talk about today's lack of one.
+    const sunday = routineFacts({ ...DEFAULT_ROUTINE, enabled: true }, FOODS, '2026-10-11', [], 0).join('\n');
+    expect(sunday).toContain('has no fixed bhaji');
+    expect(routineFacts({ ...DEFAULT_ROUTINE, enabled: true, budgetMin: 0, budgetMax: 0 }, FOODS, MON, [], 50).join('\n').toLowerCase()).not.toContain('budget');
+  });
+});
+
+describe('the neutral routine', () => {
+  it('is the four meals of the day with no bhaji, avoid list, budget or walk', () => {
+    expect(NEUTRAL_ROUTINE.enabled).toBe(true);
+    expect(NEUTRAL_ROUTINE.walk).toBe(false);
+    expect(NEUTRAL_ROUTINE.week.every((d) => d.length === 0)).toBe(true);
+    expect(NEUTRAL_ROUTINE.week).toHaveLength(7);
+    expect(NEUTRAL_ROUTINE.avoid).toEqual([]);
+    expect([NEUTRAL_ROUTINE.budgetMin, NEUTRAL_ROUTINE.budgetMax]).toEqual([0, 0]);
+    expect(NEUTRAL_ROUTINE.overrides).toEqual({});
+    expect(NEUTRAL_ROUTINE.slots).toBe(DEFAULT_SLOTS);
+  });
+
+  it('starts from slots that carry no bhaji, at the usual times and shares', () => {
+    expect(DEFAULT_SLOTS.map((s) => [s.id, s.type, s.time, s.share])).toEqual([
+      ['breakfast', 'breakfast', '08:30', 25],
+      ['lunch', 'lunch', '13:00', 35],
+      ['snack', 'snack', '16:00', 10],
+      ['dinner', 'dinner', '20:30', 30],
+    ]);
+    expect(DEFAULT_SLOTS.every((s) => !s.withBhaji)).toBe(true);
+    expect(DEFAULT_SLOTS.every((s) => s.options.length === 1 && s.options[0].length === 0)).toBe(true);
   });
 
   it('says nothing when the routine is off', () => {

@@ -1,9 +1,12 @@
 import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../core/breaks';
-import type { AppState } from '../core/types';
-import { DEFAULT_ROUTINE, DINNER_SLOT } from '../core/routine';
+import { mondayOf, toISODate } from '../core/date';
+import { addSkip, menusFromTemplate, type DayMenu } from '../core/menu';
 import { slotShare } from '../core/pattern';
+import { DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
+import { stable } from '../core/sync';
 import { DEFAULT_TODAY_CARDS, normalizeTabs } from '../core/tabs';
+import type { AppState, SavedMeal, SlotSkip } from '../core/types';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
 import { DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER, STATE_VERSION } from './defaults';
 
@@ -66,11 +69,21 @@ function upgradeLogs(old: unknown, microSeconds: number): BreakLog[] {
   });
 }
 
+/** The shipped example routine, never edited: the same slots, compared by id. */
+function untouchedExample(slots: RoutineSlot[]): boolean {
+  const byId = (list: RoutineSlot[]) => stable([...list].sort((a, b) => a.id.localeCompare(b.id)));
+  return byId(slots) === byId(DEFAULT_ROUTINE.slots);
+}
+
+/** The four meals of the day, each with its own lists. */
+function defaultSlots(): RoutineSlot[] {
+  return DEFAULT_SLOTS.map((s) => ({ ...s, options: [[]] }));
+}
+
 /** Routine meals saved before they had times get the default time for their id, else a sensible one by meal. */
-function upgradeRoutine(old: unknown, fromVersion: number): AppState['routine'] {
+function upgradeRoutine(old: unknown, fromVersion: number, hadPlan: boolean): AppState['routine'] {
   const r = { ...EMPTY_STATE.routine, ...(isRecord(old) ? old : {}) } as AppState['routine'];
-  // Version 3 made the routine opt-in. Stores from before start with it off; one tap on the routine screen brings it back.
-  if (fromVersion < 3) r.enabled = false;
+  const wasOn = r.enabled === true;
   const byType: Record<string, string> = { breakfast: '08:30', lunch: '13:00', snack: '16:00', dinner: '20:30' };
   r.slots = (Array.isArray(r.slots) ? r.slots : []).map((s) =>
     s.time ? s : { ...s, time: DEFAULT_ROUTINE.slots.find((d) => d.id === s.id)?.time ?? byType[s.type] ?? '13:00' },
@@ -80,6 +93,21 @@ function upgradeRoutine(old: unknown, fromVersion: number): AppState['routine'] 
   if (fromVersion < 6 && !r.slots.some((s) => s.type === 'dinner')) {
     r.slots = [...r.slots, { ...DINNER_SLOT, id: r.slots.some((s) => s.id === 'dinner') ? 'dinner-2' : 'dinner' }];
   }
+  // Version 7: the pattern is always on, because a menu is a list of slots. Someone who never switched it on, never planned
+  // a week and never touched the shipped example slots starts from the four meals of the day, and none of the example is
+  // theirs: no bhaji week, avoid list, budget or walk. Anyone who used it keeps all of it. Nobody is left with no slots.
+  if (fromVersion < 7 && !wasOn && !hadPlan && untouchedExample(r.slots)) {
+    r.slots = defaultSlots();
+    r.week = NEUTRAL_ROUTINE.week.map((d) => [...d]);
+    r.avoid = [];
+    r.budgetMin = NEUTRAL_ROUTINE.budgetMin;
+    r.budgetMax = NEUTRAL_ROUTINE.budgetMax;
+    r.walk = NEUTRAL_ROUTINE.walk;
+    r.overrides = {};
+  } else if (r.slots.length === 0) {
+    r.slots = defaultSlots();
+  }
+  r.enabled = true;
   return r;
 }
 
@@ -109,11 +137,16 @@ function alignOrDrop(plan: WeekPlan, routine: AppState['routine']): WeekPlan | n
   }
 }
 
+/** A done-key older builds wrote for a skipped slot. */
+function isSkipKey(a: unknown): a is { date: string; key: string } {
+  return isRecord(a) && typeof a.date === 'string' && typeof a.key === 'string' && a.key.startsWith(SKIP_PREFIX);
+}
+
 /**
  * Brings a stored blob up to the current shape. Never throws: a corrupt or
  * foreign file yields a fresh state rather than bricking the app.
  */
-export function migrateState(raw: unknown): AppState {
+export function migrateState(raw: unknown, now: Date = new Date()): AppState {
   if (!isRecord(raw) || !isRecord(raw.profile)) return { ...EMPTY_STATE };
   const breakSettings = upgradeSettings(raw.breakSettings);
   const fromVersion = typeof raw.version === 'number' ? raw.version : 1;
@@ -128,9 +161,18 @@ export function migrateState(raw: unknown): AppState {
     const weights = Array.isArray(raw.weights) ? ([...(raw.weights as AppState['weights'])].sort((a, b) => a.date.localeCompare(b.date))) : [];
     profile.startWeightKg = weights[0]?.kg ?? profile.weightKg;
   }
-  const routine = upgradeRoutine(raw.routine, fromVersion);
   // A plan that is not seven days of meals is not a plan; rebuild it from the routine on next open.
   const rawPlan = isRecord(raw.weekPlan) && Array.isArray((raw.weekPlan as { days?: unknown }).days) && (raw.weekPlan as { days: unknown[] }).days.length === 7 ? (raw.weekPlan as WeekPlan) : null;
+  const routine = upgradeRoutine(raw.routine, fromVersion, rawPlan !== null);
+  // Version 6: plan meals are named after the pattern's slots; older names land on the slot of their type nearest their time.
+  const weekPlan = rawPlan ? alignOrDrop(rawPlan, routine) : null;
+  // Version 7: the one-week template becomes this week's menus, date by date, its index 0 being Sunday. A date that already has a menu keeps it.
+  const storedMenus = Array.isArray(raw.menus) ? (raw.menus as DayMenu[]) : [];
+  const menus = weekPlan ? menusFromTemplate(weekPlan, mondayOf(toISODate(now)), storedMenus) : storedMenus;
+  // Version 7: a skipped slot is its own record with its date, not a done-key that lasted only the day.
+  const actions = Array.isArray(raw.actionsDone) ? (raw.actionsDone as unknown[]) : [];
+  let slotSkips = Array.isArray(raw.slotSkips) ? (raw.slotSkips as SlotSkip[]) : [];
+  for (const a of actions) if (isSkipKey(a)) slotSkips = addSkip(slotSkips, a.date, a.key.slice(SKIP_PREFIX.length));
   return {
     ...EMPTY_STATE,
     ...(raw as Partial<AppState>),
@@ -143,7 +185,10 @@ export function migrateState(raw: unknown): AppState {
     routine,
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
     schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}) },
-    // Version 6: plan meals are named after the pattern's slots; older names land on the slot of their type nearest their time.
-    weekPlan: rawPlan ? alignOrDrop(rawPlan, routine) : null,
+    weekPlan,
+    menus,
+    actionsDone: actions.filter((a) => !isSkipKey(a)) as AppState['actionsDone'],
+    slotSkips,
+    savedMeals: Array.isArray(raw.savedMeals) ? (raw.savedMeals as SavedMeal[]) : [],
   };
 }

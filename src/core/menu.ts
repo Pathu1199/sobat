@@ -5,7 +5,7 @@ import { weekdayOf, type PlanLine, type Routine } from './routine';
 import { stable } from './sync';
 import type { FoodItem, ISODate, Meal, MealItem, MealSource, SavedMeal, SlotSkip } from './types';
 import { isOffDay } from './week';
-import { alignDay, lineInfo, planDayFor, type PlanMeal } from './weekPlan';
+import { alignDay, lineInfo, planDayFor, type PlanMeal, type WeekPlan } from './weekPlan';
 
 /**
  * The menu, date by date. Each date holds its own meals, one per slot of the
@@ -305,4 +305,17 @@ export function withSavedMeal(list: SavedMeal[], meal: SavedMeal): SavedMeal[] {
 
 export function withoutSavedMeal(list: SavedMeal[], id: string): SavedMeal[] {
   return list.some((m) => m.id === id) ? list.filter((m) => m.id !== id) : list;
+}
+
+/**
+ * The old one-week plan written onto a real week: each date of the week
+ * starting on `monday` that has no menu yet takes the template's day for its
+ * weekday (index 0 is Sunday). A date that has a menu keeps it. Stamped as
+ * written by the app. The same list when nothing was missing.
+ */
+export function menusFromTemplate(plan: WeekPlan, monday: ISODate, menus: DayMenu[]): DayMenu[] {
+  const missing = weekDates(monday)
+    .filter((date) => !menuFor(date, menus) && plan.days[weekdayOf(date)])
+    .map((date): DayMenu => ({ date, meals: copyMeals(plan.days[weekdayOf(date)].meals), editedAt: NOT_EDITED }));
+  return missing.length ? [...menus, ...missing] : menus;
 }
