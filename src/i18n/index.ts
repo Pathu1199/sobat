@@ -1032,6 +1032,8 @@ const en: Dict = {
   sleep_debt_week: '{h} h over the last 7 nights',
   me_saved_deleted: 'Deleted {name}',
   add_this_meal: 'This meal', add_food_named: 'Add {food}', add_open_food: '{food}: choose the amount', add_grams_of: 'Grams of {food}',
+  add_plan_title: 'Change the menu', add_save_menu: 'Save menu', add_menu_saved: 'Menu saved',
+  add_replaces_plan: 'Replaces the planned meal ({kcal} kcal)', add_left_day: '{kcal} left for the day', add_over_day: '{kcal} over for the day',
 };
 
 const mr: Dict = {
@@ -2068,6 +2070,8 @@ const mr: Dict = {
   sleep_debt_week: 'गेल्या ७ रात्रींत {h} तास',
   me_saved_deleted: '{name} काढलं',
   add_this_meal: 'हे जेवण', add_food_named: '{food} जोडा', add_open_food: '{food}: किती ते निवडा', add_grams_of: '{food} किती ग्रॅम',
+  add_plan_title: 'मेन्यू बदला', add_save_menu: 'मेन्यू जतन करा', add_menu_saved: 'मेन्यू जतन केला',
+  add_replaces_plan: 'ठरवलेल्या जेवणाच्या जागी ({kcal} kcal)', add_left_day: 'दिवसासाठी {kcal} बाकी', add_over_day: 'दिवसासाठी {kcal} जास्त',
 };
 
 const hi: Dict = {
@@ -3102,6 +3106,8 @@ const hi: Dict = {
   sleep_debt_week: 'पिछली 7 रातों में {h} घंटे',
   me_saved_deleted: '{name} हटाया',
   add_this_meal: 'यह खाना', add_food_named: '{food} जोड़ें', add_open_food: '{food}: मात्रा चुनें', add_grams_of: '{food} कितने ग्राम',
+  add_plan_title: 'मेन्यू बदलें', add_save_menu: 'मेन्यू सहेजें', add_menu_saved: 'मेन्यू सहेजा',
+  add_replaces_plan: 'प्लान किए खाने की जगह ({kcal} kcal)', add_left_day: 'दिन के लिए {kcal} बाकी', add_over_day: 'दिन के लिए {kcal} ज़्यादा',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

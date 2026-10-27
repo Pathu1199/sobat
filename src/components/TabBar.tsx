@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +6,7 @@ import { addSlot, barItems, viewedDate, type BarItem } from '../core/bar';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { C, F, lh, lift, S } from '../ui/theme';
+import { useAddSheet } from './AddSheet';
 
 /**
  * The bar: Today, the extra tabs the person chose (Progress unless changed),
@@ -30,7 +30,7 @@ type TabBarProps = {
 
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const addSheet = useAddSheet();
   const app = useApp();
   const t = makeT(app.state.profile.lang);
   const focused = state.routes[state.index]?.name;
@@ -44,8 +44,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
 
   function add() {
     // The day Today shows, only while Today is in front: from any other tab ➕ adds to today.
-    const date = viewedDate(state.routes[state.index]);
-    router.push(date ? { pathname: '/log', params: { date } } : '/log');
+    addSheet.open({ date: viewedDate(state.routes[state.index]) ?? app.today });
   }
 
   const items = barItems(app.state.settings.tabs);

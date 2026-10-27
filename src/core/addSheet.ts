@@ -1,4 +1,7 @@
 import type { BasketLine } from './basket';
+import { currentSlot, type SlotState } from './pattern';
+import type { PlanLine } from './routine';
+import type { ISODate } from './types';
 
 /**
  * What the add sheet lists, top to bottom, as rows for one FlatList. With a
@@ -56,4 +59,57 @@ export function addRows(input: {
   }
   if (logging) rows.push({ kind: 'tools', key: 'tools' });
   return rows;
+}
+
+/**
+ * What Save does: log a meal, or change that date's menu. Nothing is logged
+ * into the future (the store refuses it), so on a date after today the sheet
+ * always changes the menu, however it was opened.
+ */
+export function sheetMode(date: ISODate, today: ISODate, asked?: 'log' | 'plan'): 'log' | 'plan' {
+  return date > today ? 'plan' : (asked ?? 'log');
+}
+
+/**
+ * The slot the sheet opens on, among the day's slot ids: the one asked for;
+ * else, today, the one whose turn it is; else the day's first slot not yet
+ * eaten or skipped; else its first. Undefined on a day with no slots.
+ */
+export function startSlot(input: { asked?: string; ids: readonly string[]; isToday: boolean; states: SlotState[]; minute: number }): string | undefined {
+  const has = (id: string | undefined): id is string => id !== undefined && input.ids.includes(id);
+  if (has(input.asked)) return input.asked;
+  const now = input.isToday ? currentSlot(input.states, input.minute)?.slot.id : undefined;
+  if (has(now)) return now;
+  const open = input.states.find((s) => s.status !== 'done' && !s.skipped && has(s.slot.id));
+  return open?.slot.id ?? input.ids[0];
+}
+
+/**
+ * The foods the sheet starts with: the ones it was opened with ("Change" on
+ * a meal of the menu hands them over); else, changing a menu, the slot's
+ * planned foods, since Save writes the basket as the slot's whole menu and
+ * must not drop what was planned; else none.
+ */
+export function startLines(input: { lines?: PlanLine[]; mode: 'log' | 'plan'; planned: PlanLine[] }): PlanLine[] {
+  return input.lines ?? (input.mode === 'plan' ? input.planned : []);
+}
+
+export type SlotLinePart = { key: string; params: Record<string, string | number> };
+
+/**
+ * The line under the slot chips, as words to fill: what saving leaves for
+ * the slot and for the day. A slot holding only the meal filled in from the
+ * plan says that meal is replaced, since its calories go when the basket is
+ * saved, and is never warned about for them. The day is "today" on today and
+ * "for the day" on another date. The tone: over when the day goes over, a
+ * warning when only the slot does, calm otherwise.
+ */
+export function slotLine(input: { preview: { replaces: boolean; slotLeft: number; dayLeft: number }; autoKcal: number; slot: string; isToday: boolean }): { parts: SlotLinePart[]; tone: 'calm' | 'warn' | 'over' } {
+  const { preview, isToday } = input;
+  const slotPart: SlotLinePart = preview.replaces
+    ? { key: 'add_replaces_plan', params: { kcal: input.autoKcal } }
+    : { key: preview.slotLeft >= 0 ? 'log_left_for' : 'log_over_for', params: { kcal: Math.abs(preview.slotLeft), slot: input.slot } };
+  const dayKey = preview.dayLeft >= 0 ? (isToday ? 'log_left_today' : 'add_left_day') : isToday ? 'log_over_today' : 'add_over_day';
+  const tone = preview.dayLeft < 0 ? 'over' : !preview.replaces && preview.slotLeft < 0 ? 'warn' : 'calm';
+  return { parts: [slotPart, { key: dayKey, params: { kcal: Math.abs(preview.dayLeft) } }], tone };
 }

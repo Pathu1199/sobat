@@ -11,6 +11,7 @@ import { useApp } from '../store/AppProvider';
 import { Ring } from '../ui/components';
 import { Wordmark } from '../ui/Logo';
 import { C, F, lh, MICRO, S } from '../ui/theme';
+import { useAddSheet } from './AddSheet';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -25,7 +26,8 @@ export function Sidebar() {
   const pathname = usePathname();
   const { date } = useGlobalSearchParams<{ date?: string }>();
   const monitor = useBreakMonitor();
-  const { state } = useApp();
+  const { state, today } = useApp();
+  const addSheet = useAddSheet();
   const { ai } = useAI();
   const { canUseAI } = useAuth();
   const t = makeT(state.profile.lang);
@@ -38,7 +40,7 @@ export function Sidebar() {
   const viewed = viewedDate({ name: routeAt(pathname), params: { date } });
 
   function add() {
-    router.push(viewed ? { pathname: '/log', params: { date: viewed } } : '/log');
+    addSheet.open({ date: viewed ?? today });
   }
 
   return (
