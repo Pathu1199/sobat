@@ -177,6 +177,16 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
 }
 
 /**
+ * Put a merge result on the device. The merge was worked out from `local`,
+ * the device as it was when the request went out; whatever was done here
+ * since is kept on top of it, the same way the merge kept this device's
+ * edits over the account's.
+ */
+export function landMerge(now: AppState, local: CloudState, merged: CloudState): AppState {
+  return applyCloud(now, merge3(local, forCloud(now), merged));
+}
+
+/**
  * The account file as this device last saw it, and which version that was:
  * the base every merge is worked out against. Kept on disk beside the state
  * so a restart still knows which side changed what; without it, every record

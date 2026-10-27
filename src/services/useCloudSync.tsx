@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
-import { applyCloud, bindStart, encodeSavedBase, forCloud, merge3, readSavedBase, sameCloud, signOutPlan, type CloudState } from '../core/sync';
+import { bindStart, encodeSavedBase, forCloud, landMerge, merge3, readSavedBase, sameCloud, signOutPlan, type CloudState } from '../core/sync';
 import { CLOUD_BASE_KEY, useApp } from '../store/AppProvider';
 import { CloudError, cloudConfigured, deleteData, getData, putData, type RemoteFile } from './cloud';
 import { authApi, useAuth } from './useAuth';
@@ -59,7 +59,7 @@ function parseRemote(file: RemoteFile): CloudState | null {
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const app = useApp();
   const { user, ready } = useAuth();
-  const { state, ready: stateReady, storageError, importState, resetAll, saveCloudBase } = app;
+  const { state, ready: stateReady, storageError, mergeState, resetAll, saveCloudBase } = app;
 
   const configured = cloudConfigured();
   const [status, setStatus] = useState<SyncStatus>(configured ? 'off' : 'unconfigured');
@@ -132,7 +132,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         const theirs = parseRemote(remote);
         const merged = theirs ? merge3(base.current, local, theirs) : local;
         if (!sameCloud(merged, local)) {
-          importState(JSON.stringify(applyCloud(stateRef.current, merged)));
+          // Onto the state as it is when this lands, not as it was when the request went out.
+          mergeState((now) => landMerge(now, local, merged));
         }
         if (theirs && sameCloud(merged, theirs)) {
           // The account already has exactly this; nothing to write.
@@ -149,7 +150,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       }
       throw new CloudError(409, 'kept_changing');
     },
-    [importState, settle, user?.name],
+    [mergeState, settle, user?.name],
   );
 
   /** Run rounds until nothing is waiting. A call that lands mid-round queues one more. */

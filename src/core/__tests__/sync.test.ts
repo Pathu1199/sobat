@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_STATE } from '../../store/defaults';
-import { applyCloud, bindStart, encodeSavedBase, forCloud, isPristine, merge3, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
+import { applyCloud, bindStart, encodeSavedBase, forCloud, isPristine, landMerge, merge3, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
 import type { AppState, Meal } from '../types';
 
 const meal = (id: string, at: string, kcal = 300): Meal => ({
@@ -235,5 +235,30 @@ describe('after a restart', () => {
     const fresh = cloudOf({ ...EMPTY_STATE });
     const picked = cloudOf({ ...EMPTY_STATE, profile: { ...EMPTY_STATE.profile, lang: 'mr' } });
     expect(merge3(fresh, picked, fresh).profile.lang).toBe('mr');
+  });
+});
+
+describe('a merge landing after edits made while the request was out', () => {
+  const a = meal('a', '2026-10-10T08:00:00.000Z');
+  const r = meal('r', '2026-10-10T10:00:00.000Z');
+  const n = meal('n', '2026-10-10T12:00:00.000Z');
+  // The round started from [a]; the account had r as well, so the merge came back as [a, r].
+  const local = cloudOf(used([a]));
+  const merged = cloudOf(used([a, r]));
+
+  it('a meal logged meanwhile is kept, next to the one that came from the account', () => {
+    expect(landMerge(used([a, n]), local, merged).meals.map((m) => m.id)).toEqual(['a', 'r', 'n']);
+  });
+
+  it('a meal deleted meanwhile stays deleted', () => {
+    expect(landMerge(used([]), local, merged).meals.map((m) => m.id)).toEqual(['r']);
+  });
+
+  it('a setting changed meanwhile is kept, and so are this device\'s caches', () => {
+    const now = used([a], { settings: { ...EMPTY_STATE.settings, waterGoalMl: 2000 }, chat: [{ id: 'c', role: 'user', text: 'hi', at: '' }] });
+    const out = landMerge(now, local, merged);
+    expect(out.settings.waterGoalMl).toBe(2000);
+    expect(out.chat).toHaveLength(1);
+    expect(out.meals.map((m) => m.id)).toEqual(['a', 'r']);
   });
 });

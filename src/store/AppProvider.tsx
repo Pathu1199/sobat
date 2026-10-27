@@ -86,6 +86,8 @@ type Ctx = {
   /** Rupees counted against today, bulk buys spread over their days. */
   spentToday: number;
   importState: (json: string) => { ok: boolean; error?: string };
+  /** Apply a change worked out away from the store (a sync round) to the state as it is when the change lands, migrated like an import. */
+  mergeState: (fn: (s: AppState) => AppState) => void;
   tipToday: string | null;
   screenMinutesToday: number;
   resetAll: () => void;
@@ -318,6 +320,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return { ok: false, error: 'bad_json' };
         }
       },
+      mergeState: (fn) => update((s) => migrateState(fn(s))),
       setTip: (text) =>
         update((s) => ({ ...s, tips: [...s.tips.filter((t) => t.date !== today).slice(-30), { date: today, text, lang: s.profile.lang }] })),
       resetAll: () => {
