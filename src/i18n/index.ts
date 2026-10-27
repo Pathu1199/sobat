@@ -1021,6 +1021,7 @@ const en: Dict = {
   tile_added_water: 'Added {ml} ml water', tile_added_walk: 'Added {min} min walk',
   tile_bottle_size: 'Bottle size', tile_other_amount: 'Another amount', tile_amount_ml: 'Amount in ml', tile_amount_min: 'Minutes',
   tile_no_sleep: 'No check-in yet', tile_no_weight: 'No weigh-in yet',
+  tile_unit_ml: 'ml',
 };
 
 const mr: Dict = {
@@ -2046,6 +2047,7 @@ const mr: Dict = {
   tile_added_water: '{ml} ml पाणी नोंदवलं', tile_added_walk: '{min} मि चालणं नोंदवलं',
   tile_bottle_size: 'बाटलीचा आकार', tile_other_amount: 'दुसरं प्रमाण', tile_amount_ml: 'प्रमाण (ml)', tile_amount_min: 'मिनिटं',
   tile_no_sleep: 'अजून झोपेची नोंद नाही', tile_no_weight: 'अजून वजन नोंदवलं नाही',
+  tile_unit_ml: 'ml',
 };
 
 const hi: Dict = {
@@ -3069,6 +3071,7 @@ const hi: Dict = {
   tile_added_water: '{ml} ml पानी जोड़ा', tile_added_walk: '{min} मि टहलना जोड़ा',
   tile_bottle_size: 'बोतल का आकार', tile_other_amount: 'दूसरी मात्रा', tile_amount_ml: 'मात्रा (ml)', tile_amount_min: 'मिनट',
   tile_no_sleep: 'अभी नींद दर्ज नहीं', tile_no_weight: 'अभी वज़न दर्ज नहीं',
+  tile_unit_ml: 'ml',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

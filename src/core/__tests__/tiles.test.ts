@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fillFraction, sleepFraction, streakFraction, walkTile, waterLog, waterTile, weightPoints, withWaterAdded, withWaterRemoved } from '../tiles';
+import { fillFraction, sheetAmount, sleepFraction, streakFraction, walkTile, waterLog, waterTile, weightPoints, withWaterAdded, withWaterRemoved } from '../tiles';
 
 describe('water', () => {
   it('fills toward the goal, capped at full', () => {
@@ -129,5 +129,32 @@ describe('adding and taking back water', () => {
   it('hands back the same list when no log has that id', () => {
     expect(withWaterRemoved(logs, 'w3')).toBe(logs);
     expect(withWaterRemoved([], 'w1')).toEqual([]);
+  });
+});
+
+describe('another amount, typed in the long-press sheet', () => {
+  it('takes 10 ml to 3 L of water, a whole number of millilitres', () => {
+    expect(sheetAmount('water', '250')).toBe(250);
+    expect(sheetAmount('water', ' 330 ')).toBe(330);
+    expect(sheetAmount('water', '10')).toBe(10);
+    expect(sheetAmount('water', '3000')).toBe(3000);
+    expect(sheetAmount('water', '250.6')).toBe(251);
+    expect(sheetAmount('water', '9')).toBeNull();
+    expect(sheetAmount('water', '3001')).toBeNull();
+  });
+
+  it('takes 1 to 300 minutes of walking', () => {
+    expect(sheetAmount('walk', '15')).toBe(15);
+    expect(sheetAmount('walk', '1')).toBe(1);
+    expect(sheetAmount('walk', '300')).toBe(300);
+    expect(sheetAmount('walk', '0')).toBeNull();
+    expect(sheetAmount('walk', '301')).toBeNull();
+  });
+
+  it('takes nothing that is not a number: an empty box, words, or a number with letters after it', () => {
+    for (const text of ['', ' ', 'abc', '12abc', '1,000', 'Infinity', '-250']) {
+      expect(sheetAmount('water', text), text).toBeNull();
+      expect(sheetAmount('walk', text), text).toBeNull();
+    }
   });
 });

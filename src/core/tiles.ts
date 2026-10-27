@@ -86,3 +86,19 @@ export function withWaterAdded(water: WaterLog[], input: { id: string; date: ISO
 export function withWaterRemoved(water: WaterLog[], id: string): WaterLog[] {
   return water.some((w) => w.id === id) ? water.filter((w) => w.id !== id) : water;
 }
+
+/** What the long-press sheet takes as another amount: 10 ml to 3 L of water, 1 to 300 minutes of walking. */
+export const SHEET_RANGE = { water: { min: 10, max: 3000 }, walk: { min: 1, max: 300 } } as const;
+
+/**
+ * An amount typed in the long-press sheet, rounded to a whole number, or null
+ * when the box holds anything but a number (letters after it too) or the
+ * number is outside `SHEET_RANGE`, so Add stays off.
+ */
+export function sheetAmount(kind: 'water' | 'walk', text: string): number | null {
+  const trimmed = text.trim();
+  if (trimmed === '') return null;
+  const n = Math.round(Number(trimmed));
+  const { min, max } = SHEET_RANGE[kind];
+  return Number.isFinite(n) && n >= min && n <= max ? n : null;
+}

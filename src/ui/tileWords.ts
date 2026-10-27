@@ -17,3 +17,16 @@ export function shownWords(words: TileWords, t: (key: string) => string): ShownW
     value: words.empty ? fill(t(words.empty.key), words.empty.params ?? {}) : parts.map((p) => (p.unit ? `${p.num} ${p.unit}` : p.num)).join(' '),
   };
 }
+
+/** What a tile tap or the sheet just added: which record, so Undo takes exactly that one away. */
+export type Added = { kind: 'water' | 'walk'; id: string; amount: number };
+
+/** The line under the tiles: "Added 500 ml water", "Added 10 min walk". */
+export function addedText(a: Added, t: (key: string) => string): string {
+  return a.kind === 'water' ? fill(t('tile_added_water'), { ml: a.amount }) : fill(t('tile_added_walk'), { min: a.amount });
+}
+
+/** A bottle size on its chip: "500 ml", and a litre or more in litres, "1 L". */
+export function bottleLabel(ml: number, t: (key: string) => string): string {
+  return ml >= 1000 ? `${ml / 1000} ${t('tile_unit_l')}` : `${ml} ${t('tile_unit_ml')}`;
+}

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_VALUE, sleepWords, waterWords, weightWords } from '../../core/tileText';
 import { makeT } from '../../i18n';
 import type { Lang } from '../../core/types';
-import { shownWords } from '../tileWords';
+import { addedText, bottleLabel, shownWords } from '../tileWords';
 
 const LANGS: Lang[] = ['en', 'mr', 'hi'];
 
@@ -32,5 +32,26 @@ describe('shownWords', () => {
   it('says "No weigh-in yet" in Marathi and Hindi the way it says "No check-in yet" for sleep', () => {
     expect(makeT('mr')('tile_no_weight')).toBe('अजून वजन नोंदवलं नाही');
     expect(makeT('hi')('tile_no_weight')).toBe('अभी वज़न दर्ज नहीं');
+  });
+});
+
+describe('the line under the tiles, and the bottle sizes', () => {
+  it('says what a tap added: "Added 500 ml water", "Added 10 min walk"', () => {
+    expect(addedText({ kind: 'water', id: 'a', amount: 500 }, makeT('en'))).toBe('Added 500 ml water');
+    expect(addedText({ kind: 'walk', id: 'b', amount: 10 }, makeT('en'))).toBe('Added 10 min walk');
+    for (const lang of LANGS) {
+      const t = makeT(lang);
+      expect(addedText({ kind: 'water', id: 'a', amount: 750 }, t), lang).toContain('750');
+      expect(addedText({ kind: 'walk', id: 'b', amount: 25 }, t), lang).toContain('25');
+      expect(addedText({ kind: 'walk', id: 'b', amount: 25 }, t), lang).not.toContain('{');
+    }
+  });
+
+  it('names a bottle in millilitres, and a litre or more in litres', () => {
+    expect(bottleLabel(500, makeT('en'))).toBe('500 ml');
+    expect(bottleLabel(750, makeT('en'))).toBe('750 ml');
+    expect(bottleLabel(1000, makeT('en'))).toBe('1 L');
+    expect(bottleLabel(1500, makeT('en'))).toBe('1.5 L');
+    expect(bottleLabel(1000, makeT('hi'))).toBe('1 ली');
   });
 });
