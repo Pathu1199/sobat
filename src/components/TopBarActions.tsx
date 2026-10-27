@@ -28,7 +28,7 @@ export function TopBarActions({ streak }: { streak?: number }) {
         ) : (
           <View accessibilityLabel={`${streak} day streak`} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: C.amberSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
             <Text style={{ fontSize: F.small }}>🔥</Text>
-            <Text style={{ color: C.amber, fontSize: F.small, fontWeight: '800' }}>{streak}</Text>
+            <Text style={{ color: C.amber, fontSize: F.small, fontWeight: '500' }}>{streak}</Text>
           </View>
         )
       ) : null}

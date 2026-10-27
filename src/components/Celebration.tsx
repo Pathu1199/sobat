@@ -50,10 +50,10 @@ export function Celebration() {
     <Sheet open title={t('celebrate_title')} onClose={done}>
       <GradientBanner style={{ alignItems: 'center', paddingVertical: 28 }}>
         <Text style={{ fontSize: 64 }}>{icon}</Text>
-        <Text style={{ color: '#FFFFFF', fontSize: F.h1, fontWeight: '800', textAlign: 'center', letterSpacing: -0.5 }}>{title}</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.body, fontWeight: '600', textAlign: 'center' }}>{sub}</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: F.title, fontWeight: '500', textAlign: 'center' }}>{title}</Text>
+        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.body, fontWeight: '500', textAlign: 'center' }}>{sub}</Text>
         <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6, marginTop: 4 }}>
-          <Text style={{ color: '#FFFFFF', fontSize: F.small, fontWeight: '800' }}>{`${g.points} XP · ${t(`level_${g.level.key}`)}`}</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: F.small, fontWeight: '500' }}>{`${g.points} XP · ${t(`level_${g.level.key}`)}`}</Text>
         </View>
       </GradientBanner>
       <Btn label={t('celebrate_keep')} onPress={done} />
@@ -65,7 +65,7 @@ export function Celebration() {
           router.push('/progress');
         }}
       />
-      <Text style={{ color: C.textFaint, fontSize: F.tiny, textAlign: 'center' }}>{t('celebrate_footer')}</Text>
+      <Text style={{ color: C.textFaint, fontSize: F.small, textAlign: 'center' }}>{t('celebrate_footer')}</Text>
     </Sheet>
   );
 }

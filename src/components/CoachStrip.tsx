@@ -7,7 +7,7 @@ import { fill, makeT } from '../i18n';
 import { useMinute } from '../services/useWorkSchedule';
 import { useApp } from '../store/AppProvider';
 import { Card, Micro, Row } from '../ui/components';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 import { useCoach } from './useCoach';
 
 const ICON: Record<Advice['kind'], keyof typeof Ionicons.glyphMap> = {
@@ -74,7 +74,7 @@ export function CoachStrip({ onSuggest, onWeigh, max = 2 }: { onSuggest?: () => 
           <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name={ICON[a.kind]} size={18} color={tone(a)} />
           </View>
-          <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: 22, fontWeight: a.urgency === 'now' ? '600' : '500' }}>{adviceText(a, t)}</Text>
+          <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{adviceText(a, t)}</Text>
           {a.action !== 'none' ? <Ionicons name="chevron-forward" size={16} color={C.textFaint} /> : null}
         </Pressable>
       ))}

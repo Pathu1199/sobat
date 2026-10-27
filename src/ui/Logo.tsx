@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle, Defs, Line, LinearGradient, Stop } from 'react-native-svg';
-import { C } from './theme';
+import { C, F } from './theme';
 
 /**
  * The Sobat mark: two discs on a tilted bar. Two together (सोबत means
@@ -39,10 +39,10 @@ export function Wordmark({ size = 22, alt }: { size?: number; alt?: string }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
       <Logo size={size + 8} />
       <View>
-        <Text style={{ color: C.text, fontSize: size, fontWeight: '700', letterSpacing: -0.6 }}>
+        <Text style={{ color: C.text, fontSize: size, fontWeight: '500' }}>
           Sobat
         </Text>
-        {alt ? <Text style={{ color: C.textFaint, fontSize: 10, letterSpacing: 1.1, textTransform: 'uppercase', fontWeight: '500' }}>{alt}</Text> : null}
+        {alt ? <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{alt}</Text> : null}
       </View>
     </View>
   );

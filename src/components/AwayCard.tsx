@@ -22,7 +22,7 @@ export function AwayCard() {
       <Row style={{ gap: 10, alignItems: 'flex-start' }}>
         <Ionicons name="leaf-outline" size={20} color={C.amber} style={{ marginTop: 2 }} />
         <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700' }}>{fill(t('away_title'), { n: days })}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{fill(t('away_title'), { n: days })}</Text>
           <Small color={C.textDim}>{t('away_body')}</Small>
         </View>
       </Row>

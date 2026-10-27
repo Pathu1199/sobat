@@ -57,12 +57,12 @@ export function ActivityPanel() {
       <Card rail={week.pct >= 1 ? C.green : C.accent}>
         <Row style={{ gap: 16 }}>
           <Ring value={week.minutes} max={week.target} size={88} stroke={8} color={week.pct >= 1 ? C.green : C.accent}>
-            <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '800' }}>{week.minutes}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{week.minutes}</Text>
             <Micro>{t('act_min')}</Micro>
           </Ring>
           <View style={{ flex: 1, gap: 4 }}>
             <Micro color={C.textDim}>{t('act_week_title')}</Micro>
-            <Text style={{ color: C.text, fontSize: F.body, fontWeight: '700' }}>{fill(t('act_week_line'), { n: week.minutes, target: week.target, days: week.activeDays })}</Text>
+            <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{fill(t('act_week_line'), { n: week.minutes, target: week.target, days: week.activeDays })}</Text>
             <Small color={C.textDim}>{fill(t('act_week_fat'), { kcal: week.kcal, g: week.fatGrams })}</Small>
             {burned > 0 ? <Small color={C.green}>{fill(t('act_today_line'), { kcal: burned, back: eatBack(burned) })}</Small> : <Small color={C.textFaint}>{t('act_today_none')}</Small>}
           </View>
@@ -90,7 +90,7 @@ export function ActivityPanel() {
             accessibilityLabel={activityName(a, lang)}
             style={({ pressed }) => ({ flexBasis: '31%', flexGrow: 1, minHeight: 88, backgroundColor: C.card, borderRadius: 18, borderWidth: S.hairline, borderColor: C.border, padding: 12, gap: 6, alignItems: 'flex-start', opacity: pressed ? 0.75 : 1, ...lift(1) })}>
             <Text style={{ fontSize: 24 }}>{a.icon}</Text>
-            <Text style={{ color: C.text, fontSize: F.small, fontWeight: '700' }} numberOfLines={2}>
+            <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }} numberOfLines={2}>
               {activityName(a, lang)}
             </Text>
             <Micro color={C.textFaint}>{`${kcalBurned(a, 1, 30, state.profile.weightKg)} kcal / 30 ${t('act_min')}`}</Micro>
@@ -98,7 +98,7 @@ export function ActivityPanel() {
         ))}
         <Pressable onPress={() => setChoosing(true)} accessibilityRole="button" style={({ pressed }) => ({ flexBasis: '31%', flexGrow: 1, minHeight: 88, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.borderStrong, padding: 12, alignItems: 'center', justifyContent: 'center', gap: 6, opacity: pressed ? 0.7 : 1 })}>
           <Ionicons name="add" size={22} color={C.accent} />
-          <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '700' }}>{t('act_add')}</Text>
+          <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '500' }}>{t('act_add')}</Text>
         </Pressable>
       </View>
 
@@ -114,10 +114,10 @@ export function ActivityPanel() {
                 <Row style={{ gap: 10, paddingVertical: 2 }}>
                   <Text style={{ fontSize: 20 }}>{a?.icon ?? '🏃'}</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{a ? activityName(a, lang) : l.activityId}</Text>
-                    <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{`${localHHMM(l.at)} · ${l.minutes} ${t('act_min')} · ${t(`act_${INTENSITY_KEYS[l.intensity]}`)}`}</Text>
+                    <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{a ? activityName(a, lang) : l.activityId}</Text>
+                    <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${localHHMM(l.at)} · ${l.minutes} ${t('act_min')} · ${t(`act_${INTENSITY_KEYS[l.intensity]}`)}`}</Text>
                   </View>
-                  <Text style={{ color: C.green, fontSize: F.body, fontWeight: '800' }}>{`−${l.kcal}`}</Text>
+                  <Text style={{ color: C.green, fontSize: F.body, fontWeight: '500' }}>{`−${l.kcal}`}</Text>
                   <Pressable
                     onPress={() => {
                       app.removeActivity(l.id);
@@ -144,9 +144,9 @@ export function ActivityPanel() {
               <Pressable onPress={() => setMinutes((m) => Math.max(5, m - 5))} accessibilityLabel="−" style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="remove" size={22} color={C.text} />
               </Pressable>
-              <Text style={{ flex: 1, textAlign: 'center', color: C.text, fontSize: F.display, fontWeight: '800', letterSpacing: -1 }}>
+              <Text style={{ flex: 1, textAlign: 'center', color: C.text, fontSize: F.number, fontWeight: '500' }}>
                 {minutes}
-                <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '600' }}>{` ${t('act_min')}`}</Text>
+                <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` ${t('act_min')}`}</Text>
               </Text>
               <Pressable onPress={() => setMinutes((m) => Math.min(300, m + 5))} accessibilityLabel="+" style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="add" size={22} color={C.text} />
@@ -167,16 +167,16 @@ export function ActivityPanel() {
               <Row style={{ justifyContent: 'space-between' }}>
                 <View>
                   <Micro>{t('act_burn')}</Micro>
-                  <Text style={{ color: C.text, fontSize: F.h1, fontWeight: '800' }}>
+                  <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
                     {preview}
-                    <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '600' }}> kcal</Text>
+                    <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> kcal</Text>
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Micro>{t('act_fat')}</Micro>
-                  <Text style={{ color: C.text, fontSize: F.h1, fontWeight: '800' }}>
+                  <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
                     {fatGrams(preview)}
-                    <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '600' }}> g</Text>
+                    <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> g</Text>
                   </Text>
                 </View>
               </Row>

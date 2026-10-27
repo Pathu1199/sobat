@@ -46,7 +46,7 @@ export function HeroRing({
         />
       </Svg>
       <View style={{ alignItems: 'center', gap: 2 }}>
-        <Text style={{ color: C.text, fontSize: safe >= 150 ? F.hero * 0.72 : 27, fontWeight: '200', letterSpacing: -1.6 }}>{big}</Text>
+        <Text style={{ color: C.text, fontSize: safe >= 150 ? F.number * 0.72 : 27, fontWeight: '400' }}>{big}</Text>
         <Text style={[MICRO, { color: C.textFaint }]}>{caption}</Text>
         {children}
       </View>

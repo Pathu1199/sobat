@@ -60,7 +60,7 @@ export function TomorrowCard() {
       <Row style={{ justifyContent: 'space-between' }}>
         <Row style={{ gap: 8 }}>
           <Ionicons name="moon-outline" size={15} color={C.violet} />
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('tomorrow_q')}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('tomorrow_q')}</Text>
         </Row>
         <Micro>{t(`wd_${weekdayOf(tomorrow)}`)}</Micro>
       </Row>

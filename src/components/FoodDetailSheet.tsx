@@ -75,7 +75,7 @@ export function FoodDetailSheet({
         <Row style={{ gap: 14, alignItems: 'flex-start' }}>
           <FoodThumb food={f} size={88} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600', letterSpacing: -0.3 }}>{f.name_en}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{f.name_en}</Text>
             {lang !== 'en' ? <Text style={{ color: C.textDim, fontSize: F.body }}>{lang === 'hi' ? f.name_hi : f.name_mr}</Text> : null}
             <Row style={{ gap: 6, flexWrap: 'wrap' }}>
               {style ? <Pill label={t(`style_${style}`)} /> : null}
@@ -106,9 +106,9 @@ export function FoodDetailSheet({
         <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <View>
             <Micro>{t('calories')}</Micro>
-            <Text style={{ color: C.text, fontSize: F.display - 6, fontWeight: '700', letterSpacing: -1 }}>
+            <Text style={{ color: C.text, fontSize: F.number - 6, fontWeight: '500' }}>
               {n.kcal}
-              <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500', letterSpacing: 0 }}> kcal</Text>
+              <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> kcal</Text>
             </Text>
           </View>
           <Small color={C.textFaint}>{`${grams} g`}</Small>
@@ -136,7 +136,7 @@ function Macro({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; l
         <Ionicons name={icon} size={14} color={C.textFaint} />
         <Text style={{ color: C.textDim, fontSize: F.small }}>{label}</Text>
       </Row>
-      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>{`${Math.round(value * 10) / 10} g`}</Text>
+      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{`${Math.round(value * 10) / 10} g`}</Text>
     </Row>
   );
 }

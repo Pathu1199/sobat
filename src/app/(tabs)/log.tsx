@@ -22,7 +22,7 @@ import { useApp } from '../../store/AppProvider';
 import { Bar, BiText, Btn, Card, Divider, Empty, Field, ListRow, Micro, Pill, Row, SectionHeader, Segmented } from '../../ui/components';
 import { DateStrip } from '../../ui/DateStrip';
 import { TopBar } from '../../ui/TopBar';
-import { C, F, S } from '../../ui/theme';
+import { C, F, lh, S } from '../../ui/theme';
 import { useBreakpoint } from '../../ui/useBreakpoint';
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner'];
@@ -177,7 +177,7 @@ export default function LogScreen() {
             <Ionicons name="water-outline" size={15} color={C.cyan} />
             <Micro>{t('water')}</Micro>
           </Row>
-          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '700' }}>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
             +1 <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${glasses} / ${glassGoal}`}</Text>
           </Text>
         </Pressable>
@@ -225,7 +225,7 @@ export default function LogScreen() {
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
           <BiText en={isToday ? t('tab_today') : formatDayLabel(viewDate, 'en')} alt={lang === 'en' ? undefined : isToday ? t('tab_today') : formatDayLabel(viewDate, lang)} size={F.small} color={C.textDim} weight="500" />
-          <Text style={{ color: dayKcal > app.targets.kcal ? C.red : C.text, fontSize: F.h2, fontWeight: '700' }}>
+          <Text style={{ color: dayKcal > app.targets.kcal ? C.red : C.text, fontSize: F.title, fontWeight: '500' }}>
             {dayKcal}
             <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${app.targets.kcal} kcal`}</Text>
           </Text>
@@ -281,7 +281,7 @@ export default function LogScreen() {
   const dayLeft = (isToday ? app.budget.remaining : app.targets.kcal - dayKcal) - basketKcal;
   const budgetLine =
     chosen ? (
-      <Text style={{ color: dayLeft < 0 ? C.red : slotLeft < 0 ? C.amber : C.textDim, fontSize: F.small, lineHeight: 18 }}>
+      <Text style={{ color: dayLeft < 0 ? C.red : slotLeft < 0 ? C.amber : C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>
         {[
           `${chosenLabel}: ${chosen.eaten + basketKcal} / ${chosen.allowance}`,
           slotLeft >= 0 ? fill(t('log_left_for'), { kcal: slotLeft, slot: chosenLabel }) : fill(t('log_over_for'), { kcal: -slotLeft, slot: chosenLabel }),
@@ -308,9 +308,9 @@ export default function LogScreen() {
                   <BiText en={b.food.name_en} alt={lang === 'en' ? undefined : b.food.name_mr} />
                   <Micro>{`${b.count} × ${measureText} · ${item.grams} g · ${t('edit')} ›`}</Micro>
                 </Pressable>
-                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
+                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>
                   {item.kcal}
-                  <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '500' }}> kcal</Text>
+                  <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> kcal</Text>
                 </Text>
                 <Pressable onPress={() => setBasket((x) => x.filter((y) => y.food.id !== b.food.id))} hitSlop={10} accessibilityLabel={t('delete')}>
                   <Ionicons name="close-circle" size={22} color={C.textFaint} />
@@ -319,7 +319,7 @@ export default function LogScreen() {
               {hit ? (
                 <Row style={{ gap: 8, alignItems: 'flex-start' }}>
                   <Ionicons name="swap-horizontal" size={14} color={C.amber} style={{ marginTop: 2 }} />
-                  <Text style={{ color: C.amber, fontSize: F.small, lineHeight: 18, flex: 1 }}>{swapText(hit, app.foods, lang)}</Text>
+                  <Text style={{ color: C.amber, fontSize: F.small, lineHeight: lh(F.small), flex: 1 }}>{swapText(hit, app.foods, lang)}</Text>
                   {swapTo ? <Pill label={`${t('routine_swap')} → ${foodName(swapTo, lang)}`} tone={C.amber} textColor={C.text} onPress={() => swapInBasket(b.food.id, swapTo.id)} /> : null}
                 </Row>
               ) : null}
@@ -332,7 +332,7 @@ export default function LogScreen() {
             {budgetLine}
             <Row style={{ justifyContent: 'space-between' }}>
               <View>
-                <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{basketKcal}</Text>
+                <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{basketKcal}</Text>
                 <Micro>{`kcal · ${basketProtein} g ${t('protein')}`}</Micro>
               </View>
               <Btn label={t('save')} onPress={saveMeal} />
@@ -486,7 +486,7 @@ export default function LogScreen() {
             gap: 12,
           }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{basketKcal}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{basketKcal}</Text>
             {budgetLine ?? <Micro>{`${basket.length} ${t('items').toLowerCase()} · ${basketProtein} g ${t('protein')}`}</Micro>}
           </View>
           <Btn label={t('save')} onPress={saveMeal} style={{ minWidth: 120 }} />

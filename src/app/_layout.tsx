@@ -103,7 +103,7 @@ function AppShell() {
         screenOptions={{
             headerStyle: { backgroundColor: C.bgAlt },
             headerTintColor: C.text,
-            headerTitleStyle: { fontWeight: '600' },
+            headerTitleStyle: { fontWeight: '500' },
             contentStyle: { backgroundColor: C.bg },
           }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

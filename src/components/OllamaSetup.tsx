@@ -6,7 +6,7 @@ import { makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Micro, Pill, Row, Small } from '../ui/components';
-import { C, F, S } from '../ui/theme';
+import { C, F, lh, S } from '../ui/theme';
 
 type OS = 'mac' | 'win';
 type Step = { key: string; link?: string; cmd?: string[] };
@@ -64,9 +64,9 @@ export function OllamaSetup({ onTest, testing }: { onTest: () => void; testing: 
         <View key={s.key} style={{ gap: 8 }}>
           <Row style={{ gap: 10, alignItems: 'flex-start' }}>
             <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: C.cyan, fontSize: F.small, fontWeight: '700' }}>{i + 1}</Text>
+              <Text style={{ color: C.cyan, fontSize: F.small, fontWeight: '500' }}>{i + 1}</Text>
             </View>
-            <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: 23 }}>{t(`ollama_${s.key}_${os}`) === `ollama_${s.key}_${os}` ? t(`ollama_${s.key}`) : t(`ollama_${s.key}_${os}`)}</Text>
+            <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body) }}>{t(`ollama_${s.key}_${os}`) === `ollama_${s.key}_${os}` ? t(`ollama_${s.key}`) : t(`ollama_${s.key}_${os}`)}</Text>
           </Row>
           {s.link ? (
             <Btn small tone="soft" label={t('open_link')} icon={<Ionicons name="open-outline" size={14} color={C.text} />} onPress={() => Linking.openURL(s.link!)} style={{ alignSelf: 'flex-start', marginLeft: 34 }} />

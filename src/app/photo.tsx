@@ -252,7 +252,7 @@ export default function PhotoScreen() {
                         <Micro>{`${item.grams} g`}</Micro>
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{item.kcal}</Text>
+                        <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{item.kcal}</Text>
                         <Micro>kcal</Micro>
                       </View>
                       <Pressable onPress={() => setDrafts((x) => x.filter((y) => y.key !== d.key))} hitSlop={8}>
@@ -299,7 +299,7 @@ export default function PhotoScreen() {
           <Card>
             <Row style={{ justifyContent: 'space-between' }}>
               <View>
-                <Text style={{ color: C.text, fontSize: 28, fontWeight: '700' }}>{totalKcal}</Text>
+                <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{totalKcal}</Text>
                 <Micro>{`kcal · ${totalProtein} g ${t('protein')}`}</Micro>
               </View>
               <Btn label={t('save')} onPress={save} />

@@ -66,7 +66,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
           <Pressable onPress={() => setShare(share - 5)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${t('pattern_share')} −`} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="remove" size={16} color={C.text} />
           </Pressable>
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700', minWidth: 32, textAlign: 'center' }}>{String(share)}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500', minWidth: 32, textAlign: 'center' }}>{String(share)}</Text>
           <Pressable onPress={() => setShare(share + 5)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${t('pattern_share')} +`} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="add" size={16} color={C.text} />
           </Pressable>

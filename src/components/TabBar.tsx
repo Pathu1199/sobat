@@ -5,7 +5,7 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { C, F, lift, S } from '../ui/theme';
+import { C, F, lh, lift, S } from '../ui/theme';
 
 /**
  * A hand-rolled tab bar: Today · Growth · [+] · Move · Mind.
@@ -61,7 +61,7 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
         </View>
         <Text
           numberOfLines={1}
-          style={{ color: focused ? C.accent : C.textFaint, fontSize: Math.max(12, F.micro), lineHeight: 16, fontWeight: focused ? '800' : '600', letterSpacing: 0.2, includeFontPadding: false, textAlign: 'center' }}>
+          style={{ color: focused ? C.accent : C.textFaint, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500', includeFontPadding: false, textAlign: 'center' }}>
           {label}
         </Text>
       </Pressable>,

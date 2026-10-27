@@ -118,11 +118,11 @@ export default function GrowthScreen({ embedded }: { embedded?: boolean } = {}) 
         <Micro color={weightMetric.value <= 0 ? C.cyan : C.amber}>{weightMetric.value <= 0 ? t('on_track_short') : t('watch_short')}</Micro>
       </Row>
       <Row style={{ alignItems: 'flex-end', gap: 8 }}>
-        <Text style={{ color: C.text, fontSize: 42, fontWeight: '200', letterSpacing: -1.5 }}>
+        <Text style={{ color: C.text, fontSize: F.number, fontWeight: '400' }}>
           {weightMetric.value > 0 ? '+' : ''}
           {weightMetric.value.toFixed(1)}
         </Text>
-        <Text style={{ color: C.textDim, fontSize: F.h2, marginBottom: 8 }}>{t('unit_kg')}</Text>
+        <Text style={{ color: C.textDim, fontSize: F.title, marginBottom: 8 }}>{t('unit_kg')}</Text>
       </Row>
       <View style={{ gap: 7 }}>
         <Bar value={progressed} max={totalToLose} color={C.accent} height={5} />
@@ -197,11 +197,11 @@ export default function GrowthScreen({ embedded }: { embedded?: boolean } = {}) 
         <Divider />
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro>{t('longest_sitting')}</Micro>
-          <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
+          <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '500' }}>{formatMinutes(sitting)}</Text>
         </Row>
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro>{t('break_compliance')}</Micro>
-          <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
+          <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>
             {breaksTaken}
             <Text style={{ color: C.textFaint, fontWeight: '500' }}> / {breaksToday.length}</Text>
           </Text>
@@ -221,8 +221,8 @@ export default function GrowthScreen({ embedded }: { embedded?: boolean } = {}) 
               <View key={k} style={{ minWidth: 92, flexGrow: 1, gap: 5 }}>
                 <Micro>{t(`brk_${k}`)}</Micro>
                 <Row style={{ gap: 5, alignItems: 'baseline' }}>
-                  <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '700' }}>{s.taken}</Text>
-                  <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{`/ ${s.offered} ${t('brk_offered')}`}</Text>
+                  <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{s.taken}</Text>
+                  <Text style={{ color: C.textFaint, fontSize: F.small }}>{`/ ${s.offered} ${t('brk_offered')}`}</Text>
                 </Row>
               </View>
             );
@@ -231,11 +231,11 @@ export default function GrowthScreen({ embedded }: { embedded?: boolean } = {}) 
         <Divider />
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro>{t('brk_streak')}</Micro>
-          <Text style={{ color: C.cyan, fontSize: F.small, fontWeight: '600' }}>{breakStreak(app.state.breaks, summary.dates)}</Text>
+          <Text style={{ color: C.cyan, fontSize: F.small, fontWeight: '500' }}>{breakStreak(app.state.breaks, summary.dates)}</Text>
         </Row>
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro>{t('longest_sitting')}</Micro>
-          <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
+          <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '500' }}>{formatMinutes(sitting)}</Text>
         </Row>
       </Card>
     </View>
@@ -355,11 +355,11 @@ function MetricTile({ metric, label, lang, wide }: { metric: Metric; label: stri
       }}>
       <Micro>{label}</Micro>
       <Row style={{ alignItems: 'baseline', gap: 4 }}>
-        <Text style={{ color: C.text, fontSize: 24, fontWeight: '700', letterSpacing: -0.5 }}>{value}</Text>
-        {unit ? <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{unit}</Text> : null}
+        <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{value}</Text>
+        {unit ? <Text style={{ color: C.textFaint, fontSize: F.small }}>{unit}</Text> : null}
       </Row>
       <View style={{ alignSelf: 'flex-start', backgroundColor: C.cardAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, borderWidth: S.hairline, borderColor: C.border }}>
-        <Text style={{ color: deltaColor, fontSize: F.micro, fontWeight: '500' }}>{pct === null ? t('vs_previous') : `${pct > 0 ? '+' : ''}${pct}% ${t('vs_previous')}`}</Text>
+        <Text style={{ color: deltaColor, fontSize: F.small, fontWeight: '500' }}>{pct === null ? t('vs_previous') : `${pct > 0 ? '+' : ''}${pct}% ${t('vs_previous')}`}</Text>
       </View>
     </View>
   );
@@ -370,8 +370,8 @@ function Stat({ label, value, delta, deltaGood }: { label: string; value: string
     <View style={{ minWidth: 76, flexGrow: 1, gap: 5 }}>
       <Micro>{label}</Micro>
       <Row style={{ gap: 6, alignItems: 'baseline' }}>
-        <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{value}</Text>
-        {delta ? <Text style={{ color: deltaGood ? C.cyan : C.amber, fontSize: F.tiny }}>{delta}</Text> : null}
+        <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{value}</Text>
+        {delta ? <Text style={{ color: deltaGood ? C.cyan : C.amber, fontSize: F.small }}>{delta}</Text> : null}
       </Row>
     </View>
   );

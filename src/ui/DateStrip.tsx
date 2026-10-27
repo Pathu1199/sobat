@@ -58,7 +58,7 @@ export function DateStrip({
               opacity: future ? 0.35 : pressed ? 0.7 : 1,
             })}>
             <Text style={[MICRO, { color: on ? C.white : C.textFaint }]}>{t(`wd_${weekdayOf(d)}`)}</Text>
-            <Text style={{ color: on ? C.white : C.text, fontSize: F.h3, fontWeight: '600' }}>{Number(d.slice(8, 10))}</Text>
+            <Text style={{ color: on ? C.white : C.text, fontSize: F.title, fontWeight: '500' }}>{Number(d.slice(8, 10))}</Text>
             <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: marked.has(d) ? (on ? C.white : C.cyan) : 'transparent' }} />
           </Pressable>
         );

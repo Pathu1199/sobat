@@ -6,7 +6,7 @@ import { takesScreen } from '../core/breaks';
 import { fill, makeT } from '../i18n';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
-import { C, F, MICRO, S } from '../ui/theme';
+import { C, F, lh, MICRO, S } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
 
 /**
@@ -50,13 +50,13 @@ export function BreakToast() {
         <Ionicons name={nudging ? 'body-outline' : 'time-outline'} size={15} color={nudging ? C.cyan : C.amber} />
         <Text style={[MICRO, { color: nudging ? C.cyan : C.amber }]}>{title}</Text>
       </View>
-      <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 18 }}>{body}</Text>
+      <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{body}</Text>
 
       {warning ? (
         <View style={{ flexDirection: 'row', gap: 16, marginTop: 6, flexWrap: 'wrap' }}>
           {state.breakSettings.snoozeMinutes.map((m) => (
             <Pressable key={m} onPress={() => monitor.snooze(m)} hitSlop={6} accessibilityRole="button">
-              <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '600' }}>{fill(t('brk_snooze_n'), { n: m })}</Text>
+              <Text style={{ color: C.accent, fontSize: F.small, fontWeight: '500' }}>{fill(t('brk_snooze_n'), { n: m })}</Text>
             </Pressable>
           ))}
           {monitor.skipsLeft > 0 ? (

@@ -78,7 +78,7 @@ export default function RoutineScreen() {
                   onPress={() => setOpenDay(open ? null : day)}
                   accessibilityRole="button"
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, opacity: pressed ? 0.7 : 1 })}>
-                  <Text style={{ width: 44, color: C.textDim, fontSize: F.small, fontWeight: '600' }}>{t(`wd_${day}`)}</Text>
+                  <Text style={{ width: 44, color: C.textDim, fontSize: F.small, fontWeight: '500' }}>{t(`wd_${day}`)}</Text>
                   <Text style={{ flex: 1, color: list.length > 0 ? C.text : C.textFaint, fontSize: F.body }}>
                     {list.length > 0 ? list.map((id) => nameOf(id, foods, lang)).join(' / ') : t('routine_free')}
                   </Text>

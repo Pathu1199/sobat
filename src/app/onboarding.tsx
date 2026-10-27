@@ -108,8 +108,8 @@ export default function Onboarding() {
       <Card tone={C.accent}>
         <Micro color={C.accent}>{t('target')}</Micro>
         <Row style={{ alignItems: 'baseline', gap: 8 }}>
-          <Text style={{ color: C.text, fontSize: 40, fontWeight: '200', letterSpacing: -1.5 }}>{targets.kcal.toLocaleString()}</Text>
-          <Text style={{ color: C.textDim, fontSize: F.h2 }}>kcal</Text>
+          <Text style={{ color: C.text, fontSize: F.number, fontWeight: '400' }}>{targets.kcal.toLocaleString()}</Text>
+          <Text style={{ color: C.textDim, fontSize: F.title }}>kcal</Text>
         </Row>
         <Divider />
         <StatQuad

@@ -71,7 +71,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
         <Row style={{ gap: 10 }}>
           <Ionicons name="hand-left-outline" size={20} color={C.amber} />
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t('fits_stop_title')}</Text>
+            <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t('fits_stop_title')}</Text>
             <Small color={C.textDim}>{plan.remaining > 0 ? fill(t('fits_stop_some'), { kcal: plan.remaining }) : t('fits_stop_over')}</Small>
           </View>
         </Row>
@@ -88,7 +88,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
       <Row style={{ justifyContent: 'space-between' }}>
         <Pressable onPress={() => setOpen((o) => !o)} accessibilityRole="button" style={{ flex: 1, gap: 2 }}>
           <Micro color={C.textDim}>{t('fits_title')}</Micro>
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{mode === 'day' ? fill(t('fits_day_total'), { kcal: plan.remaining }) : fill(t('fits_left'), { kcal: plan.remaining })}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{mode === 'day' ? fill(t('fits_day_total'), { kcal: plan.remaining }) : fill(t('fits_left'), { kcal: plan.remaining })}</Text>
         </Pressable>
         <Row style={{ gap: 14 }}>
           <Pressable onPress={() => setSeed((s) => s + 1)} accessibilityRole="button" accessibilityLabel={t('fits_shuffle')} hitSlop={8}>

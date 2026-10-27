@@ -42,7 +42,7 @@ export default function MindScreen({ embedded }: { embedded?: boolean } = {}) {
 
   const crisisCard = crisis ? (
     <Card tone={C.red}>
-      <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('helpline_title')}</Text>
+      <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('helpline_title')}</Text>
       <P>{t('helpline_body')}</P>
       {HELPLINES.map((h) => (
         <Pressable key={h.number} onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}>
@@ -51,7 +51,7 @@ export default function MindScreen({ embedded }: { embedded?: boolean } = {}) {
               <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{h.name}</Text>
               <Small>{h.note}</Small>
             </View>
-            <Text style={{ color: C.cyan, fontWeight: '600' }}>{h.number}</Text>
+            <Text style={{ color: C.cyan, fontWeight: '500' }}>{h.number}</Text>
           </Row>
         </Pressable>
       ))}
@@ -212,9 +212,9 @@ function BreatheBox({ lang }: { lang: any }) {
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-          <Text style={{ color: C.text, fontSize: 28, fontWeight: '600' }}>{count}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{count}</Text>
         </View>
-        <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{labels[phase]}</Text>
+        <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{labels[phase]}</Text>
         <Btn small label={running ? t('stop') : t('start')} onPress={() => setRunning((r) => !r)} />
       </View>
     </Card>

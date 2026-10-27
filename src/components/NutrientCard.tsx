@@ -44,8 +44,8 @@ export function NutrientCard() {
           return (
             <Pressable key={n} onPress={() => router.push(`/foods?n=${n}`)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, backgroundColor: had.length ? C.cardAlt : 'transparent', borderWidth: 1, borderColor: had.length ? C.border : C.borderStrong }}>
-                <Text style={{ color: had.length ? C.green : C.textFaint, fontSize: F.tiny }}>{had.length ? '✓' : '–'}</Text>
-                <Text style={{ color: had.length ? C.text : C.textFaint, fontSize: F.tiny, fontWeight: '500' }}>{t(`nut_${n}`)}</Text>
+                <Text style={{ color: had.length ? C.green : C.textFaint, fontSize: F.small }}>{had.length ? '✓' : '–'}</Text>
+                <Text style={{ color: had.length ? C.text : C.textFaint, fontSize: F.small, fontWeight: '500' }}>{t(`nut_${n}`)}</Text>
               </View>
             </Pressable>
           );

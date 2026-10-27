@@ -45,8 +45,8 @@ export function TimingCard({ date }: { date: ISODate }) {
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>{label}</Text>
-      <Text style={{ color: color ?? C.text, fontSize: F.h3, fontWeight: '800' }}>{value}</Text>
+      <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{label}</Text>
+      <Text style={{ color: color ?? C.text, fontSize: F.title, fontWeight: '500' }}>{value}</Text>
     </View>
   );
 }

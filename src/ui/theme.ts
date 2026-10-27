@@ -131,17 +131,16 @@ export const S = {
 /** Durations in ms. One curve for everything, ease-out cubic. */
 export const M = { fast: 180, base: 320, slow: 600 };
 
-/** Base type sizes at scale 1. Read on a phone, often outdoors. */
+/**
+ * The four type sizes at scale 1: the one big number a screen is about, titles,
+ * body text, and small text (labels and captions use it too). Two weights go
+ * with them, '400' for reading and '500' for names, numbers and buttons.
+ */
 const F_BASE = {
-  display: 42,
-  h1: 30,
-  h2: 24,
-  h3: 18,
-  body: 17,
-  small: 15,
-  tiny: 13,
-  micro: 12,
-  hero: 54,
+  number: 44,
+  title: 20,
+  body: 16,
+  small: 13,
 };
 
 /** The live type sizes: F_BASE times the person's text-size setting. Mutated by applyTextScale, like C. */
@@ -153,20 +152,36 @@ export function textScale(): number {
   return scaleNow;
 }
 
+/** The four sizes for a text-size setting, rounded to whole points. */
+export function scaledSizes(scale: number): typeof F_BASE {
+  const out = { ...F_BASE };
+  for (const k of Object.keys(F_BASE) as (keyof typeof F_BASE)[]) out[k] = Math.round(F_BASE[k] * scale);
+  return out;
+}
+
+/**
+ * Line height for a size that is already scaled: pass an F value. 1.45 times
+ * the size leaves room for Devanagari matras above and below the line at every
+ * text scale. `digits` is for a number on its own, which has no matras.
+ */
+export function lh(size: number, digits = false): number {
+  return Math.round(size * (digits ? 1.15 : 1.45));
+}
+
 export function applyTextScale(scale: number): void {
   if (scale === scaleNow) return;
   scaleNow = scale;
-  for (const k of Object.keys(F_BASE) as (keyof typeof F_BASE)[]) F[k] = Math.round(F_BASE[k] * scale);
-  MICRO.fontSize = F.micro;
+  Object.assign(F, scaledSizes(scale));
+  MICRO.fontSize = F.small;
+  MICRO.lineHeight = lh(F.small);
   listeners.forEach((fn) => fn());
 }
 
-/** Small uppercase label style used for every section heading and stat caption. */
+/** The small label over a section or beside a stat: normal case, no letter spacing, quiet. */
 export const MICRO = {
-  fontSize: F.micro,
-  fontWeight: '700' as const,
-  letterSpacing: 0.7,
-  textTransform: 'uppercase' as const,
+  fontSize: F.small,
+  lineHeight: lh(F.small),
+  fontWeight: '500' as const,
 };
 
 export function severityColor(s: 'good' | 'watch' | 'act') {

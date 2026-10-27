@@ -4,7 +4,7 @@ import { makeT } from '../i18n';
 import { useNudges, type Nudge } from '../services/useNudges';
 import { useApp } from '../store/AppProvider';
 import { Btn, Micro, Row } from '../ui/components';
-import { C, F, S } from '../ui/theme';
+import { C, F, lh, S } from '../ui/theme';
 
 /** The interrupt itself: one line, one two-minute task, three ways out. */
 export function NudgeToast() {
@@ -46,11 +46,11 @@ function NudgeCard({ nudge, respond }: { nudge: Nudge; respond: (action: 'done' 
         alignSelf: 'center',
       }}>
       <Micro color={C.accent}>{nudge.title}</Micro>
-      <Text style={{ color: C.text, fontSize: F.body, lineHeight: 20 }}>{nudge.body}</Text>
+      <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body) }}>{nudge.body}</Text>
       <Text style={{ color: C.cyan, fontSize: F.small }}>{nudge.task}</Text>
 
       {running && !finished ? (
-        <Text style={{ color: C.text, fontSize: 30, fontWeight: '200', textAlign: 'center', letterSpacing: -1 }}>{left}</Text>
+        <Text style={{ color: C.text, fontSize: F.title, fontWeight: '400', textAlign: 'center' }}>{left}</Text>
       ) : null}
 
       <Row style={{ gap: 8 }}>

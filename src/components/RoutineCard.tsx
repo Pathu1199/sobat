@@ -32,7 +32,7 @@ import { useApp } from '../store/AppProvider';
 import { Bar, BiText, Btn, Card, Divider, Field, Micro, Pill, Row, Small } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
 import { Checklist } from '../ui/tiles';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 
 const SPREADS = [1, 7, 30];
 
@@ -132,9 +132,9 @@ export function RoutineCard() {
         <Pressable onPress={() => router.push('/food?s=plan')} accessibilityRole="button" style={{ gap: 2 }}>
           <Row style={{ justifyContent: 'space-between' }}>
             <Micro color={C.textDim}>{t('plan_today')}</Micro>
-            <Text style={{ color: C.text, fontSize: F.body, fontWeight: '700' }}>
+            <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>
               {planTotal.kcal}
-              <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '500' }}>{` / ${targets.kcal} kcal`}</Text>
+              <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${targets.kcal} kcal`}</Text>
             </Text>
           </Row>
           {planStatus === 'low' ? <Small color={C.red}>{fill(t('plan_status_low_short'), { gap: targets.kcal - planTotal.kcal })}</Small> : null}
@@ -144,7 +144,7 @@ export function RoutineCard() {
       <View style={{ gap: 4 }}>
         <Micro>{t('routine_bhaji')}</Micro>
         {bhaji.length > 0 ? (
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
             {bhaji.map((id) => foodLabel(id, foods, lang)).join(lang === 'mr' ? ' किंवा ' : lang === 'hi' ? ' या ' : ' or ')}
           </Text>
         ) : (
@@ -180,14 +180,14 @@ export function RoutineCard() {
                     <Text style={{ color: quiet ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500', textDecorationLine: skipped ? 'line-through' : 'none' }}>{slotLabel(slot, lang)}</Text>
                     <Micro color={s.status === 'now' ? C.amber : s.status === 'missed' ? C.red : C.textFaint}>{s.status === 'missed' ? t('slot_missed') : s.status === 'now' ? t('slot_now') : slotTime(slot)}</Micro>
                   </Row>
-                  <Text style={{ color: C.textFaint, fontSize: F.tiny }} numberOfLines={1}>
+                  <Text style={{ color: C.textFaint, fontSize: F.small }} numberOfLines={1}>
                     {done ? s.meals.flatMap((m) => m.items.map((it) => itemName(it, foods, lang))).join(', ') : lines.length === 0 ? t('pattern_log_other') : lines.map((l) => lineLabel(l, foods, lang)).join(' + ')}
                   </Text>
                 </Pressable>
                 <View style={{ alignItems: 'flex-end', gap: 2 }}>
                   {done ? (
                     <>
-                      <Text style={{ color: s.left < 0 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>
+                      <Text style={{ color: s.left < 0 ? C.amber : C.text, fontSize: F.small, fontWeight: '500' }}>
                         {s.eaten}
                         <Text style={{ color: C.textFaint, fontWeight: '500' }}>{` / ${s.allowance}`}</Text>
                       </Text>
@@ -233,7 +233,7 @@ export function RoutineCard() {
           {hits.map((h) => (
             <Row key={h.rule.id} style={{ gap: 8, alignItems: 'flex-start' }}>
               <Ionicons name="swap-horizontal" size={14} color={C.amber} style={{ marginTop: 2 }} />
-              <Text style={{ color: C.amber, fontSize: F.small, lineHeight: 18, flex: 1 }}>{swapText(h, foods, lang)}</Text>
+              <Text style={{ color: C.amber, fontSize: F.small, lineHeight: lh(F.small), flex: 1 }}>{swapText(h, foods, lang)}</Text>
             </Row>
           ))}
         </View>
@@ -243,7 +243,7 @@ export function RoutineCard() {
       <Pressable onPress={() => setSpendOpen(true)} accessibilityRole="button" style={({ pressed }) => ({ gap: 7, opacity: pressed ? 0.7 : 1 })}>
         <Row style={{ justifyContent: 'space-between' }}>
           <BiText en={t('routine_budget')} alt={lang === 'en' ? undefined : t('routine_budget')} size={F.small} color={C.textDim} weight="400" />
-          <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
+          <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>
             {`₹${app.spentToday}`}
             <Text style={{ color: C.textFaint, fontWeight: '500' }}>{` / ₹${routine.budgetMin}–${routine.budgetMax}`}</Text>
           </Text>
@@ -352,9 +352,9 @@ function SlotSheet({ state: s, planLines, bhaji, onClose }: { state: SlotState |
                 <BiText en={it.name_en} alt={lang === 'en' ? undefined : it.name_mr} size={F.body} />
                 <Micro>{`${it.grams} g · ${Math.round(it.protein)} g ${t('protein').toLowerCase()}`}</Micro>
               </View>
-              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
+              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>
                 {it.kcal}
-                <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '500' }}> kcal</Text>
+                <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> kcal</Text>
               </Text>
             </Row>
           </View>
@@ -363,7 +363,7 @@ function SlotSheet({ state: s, planLines, bhaji, onClose }: { state: SlotState |
       <Divider />
       <Row style={{ justifyContent: 'space-between' }}>
         <View>
-          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{kcal}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{kcal}</Text>
           <Micro>{`kcal · ${protein} g ${t('protein').toLowerCase()} · ${t(current.type)}`}</Micro>
         </View>
         <Btn label={t('pattern_log_planned')} onPress={log} disabled={items.length === 0} style={{ minWidth: 120 }} />
@@ -425,7 +425,7 @@ function SpendSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
           <Row key={s.id} style={{ justifyContent: 'space-between' }}>
             <Small>{`${t(`spend_${s.category}`)}${s.spreadDays > 1 ? ` · ${t(`spread_${s.spreadDays}`)}` : ''}`}</Small>
             <Row style={{ gap: 12 }}>
-              <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>{`₹${s.rupees}`}</Text>
+              <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{`₹${s.rupees}`}</Text>
               <Pressable onPress={() => app.removeSpend(s.id)} hitSlop={8} accessibilityLabel={t('delete')}>
                 <Ionicons name="close" size={16} color={C.textFaint} />
               </Pressable>

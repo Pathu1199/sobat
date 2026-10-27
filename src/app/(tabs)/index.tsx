@@ -44,7 +44,7 @@ import { Logo } from '../../ui/Logo';
 import { BannerBar, GradientBanner } from '../../ui/GradientBanner';
 import { Page } from '../../ui/TopBar';
 import { Cols } from '../../ui/tiles';
-import { C, F } from '../../ui/theme';
+import { C, F, lh } from '../../ui/theme';
 import { useBreakpoint } from '../../ui/useBreakpoint';
 
 export default function TodayScreen() {
@@ -136,10 +136,10 @@ export default function TodayScreen() {
       <View style={{ gap: 14 }}>
         {/* The one number the day is about, on the brand gradient: what is left, and how far through the day's food. */}
         <GradientBanner from={over ? C.red : C.heroFrom} to={over ? C.amber : C.heroTo}>
-          <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: F.tiny, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' }}>{over ? t('kcal_over') : t('kcal_left')}</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: F.hero, fontWeight: '800', letterSpacing: -2, lineHeight: F.hero + 4 }}>{Math.abs(dayBudget.remaining).toLocaleString()}</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: F.small, fontWeight: '500' }}>{over ? t('kcal_over') : t('kcal_left')}</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: F.number, fontWeight: '500', lineHeight: lh(F.number, true) }}>{Math.abs(dayBudget.remaining).toLocaleString()}</Text>
           <BannerBar value={dayBudget.consumed} max={dayBudget.target} />
-          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.small, fontWeight: '600' }}>{`${dayBudget.consumed.toLocaleString()} / ${dayBudget.target.toLocaleString()} kcal${dayBudget.earned > 0 ? ` +${dayBudget.earned} ${t('earned_short')}` : ''} · ${dayBudget.proteinConsumed} / ${dayBudget.proteinTarget} g ${t('protein').toLowerCase()}`}</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.small, fontWeight: '500' }}>{`${dayBudget.consumed.toLocaleString()} / ${dayBudget.target.toLocaleString()} kcal${dayBudget.earned > 0 ? ` +${dayBudget.earned} ${t('earned_short')}` : ''} · ${dayBudget.proteinConsumed} / ${dayBudget.proteinTarget} g ${t('protein').toLowerCase()}`}</Text>
         </GradientBanner>
         <View style={{ gap: 13 }}>
           <MeterRow label={t('protein')} alt={lang === 'en' ? undefined : t('protein')} value={dayBudget.proteinConsumed} total={dayBudget.proteinTarget} unit="g" color={C.violet} />
@@ -155,7 +155,7 @@ export default function TodayScreen() {
               <View style={{ height: 6 }} />
               <Quote color={C.cyan}>{mantra.text}</Quote>
               {mantraWhy ? (
-                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 19, marginTop: 8, paddingLeft: 14 }}>{`${mantra.why}\n`}<Text style={{ color: C.textFaint }}>{t('mantra_source')}</Text></Text>
+                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), marginTop: 8, paddingLeft: 14 }}>{`${mantra.why}\n`}<Text style={{ color: C.textFaint }}>{t('mantra_source')}</Text></Text>
               ) : (
                 <Micro color={C.textFaint}>{`${t('mantra_why')} ›`}</Micro>
               )}
@@ -364,7 +364,7 @@ function QuickAction({ icon, label, onPress }: { icon: keyof typeof Ionicons.gly
       <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name={icon} size={18} color={C.accent} />
       </View>
-      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{label}</Text>
     </Pressable>
   );
 }

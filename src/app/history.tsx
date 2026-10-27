@@ -60,7 +60,7 @@ export default function History() {
           <Pressable key={d.date} onPress={() => router.push({ pathname: '/log', params: { date: d.date } })} accessibilityRole="button" style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}>
             <Card rail={d.meals === 0 ? undefined : over ? C.amber : C.green}>
               <Row style={{ justifyContent: 'space-between' }}>
-                <Text style={{ color: d.meals === 0 ? C.textFaint : C.text, fontSize: F.body, fontWeight: '600' }}>{label}</Text>
+                <Text style={{ color: d.meals === 0 ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500' }}>{label}</Text>
                 {d.off && d.meals === 0 ? (
                   <Micro color={C.cyan}>{`🌿 ${t('free_day')}`}</Micro>
                 ) : d.meals === 0 ? (
@@ -69,7 +69,7 @@ export default function History() {
                     <Ionicons name="add-circle-outline" size={15} color={C.accent} />
                   </Row>
                 ) : (
-                  <Text style={{ color: over ? C.amber : C.text, fontSize: F.h3, fontWeight: '600' }}>
+                  <Text style={{ color: over ? C.amber : C.text, fontSize: F.title, fontWeight: '500' }}>
                     {d.kcal}
                     <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${targets.kcal} kcal`}</Text>
                   </Text>
@@ -98,7 +98,7 @@ function Stat({ label, value, unit, color }: { label: string; value: string; uni
   return (
     <View style={{ gap: 2, minWidth: 72 }}>
       <Micro>{label}</Micro>
-      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '700', letterSpacing: -0.5 }}>
+      <Text style={{ color: color ?? C.text, fontSize: F.title, fontWeight: '500' }}>
         {value}
         {unit ? <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> {unit}</Text> : null}
       </Text>

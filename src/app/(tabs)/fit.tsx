@@ -11,7 +11,7 @@ import type { Exercise } from '../../core/types';
 import { fill, makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { BiText, Bar, Btn, Card, Divider, Micro, Pill, Ring, Row, SectionHeader, Small, StatQuad } from '../../ui/components';
-import { C, F, readinessColor } from '../../ui/theme';
+import { C, F, lh, readinessColor } from '../../ui/theme';
 import { Cols } from '../../ui/tiles';
 import { Page } from '../../ui/TopBar';
 import { useBreakpoint } from '../../ui/useBreakpoint';
@@ -58,11 +58,11 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
 
       <Row style={{ gap: 20, alignItems: 'center' }}>
         <Ring value={r.score} max={100} size={96} stroke={6} color={readinessColor(r.level)}>
-          <Text style={{ color: C.text, fontSize: 26, fontWeight: '700' }}>{r.score}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{r.score}</Text>
           <Micro>{t('readiness')}</Micro>
         </Ring>
         <View style={{ flex: 1, gap: 9 }}>
-          <BiText en={en(session.title)} alt={lang === 'en' ? undefined : t(session.title)} size={F.h2} weight="600" />
+          <BiText en={en(session.title)} alt={lang === 'en' ? undefined : t(session.title)} size={F.title} weight="500" />
           <Small>{t(session.note)}</Small>
           {r.reasons.length > 0 ? (
             <Row style={{ flexWrap: 'wrap', gap: 6 }}>
@@ -143,8 +143,8 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
               <Divider />
               {instructions(e).map((s, i) => (
                 <Row key={i} style={{ alignItems: 'flex-start', gap: 10 }}>
-                  <Text style={{ color: C.accent, fontSize: F.tiny, width: 12, marginTop: 3 }}>{i + 1}</Text>
-                  <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 19, flex: 1 }}>{s}</Text>
+                  <Text style={{ color: C.accent, fontSize: F.small, width: 12, marginTop: 3 }}>{i + 1}</Text>
+                  <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), flex: 1 }}>{s}</Text>
                 </Row>
               ))}
               <Small color={C.amber}>{e.safety_en}</Small>

@@ -10,7 +10,7 @@ import { useApp } from '../store/AppProvider';
 import { useReducedMotion } from '../ui/animated';
 import { Blink, FollowDot, NeckTilt, ShoulderRoll } from './BreakGuides';
 import { Micro } from '../ui/components';
-import { C, F, MICRO } from '../ui/theme';
+import { C, F, lh, MICRO } from '../ui/theme';
 
 /** Calm, low-effort moves worth doing while you are already standing. */
 const LONG_BREAK_CATEGORIES = ['mobility', 'stretch', 'breathing'];
@@ -101,7 +101,7 @@ export function BreakOverlay() {
         opacity: fade,
         zIndex: 999,
       }}>
-      <Text style={{ color: C.textDim, fontSize: F.h2, fontWeight: '700', marginBottom: 8, textAlign: 'center', paddingHorizontal: 24, letterSpacing: -0.2 }}>
+      <Text style={{ color: C.textDim, fontSize: F.title, fontWeight: '500', marginBottom: 8, textAlign: 'center', paddingHorizontal: 24 }}>
         {t(`brk_${kind}`)}
       </Text>
       <Text style={{ color: C.textFaint, fontSize: F.body, marginBottom: 36, textAlign: 'center', paddingHorizontal: 32 }}>{t(`brk_${kind}_hint`)}</Text>
@@ -121,7 +121,7 @@ export function BreakOverlay() {
             strokeLinecap="round"
           />
         </Svg>
-        <Text style={{ color: C.text, fontSize: size * 0.24, fontWeight: '200', letterSpacing: -2 }}>
+        <Text style={{ color: C.text, fontSize: size * 0.24, fontWeight: '400' }}>
           {mins}:{String(secs).padStart(2, '0')}
         </Text>
       </Animated.View>
@@ -138,7 +138,7 @@ export function BreakOverlay() {
         <View style={{ marginTop: 24, gap: 10, paddingHorizontal: 32, maxWidth: 520 }}>
           <Text style={[MICRO, { color: C.textFaint, textAlign: 'center' }]}>{t('brk_try_these')}</Text>
           {moves.map((e) => (
-            <Text key={e.id} style={{ color: C.textDim, fontSize: F.small, textAlign: 'center', lineHeight: 19 }}>
+            <Text key={e.id} style={{ color: C.textDim, fontSize: F.small, textAlign: 'center', lineHeight: lh(F.small) }}>
               {lang === 'mr' ? e.name_mr : lang === 'hi' ? e.name_hi : e.name_en}
               <Text style={{ color: C.textFaint }}>
                 {'  '}
@@ -180,7 +180,7 @@ export function BreakOverlay() {
             }}
             accessibilityRole="button"
             style={{ backgroundColor: C.accent, paddingVertical: 12, paddingHorizontal: 28, borderRadius: 999 }}>
-            <Text style={{ color: C.white, fontSize: F.body, fontWeight: '600' }}>{t('break_done')}</Text>
+            <Text style={{ color: C.white, fontSize: F.body, fontWeight: '500' }}>{t('break_done')}</Text>
           </Pressable>
         ) : (
           <View />

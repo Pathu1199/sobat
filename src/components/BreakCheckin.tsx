@@ -67,7 +67,7 @@ export function BreakCheckin() {
       <Row style={{ justifyContent: 'space-between' }}>
         <Row style={{ gap: 8 }}>
           <Ionicons name={block.kind === 'lunch' ? 'restaurant-outline' : block.kind === 'end' ? 'home-outline' : 'cafe-outline'} size={16} color={allDone ? C.green : C.amber} />
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t(`blk_${block.kind}`)}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t(`blk_${block.kind}`)}</Text>
         </Row>
         <Micro color={left <= 3 ? C.amber : C.textFaint}>{block.end ? fill(t('sched_left'), { n: left }) : block.start}</Micro>
       </Row>

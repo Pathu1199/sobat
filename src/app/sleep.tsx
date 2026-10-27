@@ -80,10 +80,10 @@ export default function SleepScreen() {
         <Divider />
         <Row style={{ justifyContent: 'space-around', alignItems: 'center' }}>
           <Ring value={score} max={100} size={90} stroke={8} color={score >= 70 ? C.accent : score >= 45 ? C.amber : C.red}>
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600' }}>{score}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{score}</Text>
           </Ring>
           <View>
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600' }}>{formatMinutes(minutes)}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{formatMinutes(minutes)}</Text>
             <Small>{t('sleep_score')}</Small>
           </View>
         </Row>

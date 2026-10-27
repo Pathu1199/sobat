@@ -10,7 +10,7 @@ import { makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { BiText, Bar, Btn, Card, Divider, Micro, Pill, Row, Screen, SectionHeader, Small } from '../ui/components';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 
 /** Whole minutes since a start stamp, never zero: a session always counts. */
 function elapsedSince(startMs: number): number {
@@ -130,9 +130,9 @@ export default function SessionScreen() {
       <Screen>
         <Card tone={C.accent}>
           <Micro color={C.accent}>{en(done ? 'session_complete' : 'session_stopped')}</Micro>
-          <Text style={{ color: C.text, fontSize: 30, fontWeight: '700' }}>
+          <Text style={{ color: C.text, fontSize: F.number, fontWeight: '500' }}>
             {reached}
-            <Text style={{ color: C.textFaint, fontSize: F.h2 }}> / {session.exercises.length}</Text>
+            <Text style={{ color: C.textFaint, fontSize: F.title }}> / {session.exercises.length}</Text>
           </Text>
           <Micro>{`${elapsedMinutes} min`}</Micro>
           <Divider />
@@ -189,8 +189,8 @@ export default function SessionScreen() {
           <BiText
             en={isRest ? `${t('next')}: ${current.name_en}` : current.name_en}
             alt={lang === 'en' ? undefined : name(current)}
-            size={F.h2}
-            weight="600"
+            size={F.title}
+            weight="500"
           />
 
           {!isRest && step.kind === 'exercise' ? (
@@ -212,7 +212,7 @@ export default function SessionScreen() {
                 strokeLinecap="round"
               />
             </Svg>
-            <Text style={{ color: C.text, fontSize: size * 0.24, fontWeight: '200', letterSpacing: -2 }}>
+            <Text style={{ color: C.text, fontSize: size * 0.24, fontWeight: '400' }}>
               {Math.floor(left / 60)}:{String(left % 60).padStart(2, '0')}
             </Text>
           </View>
@@ -236,8 +236,8 @@ export default function SessionScreen() {
           <Card>
             {instructions(current).map((line, i) => (
               <Row key={i} style={{ alignItems: 'flex-start', gap: 10 }}>
-                <Text style={{ color: C.accent, fontSize: F.tiny, width: 12, marginTop: 3 }}>{i + 1}</Text>
-                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 20, flex: 1 }}>{line}</Text>
+                <Text style={{ color: C.accent, fontSize: F.small, width: 12, marginTop: 3 }}>{i + 1}</Text>
+                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), flex: 1 }}>{line}</Text>
               </Row>
             ))}
             <Divider />

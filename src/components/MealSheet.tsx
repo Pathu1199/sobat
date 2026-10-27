@@ -82,9 +82,9 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
                 <BiText en={it.name_en} alt={lang === 'en' ? undefined : it.name_mr} />
                 <Micro>{`${it.grams} g${it.estimated ? ` · ${t('estimated')}` : ''}`}</Micro>
               </View>
-              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
+              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>
                 {it.kcal}
-                <Text style={{ color: C.textFaint, fontSize: F.tiny, fontWeight: '500' }}> kcal</Text>
+                <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> kcal</Text>
               </Text>
               <Pressable
                 onPress={() => {
@@ -107,7 +107,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
       <Divider />
       <Row style={{ justifyContent: 'space-between' }}>
         <View>
-          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>{kcal}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{kcal}</Text>
           <Micro>{`kcal · ${protein} g ${t('protein')}`}</Micro>
         </View>
         <Row style={{ gap: 8 }}>

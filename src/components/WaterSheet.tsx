@@ -34,9 +34,9 @@ export function WaterSheet({ open, onClose }: { open: boolean; onClose: () => vo
   return (
     <Sheet open={open} title={t('water')} onClose={onClose}>
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <Text style={{ color: waterToday >= goal ? C.green : C.text, fontSize: F.display - 8, fontWeight: '700', letterSpacing: -1 }}>
+        <Text style={{ color: waterToday >= goal ? C.green : C.text, fontSize: F.number - 8, fontWeight: '500' }}>
           {(waterToday / 1000).toFixed(2)}
-          <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500', letterSpacing: 0 }}>{` / ${goal / 1000} L`}</Text>
+          <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${goal / 1000} L`}</Text>
         </Text>
         <Micro>{`${Math.round(waterToday / state.settings.glassMl)} ${t('glasses')}`}</Micro>
       </Row>
@@ -50,7 +50,7 @@ export function WaterSheet({ open, onClose }: { open: boolean; onClose: () => vo
             accessibilityRole="button"
             style={({ pressed }) => ({ flexBasis: '31%', flexGrow: 1, backgroundColor: C.cardAlt, borderRadius: 12, paddingVertical: 12, alignItems: 'center', gap: 4, opacity: pressed ? 0.7 : 1 })}>
             <Ionicons name={a.icon} size={20} color={C.cyan} />
-            <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>{t(`water_${a.key}`)}</Text>
+            <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{t(`water_${a.key}`)}</Text>
             <Micro>{a.ml >= 1000 ? `${a.ml / 1000} L` : `${a.ml} ml`}</Micro>
           </Pressable>
         ))}

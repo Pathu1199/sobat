@@ -3,7 +3,7 @@ import { Animated, Pressable, Text, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useReducedMotion } from './animated';
 import { PressScale } from './PressScale';
-import { C, F, lift, M, MICRO, S } from './theme';
+import { C, F, lh, lift, M, MICRO, S } from './theme';
 
 /** A compact stat for horizontal strips: caption, value, one quiet line. */
 export function Tile({
@@ -50,11 +50,11 @@ export function Tile({
           {label}
         </Text>
       </View>
-      <Text style={{ color, fontSize: F.h2, fontWeight: '800', letterSpacing: -0.6 }} numberOfLines={1}>
+      <Text style={{ color, fontSize: F.title, fontWeight: '500' }} numberOfLines={1}>
         {value}
       </Text>
       {sub ? (
-        <Text style={{ color: C.textFaint, fontSize: F.tiny, lineHeight: 17 }} numberOfLines={2}>
+        <Text style={{ color: C.textFaint, fontSize: F.small, lineHeight: lh(F.small) }} numberOfLines={2}>
           {sub}
         </Text>
       ) : null}
@@ -99,7 +99,7 @@ export function Checklist({
             style={{
               color: i.done ? C.textFaint : C.text,
               fontSize: F.body,
-              lineHeight: 20,
+              lineHeight: lh(F.body),
               flex: 1,
               textDecorationLine: i.done ? 'line-through' : 'none',
             }}>

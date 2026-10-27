@@ -97,7 +97,7 @@ export default function SettingsScreen() {
               <Row style={{ justifyContent: 'space-between', gap: 12 }}>
                 <View style={{ flex: 1, gap: 2 }}>
                   <Micro>{t('signed_in_as')}</Micro>
-                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{auth.user.email}</Text>
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{auth.user.email}</Text>
                 </View>
                 {auth.isAdmin ? <Pill label={t('admin')} color={C.accent} textColor={C.white} /> : null}
               </Row>
@@ -128,7 +128,7 @@ export default function SettingsScreen() {
               </Row>
               {confirmSignOut ? (
                 <Card tone={C.amber}>
-                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t('signout_unsynced_title')}</Text>
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t('signout_unsynced_title')}</Text>
                   <Small color={C.textDim}>{t('signout_unsynced_body')}</Small>
                   <Row style={{ gap: 8 }}>
                     <Btn small tone="soft" label={t('sync_now')} onPress={() => sync.syncNow().then(() => setConfirmSignOut(false))} style={{ flex: 1 }} />
@@ -353,7 +353,7 @@ export default function SettingsScreen() {
             <Card rail={aiOnline ? C.green : C.textFaint}>
               <Row style={{ gap: 10 }}>
                 <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: aiOnline ? C.green : C.textFaint }} />
-                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', flex: 1 }}>{aiOnline ? fill(t('local_ai_up'), { url: ai.url }) : t('local_ai_down')}</Text>
+                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', flex: 1 }}>{aiOnline ? fill(t('local_ai_up'), { url: ai.url }) : t('local_ai_down')}</Text>
               </Row>
               <Small color={C.textDim}>{t('local_ai_body')}</Small>
               {blocked === 'mixed_content' ? <Small color={C.amber}>{t('local_ai_mixed')}</Small> : null}
@@ -479,7 +479,7 @@ export default function SettingsScreen() {
               <Divider />
               <Row style={{ justifyContent: 'space-between' }}>
                 <Micro>{t('break_compliance')}</Micro>
-                <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>
+                <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>
                   {app.state.breaks.filter((b) => b.action === 'taken').length}
                   <Text style={{ color: C.textFaint, fontWeight: '500' }}> / {app.state.breaks.length}</Text>
                 </Text>
@@ -495,7 +495,7 @@ export default function SettingsScreen() {
         <Card>
           <Row style={{ gap: 12 }}>
             <View style={{ flex: 1, gap: 3 }}>
-              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{`Sobat ${Constants.expoConfig?.version ?? ''}`}</Text>
+              <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{`Sobat ${Constants.expoConfig?.version ?? ''}`}</Text>
               <Small>{t('made_by')}</Small>
             </View>
           </Row>
@@ -549,7 +549,7 @@ export default function SettingsScreen() {
 function Count({ label, value }: { label: string; value: number }) {
   return (
     <View style={{ minWidth: 72, flexGrow: 1, gap: 4 }}>
-      <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '700' }}>{value}</Text>
+      <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{value}</Text>
       <Micro>{label}</Micro>
     </View>
   );

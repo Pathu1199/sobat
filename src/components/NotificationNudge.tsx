@@ -36,7 +36,7 @@ export function NotificationNudge() {
     <Card rail={C.amber}>
       <Row style={{ gap: 8 }}>
         <Ionicons name="notifications-outline" size={16} color={C.amber} />
-        <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('ntf_enable_title')}</Text>
+        <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('ntf_enable_title')}</Text>
       </Row>
       <Small>{iPhoneInSafari ? t('ntf_pin_first') : t('ntf_enable_body')}</Small>
       {!iPhoneInSafari ? <Btn small label={t('ntf_enable_btn')} onPress={enable} /> : null}

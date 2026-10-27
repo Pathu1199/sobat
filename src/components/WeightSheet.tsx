@@ -59,9 +59,9 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <View>
           <Micro>{todayEntry ? t('today_short') : t('weight_carried')}</Micro>
-          <Text style={{ color: C.text, fontSize: F.display - 8, fontWeight: '700', letterSpacing: -1 }}>
+          <Text style={{ color: C.text, fontSize: F.number - 8, fontWeight: '500' }}>
             {last ? last.kg : state.profile.weightKg}
-            <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500', letterSpacing: 0 }}> {t('unit_kg')}</Text>
+            <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> {t('unit_kg')}</Text>
           </Text>
         </View>
         {last && !todayEntry ? <Small color={C.textFaint}>{formatDayLabel(last.date, lang)}</Small> : null}
@@ -83,7 +83,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
       <View style={{ backgroundColor: C.cardAlt, borderRadius: 14, padding: 14, gap: 6, borderLeftWidth: 2, borderLeftColor: tone }}>
         <Row style={{ gap: 8 }}>
           <Ionicons name={verdict === 'working' ? 'checkmark-circle' : verdict === 'early' ? 'hourglass-outline' : 'alert-circle-outline'} size={16} color={tone} />
-          <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t(`verdict_${verdict}`)}</Text>
+          <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t(`verdict_${verdict}`)}</Text>
         </Row>
         <Small>{fill(t(`verdict_${verdict}_do`), { rate: plan.targetRate, actual: plan.actualRate ?? 0, kcal: plan.dailyKcal })}</Small>
         {verdict !== 'early' && verdict !== 'working' ? (
@@ -114,7 +114,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
             <Row key={w.date} style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
               <Small>{formatDayLabel(w.date, lang)}</Small>
               <Row style={{ gap: 14 }}>
-                <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>{`${w.kg} ${t('unit_kg')}`}</Text>
+                <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{`${w.kg} ${t('unit_kg')}`}</Text>
                 <Pressable
                   onPress={() => {
                     app.removeWeight(w.date);
@@ -138,7 +138,7 @@ function Stat({ label, value, sub, color }: { label: string; value: string; sub?
   return (
     <View style={{ gap: 3, minWidth: 64 }}>
       <Micro>{label}</Micro>
-      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '700', letterSpacing: -0.5 }}>
+      <Text style={{ color: color ?? C.text, fontSize: F.title, fontWeight: '500' }}>
         {value}
         {sub ? <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> {sub}</Text> : null}
       </Text>

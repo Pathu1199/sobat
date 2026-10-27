@@ -5,7 +5,7 @@ import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-nati
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Logo, Wordmark } from '../ui/Logo';
-import { C, F, MICRO, S } from '../ui/theme';
+import { C, F, lh, MICRO, S } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
 
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; titleKey: string; bodyKey: string }[] = [
@@ -38,7 +38,7 @@ export default function Welcome() {
           <Pressable
             onPress={() => router.replace('/login')}
             style={{ backgroundColor: C.accent, paddingVertical: 9, paddingHorizontal: 18, borderRadius: 999 }}>
-            <Text style={{ color: C.white, fontWeight: '600', fontSize: F.small }}>{t('w_cta')}</Text>
+            <Text style={{ color: C.white, fontWeight: '500', fontSize: F.small }}>{t('w_cta')}</Text>
           </Pressable>
         </View>
 
@@ -47,16 +47,16 @@ export default function Welcome() {
             <Logo size={wide ? 64 : 52} />
           </View>
           <Text style={[MICRO, { color: C.accent, marginBottom: 16 }]}>{t('w_eyebrow')}</Text>
-          <Text style={{ color: C.text, fontSize: wide ? 52 : 34, fontWeight: '700', lineHeight: wide ? 60 : 42, letterSpacing: -1 }}>
+          <Text style={{ color: C.text, fontSize: wide ? F.number : F.title, fontWeight: '500', lineHeight: lh(wide ? F.number : F.title) }}>
             {t('w_headline')}
           </Text>
-          <Text style={{ color: C.textDim, fontSize: wide ? F.h3 : F.body, lineHeight: 26, marginTop: 18 }}>{t('w_sub')}</Text>
+          <Text style={{ color: C.textDim, fontSize: wide ? F.title : F.body, lineHeight: lh(wide ? F.title : F.body), marginTop: 18 }}>{t('w_sub')}</Text>
 
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 30, flexWrap: 'wrap' }}>
             <Pressable
               onPress={() => router.replace('/login')}
               style={{ backgroundColor: C.accent, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999 }}>
-              <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
+              <Text style={{ color: C.white, fontWeight: '500', fontSize: F.body }}>{t('w_cta')}</Text>
             </Pressable>
             {Platform.OS === 'web' ? (
               <Pressable
@@ -67,7 +67,7 @@ export default function Welcome() {
               </Pressable>
             ) : null}
           </View>
-          {Platform.OS === 'web' ? <Text style={{ color: C.textFaint, fontSize: F.tiny, marginTop: 12, lineHeight: 17 }}>{t('w_download_note')}</Text> : null}
+          {Platform.OS === 'web' ? <Text style={{ color: C.textFaint, fontSize: F.small, marginTop: 12, lineHeight: lh(F.small) }}>{t('w_download_note')}</Text> : null}
         </View>
 
         <View
@@ -101,8 +101,8 @@ export default function Welcome() {
                 gap: 10,
               }}>
               <Ionicons name={f.icon} size={20} color={C.accent} />
-              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t(f.titleKey)}</Text>
-              <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 20 }}>{t(f.bodyKey)}</Text>
+              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t(f.titleKey)}</Text>
+              <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{t(f.bodyKey)}</Text>
             </View>
           ))}
         </View>
@@ -121,8 +121,8 @@ export default function Welcome() {
           }}>
           <Ionicons name="lock-closed-outline" size={24} color={C.cyan} />
           <View style={{ flex: 1, gap: 7 }}>
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600', letterSpacing: -0.3 }}>{t('w_privacy_t')}</Text>
-            <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: 23 }}>{t('w_privacy_b')}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('w_privacy_t')}</Text>
+            <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>{t('w_privacy_b')}</Text>
           </View>
         </View>
 
@@ -131,9 +131,9 @@ export default function Welcome() {
           <View style={{ flexDirection: wide ? 'row' : 'column', gap: 14 }}>
             {[1, 2, 3].map((n) => (
               <View key={n} style={{ flex: 1, gap: 8 }}>
-                <Text style={{ color: C.accent, fontSize: 30, fontWeight: '200', letterSpacing: -1 }}>{n}</Text>
-                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t(`w_step${n}_t`)}</Text>
-                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: 20 }}>{t(`w_step${n}_b`)}</Text>
+                <Text style={{ color: C.accent, fontSize: F.title, fontWeight: '400' }}>{n}</Text>
+                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t(`w_step${n}_t`)}</Text>
+                <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{t(`w_step${n}_b`)}</Text>
               </View>
             ))}
           </View>
@@ -143,7 +143,7 @@ export default function Welcome() {
           <Pressable
             onPress={() => router.replace('/login')}
             style={{ backgroundColor: C.accent, paddingVertical: 15, paddingHorizontal: 34, borderRadius: 999 }}>
-            <Text style={{ color: C.white, fontWeight: '600', fontSize: F.body }}>{t('w_cta')}</Text>
+            <Text style={{ color: C.white, fontWeight: '500', fontSize: F.body }}>{t('w_cta')}</Text>
           </Pressable>
           <Text style={[MICRO, { color: C.textFaint }]}>{`${t('made_by')} · ${t('w_footer')}`}</Text>
         </View>
@@ -155,7 +155,7 @@ export default function Welcome() {
 function Stat({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
     <View style={{ minWidth: 120 }}>
-      <Text style={{ color: accent ? C.cyan : C.text, fontSize: 32, fontWeight: '200', letterSpacing: -1 }}>{value}</Text>
+      <Text style={{ color: accent ? C.cyan : C.text, fontSize: F.title, fontWeight: '400' }}>{value}</Text>
       <Text style={[MICRO, { color: C.textFaint, marginTop: 4 }]}>{label}</Text>
     </View>
   );

@@ -54,7 +54,7 @@ export default function Journey() {
       <SectionHeader title={t('level_title')} icon={<Ionicons name="flag-outline" size={13} color={C.textFaint} />} />
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t(`level_${g.level.key}`)}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t(`level_${g.level.key}`)}</Text>
           <Micro>{g.level.next ? `${g.points} / ${g.level.next} ${t('xp')}` : `${g.points} ${t('xp')}`}</Micro>
         </Row>
         <Bar value={g.level.progress * 100} max={100} color={C.amber} />
@@ -64,7 +64,7 @@ export default function Journey() {
       <SectionHeader title={t('challenge_week')} icon={<Ionicons name="trophy-outline" size={13} color={C.textFaint} />} />
       <Card rail={g.challenge.done ? C.green : undefined}>
         <Row style={{ justifyContent: 'space-between' }}>
-          <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', flex: 1 }}>{fill(t(`challenge_${g.challenge.key}`), { n: g.challenge.target })}</Text>
+          <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', flex: 1 }}>{fill(t(`challenge_${g.challenge.key}`), { n: g.challenge.target })}</Text>
           <Micro color={g.challenge.done ? C.green : C.textDim}>{g.challenge.done ? t('challenge_done') : `${g.challenge.n}/${g.challenge.target}`}</Micro>
         </Row>
         <Bar value={g.challenge.n} max={g.challenge.target} color={g.challenge.done ? C.green : C.accent} />
@@ -79,7 +79,7 @@ export default function Journey() {
               <Row style={{ gap: 10, alignItems: 'flex-start' }}>
                 <Text style={{ fontSize: 22, opacity: b.earned ? 1 : 0.35 }}>{BADGE_ICON[b.key] ?? '🏅'}</Text>
                 <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={{ color: b.earned ? C.text : C.textDim, fontSize: F.small, fontWeight: '600' }}>{t(`badge_${b.key}`)}</Text>
+                  <Text style={{ color: b.earned ? C.text : C.textDim, fontSize: F.small, fontWeight: '500' }}>{t(`badge_${b.key}`)}</Text>
                   {b.earned ? <Micro color={C.green}>{t('badge_earned')}</Micro> : <Bar value={b.n} max={b.target} color={C.textFaint} height={3} />}
                   {!b.earned ? <Micro color={C.textFaint}>{`${b.n}/${b.target}`}</Micro> : null}
                 </View>
@@ -102,7 +102,7 @@ export default function Journey() {
                 <Small>{formatDayLabel(w.date, lang)}</Small>
                 <Row style={{ gap: 6 }}>
                   {diff !== null ? <Micro color={diff < 0 ? C.green : diff > 0 ? C.amber : C.textFaint}>{`${diff > 0 ? '+' : ''}${diff}`}</Micro> : null}
-                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', marginRight: 4 }}>{`${w.kg} kg`}</Text>
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', marginRight: 4 }}>{`${w.kg} kg`}</Text>
                   {/* Edit and delete on the row, 44-point targets; delete can be undone. */}
                   <Pressable onPress={() => setWeighOpen(true)} accessibilityRole="button" accessibilityLabel={t('edit')} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.cardAlt : 'transparent' })}>
                     <Ionicons name="create-outline" size={20} color={C.textDim} />
@@ -137,7 +137,7 @@ function Stat({ label, value, unit, color }: { label: string; value: string; uni
   return (
     <View style={{ gap: 3, minWidth: 64 }}>
       <Micro>{label}</Micro>
-      <Text style={{ color: color ?? C.text, fontSize: F.h2, fontWeight: '700', letterSpacing: -0.5 }}>
+      <Text style={{ color: color ?? C.text, fontSize: F.title, fontWeight: '500' }}>
         {value}
         <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> {unit}</Text>
       </Text>

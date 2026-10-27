@@ -5,7 +5,7 @@ import { MAX_MEMORIES, type MemoryItem, type MemoryType } from '../core/memory';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Bar, Btn, Card, Divider, Empty, Field, Micro, Pill, Row, Screen, SectionHeader } from '../ui/components';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 
 const GROUPS: { type: MemoryType; icon: keyof typeof Ionicons.glyphMap; color: string }[] = [
   { type: 'fact', icon: 'person-outline', color: C.accent },
@@ -88,7 +88,7 @@ export default function MemoryScreen() {
                       <Ionicons name={g.icon} size={14} color={g.color} />
                     </View>
                     <View style={{ flex: 1, gap: 4 }}>
-                      <Text style={{ color: m.source === 'user' ? C.text : C.textDim, fontSize: F.body, lineHeight: 20 }}>{m.text}</Text>
+                      <Text style={{ color: m.source === 'user' ? C.text : C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>{m.text}</Text>
                       <Micro color={C.textFaint}>
                         {`${m.source === 'user' ? t('memory_you') : t('memory_learned')} · ${m.date}`}
                       </Micro>
@@ -114,7 +114,7 @@ export default function MemoryScreen() {
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro>{t('memory_stored')}</Micro>
-          <Text style={{ color: C.textDim, fontSize: F.tiny }}>
+          <Text style={{ color: C.textDim, fontSize: F.small }}>
             {app.state.memory.length} / {MAX_MEMORIES}
           </Text>
         </Row>

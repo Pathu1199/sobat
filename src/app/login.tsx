@@ -58,7 +58,7 @@ export default function Login() {
         <View style={{ width: '100%', maxWidth: 400, alignSelf: 'center', gap: 14 }}>
           <View style={{ alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <Logo size={56} />
-            <Text style={{ color: C.text, fontSize: F.h1, fontWeight: '600', textAlign: 'center' }}>{t('login_title')}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500', textAlign: 'center' }}>{t('login_title')}</Text>
             <Small color={C.textDim}>{t('login_sub')}</Small>
           </View>
 

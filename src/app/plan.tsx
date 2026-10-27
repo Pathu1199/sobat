@@ -30,7 +30,7 @@ import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, Btn, Card, Field, Micro, Pill, Row, Screen, Small, Toggle } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
-import { C, F, S } from '../ui/theme';
+import { C, F, lh, S } from '../ui/theme';
 
 /** Monday first, the way a working week is read. Values are Date.getDay() indexes. */
 const ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -163,8 +163,8 @@ export default function PlanScreen() {
               }}
               accessibilityRole="button"
               style={{ flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: S.radiusSm, backgroundColor: active ? C.accent : C.card, borderWidth: S.hairline, borderColor: d === weekdayOf(today) ? C.accent : C.border }}>
-              <Text style={{ color: active ? C.white : C.text, fontSize: F.small, fontWeight: '700' }}>{t(`wd_${d}`)}</Text>
-              <Text style={{ color: active ? C.white : offDays.includes(d) ? C.textFaint : st === 'low' ? C.red : st === 'on' ? C.green : C.textFaint, fontSize: F.micro, fontWeight: '600' }}>{offDays.includes(d) ? t('free_short') : k}</Text>
+              <Text style={{ color: active ? C.white : C.text, fontSize: F.small, fontWeight: '500' }}>{t(`wd_${d}`)}</Text>
+              <Text style={{ color: active ? C.white : offDays.includes(d) ? C.textFaint : st === 'low' ? C.red : st === 'on' ? C.green : C.textFaint, fontSize: F.small, fontWeight: '500' }}>{offDays.includes(d) ? t('free_short') : k}</Text>
             </Pressable>
           );
         })}
@@ -179,8 +179,8 @@ export default function PlanScreen() {
         style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, borderRadius: S.radius, backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, opacity: pressed ? 0.8 : 1 })}>
         <Ionicons name="basket-outline" size={22} color={C.accent} />
         <View style={{ flex: 1 }}>
-          <Text style={{ color: C.text, fontSize: F.body, fontWeight: '700' }}>{t('grocery_title')}</Text>
-          <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{t('grocery_sub')}</Text>
+          <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t('grocery_title')}</Text>
+          <Text style={{ color: C.textFaint, fontSize: F.small }}>{t('grocery_sub')}</Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={C.textFaint} />
       </Pressable>
@@ -192,7 +192,7 @@ export default function PlanScreen() {
 
       {isFree ? (
         <Card rail={C.cyan}>
-          <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '700' }}>{`🌿 ${t('free_day')}`}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{`🌿 ${t('free_day')}`}</Text>
           <Small color={C.textDim}>{t('free_day_body')}</Small>
         </Card>
       ) : null}
@@ -202,7 +202,7 @@ export default function PlanScreen() {
         <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <View style={{ gap: 2 }}>
             <Micro>{isToday ? t('plan_today') : t(`wd_${dayIdx}`)}</Micro>
-            <Text style={{ color: C.text, fontSize: F.h1, fontWeight: '700' }}>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
               {totals.kcal}
               <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${targets.kcal} kcal`}</Text>
             </Text>
@@ -210,7 +210,7 @@ export default function PlanScreen() {
           <Small color={totals.protein < targets.proteinG * 0.7 ? C.amber : C.textDim}>{fill(t('plan_protein'), { p: totals.protein, target: targets.proteinG })}</Small>
         </Row>
         <Bar value={totals.kcal} max={targets.kcal} color={statusColor} />
-        <Text style={{ color: statusColor, fontSize: F.body, fontWeight: '600', lineHeight: 22 }}>{fill(t(status === 'low' && totals.kcal >= targets.kcal * 0.85 ? 'plan_status_floor' : `plan_status_${status}`), { gap, floor })}</Text>
+        <Text style={{ color: statusColor, fontSize: F.body, fontWeight: '500', lineHeight: lh(F.body) }}>{fill(t(status === 'low' && totals.kcal >= targets.kcal * 0.85 ? 'plan_status_floor' : `plan_status_${status}`), { gap, floor })}</Text>
         {note ? <Small color={C.textDim}>{note}</Small> : null}
         <Row style={{ gap: 8, flexWrap: 'wrap' }}>
           <Btn small tone={status === 'on' ? 'soft' : 'primary'} label={t('plan_balance')} icon={<Ionicons name="scale-outline" size={14} color={status === 'on' ? C.text : C.white} />} onPress={balance} style={{ flexGrow: 1 }} />
@@ -226,7 +226,7 @@ export default function PlanScreen() {
         return (
           <Card key={meal.id} rail={done ? C.green : undefined}>
             <Row style={{ justifyContent: 'space-between' }}>
-              <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700' }}>{`${mealName(meal)} · ${meal.time}`}</Text>
+              <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{`${mealName(meal)} · ${meal.time}`}</Text>
               <Micro>{`${mt.kcal} kcal · ${mt.protein} g`}</Micro>
             </Row>
             {meal.lines.map((line, i) => {
@@ -237,10 +237,10 @@ export default function PlanScreen() {
                   <Pressable onPress={() => setSwap({ mealId: meal.id, lineIdx: i })} accessibilityRole="button" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <FoodThumb food={info.food} size={34} />
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }} numberOfLines={1}>
+                      <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }} numberOfLines={1}>
                         {foodName(info.food, lang)}
                       </Text>
-                      <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{`${info.kcal} kcal · ${t('plan_tap_to_change')}`}</Text>
+                      <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${info.kcal} kcal · ${t('plan_tap_to_change')}`}</Text>
                     </View>
                   </Pressable>
                   <Row style={{ gap: 4 }}>
@@ -248,8 +248,8 @@ export default function PlanScreen() {
                       <Ionicons name="remove" size={16} color={C.text} />
                     </Pressable>
                     <Pressable onPress={() => cycleUnit(meal.id, i, line)} style={{ minWidth: 64, alignItems: 'center' }}>
-                      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '700' }}>{qtyText(line.qty)}</Text>
-                      <Text style={{ color: C.accent, fontSize: F.micro }} numberOfLines={1}>{`${unitName(info.unit)} · ${info.grams} g`}</Text>
+                      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{qtyText(line.qty)}</Text>
+                      <Text style={{ color: C.accent, fontSize: F.small }} numberOfLines={1}>{`${unitName(info.unit)} · ${info.grams} g`}</Text>
                     </Pressable>
                     <Pressable onPress={() => changeQty(meal.id, i, line, 1)} hitSlop={6} accessibilityLabel="+" style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                       <Ionicons name="add" size={16} color={C.text} />
@@ -295,11 +295,11 @@ export default function PlanScreen() {
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, opacity: pressed ? 0.7 : 1 })}>
                   <FoodThumb food={f} size={32} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }} numberOfLines={1}>{foodName(f, lang)}</Text>
-                    <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{`${qtyText(s.line.qty)} ${unitName(info.unit)} · ${info.grams} g`}</Text>
+                    <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }} numberOfLines={1}>{foodName(f, lang)}</Text>
+                    <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${qtyText(s.line.qty)} ${unitName(info.unit)} · ${info.grams} g`}</Text>
                   </View>
-                  <Text style={{ color: C.text, fontSize: F.small, fontWeight: '700' }}>{s.kcal}</Text>
-                  <Text style={{ color: s.diff > 0 ? C.amber : s.diff < 0 ? C.green : C.textFaint, fontSize: F.tiny, width: 44, textAlign: 'right' }}>{s.diff === 0 ? '±0' : s.diff > 0 ? `+${s.diff}` : `${s.diff}`}</Text>
+                  <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{s.kcal}</Text>
+                  <Text style={{ color: s.diff > 0 ? C.amber : s.diff < 0 ? C.green : C.textFaint, fontSize: F.small, width: 44, textAlign: 'right' }}>{s.diff === 0 ? '±0' : s.diff > 0 ? `+${s.diff}` : `${s.diff}`}</Text>
                 </Pressable>
               );
             })}
@@ -323,8 +323,8 @@ export default function PlanScreen() {
             <Pressable key={f.id} onPress={() => setPicked(f)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, opacity: pressed ? 0.7 : 1 })}>
               <FoodThumb food={f} size={30} />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }} numberOfLines={1}>{foodName(f, lang)}</Text>
-                <Text style={{ color: avoided.has(f.id) ? C.amber : C.textFaint, fontSize: F.tiny }} numberOfLines={1}>
+                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }} numberOfLines={1}>{foodName(f, lang)}</Text>
+                <Text style={{ color: avoided.has(f.id) ? C.amber : C.textFaint, fontSize: F.small }} numberOfLines={1}>
                   {avoided.has(f.id) ? `${t('plan_on_avoid')} · ` : ''}
                   {one ? `${unitName(one.unit)} · ${one.kcal} kcal` : ''}
                 </Text>

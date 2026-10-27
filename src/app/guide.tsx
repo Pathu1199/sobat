@@ -6,7 +6,7 @@ import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Card, Divider, Screen, Small } from '../ui/components';
 import { Logo } from '../ui/Logo';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 
 /** The coach's standing advice, one fold per topic. The first is open so the page is never a wall of headings. */
 export default function GuideScreen() {
@@ -22,7 +22,7 @@ export default function GuideScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 }}>
           <Logo size={36} />
           <View style={{ flex: 1 }}>
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '600', letterSpacing: -0.3 }}>{t('guide_title')}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('guide_title')}</Text>
             <Small>{t('guide_sub')}</Small>
           </View>
         </View>
@@ -41,7 +41,7 @@ export default function GuideScreen() {
                 <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name={s.icon as keyof typeof Ionicons.glyphMap} size={16} color={on ? C.accent : C.textDim} />
                 </View>
-                <Text style={{ flex: 1, color: C.text, fontSize: F.body, fontWeight: '600' }}>{s.title}</Text>
+                <Text style={{ flex: 1, color: C.text, fontSize: F.body, fontWeight: '500' }}>{s.title}</Text>
                 <Ionicons name={on ? 'chevron-up' : 'chevron-down'} size={15} color={C.textFaint} />
               </Pressable>
               {on ? (
@@ -49,7 +49,7 @@ export default function GuideScreen() {
                   {s.lines.map((line, j) => (
                     <View key={j} style={{ flexDirection: 'row', gap: 10 }}>
                       <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.accent, marginTop: 8 }} />
-                      <Text style={{ flex: 1, color: C.textDim, fontSize: F.body, lineHeight: 22 }}>{line}</Text>
+                      <Text style={{ flex: 1, color: C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>{line}</Text>
                     </View>
                   ))}
                 </View>

@@ -28,7 +28,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
           }}>
           {!wide ? <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: C.borderStrong, marginTop: 8 }} /> : null}
           <View style={{ paddingHorizontal: S.padLg, paddingTop: 14, paddingBottom: 6 }}>
-            <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{title}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{title}</Text>
           </View>
           <ScrollView contentContainerStyle={{ paddingHorizontal: S.padLg, paddingBottom: S.padLg, gap: 12 }} keyboardShouldPersistTaps="handled">
             {children}

@@ -80,7 +80,7 @@ export function CravingSOS() {
                 strokeLinecap="round"
               />
             </Svg>
-            <Text style={{ color: C.text, fontSize: 28, fontWeight: '200' }}>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '400' }}>
               {Math.floor(left / 60)}:{String(left % 60).padStart(2, '0')}
             </Text>
           </View>
@@ -99,7 +99,7 @@ export function CravingSOS() {
               />
             </>
           ) : (
-            <Text style={{ color: C.text, fontSize: F.h3 }}>{stepList[stepIndex]}</Text>
+            <Text style={{ color: C.text, fontSize: F.title }}>{stepList[stepIndex]}</Text>
           )}
         </View>
       )}

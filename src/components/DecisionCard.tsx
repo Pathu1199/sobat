@@ -10,7 +10,7 @@ import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
 import { Card, Divider, Micro, Quote, Row, StatQuad } from '../ui/components';
 import { Checklist } from '../ui/tiles';
-import { C, F, severityColor } from '../ui/theme';
+import { C, F, lh, severityColor } from '../ui/theme';
 
 /**
  * The rules produce the advice; the model only rewrites it in a warmer voice,
@@ -87,7 +87,7 @@ export function DecisionCard({ decision, lang, targets, budget }: { decision: De
       <Row style={{ justifyContent: 'space-between' }}>
         <Row style={{ gap: 8 }}>
           <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: tone }} />
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t(`sit_${decision.situation}`)}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t(`sit_${decision.situation}`)}</Text>
         </Row>
         <Pressable onPress={() => setWhy((w) => !w)} hitSlop={8} accessibilityRole="button">
           <Micro color={why ? C.text : C.textFaint}>{t('why')}</Micro>
@@ -98,12 +98,12 @@ export function DecisionCard({ decision, lang, targets, budget }: { decision: De
 
       {words ? (
         lang === 'en' ? (
-          <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: 21 }}>{words}</Text>
+          <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>{words}</Text>
         ) : (
           <Quote>{words}</Quote>
         )
       ) : (
-        <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: 21 }}>
+        <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>
           {budget.remaining >= 0
             ? t('under_by').replace('{n}', String(Math.abs(budget.remaining)))
             : t('over_by').replace('{n}', String(Math.abs(budget.remaining)))}

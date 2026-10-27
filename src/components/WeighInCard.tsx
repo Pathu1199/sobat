@@ -32,7 +32,7 @@ export function WeighInCard() {
     <Card rail={C.cyan}>
       <Row style={{ gap: 8 }}>
         <Ionicons name="scale-outline" size={16} color={C.cyan} />
-        <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('weigh_q')}</Text>
+        <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('weigh_q')}</Text>
       </Row>
       <Small>{t('weigh_hint')}</Small>
       <Row style={{ gap: 10 }}>

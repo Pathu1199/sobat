@@ -64,7 +64,7 @@ export default function Admin() {
   return (
     <Screen>
       <View style={{ gap: 4 }}>
-        <Text style={{ color: C.text, fontSize: F.h1, fontWeight: '600' }}>{t('admin_title')}</Text>
+        <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('admin_title')}</Text>
         <Small color={C.textDim}>{t('admin_sub')}</Small>
       </View>
       {!cloudConfigured() ? <Small color={C.amber}>{t('sync_unconfigured')}</Small> : null}
@@ -80,7 +80,7 @@ export default function Admin() {
           <Card key={u.uid} rail={u.disabled ? C.red : me ? C.accent : undefined}>
             <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>
+                <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>
                   {u.name || '—'}
                   {me ? <Text style={{ color: C.textFaint, fontWeight: '500' }}>{`  (${t('admin_you')})`}</Text> : null}
                 </Text>
@@ -127,7 +127,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ gap: 1 }}>
       <Micro>{label}</Micro>
-      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>{value}</Text>
+      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{value}</Text>
     </View>
   );
 }

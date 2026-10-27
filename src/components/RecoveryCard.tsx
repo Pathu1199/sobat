@@ -32,7 +32,7 @@ export function RecoveryCard() {
       <Row style={{ justifyContent: 'space-between' }}>
         <Row style={{ gap: 8 }}>
           <Ionicons name="leaf-outline" size={16} color={C.amber} />
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('rec_title')}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('rec_title')}</Text>
         </Row>
         <Micro>{`${done} / ${items.length}`}</Micro>
       </Row>

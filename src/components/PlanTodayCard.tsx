@@ -13,7 +13,7 @@ import { useMinute } from '../services/useWorkSchedule';
 import { isOffDay } from '../core/week';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Micro, Row, Small } from '../ui/components';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 
 /**
  * Today's page of the week plan on the home screen: the day's planned total
@@ -40,7 +40,7 @@ export function PlanTodayCard() {
     return (
       <Pressable onPress={() => router.push('/food?s=plan')} accessibilityRole="button">
         <Card rail={C.cyan}>
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700' }}>{`🌿 ${t('free_day')}`}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{`🌿 ${t('free_day')}`}</Text>
           <Small color={C.textDim}>{t('free_day_today')}</Small>
         </Card>
       </Pressable>
@@ -53,7 +53,7 @@ export function PlanTodayCard() {
           <Row style={{ justifyContent: 'space-between' }}>
             <View style={{ flex: 1, gap: 3 }}>
               <Micro color={C.textDim}>{t('diet_title')}</Micro>
-              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600' }}>{t('plan_make')}</Text>
+              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t('plan_make')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={C.textFaint} />
           </Row>
@@ -91,7 +91,7 @@ export function PlanTodayCard() {
         <Row style={{ justifyContent: 'space-between' }}>
           <View style={{ gap: 2 }}>
             <Micro color={C.textDim}>{t('plan_today')}</Micro>
-            <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700' }}>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
               {totals.kcal}
               <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` / ${targets.kcal} kcal`}</Text>
             </Text>
@@ -120,7 +120,7 @@ export function PlanTodayCard() {
               <Micro>{`${mt.kcal} kcal`}</Micro>
             </Row>
             <Row style={{ gap: 10 }}>
-              <Text style={{ flex: 1, color: C.text, fontSize: F.small, lineHeight: 20 }} numberOfLines={2}>{names}</Text>
+              <Text style={{ flex: 1, color: C.text, fontSize: F.small, lineHeight: lh(F.small) }} numberOfLines={2}>{names}</Text>
               <Btn small tone="soft" label={t('plan_log_short')} icon={<Ionicons name="checkmark" size={14} color={C.text} />} onPress={() => log(meal)} />
             </Row>
           </View>

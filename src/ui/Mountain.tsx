@@ -77,7 +77,7 @@ export function Mountain({
               <React.Fragment key={c.p}>
                 <Line x1={q.x} y1={q.y} x2={q.x} y2={q.y - 14} stroke={C.textFaint} strokeWidth="1" />
                 <Path d={`M ${q.x} ${q.y - 14} L ${q.x + 9} ${q.y - 11} L ${q.x} ${q.y - 8} Z`} fill={p >= c.p ? C.green : C.textFaint} />
-                <SvgText x={q.x + 2} y={q.y + 14} fill={C.textFaint} fontSize="8" fontWeight="600">
+                <SvgText x={q.x + 2} y={q.y + 14} fill={C.textFaint} fontSize="8" fontWeight="500">
                   {c.label}
                 </SvgText>
               </React.Fragment>
@@ -99,7 +99,7 @@ export function Mountain({
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Text style={[MICRO, { color: C.textFaint }]}>{startLabel}</Text>
-        <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>{nowLabel}</Text>
+        <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{nowLabel}</Text>
         <Text style={[MICRO, { color: C.cyan }]}>{goalLabel}</Text>
       </View>
     </View>

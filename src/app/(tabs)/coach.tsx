@@ -26,7 +26,7 @@ import { useAI } from '../../services/useAI';
 import { useAuth } from '../../services/useAuth';
 import { useApp } from '../../store/AppProvider';
 import { BiText, Btn, Card, Divider, Micro, Pill, Row, Small } from '../../ui/components';
-import { C, F, S } from '../../ui/theme';
+import { C, F, lh, S } from '../../ui/theme';
 import { TopBar } from '../../ui/TopBar';
 import { useBreakpoint } from '../../ui/useBreakpoint';
 
@@ -339,7 +339,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
 
             {crisis ? (
               <Card tone={C.red}>
-                <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '600' }}>{t('helpline_title')}</Text>
+                <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('helpline_title')}</Text>
                 <Small>{t('helpline_body')}</Small>
                 {HELPLINES.map((h) => (
                   <Pressable key={h.number} onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}>
@@ -348,7 +348,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
                         <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{h.name}</Text>
                         <Small color={C.textFaint}>{h.note}</Small>
                       </View>
-                      <Text style={{ color: C.cyan, fontWeight: '600' }}>{h.number}</Text>
+                      <Text style={{ color: C.cyan, fontWeight: '500' }}>{h.number}</Text>
                     </Row>
                   </Pressable>
                 ))}
@@ -361,7 +361,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
               <Card rail={C.textFaint}>
                 <Row style={{ gap: 10 }}>
                   <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.textFaint }} />
-                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', flex: 1 }}>{t('local_ai_down')}</Text>
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', flex: 1 }}>{t('local_ai_down')}</Text>
                 </Row>
                 <Small color={C.textDim}>{t('coach_ai_off_hint')}</Small>
                 <Pressable onPress={() => router.push('/settings')}>
@@ -384,12 +384,12 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
             {chatOpen ? app.state.chat.map((m) =>
               m.role === 'user' ? (
                 <View key={m.id} style={{ alignSelf: 'flex-end', maxWidth: '86%', backgroundColor: C.accent, borderRadius: 16, borderBottomRightRadius: 5, padding: 13 }}>
-                  <Text style={{ color: C.white, fontSize: F.body, lineHeight: 20 }}>{m.text}</Text>
+                  <Text style={{ color: C.white, fontSize: F.body, lineHeight: lh(F.body) }}>{m.text}</Text>
                 </View>
               ) : (
                 <View key={m.id} style={{ gap: 10 }}>
                   <View style={{ maxWidth: '92%', backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, borderRadius: 16, borderBottomLeftRadius: 5, padding: 14, gap: 10 }}>
-                    <Text style={{ color: C.text, fontSize: F.body, lineHeight: 21 }}>{m.text}</Text>
+                    <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body) }}>{m.text}</Text>
                     <Row style={{ gap: 14 }}>
                       <Pressable onPress={() => app.rememberText(m.text, 'preference', 'user')}>
                         <Micro color={C.textFaint}>{t('remember_this')}</Micro>
@@ -420,8 +420,8 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
                             <Micro>{`${o.grams} g`}</Micro>
                           </View>
                           <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                            <Text style={{ color: C.violet, fontSize: F.small, fontWeight: '600' }}>{o.protein}g</Text>
-                            <Text style={{ color: C.textDim, fontSize: F.tiny }}>{o.kcal} kcal</Text>
+                            <Text style={{ color: C.violet, fontSize: F.small, fontWeight: '500' }}>{o.protein}g</Text>
+                            <Text style={{ color: C.textDim, fontSize: F.small }}>{o.kcal} kcal</Text>
                           </View>
                           <Ionicons name="add-circle-outline" size={19} color={C.accent} />
                         </Pressable>
@@ -492,7 +492,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <Row style={{ justifyContent: 'space-between' }}>
       <Micro>{label}</Micro>
-      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '600' }}>{value}</Text>
+      <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{value}</Text>
     </Row>
   );
 }

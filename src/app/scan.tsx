@@ -114,13 +114,13 @@ export default function ScanScreen() {
       <Screen>
         <Card tone={C.accent}>
           <Micro color={C.cyan}>{t('barcode_found')}</Micro>
-          <BiText en={found.name_en} alt={lang === 'en' ? undefined : found.name_mr} size={F.h2} weight="600" />
+          <BiText en={found.name_en} alt={lang === 'en' ? undefined : found.name_mr} size={F.title} weight="500" />
           <Divider />
           <Row style={{ justifyContent: 'space-between' }}>
             <Micro>{per.label_en}</Micro>
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '500' }}>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
               {n.kcal}
-              <Text style={{ color: C.textFaint, fontSize: F.tiny }}> kcal</Text>
+              <Text style={{ color: C.textFaint, fontSize: F.small }}> kcal</Text>
             </Text>
           </Row>
           <Micro>{`${n.protein} g ${t('protein')} · ${found.kcal_100g} kcal / 100 g`}</Micro>

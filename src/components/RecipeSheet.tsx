@@ -10,7 +10,7 @@ import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Divider, Micro, Pill, Row, Small } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 import { FoodThumb } from './FoodDetailSheet';
 
 /** One recipe: picture, how it is cooked, what goes in, what to do, and the calories of a serving; one button logs it. */
@@ -45,7 +45,7 @@ export function RecipeSheet({ recipe, onClose }: { recipe: Recipe | null; onClos
             <Pill label={fill(t('serves_n'), { n: recipe.serves })} />
           </Row>
           {n ? (
-            <Text style={{ color: C.text, fontSize: F.h2, fontWeight: '700' }}>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
               {n.kcal}
               <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{` kcal · ${Math.round(n.protein)} g ${t('protein').toLowerCase()} · ${portion ? portion.grams : ''} g`}</Text>
             </Text>
@@ -64,8 +64,8 @@ export function RecipeSheet({ recipe, onClose }: { recipe: Recipe | null; onClos
       <Micro>{t('recipe_steps')}</Micro>
       {recipe.steps[lang].map((line, i) => (
         <Row key={i} style={{ gap: 10, alignItems: 'flex-start' }}>
-          <Text style={{ color: C.cyan, fontSize: F.h3, fontWeight: '700', width: 18 }}>{i + 1}</Text>
-          <Text style={{ flex: 1, color: C.textDim, fontSize: F.body, lineHeight: 22 }}>{line}</Text>
+          <Text style={{ color: C.cyan, fontSize: F.title, fontWeight: '500', width: 18 }}>{i + 1}</Text>
+          <Text style={{ flex: 1, color: C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>{line}</Text>
         </Row>
       ))}
       <Divider />

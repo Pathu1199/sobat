@@ -38,11 +38,11 @@ export function TopBar({
         }}>
         {left}
         <View style={{ flex: 1, gap: 2 }}>
-          <Text numberOfLines={1} style={{ color: C.text, fontSize: F.h2, fontWeight: '800', letterSpacing: -0.5 }}>
+          <Text numberOfLines={1} style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
             {alt || title}
           </Text>
           {subtitle ? (
-            <Text numberOfLines={1} style={{ color: C.textDim, fontSize: F.tiny, fontWeight: '600', letterSpacing: 0.2 }}>
+            <Text numberOfLines={1} style={{ color: C.textDim, fontSize: F.small, fontWeight: '500' }}>
               {subtitle}
             </Text>
           ) : null}

@@ -71,7 +71,7 @@ export function Sidebar() {
                 borderColor: active ? C.border : 'transparent',
               }}>
               <Ionicons name={item.icon} size={18} color={active ? C.accent : C.textFaint} />
-              <Text style={{ color: active ? C.text : C.textDim, fontSize: F.body, fontWeight: active ? '600' : '400' }}>
+              <Text style={{ color: active ? C.text : C.textDim, fontSize: F.body, fontWeight: active ? '500' : '400' }}>
                 {t(item.labelKey)}
               </Text>
             </Pressable>
@@ -101,7 +101,7 @@ export function Sidebar() {
         <View style={{ paddingHorizontal: 12, paddingVertical: 10, gap: 10, borderTopWidth: S.hairline, borderTopColor: C.border, marginTop: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Ring value={monitor.enabled ? elapsed : 0} max={nextEvery} size={34} stroke={3} color={C.accent}>
-              <Text style={{ color: C.text, fontSize: F.micro, fontWeight: '600' }}>{monitor.enabled ? left : '--'}</Text>
+              <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{monitor.enabled ? left : '--'}</Text>
             </Ring>
             <View style={{ flex: 1 }}>
               <Text style={[MICRO, { color: C.textFaint }]}>{t('next_break')}</Text>

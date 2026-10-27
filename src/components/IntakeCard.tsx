@@ -25,7 +25,7 @@ export function IntakeCard() {
       <Row style={{ gap: 10, alignItems: 'flex-start' }}>
         <Ionicons name="warning-outline" size={20} color={C.red} style={{ marginTop: 2 }} />
         <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ color: C.text, fontSize: F.h3, fontWeight: '700' }}>{t('intake_title')}</Text>
+          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('intake_title')}</Text>
           <Small color={C.textDim}>{fill(t('intake_body'), { avg: intake.avg, days: intake.days, limit: intake.limit, target: targets.kcal })}</Small>
         </View>
       </Row>

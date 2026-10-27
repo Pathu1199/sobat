@@ -8,7 +8,7 @@ import { useApp } from '../store/AppProvider';
 import { useReducedMotion } from '../ui/animated';
 import { Btn } from '../ui/components';
 import { Logo } from '../ui/Logo';
-import { C, F, M, MICRO } from '../ui/theme';
+import { C, F, lh, M, MICRO } from '../ui/theme';
 
 const PAGES: { icon: keyof typeof Ionicons.glyphMap; color: string }[] = [
   { icon: 'pie-chart-outline', color: C.accent },
@@ -63,8 +63,8 @@ export default function TourScreen() {
           <Ionicons name={p.icon} size={40} color={p.color} />
         </View>
         <Text style={[MICRO, { color: p.color }]}>{`${page + 1} / ${PAGES.length}`}</Text>
-        <Text style={{ color: C.text, fontSize: F.h1, fontWeight: '600', letterSpacing: -0.5, textAlign: 'center', lineHeight: 34 }}>{t(`tour_${page + 1}_t`)}</Text>
-        <Text style={{ color: C.textDim, fontSize: F.h3, lineHeight: 24, textAlign: 'center' }}>{t(`tour_${page + 1}_b`)}</Text>
+        <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500', textAlign: 'center', lineHeight: lh(F.title) }}>{t(`tour_${page + 1}_t`)}</Text>
+        <Text style={{ color: C.textDim, fontSize: F.title, lineHeight: lh(F.title), textAlign: 'center' }}>{t(`tour_${page + 1}_b`)}</Text>
       </Animated.View>
 
       <View style={{ gap: 18, alignItems: 'center' }}>

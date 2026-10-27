@@ -65,10 +65,10 @@ export function GrocerySheet({ open, onClose, plan }: { open: boolean; onClose: 
                     </View>
                     <FoodThumb food={l.food} size={34} />
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: C.text, fontSize: F.body, fontWeight: '600', textDecorationLine: on ? 'line-through' : 'none' }}>{foodName(l.food, lang)}</Text>
-                      <Text style={{ color: C.textFaint, fontSize: F.tiny }}>{fill(t('grocery_times'), { n: l.times })}</Text>
+                      <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', textDecorationLine: on ? 'line-through' : 'none' }}>{foodName(l.food, lang)}</Text>
+                      <Text style={{ color: C.textFaint, fontSize: F.small }}>{fill(t('grocery_times'), { n: l.times })}</Text>
                     </View>
-                    <Text style={{ color: on ? C.textFaint : C.text, fontSize: F.body, fontWeight: '700', minWidth: 64, textAlign: 'right' }}>{unitLabel(l.unit, l.amount)}</Text>
+                    <Text style={{ color: on ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500', minWidth: 64, textAlign: 'right' }}>{unitLabel(l.unit, l.amount)}</Text>
                   </Pressable>
                 );
               })}

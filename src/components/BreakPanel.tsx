@@ -38,7 +38,7 @@ export function BreakPanel() {
       {monitor.enabled ? (
         <Row style={{ gap: 16, alignItems: 'center' }}>
           <Ring value={elapsed} max={nextEvery} size={88} stroke={5} color={left <= 1 ? C.amber : C.accent}>
-            <Text style={{ color: C.text, fontSize: 26, fontWeight: '200', letterSpacing: -1 }}>{left}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '400' }}>{left}</Text>
             <Micro>{t('minutes')}</Micro>
           </Ring>
           <View style={{ flex: 1, gap: 10 }}>
@@ -49,7 +49,7 @@ export function BreakPanel() {
             <View style={{ gap: 6 }}>
               <Row style={{ justifyContent: 'space-between' }}>
                 <Micro>{t('break_compliance')}</Micro>
-                <Text style={{ color: stats.compliancePct >= 60 ? C.cyan : C.textDim, fontSize: F.small, fontWeight: '600' }}>
+                <Text style={{ color: stats.compliancePct >= 60 ? C.cyan : C.textDim, fontSize: F.small, fontWeight: '500' }}>
                   {stats.taken}
                   <Text style={{ color: C.textFaint, fontWeight: '500' }}> / {todayBreaks.length}</Text>
                 </Text>
@@ -64,7 +64,7 @@ export function BreakPanel() {
 
       <Row style={{ justifyContent: 'space-between' }}>
         <Micro>{t('longest_sitting')}</Micro>
-        <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '600' }}>{formatMinutes(sitting)}</Text>
+        <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '500' }}>{formatMinutes(sitting)}</Text>
       </Row>
 
       <Row style={{ gap: 8 }}>
