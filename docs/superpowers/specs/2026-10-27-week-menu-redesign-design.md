@@ -94,6 +94,11 @@ Made with Varad on 2026-10-27, one question at a time:
     - **Walk** is counted in minutes, 10 per tap, toward 30 a day.
     - **One tap adds**, and the tank fills smoothly, showing what is left.
     - Undo lasts 5 seconds; there are no confirm dialogs.
+15. **Meals fill themselves from the plan.** A filled meal counts, but
+    keeps a "from plan" mark until it is confirmed (the user's choice).
+16. **Every tracker is a "living tile"**: the same square frame, with its
+    own symbol and its own animation that shows the value. See "Living
+    tiles".
 
 One decision follows from the others and is made here: **the eating pattern
 is always on.** A menu is a list of slots, so the app cannot have a menu
@@ -144,11 +149,40 @@ across in the migration.
 
 ### What was eaten, against the plan
 
-`Meal` gains `fromPlan?: boolean`. "Ate as planned" logs a meal with
-`slotId`, `date` (the date being viewed, not always today),
-`fromPlan: true`, and one `MealItem` per line with grams from `lineInfo`.
+`Meal` gains `source?: 'manual' | 'plan' | 'auto'`. A missing value reads
+as `manual`, for older meals.
+
+- **`manual`**: typed, searched, a photo or a barcode.
+- **`plan`**: "Ate as planned", or confirmed from the plan.
+- **`auto`**: filled in by the app from the plan and not confirmed yet.
+
+A meal from the plan has `slotId`, `date` (the date being viewed, not
+always today) and one `MealItem` per line, with grams from `lineInfo`.
 Calories always come from the food database × grams. Custom foods keep
 `estimated: true`. Every `addMeal` still goes through `withSlot`.
+
+### Meals that fill themselves: `autoFill` in `src/core/menu.ts`
+
+The user should not have to type what they planned and then ate.
+
+- **When**: 90 minutes after a slot's time, a slot with no meal and no skip
+  on that date gets the planned meal logged with `source: 'auto'`.
+- **It counts**: in calories and toward a full record, like any meal.
+- **Only for today**, and for yesterday when the app was opened yesterday
+  (`usage` has a bucket that day). The pure
+  `autoFill({ date, now, menu, meals, skips, openedDates })` returns the
+  meals to add. `AppProvider` runs it on open and on each clock tick. An
+  older day the app was never opened stays `empty`; it offers one button,
+  "Fill this day from plan", which logs every open slot with
+  `source: 'plan'`.
+- **Confirming**: tapping a filled meal sets it to `plan`, and Change opens
+  the add sheet. At 21:00 or later, a "Day looks right" button confirms
+  every `auto` meal of the day at once.
+- **What is never auto-filled**: off days, a slot the user skipped, or a
+  slot that already has any meal.
+- **Unconfirmed meals stay `auto` for good** (the user's choice). The
+  record keeps a small "from plan" mark for those days, so the user can
+  see which days were really checked.
 
 ### The record: `dayRecord` in `src/core/record.ts` (new)
 
@@ -163,6 +197,9 @@ dayRecord(input: { date; today; menu; meals; skips; offDays }): DayRecord
 - `partial`: some slots have one.
 - `empty`: none.
 - **Today counts too**: it is `partial` until its last slot is settled.
+- `dayRecord` also returns `fromPlan: boolean`, which is true when any
+  meal that day is still `auto`. The week strip and the record calendar
+  draw such a day in a lighter tone, and History shows "from plan".
 
 `weekRecord(monday, …)` returns the seven values for the strip, and
 `recordStreak` counts the full days in a row. A day with nothing logged yet
@@ -337,6 +374,63 @@ From top to bottom:
   Each tile is far bigger than 44 pt.
 - **A long press** opens a small sheet to change the bottle size, enter
   another amount, or change the walk goal.
+
+### Living tiles: `src/components/tiles/` (new; `TankTile` becomes the Water tile)
+
+The user liked the running water and asked that every tracker look like
+this, each with its own symbol and its own animation. Every animation
+shows the value; none is only decoration.
+
+**One frame, `LivingTile.tsx`**:
+- A square with a 20 radius and a 0.5 hairline border.
+- The icon and name at top left, the big value, and one small line under
+  it.
+- The art layer sits behind the text. Padding and type are identical in
+  every tile.
+- Each tracker supplies only its art, its value and its tap.
+
+| Tile | Symbol | The art shows the value | Tap |
+|---|---|---|---|
+| Water | droplet | A tank filling from the bottom, with a gentle wave on top | +1 bottle |
+| Walk | walker | A dotted path, drawn from the start toward the goal | +10 min |
+| Sleep | moon | A night arc that fills to hours ÷ target, with three faint stars that twinkle | Opens the sleep check-in |
+| Weight | scale | The last 8 weigh-ins as a line that draws itself, with a dot on the latest | Opens the weight entry |
+| Streak | flame | A mountain ridge, climbed toward the flag; full at the best streak | Opens Progress |
+| Breathe | wind | A circle that grows for 4 s and shrinks for 4 s during a 1-minute session | Starts or stops the session |
+
+**Where the tiles appear**:
+- **Today**: Water and Walk by default. Sleep, Weight, Streak and Breathe
+  can be added in Customize; they replace the old `TrackerGrid`.
+- **Body**: Walk, Sleep and Breathe.
+- **Progress**: Weight and Streak.
+
+**Colour**:
+- Each tracker has one muted identity colour, used only inside its tile.
+  Fills sit at about 25% opacity and lines at full strength, so text stays
+  readable in light and dark mode.
+  - Water: blue.
+  - Walk: teal.
+  - Sleep: purple.
+  - Weight: ink grey.
+  - Streak: amber.
+  - Breathe: pink.
+- Teal is still the only colour for actions (buttons, ticks).
+
+**Motion rules**:
+- Animate on a change, or once when the tile first appears, for at most
+  1.1 s with an ease-out curve.
+- Only three things move continuously: the water wave, the sleep stars,
+  and the breathing circle during a session.
+- With reduce motion on, nothing loops and values change instantly.
+- An animation never blocks a tap. Taps made during an animation add up
+  and the fill catches up.
+- Build it with Reanimated shared values for fills and stroke offsets and
+  react-native-svg for the paths. Read reduce motion through Reanimated's
+  hook or `AccessibilityInfo`; check the installed version's API.
+
+**Pure helpers**: `src/core/tiles.ts` (new) holds each tile's fraction
+(water, walk, sleep and streak, capped at 1), the "left" text inputs, and
+the weight line's points. All are unit tested.
 
 Cards switched on in Customize render after these, in the user's order.
 `StartHereCard`, the tracker grid, `FitsCard`, `PlanTodayCard`, the
@@ -517,6 +611,7 @@ Each step is its own commit series and is tested before the next.
     moved, defaults set once, logs untouched.
   - `merge3` with menus edited on two devices.
   - `slotAt` with a 21:30 dinner and two snack slots.
+  - `autoFill`: only after slot time + 90 min; never on off days, skipped slots or slots that already have a meal; yesterday only when the app was opened that day; "Day looks right" turns every `auto` meal into `plan`; `dayRecord` reports `fromPlan`.
   - Tank-tile maths, as a pure helper: amount to fill fraction (capped at
     1), the "N bottles left" count (rounded up) for each bottle size, and
     goal reached.
@@ -535,7 +630,7 @@ Each step is its own commit series and is tested before the next.
 - **New**:
   - `src/core/menu.ts`, `src/core/record.ts`
   - `src/components/AddSheet.tsx`, `src/components/WeekStrip.tsx`,
-    `src/components/DayMenu.tsx`, `src/components/TankTile.tsx`
+    `src/components/DayMenu.tsx`, `src/components/tiles/` (`LivingTile.tsx` and one art component per tracker), `src/core/tiles.ts`
   - `src/app/(tabs)/me.tsx`, `src/app/customize.tsx`
   - tests for each new core module
 - **Changed**:
