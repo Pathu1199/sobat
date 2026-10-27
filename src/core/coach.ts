@@ -1,5 +1,5 @@
 import type { ISODate, Meal, MealType, SleepLog, WaterLog, WeightLog } from './types';
-import { expectedWaterByHour } from './nudge';
+import { expectedWaterByHour, inQuietHours } from './nudge';
 import { MEAL_WINDOWS } from './nutrition';
 import type { Budget } from './nutrition';
 import { weighInDue } from './plan';
@@ -123,4 +123,25 @@ export function coachAdvice(input: CoachInput): Advice[] {
   }
 
   return out.sort((a, c) => ORDER[a.urgency] - ORDER[c.urgency]);
+}
+
+/**
+ * The one piece of advice the coach says out loud now, or null. Only to the
+ * person using Sobat here: never on a device that is signed out or reset, or
+ * whose store and session are not known yet, never with nudges off or in quiet
+ * hours, and never anything already said today (`said`) or with nothing to do.
+ */
+export function adviceToSay(p: {
+  advice: Advice[];
+  said: ReadonlySet<string>;
+  known: boolean;
+  active: boolean;
+  nudgesEnabled: boolean;
+  hour: number;
+  quietStartHour: number;
+  quietEndHour: number;
+}): Advice | null {
+  if (!p.known || !p.active || !p.nudgesEnabled) return null;
+  if (inQuietHours(p.hour, p.quietStartHour, p.quietEndHour)) return null;
+  return p.advice.find((a) => a.urgency === 'now' && a.action !== 'none' && !p.said.has(a.key)) ?? null;
 }

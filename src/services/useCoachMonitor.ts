@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { adviceText } from '../components/CoachStrip';
 import { useCoach } from '../components/useCoach';
-import { inQuietHours } from '../core/nudge';
+import { adviceToSay } from '../core/coach';
 import { storyLine, storySeed, type StoryKind } from '../core/storyLines';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useFeedback } from './feedback';
 import { notifyNow } from './notify';
+import { useReminderGate } from './useScheduledReminders';
 import { useMinute } from './useWorkSchedule';
 
 /**
@@ -14,6 +15,7 @@ import { useMinute } from './useWorkSchedule';
  * any advice that is urgent now is said once, as a toast and a notification.
  * Never in quiet hours, never twice for the same thing on the same day, and
  * never in the first minute after opening, when the screen already shows it.
+ * Silent on a device that is signed out or reset: signing in counts as opening.
  */
 export function useCoachMonitor() {
   const app = useApp();
@@ -24,17 +26,19 @@ export function useCoachMonitor() {
   const first = useRef(true);
   const t = makeT(app.state.profile.lang);
   const { quietStartHour, quietEndHour, nudgesEnabled } = app.state.settings;
+  const { known, active } = useReminderGate();
 
   useEffect(() => {
+    if (!known || !active) {
+      first.current = true;
+      return;
+    }
     if (first.current) {
       first.current = false;
       return;
     }
-    if (!nudgesEnabled || !app.state.profile.onboarded) return;
     if (said.current.date !== app.today) said.current = { date: app.today, keys: new Set() };
-    if (inQuietHours(app.hour, quietStartHour, quietEndHour)) return;
-    const urgent = advice.filter((a) => a.urgency === 'now' && a.action !== 'none' && !said.current.keys.has(a.key));
-    const a = urgent[0];
+    const a = adviceToSay({ advice, said: said.current.keys, known, active, nudgesEnabled, hour: app.hour, quietStartHour, quietEndHour });
     if (!a) return;
     said.current.keys.add(a.key);
     const kind: StoryKind = a.kind === 'water' ? 'water' : a.kind === 'stop' ? 'stop' : a.kind === 'move' ? 'walk' : a.kind === 'sleep' ? 'sleep' : a.kind === 'weigh' ? 'weigh' : a.kind === 'log' ? 'log' : 'meal';

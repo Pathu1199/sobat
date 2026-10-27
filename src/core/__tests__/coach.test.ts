@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { coachAdvice, type CoachInput } from '../coach';
+import { adviceToSay, coachAdvice, type Advice, type CoachInput } from '../coach';
 import type { Budget } from '../nutrition';
 import type { Meal } from '../types';
 
@@ -55,5 +55,34 @@ describe('coachAdvice', () => {
     const order = a.map((x) => x.urgency);
     const rank = { now: 0, soon: 1, note: 2 };
     for (let i = 1; i < order.length; i++) expect(rank[order[i]]).toBeGreaterThanOrEqual(rank[order[i - 1]]);
+  });
+});
+
+describe('adviceToSay', () => {
+  const urgent: Advice = { key: 'coach_stop', kind: 'stop', urgency: 'now', action: 'water', params: {} };
+  const soon: Advice = { key: 'coach_meal_plate', kind: 'food', urgency: 'soon', action: 'log', params: {} };
+  const said = new Set<string>();
+  const here = { known: true, active: true, nudgesEnabled: true, hour: 13, quietStartHour: 22, quietEndHour: 7 };
+
+  it('says the first urgent advice to the person who is here', () => {
+    expect(adviceToSay({ ...here, advice: [soon, urgent], said })).toBe(urgent);
+  });
+
+  it('says nothing on a device that is signed out or reset', () => {
+    expect(adviceToSay({ ...here, active: false, advice: [urgent], said })).toBeNull();
+  });
+
+  it('says nothing before the store and the session are known', () => {
+    expect(adviceToSay({ ...here, known: false, advice: [urgent], said })).toBeNull();
+  });
+
+  it('says nothing with nudges off or in quiet hours', () => {
+    expect(adviceToSay({ ...here, nudgesEnabled: false, advice: [urgent], said })).toBeNull();
+    expect(adviceToSay({ ...here, hour: 23, advice: [urgent], said })).toBeNull();
+  });
+
+  it('never says the same thing twice, and never advice with nothing to do', () => {
+    const quiet: Advice = { ...urgent, key: 'coach_win', action: 'none' };
+    expect(adviceToSay({ ...here, advice: [urgent, quiet], said: new Set(['coach_stop']) })).toBeNull();
   });
 });
