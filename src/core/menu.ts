@@ -296,6 +296,23 @@ export function skipsAfterRemove(skips: SlotSkip[], removed: Meal, rest: Meal[])
   return addSkip(skips, removed.date, removed.slotId);
 }
 
+/**
+ * A real meal replaces the copy the app filled in. When a slot on a date also
+ * holds a meal the person ate (typed in, eaten as planned or confirmed) or is
+ * marked skipped that date, the unconfirmed meal the app filled in there
+ * goes, so the day counts what was eaten once. Matched by slot id: a meal
+ * that names no slot never takes anything away. The same list when nothing
+ * goes.
+ */
+export function settleAuto(meals: Meal[], skips: SlotSkip[]): Meal[] {
+  if (!meals.some((m) => m.source === 'auto' && m.slotId)) return meals;
+  // One key per date and slot, the way a skip is named.
+  const settled = new Set(skips.map((s) => skipId(s.date, s.slotId)));
+  for (const m of meals) if (m.source !== 'auto' && m.slotId) settled.add(skipId(m.date, m.slotId));
+  const kept = meals.filter((m) => !(m.source === 'auto' && m.slotId && settled.has(skipId(m.date, m.slotId))));
+  return kept.length === meals.length ? meals : kept;
+}
+
 /** Add or replace a saved meal. One without a name or without a line is not saved. */
 export function withSavedMeal(list: SavedMeal[], meal: SavedMeal): SavedMeal[] {
   const name = meal.name.trim();

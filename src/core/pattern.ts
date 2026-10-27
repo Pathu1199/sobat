@@ -130,11 +130,14 @@ export function slotStates(input: {
  * so a snack after lunch is not taken for a missed breakfast; with nothing
  * after it left, the latest earlier slot still open. Before any window has
  * opened, the first open slot of the day; when the day is done, the
- * nearest by time. Null only with no slots.
+ * nearest by time. A slot holding only a meal the app filled in from the plan
+ * is still open here, though it counts as eaten: a real meal eaten in it
+ * replaces that copy. Null only with no slots.
  */
 export function currentSlot(states: SlotState[], nowMinutes: number): SlotState | null {
   if (states.length === 0) return null;
-  const open = (s: SlotState) => s.status !== 'done' && s.status !== 'skipped';
+  const filledIn = (s: SlotState) => s.meals.length > 0 && s.meals.every((m) => m.source === 'auto');
+  const open = (s: SlotState) => s.status !== 'skipped' && (s.status !== 'done' || filledIn(s));
   // States are in time order, so the opened ones are a prefix; -1 when none has opened yet.
   let last = -1;
   states.forEach((s, i) => {

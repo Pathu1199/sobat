@@ -248,6 +248,17 @@ describe('migrateState', () => {
     expect(migrateState(once, NOW)).toEqual(once);
   });
 
+  it('a meal eaten in a slot replaces the one the app filled in there, on load and when another device\'s meals arrive', () => {
+    // The phone logged lunch by hand; the PC filled lunch in from the plan. Both land in one list.
+    const typed = { id: 'm1', at: '2026-10-27T09:30:00.000Z', date: '2026-10-27', type: 'lunch', slotId: 'lunch', items: [], kcal: 450, protein: 15, source: 'manual' };
+    const filled = { id: 'auto-2026-10-27-lunch', at: '2026-10-27T07:30:00.000Z', date: '2026-10-27', type: 'lunch', slotId: 'lunch', items: [], kcal: 600, protein: 20, source: 'auto' };
+    const dinner = { ...filled, id: 'auto-2026-10-27-dinner', type: 'dinner', slotId: 'dinner' };
+    const tea = { ...filled, id: 'auto-2026-10-27-snack', type: 'snack', slotId: 'snack' };
+    const once = migrateState({ ...v1, version: 7, meals: [filled, typed, dinner, tea], slotSkips: [{ id: '2026-10-27:snack', date: '2026-10-27', slotId: 'snack' }] }, NOW);
+    expect(once.meals).toEqual([typed, dinner]);
+    expect(migrateState(once, NOW)).toEqual(once);
+  });
+
   it('a new person starts with the four meals of the day and nothing about anyone else\'s life', () => {
     const r = EMPTY_STATE.routine;
     expect(r.enabled).toBe(true);

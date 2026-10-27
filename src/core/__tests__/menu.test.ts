@@ -6,6 +6,7 @@ import {
   alignMenu,
   alignMenus,
   autoFill,
+  autoMealId,
   copyDay,
   ensureWeek,
   fillFromPlan,
@@ -15,6 +16,7 @@ import {
   removeSkip,
   setMenuLine,
   setMenuMeal,
+  settleAuto,
   skippedOn,
   skipsAfterRemove,
   viewMenu,
@@ -27,7 +29,7 @@ import {
 } from '../menu';
 import { kcalForGrams } from '../nutrition';
 import { DEFAULT_ROUTINE, type PlanLine, type Routine, type RoutineSlot } from '../routine';
-import type { FoodItem, Meal, SlotSkip } from '../types';
+import type { FoodItem, Meal, MealSource, SlotSkip } from '../types';
 import { lineInfo, planDayFor, type PlanMeal } from '../weekPlan';
 
 const foods = foodsJson as FoodItem[];
@@ -247,6 +249,51 @@ describe('confirming and taking away', () => {
     expect(skipsAfterRemove([], { ...gone, source: undefined }, [])).toEqual([]);
     const other: Meal = { ...auto('b', '2026-10-27', 'lunch'), source: 'manual' };
     expect(skipsAfterRemove([], gone, [other])).toEqual([]);
+  });
+});
+
+describe('a real meal replaces the filled-in one', () => {
+  const d = '2026-10-27';
+  const filled = (slotId: string, date = d): Meal => ({ id: autoMealId(date, slotId), at: `${date}T07:30:00.000Z`, date, type: 'lunch', slotId, items: [], kcal: 600, protein: 20, source: 'auto' });
+  const ate = (id: string, slotId: string | undefined, source: MealSource | undefined, date = d): Meal => ({ id, at: `${date}T09:30:00.000Z`, date, type: 'lunch', slotId, items: [], kcal: 450, protein: 15, source });
+
+  it('a meal eaten in a slot the app filled in takes the filled-in one away, so the day counts lunch once', () => {
+    const real = ate('m1', 'lunch', 'manual');
+    expect(settleAuto([filled('lunch'), real], [])).toEqual([real]);
+    // A meal with no source was logged before there was a plan: typed in by the person.
+    const old = ate('m2', 'lunch', undefined);
+    expect(settleAuto([old, filled('lunch')], [])).toEqual([old]);
+  });
+
+  it('"Ate as planned" in that slot takes it away too', () => {
+    const planned = ate('p1', 'lunch', 'plan');
+    expect(settleAuto([filled('lunch'), planned], [])).toEqual([planned]);
+  });
+
+  it('a skip on that date and slot takes it away', () => {
+    expect(settleAuto([filled('lunch'), filled('dinner')], addSkip([], d, 'lunch'))).toEqual([filled('dinner')]);
+  });
+
+  it('a confirmed one stays, and so does one in another slot or on another date', () => {
+    const confirmed = withMealConfirmed([filled('lunch')], autoMealId(d, 'lunch'));
+    expect(settleAuto(confirmed, [])).toBe(confirmed);
+    const others = [filled('dinner'), filled('lunch', '2026-10-26'), ate('m1', 'lunch', 'manual'), filled('morning', '2026-10-28')];
+    const skips = addSkip(addSkip([], d, 'morning'), '2026-10-26', 'dinner');
+    expect(settleAuto(others, skips).map((m) => m.id)).toEqual(['auto-2026-10-27-dinner', 'auto-2026-10-26-lunch', 'm1', 'auto-2026-10-28-morning']);
+  });
+
+  it('a meal that names no slot never takes anything away', () => {
+    const list = [filled('lunch'), ate('m1', undefined, 'manual'), ate('m2', undefined, 'plan')];
+    expect(settleAuto(list, [])).toBe(list);
+  });
+
+  it('gives back the same list when nothing goes, and settling again changes nothing', () => {
+    const list = [filled('lunch'), filled('dinner'), ate('m1', 'morning', 'manual')];
+    expect(settleAuto(list, addSkip([], '2026-10-26', 'lunch'))).toBe(list);
+    const empty: Meal[] = [];
+    expect(settleAuto(empty, [])).toBe(empty);
+    const once = settleAuto([filled('lunch'), ate('m1', 'lunch', 'manual'), filled('dinner')], []);
+    expect(settleAuto(once, [])).toBe(once);
   });
 });
 

@@ -1,12 +1,12 @@
 import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../core/breaks';
 import { mondayOf, toISODate } from '../core/date';
-import { addSkip, menusFromTemplate, type DayMenu } from '../core/menu';
+import { addSkip, menusFromTemplate, settleAuto, type DayMenu } from '../core/menu';
 import { slotShare } from '../core/pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
 import { stable } from '../core/sync';
 import { DEFAULT_TODAY_CARDS, normalizeTabs } from '../core/tabs';
-import type { AppState, SavedMeal, SlotSkip } from '../core/types';
+import type { AppState, Meal, SavedMeal, SlotSkip } from '../core/types';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
 import { DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER, STATE_VERSION } from './defaults';
 
@@ -173,6 +173,9 @@ export function migrateState(raw: unknown, now: Date = new Date()): AppState {
   const actions = Array.isArray(raw.actionsDone) ? (raw.actionsDone as unknown[]) : [];
   let slotSkips = Array.isArray(raw.slotSkips) ? (raw.slotSkips as SlotSkip[]) : [];
   for (const a of actions) if (isSkipKey(a)) slotSkips = addSkip(slotSkips, a.date, a.key.slice(SKIP_PREFIX.length));
+  // A meal eaten in a slot, or a skip, replaces the copy the app filled in there: this runs on every load and every sync
+  // landing, so a lunch typed on one device and the one another device filled in are never both counted.
+  const meals = Array.isArray(raw.meals) ? settleAuto(raw.meals as Meal[], slotSkips) : EMPTY_STATE.meals;
   return {
     ...EMPTY_STATE,
     ...(raw as Partial<AppState>),
@@ -181,6 +184,7 @@ export function migrateState(raw: unknown, now: Date = new Date()): AppState {
     settings,
     breakSettings,
     breaks: upgradeLogs(raw.breaks, breakSettings.micro.seconds),
+    meals,
     // Older stores have no routine; one saved before a field existed gets the default for it.
     routine,
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],

@@ -108,6 +108,14 @@ describe('currentSlot', () => {
     expect(currentSlot(at14([meal('lunch', '13:10', 400)]), 14 * 60)?.slot.id).toBe('dinner');
   });
 
+  it('takes a slot holding only a meal the app filled in as still open, though it reads as done; a real or confirmed meal in it closes it', () => {
+    const filled: Meal = { ...meal('lunch', '13:00', 600, 'lunch'), source: 'auto' };
+    expect(at14([filled])[1].status).toBe('done');
+    expect(currentSlot(at14([filled]), 14 * 60)?.slot.id).toBe('lunch');
+    expect(currentSlot(at14([filled, meal('lunch', '13:10', 400)]), 14 * 60)?.slot.id).toBe('dinner');
+    expect(currentSlot(at14([{ ...filled, source: 'plan' }]), 14 * 60)?.slot.id).toBe('dinner');
+  });
+
   it('with the latest opened slot done and nothing after it, is the latest earlier slot still open', () => {
     const evening = (meals: Meal[]) => slotStates({ routine, target: 1600, meals, nowMinutes: 20 * 60 + 30, skippedSlots: [] });
     expect(currentSlot(evening([meal('breakfast', '08:40', 300), meal('dinner', '19:40', 500)]), 20 * 60 + 30)?.slot.id).toBe('lunch');
@@ -152,6 +160,14 @@ describe('withSlot', () => {
     expect(withSlot(yesterday, input)).toMatchObject({ slotId: 'lunch', type: 'lunch' });
     const lateLastNight = { ...meal('snack', '23:55', 100), date: '2026-10-11', at: new Date('2026-10-11T23:55:00').toISOString() };
     expect(withSlot(lateLastNight, { ...input, now: new Date('2026-10-12T00:02:00') })).toMatchObject({ slotId: 'dinner' });
+  });
+
+  it('gives a lunch eaten after the app filled lunch in the lunch slot, not dinner; after a real lunch, the next slot as before', () => {
+    const at15 = { ...input, now: new Date('2026-10-12T15:00:00') };
+    const filled: Meal = { ...meal('lunch', '13:00', 600, 'lunch'), source: 'auto' };
+    expect(withSlot(meal('snack', '15:00', 450), { ...at15, meals: [filled] })).toMatchObject({ slotId: 'lunch', type: 'lunch' });
+    const typed: Meal = { ...meal('lunch', '13:10', 450, 'lunch'), source: 'manual' };
+    expect(withSlot(meal('snack', '15:00', 300), { ...at15, meals: [typed] })).toMatchObject({ slotId: 'dinner', type: 'dinner' });
   });
 
   it('leaves a meal that names a slot, or a pattern with no slots, alone', () => {
