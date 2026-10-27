@@ -1,5 +1,5 @@
 import { normalizeTabs } from './tabs';
-import type { TabId } from './types';
+import type { ISODate, TabId } from './types';
 
 /**
  * The tab bar and the Me list, from the extra tabs the person chose. Today
@@ -30,7 +30,9 @@ export function barItems(tabs: unknown): BarItem[] {
   return [...around.slice(0, middle), ADD, ...around.slice(middle)];
 }
 
-export type MeRow = { key: string; icon: string; labelKey: string; subKey?: string; href?: string; sheet?: 'savedMeals' };
+/** A sheet a Me row opens over Me instead of a page: the saved meals, or this week's grocery list. */
+export type MeSheet = 'savedMeals' | 'grocery';
+export type MeRow = { key: string; icon: string; labelKey: string; subKey?: string; href?: string; sheet?: MeSheet };
 
 /** Me's plain list. Rows are data: a new one is one entry here. */
 export function meRows(tabs: unknown): MeRow[] {
@@ -39,11 +41,38 @@ export function meRows(tabs: unknown): MeRow[] {
     { key: 'body', icon: 'body-outline', labelKey: 'tab_body', subKey: 'me_body_sub', href: '/body' },
     { key: 'plan', icon: 'calendar-outline', labelKey: 'me_plan', href: '/food?s=plan' },
     { key: 'saved', icon: 'bookmark-outline', labelKey: 'me_saved', sheet: 'savedMeals' },
-    { key: 'grocery', icon: 'basket-outline', labelKey: 'me_grocery', href: '/food?s=recipes' },
+    { key: 'grocery', icon: 'basket-outline', labelKey: 'grocery_title', sheet: 'grocery' },
+    { key: 'recipes', icon: 'restaurant-outline', labelKey: 'recipes', href: '/food?s=recipes' },
     { key: 'settings', icon: 'settings-outline', labelKey: 'settings', href: '/settings' },
     { key: 'guide', icon: 'help-circle-outline', labelKey: 'hdr_guide', href: '/guide' },
   ];
   // Progress taken off the bar stays one tap away.
   if (!normalizeTabs(tabs).includes('progress')) rows.splice(1, 0, { key: 'progress', icon: 'trending-up-outline', labelKey: 'tab_progress', href: '/progress' });
   return rows;
+}
+
+/** A tab route's address: Today is the root, every other tab its own name. */
+export function hrefOf(route: string): string {
+  return route === TODAY.route ? '/' : `/${route}`;
+}
+
+/** The tab route at an address: the root is Today. */
+export function routeAt(pathname: string): string {
+  return pathname === '/' ? (TODAY.route as string) : pathname.replace(/^\//, '');
+}
+
+/** A date written YYYY-MM-DD, the way Today's ?date= and the add page's carry one. */
+export function isIsoDate(v: unknown): v is ISODate {
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+}
+
+/**
+ * The day ➕ adds to: the date Today shows (its ?date=), but only while Today
+ * is the route in front. Undefined while Today shows today, and while another
+ * page is in front, so ➕ never adds to a day the person is not looking at.
+ */
+export function viewedDate(front: { name: string; params?: object } | undefined): ISODate | undefined {
+  if (!front || front.name !== TODAY.route) return undefined;
+  const date = (front.params as { date?: unknown } | undefined)?.date;
+  return isIsoDate(date) ? date : undefined;
 }

@@ -37,7 +37,11 @@ export default function TabsLayout() {
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: C.bg }}>
       {wide ? <Sidebar /> : null}
       <View style={{ flex: 1 }}>
-        <Tabs tabBar={wide ? () => null : (props) => <TabBar {...props} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: C.bg } }}>
+        {/* Back goes to the tab seen before, so Android back from a page opened from Me returns to Me. */}
+        <Tabs
+          backBehavior="history"
+          tabBar={wide ? () => null : (props) => <TabBar {...props} />}
+          screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: C.bg } }}>
           {/* Every tab the bar can show; which of them it shows comes from the person's settings (core/bar.ts). */}
           <Tabs.Screen name="index" options={{ title: t('tab_today') }} />
           <Tabs.Screen name="me" options={{ title: t('tab_me') }} />

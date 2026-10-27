@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { barItems, type BarItem } from '../core/bar';
+import { barItems, viewedDate, type BarItem } from '../core/bar';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { C, F, lh, lift, S } from '../ui/theme';
@@ -11,9 +11,10 @@ import { C, F, lh, lift, S } from '../ui/theme';
 /**
  * The bar: Today, the extra tabs the person chose (Progress unless changed),
  * ➕ in the middle, and Me. core/bar.ts sets the order, so the sidebar on a
- * wide screen shows the same list. ➕ is a button, not a tab: it adds food
- * for the day Today is showing. Hand-rolled because the stock bar gives its
- * label a box that clips Devanagari marks on the web.
+ * wide screen shows the same list. The tabs are tabs in a tab list, so the
+ * selected one is announced on the web too; ➕ is a button, not a tab: it
+ * adds food for the day Today is showing. Hand-rolled because the stock bar
+ * gives its label a box that clips Devanagari marks on the web.
  */
 type IconName = keyof typeof Ionicons.glyphMap;
 type Route = { key: string; name: string; params?: object };
@@ -25,12 +26,6 @@ type TabBarProps = {
     navigate: (name: string, params?: object) => void;
   };
 };
-
-/** The date Today is showing, from its ?date= param; undefined while it shows today. */
-export function viewedDate(routes: Route[]): string | undefined {
-  const params = routes.find((r) => r.name === 'index')?.params as { date?: unknown } | undefined;
-  return typeof params?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : undefined;
-}
 
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
@@ -47,13 +42,15 @@ export function TabBar({ state, navigation }: TabBarProps) {
   }
 
   function add() {
-    const date = viewedDate(state.routes);
+    // The day Today shows, only while Today is in front: from any other tab ➕ adds to today.
+    const date = viewedDate(state.routes[state.index]);
     router.push(date ? { pathname: '/log', params: { date } } : '/log');
   }
 
   const bottom = Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6);
   return (
     <View
+      accessibilityRole="tablist"
       style={{
         flexDirection: 'row',
         backgroundColor: C.bgAlt,
@@ -103,8 +100,8 @@ function TabButton({ item, focused, label, onPress }: { item: BarItem; focused: 
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
-      aria-selected={focused || undefined}
+      accessibilityRole="tab"
+      aria-selected={focused}
       accessibilityLabel={label}
       style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'flex-start', gap: 3, paddingHorizontal: 2, opacity: pressed ? 0.6 : 1 })}>
       {/* The active tab sits on a 48 × 32 tinted pill: seen before it is read. */}

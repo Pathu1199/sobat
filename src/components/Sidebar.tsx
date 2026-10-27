@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useGlobalSearchParams, usePathname, useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { barItems } from '../core/bar';
+import { Platform, Pressable, Text, View } from 'react-native';
+import { barItems, hrefOf, routeAt, viewedDate } from '../core/bar';
 import { makeT } from '../i18n';
 import { useAI } from '../services/useAI';
 import { useAuth } from '../services/useAuth';
@@ -14,15 +14,11 @@ import { C, F, lh, MICRO, S } from '../ui/theme';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-/** A tab route's address. */
-function hrefOf(route: string): string {
-  return route === 'index' ? '/' : `/${route}`;
-}
-
 /**
  * Replaces the bottom bar on wide screens with the same list in the same
- * order (core/bar.ts): Today, the person's extra tabs, Add food, and Me. The
- * break timer shows only while screen breaks are switched on.
+ * order (core/bar.ts): Today, the person's extra tabs, Add food, and Me. Each
+ * page is a link, the one open marked as the current page. The break timer
+ * shows only while screen breaks are switched on.
  */
 export function Sidebar() {
   const router = useRouter();
@@ -38,8 +34,8 @@ export function Sidebar() {
   const nextEvery = monitor.nextKind ? state.breakSettings[monitor.nextKind].everyMinutes : state.breakSettings.micro.everyMinutes;
   const left = Number.isFinite(monitor.secondsLeft) ? Math.ceil(monitor.secondsLeft / 60) : 0;
   const elapsed = Math.max(0, nextEvery - left);
-  // The day Today is showing, so Add food logs there.
-  const viewed = pathname === '/' && typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;
+  // The day Today is showing, only while Today is in front, so Add food logs there.
+  const viewed = viewedDate({ name: routeAt(pathname), params: { date } });
 
   function add() {
     router.push(viewed ? { pathname: '/log', params: { date: viewed } } : '/log');
@@ -71,8 +67,10 @@ export function Sidebar() {
             <Pressable
               key={item.key}
               onPress={() => router.navigate(href as never)}
-              accessibilityRole="button"
-              aria-selected={active || undefined}
+              accessibilityRole="link"
+              // The web says "current page"; the phone, which has no aria-current, says "selected".
+              aria-current={active ? 'page' : undefined}
+              aria-selected={Platform.OS === 'web' ? undefined : active || undefined}
               accessibilityLabel={t(item.labelKey)}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch, paddingHorizontal: 12, borderRadius: S.radiusSm, backgroundColor: active ? C.cardAlt : 'transparent', borderWidth: S.hairline, borderColor: active ? C.border : 'transparent' }}>
               <Ionicons name={item.icon as IconName} size={18} color={active ? C.accentText : C.textFaint} />

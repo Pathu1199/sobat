@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { View } from 'react-native';
+import { GrocerySheet } from '../../components/GrocerySheet';
 import { SavedMealsSheet } from '../../components/SavedMealsSheet';
-import { meRows } from '../../core/bar';
+import { meRows, type MeSheet } from '../../core/bar';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { Card, Divider, ListRow } from '../../ui/components';
@@ -17,7 +18,7 @@ export default function MeScreen() {
   const app = useApp();
   const router = useRouter();
   const t = makeT(app.state.profile.lang);
-  const [saved, setSaved] = useState(false);
+  const [sheet, setSheet] = useState<MeSheet | null>(null);
   return (
     <Page title={t('tab_me')}>
       <Card>
@@ -29,7 +30,7 @@ export default function MeScreen() {
               title={t(row.labelKey)}
               sub={row.subKey ? t(row.subKey) : undefined}
               onPress={() => {
-                if (row.sheet) setSaved(true);
+                if (row.sheet) setSheet(row.sheet);
                 else if (row.href) router.push(row.href as never);
               }}
               trailing={<Ionicons name="chevron-forward" size={16} color={C.textFaint} />}
@@ -37,7 +38,9 @@ export default function MeScreen() {
           </View>
         ))}
       </Card>
-      <SavedMealsSheet open={saved} onClose={() => setSaved(false)} />
+      <SavedMealsSheet open={sheet === 'savedMeals'} onClose={() => setSheet(null)} />
+      {/* This week's plan as a shopping list, the same sheet the diet plan opens. */}
+      <GrocerySheet open={sheet === 'grocery'} onClose={() => setSheet(null)} plan={app.weekPlan} />
     </Page>
   );
 }

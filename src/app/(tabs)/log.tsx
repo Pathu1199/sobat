@@ -8,6 +8,7 @@ import { FoodDetailSheet, FoodThumb, type Chosen } from '../../components/FoodDe
 import { SuggestSheet } from '../../components/SuggestSheet';
 import { swapText } from '../../components/RoutineCard';
 import { IconButton } from '../../components/TopBarActions';
+import { isIsoDate } from '../../core/bar';
 import { addDays, formatDayLabel, lastNDates, localHHMM } from '../../core/date';
 import { newId } from '../../core/id';
 import { defaultPortion, DISH_STYLES, foodName, portionLabel, recentFoodIds, searchFoods, styleOf, toMealItem, type DishStyle } from '../../core/foods';
@@ -60,7 +61,7 @@ export default function LogScreen() {
   // Today each time the + opens it, unless a screen handed over a day (Today's
   // "add food for yesterday"), which is read as ?date=YYYY-MM-DD.
   const { date: dateParam, slot: slotParam } = useLocalSearchParams<{ date?: string; slot?: string }>();
-  const wanted = typeof dateParam === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : app.today;
+  const wanted = isIsoDate(dateParam) ? dateParam : app.today;
   const wantedSlot = typeof slotParam === 'string' ? slotParam : null;
   const [slotId, setSlotId] = useState<string | null>(null);
   useFocusEffect(
