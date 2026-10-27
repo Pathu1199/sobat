@@ -46,8 +46,11 @@ import {
   withSavedMealAt,
   withSkipAdded,
   type DayMenu,
+  type MealsAndSkips,
+  type MealState,
   type MenuFit,
 } from '../menu';
+import { slotBefore, undoSteps, type UndoStep } from '../addSheet';
 import { dailyTargets, KCAL_FLOOR, kcalForGrams } from '../nutrition';
 import { dayRecord } from '../record';
 import { forCloud, isPristine } from '../sync';
@@ -557,6 +560,54 @@ describe('adding a meal to the state', () => {
     expect(removed.slotSkips.map((x) => x.id)).toEqual(['2026-10-27:lunch']);
     const back = withMealAdded(removed, filled('lunch'), 1600, now);
     expect(back).toEqual({ meals: before.meals, slotSkips: [] });
+  });
+
+  describe('a one-tap log and its Undo, through the steps the store takes (removeMeal, addMeal, skipSlot, unskipSlot), leave the state as it was', () => {
+    const undo = (s: MealState, steps: UndoStep[], now: Date): MealsAndSkips =>
+      steps.reduce<MealState>((acc, step) => {
+        const next =
+          step.kind === 'remove'
+            ? withMealRemoved(acc, step.id, now)
+            : step.kind === 'add'
+              ? withMealAdded(acc, step.meal, 1600, now)
+              : step.kind === 'skip'
+                ? withSkipAdded(acc, step.date, step.slotId)
+                : { meals: acc.meals, slotSkips: removeSkip(acc.slotSkips, step.date, step.slotId) };
+        return { ...acc, ...next };
+      }, s);
+    const tapAndUndo = (before: MealState, m: Meal, now: Date): MealsAndSkips => {
+      const slotId = m.slotId!;
+      const was = slotBefore(before, m.date, slotId);
+      const logged = { ...before, ...withMealAdded(before, m, 1600, now) };
+      expect(logged.meals.map((x) => x.id)).toContain(m.id);
+      const back = undo(logged, undoSteps({ id: m.id, date: m.date, slotId, ...was }), now);
+      return { meals: back.meals, slotSkips: back.slotSkips };
+    };
+    const old = '2026-10-25';
+    const asPlanned = (date: string): Meal => ({ ...real('p1', 'lunch', '13:30', date), source: 'plan' });
+
+    it('a meal that replaced the one filled in from the plan today', () => {
+      const before = state([filled('lunch')]);
+      expect(tapAndUndo(before, real('m1', 'lunch', '14:50'), at('15:00'))).toEqual({ meals: before.meals, slotSkips: [] });
+    });
+
+    it('an open slot on a day before yesterday, eaten as planned: taking the meal away alone would leave the slot skipped', () => {
+      const before = state([]);
+      const logged = { ...before, ...withMealAdded(before, asPlanned(old), 1600, at('15:00')) };
+      expect(withMealRemoved(logged, 'p1', at('15:00')).slotSkips.map((x) => x.id)).toEqual(['2026-10-25:lunch']);
+      expect(tapAndUndo(before, asPlanned(old), at('15:00'))).toEqual({ meals: [], slotSkips: [] });
+    });
+
+    it('an open slot on a day before yesterday, a saved meal typed by hand', () => {
+      expect(tapAndUndo(state([]), real('m1', 'lunch', '13:30', old), at('15:00'))).toEqual({ meals: [], slotSkips: [] });
+    });
+
+    it('a slot that was skipped is skipped again: on a day before yesterday, and today before its meal would be filled in', () => {
+      const skips = addSkip([], old, 'lunch');
+      expect(tapAndUndo(state([], skips), real('m1', 'lunch', '13:30', old), at('15:00'))).toEqual({ meals: [], slotSkips: skips });
+      const todays = addSkip([], d, 'lunch');
+      expect(tapAndUndo(state([], todays), asPlanned(d), at('09:00'))).toEqual({ meals: [], slotSkips: todays });
+    });
   });
 
   it('a meal that names no slot gets the one it is eaten in; one that names its slot keeps it', () => {

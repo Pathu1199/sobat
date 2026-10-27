@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { formatQty, gramsDraftAfter, gramsText, lineGrams, parseGrams, type BasketLine } from '../core/basket';
+import { amountText, formatQty, gramsDraftAfter, gramsText, lineGrams, parseGrams, type BasketLine } from '../core/basket';
 import { defaultPortion, foodName, measureName } from '../core/foods';
 import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem, Lang } from '../core/types';
@@ -42,7 +42,7 @@ export function FoodRow({
   const p = defaultPortion(food);
   const grams = line ? lineGrams(line) : p?.grams ?? 100;
   const kcal = kcalForGrams(food, grams).kcal;
-  const measure = line ? `${formatQty(line.count)} × ${measureName(food, line.unit, lang)}` : p ? measureName(food, p.unit, lang) : '';
+  const measure = line ? amountText(line.count, measureName(food, line.unit, lang)) : p ? measureName(food, p.unit, lang) : '';
   const sub = measure ? `${measure} · ${kcal} kcal` : `${kcal} kcal`;
   const step = (by: 1 | -1) => {
     setDraft(gramsDraftAfter('step'));

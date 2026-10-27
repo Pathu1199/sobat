@@ -1,18 +1,20 @@
-import { basketFromLines, linesFromBasket, type BasketLine } from './basket';
+import { amountText, basketFromLines, linesFromBasket, type BasketLine } from './basket';
 import { addDays } from './date';
-import { toMealItem } from './foods';
+import { foodName, measureName, toMealItem } from './foods';
+import { skippedOn, type MealsAndSkips } from './menu';
 import { currentSlot, type SlotState } from './pattern';
 import type { PlanLine } from './routine';
 import { stable } from './sync';
-import type { FoodItem, ISODate, Meal, MealItem } from './types';
+import type { FoodItem, ISODate, Lang, Meal, MealItem, SavedMeal } from './types';
 import { lineInfo, type PlanMeal } from './weekPlan';
 
 /**
  * What the add sheet lists, top to bottom, as rows for one FlatList. With a
  * search typed: the matches only, so they sit just under the search box and
  * above the keyboard, or one line saying nothing was found. With none: the
- * meal being built, then (when logging) eating as planned and the same as
- * yesterday, then saved meals, recent foods, and photo and barcode.
+ * meal being built, then (when logging) eating as planned, while no foods are
+ * chosen, and the same as yesterday, then saved meals, recent foods, and
+ * photo and barcode.
  */
 export type AddRow =
   | { kind: 'head'; key: string; titleKey: string }
@@ -49,7 +51,8 @@ export function addRows(input: {
     rows.push({ kind: 'head', key: 'head:basket', titleKey: 'add_this_meal' });
     for (const b of input.basket) rows.push({ kind: 'basket', key: `basket:${b.foodId}`, foodId: b.foodId });
   }
-  if (logging && input.planned) rows.push({ kind: 'planned', key: 'planned' });
+  // Eating as planned logs the plan as it is, so it is not offered while foods are being chosen: it would drop them.
+  if (logging && input.planned && input.basket.length === 0) rows.push({ kind: 'planned', key: 'planned' });
   if (logging && input.yesterday) rows.push({ kind: 'yesterday', key: 'yesterday' });
   if (input.saved.length > 0) {
     rows.push({ kind: 'head', key: 'head:saved', titleKey: 'me_saved' });
@@ -193,4 +196,57 @@ export function repeatItems(meals: Meal[], foods: FoodItem[]): MealItem[] {
 /** The meals the app filled in from the plan in a slot on a date: a meal logged there replaces them, and its Undo puts them back. */
 export function filledIn(meals: Meal[], date: ISODate, slotId: string): Meal[] {
   return meals.filter((m) => m.date === date && m.source === 'auto' && m.slotId === slotId);
+}
+
+/**
+ * What a tap on the same as yesterday or a saved meal does: logs it in one
+ * tap while nothing is being built, else adds its foods into the meal being
+ * built (and always while a menu is being changed), so the foods chosen so
+ * far are never dropped or logged apart.
+ */
+export function addsIntoMeal(mode: 'log' | 'plan', basket: readonly BasketLine[]): boolean {
+  return mode === 'plan' || basket.length > 0;
+}
+
+/** The slot as it was before a one-tap log, for its Undo: the meals filled in from the plan the log replaces, and whether the slot was marked skipped. */
+export function slotBefore(state: MealsAndSkips, date: ISODate, slotId: string): { replaced: Meal[]; wasSkipped: boolean } {
+  return { replaced: filledIn(state.meals, date, slotId), wasSkipped: skippedOn(state.slotSkips, date).includes(slotId) };
+}
+
+/** One step of an Undo, each done through the store: removeMeal, addMeal, skipSlot or unskipSlot. */
+export type UndoStep = { kind: 'remove'; id: string } | { kind: 'add'; meal: Meal } | { kind: 'skip' | 'unskip'; date: ISODate; slotId: string };
+
+/**
+ * The Undo of a one-tap log, in order: the meal taken away, the meals filled
+ * in from the plan that it replaced put back, and the slot's skip put back
+ * exactly as it was. Taking a meal away can mark its slot skipped (so the app
+ * does not fill it straight back), which an Undo must not leave behind; and a
+ * slot skipped before the tap is skipped again.
+ */
+export function undoSteps(tap: { id: string; date: ISODate; slotId: string; replaced: Meal[]; wasSkipped: boolean }): UndoStep[] {
+  return [
+    { kind: 'remove', id: tap.id },
+    ...tap.replaced.map((meal): UndoStep => ({ kind: 'add', meal })),
+    { kind: tap.wasSkipped ? 'skip' : 'unskip', date: tap.date, slotId: tap.slotId },
+  ];
+}
+
+/** A line's food, measure and amount, the amount to three places so a count read back from grams still matches. */
+const lineKey = (l: PlanLine) => `${l.foodId}|${l.unit}|${Math.round(l.qty * 1000)}`;
+const linesKey = (lines: PlanLine[]) => lines.map(lineKey).sort().join(',');
+
+/** A saved meal already holds these lines: the same foods in the same measures and amounts, in any order. Then there is nothing to offer to save. */
+export function alreadySaved(lines: PlanLine[], saved: Pick<SavedMeal, 'lines'>[]): boolean {
+  const key = linesKey(lines);
+  return saved.some((s) => linesKey(s.lines) === key);
+}
+
+/** The foods of eating as planned, each named with its measure ("Kanda Poha 1 katori (150 g)"); a food that is gone or an amount of nothing is left out, as it is when logged. */
+export function plannedSummary(lines: PlanLine[], foods: FoodItem[], lang: Lang): string {
+  return lines
+    .flatMap((l) => {
+      const info = lineInfo(l, foods, lang);
+      return info && info.grams > 0 ? [`${foodName(info.food, lang)} ${amountText(l.qty, measureName(info.food, info.unit, lang))}`] : [];
+    })
+    .join(' · ');
 }

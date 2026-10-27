@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
 import {
   addLine,
+  amountText,
+  basketFromItems,
   basketFromLines,
   basketItems,
   basketMeal,
@@ -24,7 +26,7 @@ import {
   stepFor,
 } from '../basket';
 import { kcalForGrams } from '../nutrition';
-import type { FoodItem } from '../types';
+import type { FoodItem, MealItem } from '../types';
 import { lineInfo } from '../weekPlan';
 
 const foods = foodsJson as unknown as FoodItem[];
@@ -228,5 +230,32 @@ describe('the meal it saves', () => {
 describe('formatQty', () => {
   it('writes halves and quarters as fractions, and anything else as it is', () => {
     expect([2, 0.5, 1.5, 0.25, 2.75, 1.33, 0.4].map((q) => formatQty(q))).toEqual(['2', '½', '1½', '¼', '2¾', '1.33', '0.4']);
+  });
+});
+
+describe('amountText: how many of a measure', () => {
+  it('one of a measure is the measure alone; any other amount is how many times it', () => {
+    expect(amountText(1, '1 katori (150 g)')).toBe('1 katori (150 g)');
+    expect(amountText(1.0001, '1 katori (150 g)')).toBe('1 katori (150 g)');
+    expect(amountText(1.5, '1 katori (150 g)')).toBe('1½ × 1 katori (150 g)');
+    expect(amountText(2, '1 piece (40 g)')).toBe('2 × 1 piece (40 g)');
+    expect(amountText(0.5, '1 katori (150 g)')).toBe('½ × 1 katori (150 g)');
+  });
+});
+
+describe('basketFromItems: a logged meal put into the meal being built', () => {
+  const item = (foodId: string | undefined, grams: number): MealItem => ({ foodId, name_en: foodId ?? 'Home dal', name_mr: '', grams, kcal: 1, protein: 1, carbs: 1, fat: 1, estimated: false });
+
+  it("each food from the database at its own default measure and the same grams, added to what is there", () => {
+    const out = basketFromItems([lineOf(food('poha'))], [item('poha', 75), item('chapati', 80)], foods);
+    expect(out).toEqual([
+      { foodId: 'poha', unit: 'katori', gramsPerUnit: 150, count: 1.5 },
+      { foodId: 'chapati', unit: 'piece', gramsPerUnit: 40, count: 2 },
+    ]);
+  });
+
+  it('a food not in the database (read from a photo) or of no weight cannot be weighed into the meal and is left out', () => {
+    const start = [lineOf(food('poha'))];
+    expect(basketFromItems(start, [item(undefined, 200), item('no-such-food', 100), item('poha', 0)], foods)).toBe(start);
   });
 });

@@ -2,10 +2,27 @@ import { useRouter } from 'expo-router';
 import React, { createContext, useContext, useDeferredValue, useMemo, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addRows, filledIn, menuSave, offersPlanned, repeatItems, sheetMode, slotLine, startLines, startSlot, switchDraft, yesterdayIn, type AddRow } from '../core/addSheet';
-import { addLine, basketFromLines, basketMeal, basketTotals, formatQty, itemsMeal, lineOf, linesFromBasket, putLine, setCount, setGrams, slotPreview, stepCount, type BasketLine } from '../core/basket';
+import {
+  addRows,
+  addsIntoMeal,
+  alreadySaved,
+  menuSave,
+  offersPlanned,
+  plannedSummary,
+  repeatItems,
+  sheetMode,
+  slotBefore,
+  slotLine,
+  startLines,
+  startSlot,
+  switchDraft,
+  undoSteps,
+  yesterdayIn,
+  type AddRow,
+} from '../core/addSheet';
+import { addLine, basketFromItems, basketFromLines, basketMeal, basketTotals, itemsMeal, lineOf, linesFromBasket, putLine, setCount, setGrams, slotPreview, stepCount, type BasketLine } from '../core/basket';
 import { addDays } from '../core/date';
-import { findFoods, foodName, itemName, recentFoodIds } from '../core/foods';
+import { findFoods, itemName, recentFoodIds } from '../core/foods';
 import { newId } from '../core/id';
 import { mealFromLines, skippedOn } from '../core/menu';
 import { slotStates } from '../core/pattern';
@@ -84,10 +101,11 @@ function SlotChip({ label, active, onPress }: { label: string; active: boolean; 
  * with "N items · X kcal" and Save. Every meal goes through the store's
  * addMeal (or addMealFromPlan) with calories from the database. The fast ways
  * in log in one tap with Undo: the slot as planned, the same slot yesterday, a
- * saved meal. After a meal of two or more foods, the sheet offers to save it
- * under a name. Opened in plan mode, or on a date after today (nothing is
- * logged into the future), Save changes that date's menu instead, and a saved
- * meal goes into it.
+ * saved meal; while foods are being chosen the last two add into the meal
+ * instead. After a meal of two or more foods that is not one of the saved
+ * meals already, the sheet offers to save it under a name. Opened in plan
+ * mode, or on a date after today (nothing is logged into the future), Save
+ * changes that date's menu instead, and a saved meal goes into it.
  */
 function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => void }) {
   const app = useApp();
@@ -152,13 +170,8 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   const saved = state.savedMeals;
   const rows = addRows({ mode, query: deferred, results: results.map((f) => f.id), basket, planned, yesterday: yesterdayItems.length > 0, saved: saved.map((s) => s.id), recents });
   const linesKcal = (lines: PlanLine[]) => lines.reduce((a, l) => a + (lineInfo(l, foods)?.kcal ?? 0), 0);
-  const summary = (lines: PlanLine[]) =>
-    lines
-      .flatMap((l) => {
-        const info = lineInfo(l, foods, lang);
-        return info ? [`${foodName(info.food, lang)} ${formatQty(l.qty)}`] : [];
-      })
-      .join(' · ');
+  // The same as yesterday and a saved meal add into the meal while foods are being chosen (and always while changing a menu).
+  const into = addsIntoMeal(mode, basket);
   const editing = detail ? (basket.find((b) => b.foodId === detail.id) ?? null) : null;
 
   function pickSlot(id: string) {
@@ -185,16 +198,23 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   }
 
   /**
-   * After a one-tap log: the toast with Undo, and the sheet closes. Undo takes the meal away through removeMeal and puts
-   * back, through addMeal, the meal filled in from the plan that it replaced, which also lifts the skip removeMeal marks.
+   * After a one-tap log in a slot: the toast with Undo, and the sheet closes. The slot as it was is taken at the tap, so
+   * the Undo (undoSteps, through the store) takes the meal away, puts back the meal filled in from the plan that it
+   * replaced, and leaves the slot skipped or not exactly as it was.
    */
-  function loggedWithUndo(id: string, kcal: number, replaced: Meal[]) {
+  function logWithUndo(slotId: string, kcal: number, log: () => string) {
+    const before = slotBefore(state, date, slotId);
+    const id = log();
     fb.haptic('success');
     fb.notify(fill(t('toast_meal_saved'), { kcal }), {
       label: t('undo'),
       onPress: () => {
-        app.removeMeal(id);
-        for (const m of replaced) app.addMeal(m);
+        for (const step of undoSteps({ id, date, slotId, ...before })) {
+          if (step.kind === 'remove') app.removeMeal(step.id);
+          else if (step.kind === 'add') app.addMeal(step.meal);
+          else if (step.kind === 'skip') app.skipSlot(step.date, step.slotId);
+          else app.unskipSlot(step.date, step.slotId);
+        }
       },
     });
     onClose();
@@ -202,35 +222,39 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
 
   function atePlanned() {
     if (!slot || !planned) return;
-    const replaced = filledIn(state.meals, date, slot.id);
-    const id = app.addMealFromPlan(date, slot.id);
-    loggedWithUndo(id, linesKcal(slot.lines), replaced);
+    logWithUndo(slot.id, linesKcal(slot.lines), () => app.addMealFromPlan(date, slot.id));
   }
 
   // A meal built here, logged in one tap: the same as yesterday or a saved meal.
-  function logMeal(meal: Meal) {
-    const replaced = meal.slotId ? filledIn(state.meals, date, meal.slotId) : [];
-    app.addMeal(meal);
-    loggedWithUndo(meal.id, meal.kcal, replaced);
+  function logMeal(meal: Meal, slotId: string) {
+    logWithUndo(slotId, meal.kcal, () => {
+      app.addMeal(meal);
+      return meal.id;
+    });
   }
 
   function repeatYesterday() {
     if (!slot) return;
+    if (into) {
+      fb.haptic('light');
+      setBasket((b) => basketFromItems(b, yesterdayItems, foods));
+      return;
+    }
     // A copy typed by hand, each food's calories from the database at yesterday's grams.
     const meal = itemsMeal({ id: newId(), date, slot, items: yesterdayItems, now: new Date() });
-    if (meal) logMeal(meal);
+    if (meal) logMeal(meal, slot.id);
   }
 
   function logSaved(s: SavedMeal) {
     if (!slot) return;
-    if (mode === 'plan') {
+    if (into) {
       fb.haptic('light');
       setBasket((b) => basketFromLines(s.lines, foods).reduce((acc, l) => addLine(acc, l), b));
       return;
     }
     // Logged from its lines the way eating as planned is, with calories from the database.
     const meal = mealFromLines({ id: newId(), date, slot, lines: s.lines, foods, source: 'manual', now: new Date() });
-    if (meal) logMeal(meal);
+    if (meal) logMeal(meal, slot.id);
   }
 
   function changePlanned() {
@@ -259,10 +283,10 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
     app.addMeal(meal);
     fb.haptic('success');
     const words = fill(t('toast_meal_saved'), { kcal: meal.kcal });
-    // A meal of two or more foods may be one the person eats often: offer to keep it for one-tap logging.
-    // The sheet itself says it was logged, as the toast would sit behind it.
+    // A meal of two or more foods may be one the person eats often: offer to keep it for one-tap logging, unless it is one
+    // of their saved meals already. The sheet itself says it was logged, as the toast would sit behind it.
     const lines = linesFromBasket(basket, foods);
-    if (lines.length >= 2) {
+    if (lines.length >= 2 && !alreadySaved(lines, state.savedMeals)) {
       setOffer({ lines, logged: words });
       return;
     }
@@ -321,7 +345,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
         return slot ? (
           <PlannedCard
             title={fill(t('add_eat_planned'), { slot: slotName(slot) })}
-            summary={summary(slot.lines)}
+            summary={plannedSummary(slot.lines, foods, lang)}
             kcal={linesKcal(slot.lines)}
             lang={lang}
             onAte={atePlanned}
@@ -336,7 +360,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
             icon="refresh"
             title={title}
             sub={`${yesterdayItems.map((it) => itemName(it, foods, lang)).join(', ')} · ${yesterdayItems.reduce((a, it) => a + it.kcal, 0)} kcal`}
-            label={title}
+            label={into ? fill(t('add_food_named'), { food: title }) : title}
             onPress={repeatYesterday}
           />
         );
@@ -349,7 +373,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
             icon="bookmark-outline"
             title={s.name}
             sub={fill(t(s.lines.length === 1 ? 'add_bar_one' : 'add_bar'), { n: s.lines.length, kcal: linesKcal(s.lines) })}
-            label={fill(mode === 'plan' ? t('add_food_named') : t('add_log_saved'), { food: s.name, name: s.name })}
+            label={fill(into ? t('add_food_named') : t('add_log_saved'), { food: s.name, name: s.name })}
             onPress={() => logSaved(s)}
           />
         );

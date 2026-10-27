@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { addRows, filledIn, menuSave, offersPlanned, repeatItems, sheetMode, slotLine, startLines, startSlot, switchDraft, yesterdayIn } from '../addSheet';
+import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, plannedSummary, repeatItems, sheetMode, slotBefore, slotLine, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
 import { addLine, basketFromLines, lineOf, setCount, slotPreview, type BasketLine } from '../basket';
+import { addSkip } from '../menu';
 import { kcalForGrams } from '../nutrition';
 import { slotStates } from '../pattern';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
@@ -19,7 +20,12 @@ describe('addRows', () => {
   });
 
   it('puts the meal being built first, and a recent food already in it is not listed twice', () => {
-    expect(kinds(addRows({ ...base, basket: [line('poha')] }))).toEqual(['head:add_this_meal', 'basket:poha', 'planned', 'yesterday', 'head:me_saved', 'saved', 'head:recent', 'food:chapati', 'tools']);
+    expect(kinds(addRows({ ...base, basket: [line('poha')] }))).toEqual(['head:add_this_meal', 'basket:poha', 'yesterday', 'head:me_saved', 'saved', 'head:recent', 'food:chapati', 'tools']);
+  });
+
+  it('while a meal is being built, eating as planned is not offered: it would log the plan and drop the foods chosen', () => {
+    expect(kinds(addRows({ ...base, basket: [line('poha')] }))).not.toContain('planned');
+    expect(kinds(addRows(base))).toContain('planned');
   });
 
   it('with a search typed: the matches only, or one line saying nothing was found', () => {
@@ -259,5 +265,74 @@ describe('changing a menu, slot by slot', () => {
   it('a change undone before Save is nothing to write', () => {
     const undone = setCount(setCount(plannedOf('lunch'), 'chapati', 3), 'chapati', 2);
     expect(menuSave(plan, { lunch: undone }, foods)).toBeNull();
+  });
+});
+
+describe('addsIntoMeal: what a tap on the same as yesterday or a saved meal does', () => {
+  it('logs it in one tap while nothing is being built', () => {
+    expect(addsIntoMeal('log', [])).toBe(false);
+  });
+
+  it('adds it into the meal while foods are being chosen, and always while changing a menu', () => {
+    expect(addsIntoMeal('log', [line('poha')])).toBe(true);
+    expect(addsIntoMeal('plan', [])).toBe(true);
+    expect(addsIntoMeal('plan', [line('poha')])).toBe(true);
+  });
+});
+
+describe('the Undo of a one-tap log', () => {
+  const d = '2026-10-25';
+  const auto = meal('auto-2026-10-25-lunch', d, 'lunch', 'auto');
+
+  it('remembers, at the tap, the meals filled in from the plan it replaces and whether the slot was marked skipped', () => {
+    const meals = [auto, meal('m0', d, 'dinner', 'manual')];
+    expect(slotBefore({ meals, slotSkips: [] }, d, 'lunch')).toEqual({ replaced: [auto], wasSkipped: false });
+    expect(slotBefore({ meals: [], slotSkips: addSkip([], d, 'lunch') }, d, 'lunch')).toEqual({ replaced: [], wasSkipped: true });
+    expect(slotBefore({ meals: [], slotSkips: addSkip([], '2026-10-24', 'lunch') }, d, 'lunch')).toEqual({ replaced: [], wasSkipped: false });
+  });
+
+  it('takes the meal away, puts back what it replaced, and leaves the slot not skipped when it was not', () => {
+    expect(undoSteps({ id: 'm1', date: d, slotId: 'lunch', replaced: [auto], wasSkipped: false })).toEqual([
+      { kind: 'remove', id: 'm1' },
+      { kind: 'add', meal: auto },
+      { kind: 'unskip', date: d, slotId: 'lunch' },
+    ]);
+  });
+
+  it('marks the slot skipped again when it was skipped before the tap', () => {
+    expect(undoSteps({ id: 'm1', date: d, slotId: 'lunch', replaced: [], wasSkipped: true })).toEqual([
+      { kind: 'remove', id: 'm1' },
+      { kind: 'skip', date: d, slotId: 'lunch' },
+    ]);
+  });
+});
+
+describe('alreadySaved: no offer to save a meal the person already has', () => {
+  const lines = [
+    { foodId: 'poha', unit: 'katori', qty: 1 },
+    { foodId: 'chapati', unit: 'piece', qty: 2 },
+  ];
+
+  it('is true when a saved meal has the same foods, measures and amounts, in any order', () => {
+    expect(alreadySaved(lines, [{ lines: [lines[1], lines[0]] }])).toBe(true);
+    expect(alreadySaved(lines, [{ lines: [{ foodId: 'poha', unit: 'katori', qty: 1.00001 }, lines[1]] }])).toBe(true);
+  });
+
+  it('is false for another amount, another measure, a food more or less, or no saved meals', () => {
+    expect(alreadySaved(lines, [])).toBe(false);
+    expect(alreadySaved(lines, [{ lines: [lines[0], { ...lines[1], qty: 3 }] }])).toBe(false);
+    expect(alreadySaved(lines, [{ lines: [{ ...lines[0], unit: 'plate' }, lines[1]] }])).toBe(false);
+    expect(alreadySaved(lines, [{ lines: [lines[0]] }])).toBe(false);
+    expect(alreadySaved(lines, [{ lines: [...lines, { foodId: 'poha', unit: 'plate', qty: 1 }] }])).toBe(false);
+  });
+});
+
+describe('plannedSummary: the foods of eating as planned', () => {
+  it('names each food with its measure, without "1 ×" for one of it', () => {
+    expect(plannedSummary([{ foodId: 'poha', unit: 'katori', qty: 1 }, { foodId: 'chapati', unit: 'piece', qty: 2 }], foods, 'en')).toBe('Kanda Poha 1 katori (150 g) · Chapati 2 × 1 piece (40 g)');
+  });
+
+  it("in the person's language; a food that is gone, or an amount of nothing, is left out as it is when logged", () => {
+    expect(plannedSummary([{ foodId: 'poha', unit: 'katori', qty: 1.5 }, { foodId: 'no-such-food', unit: 'katori', qty: 1 }, { foodId: 'chapati', unit: 'piece', qty: 0 }], foods, 'mr')).toBe(`${food('poha').name_mr} 1½ × १ वाटी (१५० ग्रॅ)`);
   });
 });

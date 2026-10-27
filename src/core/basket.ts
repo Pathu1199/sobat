@@ -239,6 +239,30 @@ export function slotPreview(input: { allowance: number; eaten: number; autoKcal:
   return { replaces, slotLeft: input.allowance - (input.eaten - back) - input.basketKcal, dayLeft: input.dayLeft + back - input.basketKcal };
 }
 
+/**
+ * A logged meal's foods put into the basket (the same as yesterday, tapped
+ * while a meal is being built): each food from the database at its own
+ * default measure and the same grams, added to what is there. A food not in
+ * the database (read from a photo) cannot be weighed into the meal and is
+ * left out; the same basket when nothing could go in.
+ */
+export function basketFromItems(basket: BasketLine[], items: MealItem[], foods: FoodItem[]): BasketLine[] {
+  let out = basket;
+  for (const it of items) {
+    const food = it.foodId ? foods.find((f) => f.id === it.foodId) : undefined;
+    if (!food) continue;
+    const l = lineOf(food);
+    if (l.gramsPerUnit > 0) out = addLine(out, { ...l, count: it.grams / l.gramsPerUnit });
+  }
+  return out;
+}
+
+/** How many of a measure, as a line reads: the measure alone for one of it ("1 katori (150 g)"), else how many times it ("1½ × 1 katori (150 g)"). */
+export function amountText(count: number, measure: string): string {
+  const n = formatQty(count);
+  return n === '1' ? measure : `${n} × ${measure}`;
+}
+
 const FRACTIONS: Record<string, string> = { '0.25': '¼', '0.5': '½', '0.75': '¾' };
 
 /** A count as people write it: 2, ½, 1½, ¾; anything else as it is (1.33). */
