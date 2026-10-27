@@ -5,6 +5,7 @@ import { removeUndoSteps } from '../core/addSheet';
 import { localHHMM } from '../core/date';
 import { defaultPortion, itemName, scaleMealItem, toMealItem } from '../core/foods';
 import type { Meal, MealItem } from '../core/types';
+import { runUndo } from '../core/undo';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
@@ -69,13 +70,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
     fb.haptic('light');
     fb.notify(t('meal_removed'), {
       label: t('undo'),
-      onPress: () => {
-        for (const step of steps) {
-          if (step.kind === 'add') app.addMeal(step.meal);
-          else if (step.kind === 'skip') app.skipSlot(step.date, step.slotId);
-          else if (step.kind === 'unskip') app.unskipSlot(step.date, step.slotId);
-        }
-      },
+      onPress: () => runUndo(app, steps),
     });
     onClose();
   }

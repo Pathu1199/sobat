@@ -20,9 +20,13 @@ export function stripDayWidth(rowWidth: number): number {
   return rowWidth / 7;
 }
 
-/** The strip's row on Today for a screen this wide: less the screen's padding, the card's border and the strip's edge on each side. */
+/** The strip's own margin on Today: negative, so it reaches over the card's padding to STRIP_EDGE from the card's edge. */
+export const STRIP_MARGIN = STRIP_EDGE - S.padLg;
+
+/** The strip's row on Today for a screen this wide: inside the card (less the screen's padding, the card's border and its padding on each side), less the strip's margin. */
 export function stripRowWidth(screenWidth: number): number {
-  return screenWidth - 2 * (S.pad + S.hairline + STRIP_EDGE);
+  const cardInside = screenWidth - 2 * (S.pad + S.hairline + S.padLg);
+  return cardInside - 2 * STRIP_MARGIN;
 }
 
 type Token = keyof (typeof PALETTES)['light'];

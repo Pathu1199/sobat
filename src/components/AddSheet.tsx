@@ -28,6 +28,7 @@ import { mealFromLines, skippedOn } from '../core/menu';
 import { slotStates } from '../core/pattern';
 import { slotLabel, type PlanLine } from '../core/routine';
 import type { FoodItem, ISODate, Meal, SavedMeal } from '../core/types';
+import { runUndo } from '../core/undo';
 import { lineInfo, type PlanMeal } from '../core/weekPlan';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
@@ -210,14 +211,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
     fb.haptic('success');
     fb.notify(fill(t('toast_meal_saved'), { kcal }), {
       label: t('undo'),
-      onPress: () => {
-        for (const step of undoSteps({ id, date, slotId, ...before })) {
-          if (step.kind === 'remove') app.removeMeal(step.id);
-          else if (step.kind === 'add') app.addMeal(step.meal);
-          else if (step.kind === 'skip') app.skipSlot(step.date, step.slotId);
-          else app.unskipSlot(step.date, step.slotId);
-        }
-      },
+      onPress: () => runUndo(app, undoSteps({ id, date, slotId, ...before })),
     });
     onClose();
   }

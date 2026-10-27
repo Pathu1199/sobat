@@ -5,6 +5,7 @@ import { CaloriesLeft } from '../../components/CaloriesLeft';
 import { Celebration } from '../../components/Celebration';
 import { CoachLine } from '../../components/CoachLine';
 import { DayMenu } from '../../components/DayMenu';
+import { IntakeCard } from '../../components/IntakeCard';
 import { MantraCard } from '../../components/MantraCard';
 import { MealSheet } from '../../components/MealSheet';
 import { StepsCard } from '../../components/StepsCard';
@@ -30,8 +31,8 @@ import { useMinute } from '../../services/useWorkSchedule';
 import { useApp } from '../../store/AppProvider';
 import { Card, Small } from '../../ui/components';
 import { Logo } from '../../ui/Logo';
-import { STRIP_EDGE } from '../../ui/stripGeometry';
-import { C, S } from '../../ui/theme';
+import { STRIP_MARGIN } from '../../ui/stripGeometry';
+import { C } from '../../ui/theme';
 import { Page } from '../../ui/TopBar';
 
 /**
@@ -86,11 +87,13 @@ export default function TodayScreen() {
       {queued > 0 ? <Small color={C.cyan}>{fill(t(queued === 1 ? 'photos_queued' : 'photos_queued_plural'), { n: queued })}</Small> : null}
       <Card>
         {/* The strip reaches over the card's padding, so each day is a finger wide on a 360 point phone (ui/stripGeometry.ts). */}
-        <View style={{ marginHorizontal: STRIP_EDGE - S.padLg }}>
+        <View style={{ marginHorizontal: STRIP_MARGIN }}>
           <WeekStrip days={days} lang={lang} onSelect={go} onWeek={onWeek} />
         </View>
         <CaloriesLeft mode={mode} view={view} suggested={suggested} />
       </Card>
+      {/* Days in a row under the safe minimum are said plainly, today only; nothing shows otherwise. */}
+      {mode === 'today' ? <IntakeCard /> : null}
       {/* A day still to come has no night to check in yet, so todayBlocks leaves its Sleep tile out. */}
       {todayBlocks(state.settings.todayCards, mode).map((b, i) => {
         if (b.kind === 'menu') return <DayMenu key="menu" date={viewed} view={view} menu={menu} onOpenMeal={setOpenMeal} />;

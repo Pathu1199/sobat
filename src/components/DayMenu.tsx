@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { slotBefore, undoSteps, type UndoStep } from '../core/addSheet';
+import { slotBefore, undoSteps } from '../core/addSheet';
 import { amountText, steppedLine } from '../core/basket';
 import { draftKey, fillUndoSteps, offersDayConfirm, planNote, rowLines, rowOffers, stepDraft, type DayView, type MenuRow, type RowLine } from '../core/dayView';
 import { itemName } from '../core/foods';
@@ -10,6 +10,7 @@ import type { DayMenu as Menu } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
 import { slotLabel, type PlanLine } from '../core/routine';
 import type { ISODate, Meal } from '../core/types';
+import { runUndo } from '../core/undo';
 import { isOffDay } from '../core/week';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
@@ -75,16 +76,6 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
   };
   const kcalOf = (lines: RowLine[]) => lines.reduce((a, l) => a + l.kcal, 0);
 
-  /** Each step of an Undo through the store, so a meal put back lifts the skip taking one away may have marked. */
-  function undo(steps: UndoStep[]) {
-    for (const step of steps) {
-      if (step.kind === 'remove') app.removeMeal(step.id);
-      else if (step.kind === 'add') app.addMeal(step.meal);
-      else if (step.kind === 'skip') app.skipSlot(step.date, step.slotId);
-      else app.unskipSlot(step.date, step.slotId);
-    }
-  }
-
   function stepLine(row: MenuRow, l: RowLine, by: 1 | -1) {
     if (past) {
       // A past day: only the draft changes, never what that day planned.
@@ -108,7 +99,7 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
     fb.haptic('success');
     fb.notify(fill(t('toast_meal_saved'), { kcal: kcalOf(shownLines(row)) }), {
       label: t('undo'),
-      onPress: () => undo(undoSteps({ id, date, slotId: row.slotId, ...before })),
+      onPress: () => runUndo(app, undoSteps({ id, date, slotId: row.slotId, ...before })),
     });
   }
 
@@ -116,7 +107,7 @@ export function DayMenu({ date, view, menu, onOpenMeal }: { date: ISODate; view:
     const steps = fillUndoSteps(view);
     app.fillDayFromPlan(date);
     fb.haptic('success');
-    fb.notify(t('menu_day_filled'), { label: t('undo'), onPress: () => undo(steps) });
+    fb.notify(t('menu_day_filled'), { label: t('undo'), onPress: () => runUndo(app, steps) });
   }
 
   const head = (row: MenuRow, right?: string) => (

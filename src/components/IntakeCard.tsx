@@ -7,9 +7,9 @@ import { KCAL_FLOOR } from '../core/nutrition';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Card, Micro, Row, Small } from '../ui/components';
-import { C, F } from '../ui/theme';
+import { C, F, S } from '../ui/theme';
 
-/** Three logged days under the line: say so once, plainly, and point at the plan. */
+/** Three logged days under the line: say so once, plainly, and point at the plan. Nothing otherwise. */
 export function IntakeCard() {
   const app = useApp();
   const router = useRouter();
@@ -29,7 +29,12 @@ export function IntakeCard() {
           <Small color={C.textDim}>{fill(t('intake_body'), { avg: intake.avg, days: intake.days, limit: intake.limit, target: targets.kcal })}</Small>
         </View>
       </Row>
-      <Pressable onPress={() => router.push('/food?s=plan')} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('intake_open_plan')}>
+      {/* A finger tall on every platform: the web adds no reach around a control, so the box itself is the size. */}
+      <Pressable
+        onPress={() => router.push('/food?s=plan')}
+        accessibilityRole="button"
+        accessibilityLabel={t('intake_open_plan')}
+        style={({ pressed }) => ({ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start', opacity: pressed ? 0.7 : 1 })}>
         <Micro color={C.accentText}>{`${t('intake_open_plan')} ›`}</Micro>
       </Pressable>
     </Card>

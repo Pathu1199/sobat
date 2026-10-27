@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_SIZE, STRIP_EDGE, STRIP_RING, stripDayWidth, stripRowWidth } from '../stripGeometry';
+import { STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_SIZE, STRIP_EDGE, STRIP_MARGIN, STRIP_RING, stripDayWidth, stripRowWidth } from '../stripGeometry';
 import { lh, S, scaledSizes, TEXT_SCALES } from '../theme';
 
 /** A digit is about 0.6 of the type size wide (tabular figures). */
@@ -16,6 +16,13 @@ describe('the week strip on the narrowest phone', () => {
     // The strip reaches over the card's padding: 320 less the screen's padding (16), the card's border (1) and the strip's edge on each side.
     expect(stripRowWidth(320)).toBe(320 - 2 * (16 + 1 + STRIP_EDGE));
     expect(STRIP_EDGE).toBeLessThan(S.padLg);
+  });
+
+  it("the strip's margin on Today reaches over the card's padding to its edge, and the row is the card's inside less that margin", () => {
+    expect(STRIP_MARGIN).toBe(STRIP_EDGE - S.padLg);
+    expect(STRIP_MARGIN).toBeLessThan(0);
+    const cardInside = 375 - 2 * (S.pad + S.hairline + S.padLg);
+    expect(stripRowWidth(375)).toBe(cardInside - 2 * STRIP_MARGIN);
   });
 
   it('every day is a finger wide on a 360 and a 375 point phone', () => {
