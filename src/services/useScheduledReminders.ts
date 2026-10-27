@@ -51,7 +51,8 @@ export function useReminderGate(): { known: boolean; active: boolean } {
 export function useScheduledReminders() {
   const app = useApp();
   const { nudgesEnabled, quietStartHour, quietEndHour, offDays } = app.state.settings;
-  const lang = app.state.profile.lang;
+  const mealPrompt = app.state.settings.reminders.mealPrompt;
+  const { lang, onboardedOn } = app.state.profile;
   const mantra = useMantra();
   const mantraText = mantra?.text ?? '';
   const routine = app.state.routine;
@@ -67,7 +68,6 @@ export function useScheduledReminders() {
     const want = dailyReminders({
       active,
       nudgesEnabled,
-      routineEnabled: routine.enabled,
       quietStartHour,
       quietEndHour,
       mantra: mantraText,
@@ -91,7 +91,7 @@ export function useScheduledReminders() {
     return () => {
       stale = true;
     };
-  }, [known, active, nudgesEnabled, quietStartHour, quietEndHour, lang, breaksJson, mantraText, routine.enabled]);
+  }, [known, active, nudgesEnabled, quietStartHour, quietEndHour, lang, breaksJson, mantraText]);
 
   // Slots done or skipped today, as one string so the memo below only moves when the set does.
   const doneKey = useMemo(() => {
@@ -105,12 +105,16 @@ export function useScheduledReminders() {
   }, [routine, app.state.meals, today, app.targets.kcal, hour, app.skippedToday]);
   const lastLog = useMemo(() => lastLogDate(app.state.meals, today), [app.state.meals, today]);
 
+  // The slot prompts follow the meal-time prompt's switch and the absence lines the app's reminders switch, so either one on plans something.
   const wanted = useMemo(() => {
-    if (Platform.OS === 'web' || !active || !nudgesEnabled) return [];
+    if (Platform.OS === 'web' || !active || (!nudgesEnabled && !mealPrompt)) return [];
     return plannedReminders({
       today,
       nowMinutes: hour * 60,
       routine,
+      mealPrompt,
+      nudgesEnabled,
+      onboardedOn,
       doneSlotIds: doneKey ? doneKey.split(',') : [],
       lastLogDate: lastLog,
       offDays: offDays ?? [],
@@ -119,7 +123,7 @@ export function useScheduledReminders() {
       lang,
       t: makeT(lang),
     });
-  }, [active, nudgesEnabled, today, hour, routine, doneKey, lastLog, offDays, quietStartHour, quietEndHour, lang]);
+  }, [active, nudgesEnabled, mealPrompt, onboardedOn, today, hour, routine, doneKey, lastLog, offDays, quietStartHour, quietEndHour, lang]);
 
   // Runs once the store and the session are known, whoever is there: after a sign-out or a reset `wanted` is
   // empty and the planned week is cancelled. Never on a store that failed to load, whose empty state is not the person's.

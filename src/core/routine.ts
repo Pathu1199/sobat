@@ -94,8 +94,13 @@ export const DINNER_SLOT: RoutineSlot = {
   share: 20,
 };
 
+/**
+ * The example routine builds before version 7 gave everyone. Nobody starts
+ * from it now (a new person gets NEUTRAL_ROUTINE); the migration compares a
+ * stored routine with it to tell a field nobody touched from one a person set.
+ */
 export const DEFAULT_ROUTINE: Routine = {
-  // How older stores saved it. Since version 7 every loaded store has the pattern on (store/migrate.ts).
+  // Off: the default from version 3 to 6 (before 3 it was on). Since version 7 every loaded store has the pattern on (store/migrate.ts).
   enabled: false,
   walk: true,
   week: [
@@ -221,6 +226,11 @@ export const DEFAULT_ROUTINE: Routine = {
 
 export function weekdayOf(date: ISODate): number {
   return new Date(date + 'T12:00:00').getDay();
+}
+
+/** True when some day of the week has a bhaji. A week with none (a new person's) is not a bhaji routine, so nothing asks about bhaji. */
+export function hasBhajiWeek(routine: Pick<Routine, 'week'>): boolean {
+  return routine.week.some((d) => d.length > 0);
 }
 
 /** The bhaji choices for a date: the day's own pick if there is one, else the weekly plan. Empty means a free day. */
@@ -353,7 +363,7 @@ export function routineFacts(routine: Routine, foods: FoodItem[], date: ISODate,
   const facts: string[] = [];
   const bhaji = bhajiFor(routine, date);
   // A week with no bhaji on any day is not a bhaji routine; say nothing about it.
-  const keepsBhaji = bhaji.length > 0 || routine.week.some((d) => d.length > 0);
+  const keepsBhaji = bhaji.length > 0 || hasBhajiWeek(routine);
   const day = new Date(date + 'T12:00:00').toLocaleDateString('en-IN', { weekday: 'long' });
   if (keepsBhaji) {
     facts.push(

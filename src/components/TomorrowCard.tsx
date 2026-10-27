@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { addDays } from '../core/date';
 import { foodName } from '../core/foods';
-import { bhajiFor, setBhajiOverride, weekdayOf } from '../core/routine';
+import { bhajiFor, hasBhajiWeek, setBhajiOverride, weekdayOf } from '../core/routine';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
@@ -17,7 +17,8 @@ const CHOICES = 10;
 /**
  * In the evening, one question: which bhaji tomorrow? The answer sits on
  * top of the weekly plan for that one day, so the morning card already
- * knows and the shopping can happen tonight.
+ * knows and the shopping can happen tonight. Someone with no bhaji week is
+ * not asked.
  */
 export function TomorrowCard() {
   const app = useApp();
@@ -42,7 +43,7 @@ export function TomorrowCard() {
     return ordered.slice(0, CHOICES);
   }, [foods, routine.week, tomorrow, chosen]);
 
-  if (!routine.enabled || hour < EVENING_HOUR) return null;
+  if (!routine.enabled || !hasBhajiWeek(routine) || hour < EVENING_HOUR) return null;
 
   function pick(id: string) {
     const next = chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id].slice(-2);

@@ -25,6 +25,8 @@ export type Profile = {
   rateKgPerWeek: number;
   lang: Lang;
   onboarded: boolean;
+  /** The day setup was finished, when no meal-time prompt goes out. Missing on older profiles: they are not on day one. */
+  onboardedOn?: ISODate;
 };
 
 export type Settings = {

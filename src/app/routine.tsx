@@ -119,10 +119,15 @@ export default function RoutineScreen() {
                   <SlotEditor
                     slot={s}
                     onChange={setSlot}
-                    onRemove={() => {
-                      app.setRoutine({ slots: routine.slots.filter((x) => x.id !== s.id) });
-                      setOpenSlot(null);
-                    }}
+                    // A menu is a list of slots: the last one cannot be removed.
+                    onRemove={
+                      routine.slots.length > 1
+                        ? () => {
+                            app.setRoutine({ slots: routine.slots.filter((x) => x.id !== s.id) });
+                            setOpenSlot(null);
+                          }
+                        : undefined
+                    }
                   />
                 ) : null}
               </View>

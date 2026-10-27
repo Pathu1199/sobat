@@ -8,11 +8,13 @@ import { isOffDay } from './week';
 
 /**
  * Everything the app will say on its own over the next week, worked out in
- * advance so the phone can hand it to the OS and be closed. Two kinds: a
- * "log or skip?" prompt for each slot of the pattern, for today and the
- * next two days only (a week away is not fifty prompts), and a morning
- * line when days go by without a log. The absence lines escalate gently
- * for three days and then stop; an app that keeps nagging gets uninstalled.
+ * advance so the phone can hand it to the OS and be closed. Two kinds, each
+ * with its own switch. The meal-time prompt: a "log or skip?" for each slot
+ * of the pattern, for today and the next two days only (a week away is not
+ * fifty prompts), never on the day the person finished setup (no nags on day
+ * one). The absence lines, while the app's reminders are on: a morning line
+ * when days go by without a log, escalating gently for three days and then
+ * stopping; an app that keeps nagging gets uninstalled.
  */
 export type Reminder = { id: string; date: ISODate; time: string; title: string; body: string };
 
@@ -22,6 +24,12 @@ export type ReminderInput = {
   /** How many days ahead, today included. */
   days?: number;
   routine: Routine;
+  /** The meal-time prompt's switch (`settings.reminders.mealPrompt`): the slot prompts follow it. */
+  mealPrompt: boolean;
+  /** The app's reminders switch (`settings.nudgesEnabled`): the absence lines follow it. */
+  nudgesEnabled: boolean;
+  /** The day the person finished setup: no slot prompt on it. Missing on older profiles. */
+  onboardedOn?: ISODate;
   /** Slots logged or skipped today. */
   doneSlotIds: string[];
   /** The last day with a meal logged, today included; null when nothing was ever logged. */
@@ -59,21 +67,21 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
   const days = input.days ?? 7;
   const out: Reminder[] = [];
   const quiet = (minutes: number) => inQuietHours(Math.floor(minutes / 60), input.quietStartHour, input.quietEndHour);
-  const slots = input.routine.enabled ? pattern(input.routine) : [];
+  const slots = input.mealPrompt ? pattern(input.routine) : [];
   const awayAt = Math.max(AWAY_HOUR, input.quietEndHour) * 60;
 
   for (let k = 0; k < days; k++) {
     const date = addDays(input.today, k);
     if (isOffDay(input.offDays, date)) continue;
 
-    for (const p of k < SLOT_DAYS ? slots : []) {
+    for (const p of k < SLOT_DAYS && date !== input.onboardedOn ? slots : []) {
       const at = p.minutes + SLOT_GRACE_MIN;
       if (at >= 1440 || quiet(at)) continue;
       if (k === 0 && (input.doneSlotIds.includes(p.id) || at <= input.nowMinutes)) continue;
       out.push({ id: `slot:${p.id}:${date}`, date, time: hhmm(at), title: `${slotLabel(p.slot, input.lang)}?`, body: input.t('slot_prompt') });
     }
 
-    if (k > 0 && input.lastLogDate) {
+    if (input.nudgesEnabled && k > 0 && input.lastLogDate) {
       const gap = missedDays(input.lastLogDate, date, input.offDays);
       if (gap >= AWAY_FIRST && gap <= AWAY_LAST && !quiet(awayAt)) {
         out.push({ id: `away:${date}`, date, time: hhmm(awayAt), title: input.t(`away_${gap}_title`), body: input.t(`away_${gap}_body`) });
@@ -90,8 +98,6 @@ export type DailyInput = {
   /** False on a device that is signed out or reset: reminders belong to a person. */
   active: boolean;
   nudgesEnabled: boolean;
-  /** The pattern prompts its own dinner slot. */
-  routineEnabled: boolean;
   quietStartHour: number;
   quietEndHour: number;
   /** The day's line; empty when there is none. */
@@ -101,6 +107,7 @@ export type DailyInput = {
   t: (key: string) => string;
 };
 
+/** `dinner` is no longer registered (the pattern is always on and its dinner slot asks); it stays here so a device that still holds it has it cancelled. */
 export const DAILY_IDS = { sleep: 'sobat-sleep-checkin', mantra: 'sobat-mantra', water: 'sobat-water', dinner: 'sobat-dinner', review: 'sobat-day-review' } as const;
 /** Every long-break reminder's id starts with this; older builds used it alone, for one repeating notification. */
 export const LONG_BREAK_ID = 'sobat-long-break';
@@ -116,8 +123,6 @@ export function dailyReminders(input: DailyInput): DailyReminder[] {
   if (input.mantra) out.push({ id: DAILY_IDS.mantra, hour: 8, minute: 0, title: t('mantra_title'), body: input.mantra });
   // A single mid-afternoon water prompt; the in-app engine handles the rest.
   out.push({ id: DAILY_IDS.water, hour: 15, minute: 0, title: t('add_water'), body: t('act_drink_water') });
-  // Dinner, earlier than the quiet hours start. With the pattern on, the dinner slot's own prompt does this.
-  if (!input.routineEnabled) out.push({ id: DAILY_IDS.dinner, hour: Math.max(18, input.quietStartHour - 3), minute: 30, title: t('dinner'), body: t('act_light_dinner') });
   // The day recap, just before things wind down.
   out.push({ id: DAILY_IDS.review, hour: 21, minute: 30, title: t('day_review'), body: t('write_review') });
   return [...out, ...longBreaks(input)];

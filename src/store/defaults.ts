@@ -85,8 +85,8 @@ export const EMPTY_STATE: AppState = {
   actionsDone: [],
   slotSkips: [],
   savedMeals: [],
-  // A new person's pattern is the four meals of the day, always on, and nothing about anyone else's life:
-  // no bhaji week, avoid list, budget or walk. A copy, so no two states share the lists a person edits.
+  // A new person's pattern: the four meals of the day, on, with no bhaji week, avoid list, budget or walk.
+  // Every list is a copy of NEUTRAL_ROUTINE's, so no two states ever share a list.
   routine: {
     ...NEUTRAL_ROUTINE,
     week: NEUTRAL_ROUTINE.week.map((d) => [...d]),

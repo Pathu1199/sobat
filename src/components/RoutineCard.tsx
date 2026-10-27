@@ -10,6 +10,7 @@ import {
   avoidHits,
   bhajiFor,
   DEFAULT_SPREAD,
+  hasBhajiWeek,
   planItems,
   slotLabel,
   slotLines,
@@ -67,7 +68,8 @@ export function swapText(hit: AvoidHit, foods: FoodItem[], lang: Lang): string {
  * Today's eating pattern: one row per slot with what is planned, what was
  * eaten against what it may have, and the difference. A slot not yet eaten
  * logs as planned in one tap or opens the log screen for something else.
- * The bhaji, the walk, the avoid list and the money stay where they were.
+ * The bhaji (when there is a bhaji week), the walk, the avoid list and the
+ * money (when there is a budget) stay where they were.
  */
 export function RoutineCard() {
   const app = useApp();
@@ -140,16 +142,19 @@ export function RoutineCard() {
         </Pressable>
       ) : null}
 
-      <View style={{ gap: 4 }}>
-        <Micro>{t('routine_bhaji')}</Micro>
-        {bhaji.length > 0 ? (
-          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
-            {bhaji.map((id) => foodLabel(id, foods, lang)).join(lang === 'mr' ? ' किंवा ' : lang === 'hi' ? ' या ' : ' or ')}
-          </Text>
-        ) : (
-          <Small>{t('routine_free_day')}</Small>
-        )}
-      </View>
+      {/* No bhaji week, no bhaji to show. */}
+      {hasBhajiWeek(routine) ? (
+        <View style={{ gap: 4 }}>
+          <Micro>{t('routine_bhaji')}</Micro>
+          {bhaji.length > 0 ? (
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
+              {bhaji.map((id) => foodLabel(id, foods, lang)).join(lang === 'mr' ? ' किंवा ' : lang === 'hi' ? ' या ' : ' or ')}
+            </Text>
+          ) : (
+            <Small>{t('routine_free_day')}</Small>
+          )}
+        </View>
+      ) : null}
 
       {routine.walk ? (
         <Checklist

@@ -35,6 +35,8 @@ export default function Onboarding() {
     rateKgPerWeek: rate,
     lang,
     onboarded: true,
+    // Day one: no meal-time prompts until tomorrow.
+    onboardedOn: app.today,
   };
 
   const targets = dailyTargets(draft);

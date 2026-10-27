@@ -45,7 +45,7 @@ let chain: Promise<void> = Promise.resolve();
 export function useWorkSchedule() {
   const app = useApp();
   const fb = useFeedback();
-  const { schedule, profile, routine } = app.state;
+  const { schedule, profile, routine, settings } = app.state;
   const minute = useMinute();
   const last = useRef(minute);
   const lastRegistered = useRef<string[]>([]);
@@ -68,8 +68,9 @@ export function useWorkSchedule() {
         })
         .catch(() => {});
     }
-    // A routine meal whose time passed with nothing logged against it: ask once, log or skip.
-    if (routine.enabled) {
+    // A routine meal whose time passed with nothing logged against it: ask once, log or skip. Only while the
+    // meal-time prompt is on, and never on the day the person finished setup.
+    if (settings.reminders.mealPrompt && app.today !== profile.onboardedOn) {
       const todayMeals = app.state.meals.filter((m) => m.date === app.today);
       const states = slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday });
       for (const s of slotsDueBetween(routine, from, minute)) {

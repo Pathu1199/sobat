@@ -80,10 +80,16 @@ function defaultSlots(): RoutineSlot[] {
   return DEFAULT_SLOTS.map((s) => ({ ...s, options: [[]] }));
 }
 
+/** True when a stored field still holds the shipped example's value. */
+function untouched(value: unknown, example: unknown): boolean {
+  return stable(value) === stable(example);
+}
+
 /** Routine meals saved before they had times get the default time for their id, else a sensible one by meal. */
 function upgradeRoutine(old: unknown, fromVersion: number, hadPlan: boolean): AppState['routine'] {
   const r = { ...EMPTY_STATE.routine, ...(isRecord(old) ? old : {}) } as AppState['routine'];
-  const wasOn = r.enabled === true;
+  // Before version 3 the pattern was on by default, not by choice (version 3 switched every older store off).
+  const wasOn = fromVersion >= 3 && r.enabled === true;
   const byType: Record<string, string> = { breakfast: '08:30', lunch: '13:00', snack: '16:00', dinner: '20:30' };
   r.slots = (Array.isArray(r.slots) ? r.slots : []).map((s) =>
     s.time ? s : { ...s, time: DEFAULT_ROUTINE.slots.find((d) => d.id === s.id)?.time ?? byType[s.type] ?? '13:00' },
@@ -94,16 +100,22 @@ function upgradeRoutine(old: unknown, fromVersion: number, hadPlan: boolean): Ap
     r.slots = [...r.slots, { ...DINNER_SLOT, id: r.slots.some((s) => s.id === 'dinner') ? 'dinner-2' : 'dinner' }];
   }
   // Version 7: the pattern is always on, because a menu is a list of slots. Someone who never switched it on, never planned
-  // a week and never touched the shipped example slots starts from the four meals of the day, and none of the example is
-  // theirs: no bhaji week, avoid list, budget or walk. Anyone who used it keeps all of it. Nobody is left with no slots.
+  // a week and never touched the shipped example slots starts from the four meals of the day. The routine screen still let
+  // them edit the rest, so each other field goes neutral only while it still holds the example's value: an edited bhaji
+  // week, avoid list, budget, walk or picked bhaji is theirs and stays. Anyone who used the pattern keeps all of it.
+  // Nobody is left with no slots.
   if (fromVersion < 7 && !wasOn && !hadPlan && untouchedExample(r.slots)) {
     r.slots = defaultSlots();
-    r.week = NEUTRAL_ROUTINE.week.map((d) => [...d]);
-    r.avoid = [];
-    r.budgetMin = NEUTRAL_ROUTINE.budgetMin;
-    r.budgetMax = NEUTRAL_ROUTINE.budgetMax;
-    r.walk = NEUTRAL_ROUTINE.walk;
-    r.overrides = {};
+    if (untouched(r.week, DEFAULT_ROUTINE.week)) r.week = NEUTRAL_ROUTINE.week.map((d) => [...d]);
+    if (untouched(r.avoid, DEFAULT_ROUTINE.avoid)) r.avoid = [];
+    // The budget is one pair: either end changed keeps both.
+    if (untouched([r.budgetMin, r.budgetMax], [DEFAULT_ROUTINE.budgetMin, DEFAULT_ROUTINE.budgetMax])) {
+      r.budgetMin = NEUTRAL_ROUTINE.budgetMin;
+      r.budgetMax = NEUTRAL_ROUTINE.budgetMax;
+    }
+    if (untouched(r.walk, DEFAULT_ROUTINE.walk)) r.walk = NEUTRAL_ROUTINE.walk;
+    // The example picked no bhaji for any date; one picked is the person's.
+    if (untouched(r.overrides ?? {}, DEFAULT_ROUTINE.overrides ?? {})) r.overrides = {};
   } else if (r.slots.length === 0) {
     r.slots = defaultSlots();
   }
@@ -122,6 +134,8 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   delete s.glassMl;
   s.features = { ...EMPTY_STATE.settings.features, ...(isRecord(raw.features) ? raw.features : {}) } as AppState['settings']['features'];
   s.reminders = { ...EMPTY_STATE.settings.reminders, ...(isRecord(raw.reminders) ? raw.reminders : {}) } as AppState['settings']['reminders'];
+  // Someone who switched the app's reminders off before these switches existed does not get the meal-time prompt switched on by an update.
+  if (!isRecord(raw.reminders) && raw.nudgesEnabled === false) s.reminders.mealPrompt = false;
   // A tab list from sync or an old file can never hide Today, ➕ or Me.
   s.tabs = normalizeTabs(s.tabs);
   if (!Array.isArray(s.todayCards)) s.todayCards = DEFAULT_TODAY_CARDS.map((c) => ({ ...c }));

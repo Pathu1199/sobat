@@ -6,6 +6,7 @@ import {
   bhajiFor,
   DEFAULT_ROUTINE,
   DEFAULT_SLOTS,
+  hasBhajiWeek,
   NEUTRAL_ROUTINE,
   planItems,
   planKcal,
@@ -303,5 +304,11 @@ describe('the neutral routine', () => {
 
   it('says nothing when the routine is off', () => {
     expect(routineFacts(DEFAULT_ROUTINE, FOODS, MON, [], 0)).toEqual([]);
+  });
+
+  it('has no bhaji week until some day of the week has a bhaji', () => {
+    expect(hasBhajiWeek(NEUTRAL_ROUTINE)).toBe(false);
+    expect(hasBhajiWeek(DEFAULT_ROUTINE)).toBe(true);
+    expect(hasBhajiWeek({ ...NEUTRAL_ROUTINE, week: NEUTRAL_ROUTINE.week.map((d, i) => (i === 5 ? ['bhindi-bhaji'] : d)) })).toBe(true);
   });
 });

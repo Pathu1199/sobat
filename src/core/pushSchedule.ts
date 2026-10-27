@@ -62,7 +62,12 @@ export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string
     lang,
     days: sched.enabled ? sched.days : [],
     blocks: blocks.map((b) => ({ kind: b.kind, start: b.start, title: t(`ntf_${b.kind}`), body: t(`ntf_${b.kind}_body`) })),
-    slots: routine.enabled ? routine.slots.map((s) => ({ id: s.id, at: addMinutes(slotTime(s), SLOT_GRACE_MIN), title: `${slotLabel(s, lang)}?`, body: t('slot_prompt') })) : [],
+    // The meal-time prompt, when it is on, and never on the day the person finished setup. The mantras change the
+    // payload every day, so the slots go back the next day the app runs.
+    slots:
+      state.settings.reminders.mealPrompt && today !== state.profile.onboardedOn
+        ? routine.slots.map((s) => ({ id: s.id, at: addMinutes(slotTime(s), SLOT_GRACE_MIN), title: `${slotLabel(s, lang)}?`, body: t('slot_prompt') }))
+        : [],
     breaks:
       sched.enabled && br.enabled && br.micro.enabled
         ? { everyMinutes: br.micro.everyMinutes, from: start, to: end, title: t('brk_micro'), body: t('brk_micro_hint') }

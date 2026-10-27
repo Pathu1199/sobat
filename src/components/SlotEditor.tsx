@@ -16,8 +16,10 @@ const QTYS = [0.5, 1, 1.5, 2, 3];
 /**
  * One meal of the routine, opened for editing: its name, which meal of the
  * day it is, whether the day's bhaji goes in, and the foods in each option.
+ * Without `onRemove` the remove button is there but disabled: the last meal
+ * of the pattern stays, because a menu is a list of slots.
  */
-export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; onChange: (s: RoutineSlot) => void; onRemove: () => void }) {
+export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; onChange: (s: RoutineSlot) => void; onRemove?: () => void }) {
   const app = useApp();
   const { foods } = app;
   const lang: Lang = app.state.profile.lang;
@@ -137,7 +139,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
 
       <Row style={{ gap: 8 }}>
         <Btn small tone="soft" label={t('routine_add_alt')} onPress={() => onChange({ ...slot, options: [...slot.options, []] })} style={{ flex: 1 }} />
-        <Btn small tone="danger" label={t('routine_remove_meal')} onPress={onRemove} style={{ flex: 1 }} />
+        <Btn small tone="danger" label={t('routine_remove_meal')} onPress={() => onRemove?.()} disabled={!onRemove} style={{ flex: 1 }} />
       </Row>
       <Divider />
     </View>

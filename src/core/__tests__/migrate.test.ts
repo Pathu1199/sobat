@@ -100,7 +100,8 @@ describe('migrateState', () => {
   });
 
   it('gives routine meals saved without a time their default time', () => {
-    const old = { ...v1, routine: { ...DEFAULT_ROUTINE, enabled: true, slots: DEFAULT_ROUTINE.slots.map(({ time: _t, ...s }) => s) } };
+    // Version 3, the first where a pattern switched on was the person's choice rather than the old default.
+    const old = { ...v1, version: 3, routine: { ...DEFAULT_ROUTINE, enabled: true, slots: DEFAULT_ROUTINE.slots.map(({ time: _t, ...s }) => s) } };
     const s = migrateState(old);
     expect(s.routine.slots.find((x) => x.id === 'bhel')?.time).toBe('18:30');
     expect(s.routine.slots.find((x) => x.id === 'lunch')?.time).toBe('13:00');
@@ -282,9 +283,59 @@ describe('migrateState', () => {
   it('version 7: an old store that never used the shipped example routine gets the neutral one, not its bhaji, avoid list, budget or walk', () => {
     const old = { ...v1, version: 6, routine: { ...DEFAULT_ROUTINE, overrides: { '2026-10-20': ['palak-bhaji'] } } };
     const r = migrateState(old, NOW).routine;
-    expect(r).toEqual(NEUTRAL_ROUTINE);
-    // A store from before the routine existed is the same.
-    expect(migrateState({ ...v1, version: 2, routine: { ...DEFAULT_ROUTINE } }, NOW).routine).toEqual(NEUTRAL_ROUTINE);
+    // An override is a bhaji the person picked for a date, so it is theirs and stays; everything else is neutral.
+    expect(r).toEqual({ ...NEUTRAL_ROUTINE, overrides: { '2026-10-20': ['palak-bhaji'] } });
+    // A store from before version 3 had the pattern on by default, not by choice, so it is the same.
+    expect(migrateState({ ...v1, version: 2, routine: { ...DEFAULT_ROUTINE, enabled: true } }, NOW).routine).toEqual(NEUTRAL_ROUTINE);
+  });
+
+  it('version 7: a store from version 3 on that switched the example on keeps all of it', () => {
+    const r = migrateState({ version: 3, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...DEFAULT_ROUTINE, enabled: true } }, NOW).routine;
+    expect(r).toEqual({ ...DEFAULT_ROUTINE, enabled: true, overrides: {} });
+  });
+
+  it('version 7: the never-used reset keeps every field the person changed from the example, and clears only the untouched ones', () => {
+    const never = (changes: Partial<typeof DEFAULT_ROUTINE>) =>
+      migrateState({ version: 6, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...DEFAULT_ROUTINE, ...changes } }, NOW).routine;
+    // Their own avoid list and budget stay; the week and the walk, never touched, become neutral.
+    const avoid = [DEFAULT_ROUTINE.avoid[1]];
+    const listed = never({ avoid, budgetMin: 100, budgetMax: 150 });
+    expect(listed.avoid).toEqual(avoid);
+    expect([listed.budgetMin, listed.budgetMax]).toEqual([100, 150]);
+    expect(listed.slots).toEqual(DEFAULT_SLOTS);
+    expect(listed.week).toEqual(NEUTRAL_ROUTINE.week);
+    expect(listed.walk).toBe(NEUTRAL_ROUTINE.walk);
+    expect(listed).toEqual({ ...NEUTRAL_ROUTINE, avoid, budgetMin: 100, budgetMax: 150 });
+    // Their own bhaji week stays; the rest is neutral.
+    const week = DEFAULT_ROUTINE.week.map((d, i) => (i === 3 ? ['bhindi-bhaji'] : d));
+    expect(never({ week })).toEqual({ ...NEUTRAL_ROUTINE, week });
+    // The budget is one pair: one end changed keeps both.
+    expect(never({ budgetMax: 250 })).toEqual({ ...NEUTRAL_ROUTINE, budgetMin: DEFAULT_ROUTINE.budgetMin, budgetMax: 250 });
+  });
+
+  it('version 7: a never-used version-6 store migrates once, and a second load changes nothing', () => {
+    const raw = { ...v1, version: 6, routine: { ...DEFAULT_ROUTINE, avoid: [DEFAULT_ROUTINE.avoid[0]] }, actionsDone: [{ date: '2026-10-27', key: 'skip_lunch' }] };
+    const once = migrateState(raw, NOW);
+    expect(once.routine.slots).toEqual(DEFAULT_SLOTS);
+    expect(once.routine.avoid).toEqual([DEFAULT_ROUTINE.avoid[0]]);
+    expect(migrateState(once, NOW)).toEqual(once);
+    expect(migrateState(raw, NOW)).toEqual(once);
+  });
+
+  it('version 7: the same skip written twice becomes one slot skip', () => {
+    const out = migrateState({ ...v1, actionsDone: [{ date: '2026-10-28', key: 'skip_lunch' }, { date: '2026-10-28', key: 'skip_lunch' }] }, NOW);
+    expect(out.slotSkips).toEqual([{ id: '2026-10-28:lunch', date: '2026-10-28', slotId: 'lunch' }]);
+    expect(out.actionsDone).toEqual([]);
+  });
+
+  it('version 7: someone who switched the app\'s reminders off does not get the meal-time prompt switched on by an update', () => {
+    expect(migrateState({ ...v1, settings: { ...v1.settings, nudgesEnabled: false } }).settings.reminders.mealPrompt).toBe(false);
+    expect(migrateState(v1).settings.reminders.mealPrompt).toBe(true);
+    // Once the record exists it is the person's choice, whatever the other switch says.
+    const chosen = { ...v1, version: 7, settings: { ...v1.settings, nudgesEnabled: false, reminders: { mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false } } };
+    expect(migrateState(chosen).settings.reminders.mealPrompt).toBe(true);
+    const off = migrateState({ ...v1, settings: { ...v1.settings, nudgesEnabled: false } });
+    expect(migrateState(off)).toEqual(off);
   });
 
   it('version 7: a routine someone switched on, planned or edited keeps its bhaji week, avoid list, budget and walk exactly', () => {
