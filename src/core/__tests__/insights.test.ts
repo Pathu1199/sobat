@@ -118,6 +118,22 @@ describe('scoreDay', () => {
     expect(s.water).toBe(50);
   });
 
+  it('judges water and movement over the waking day, not until the last meal: with the last slot at 17:00, at 17:50', () => {
+    const early = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS.filter((s) => s.id !== 'dinner').map((s) => (s.id === 'snack' ? { ...s, time: '17:00' } : s)) });
+    const idle = { ...b, workedOut: false, workoutMinutes: 0, kcal: 1800, slots: early };
+    const s = scoreDay({ ...idle, waterMl: 2100, minutes: 17 * 60 + 50, expectedWaterMl: 2100 });
+    // On pace for the water drunk so far, not judged against the whole goal.
+    expect(s.water).toBe(100);
+    // Movement is still to come at 17:50, and judged from 18:00 as on any day.
+    expect(s.movement).toBeNull();
+    expect(scoreDay({ ...idle, waterMl: 2100, minutes: 19 * 60, expectedWaterMl: 2400 }).movement).toBe(0);
+    // Eating is judged whole once the 17:00 slot's window has closed at 17:45.
+    expect(s.eating).toBe(scoreDay({ ...idle, waterMl: 0 }).eating);
+    // From 21:00 the day is over for water and movement too.
+    const night = scoreDay({ ...idle, waterMl: 2100, minutes: 21 * 60, expectedWaterMl: 2100 });
+    expect(night.water).toBe(70);
+  });
+
   it('judges movement from 18:00 exactly', () => {
     const s = scoreDay({ ...b, workedOut: false, workoutMinutes: 0, kcal: 500, waterMl: 1000, minutes: 18 * 60 });
     expect(s.movement).toBe(0);

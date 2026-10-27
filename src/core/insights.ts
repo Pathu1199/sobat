@@ -20,6 +20,9 @@ export type LeverKey = 'eating' | 'movement' | 'water' | 'sleep' | 'mood';
 /** Movement is only judged once the evening window opens, unless it already happened. */
 const MOVEMENT_JUDGED_FROM_HOUR = 18;
 
+/** Water and movement are judged as the day runs until this hour at least, whatever time the last meal is. */
+const DAY_ENDS_AT_HOUR = 21;
+
 /** The four meals of the day, for a running day judged without the person's own pattern. */
 const DEFAULT_PATTERN = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS });
 
@@ -45,8 +48,11 @@ export function scoreDay(input: {
   slots?: PatternSlot[];
 }): DayScore {
   const slots = input.slots?.length ? input.slots : DEFAULT_PATTERN;
-  // Today is still running until the last slot's window has closed, so a 21:30 dinner is not missed at 21:15.
+  // Eating is still running until the last slot's window has closed, so a 21:30 dinner is not missed at 21:15.
   const running = input.minutes !== undefined && input.minutes < windowsCloseAt(slots);
+  // Water and movement run over the waking day, until 21:00 or the last window's close if later,
+  // so a pattern whose last meal is at 17:00 does not end the day for them at 17:45.
+  const awake = input.minutes !== undefined && input.minutes < Math.max(DAY_ENDS_AT_HOUR * 60, windowsCloseAt(slots));
   // Mid-day, judge against the person's own pattern: on pace anywhere from what is due by
   // now to all the slots whose window has opened, so a breakfast eaten as its window opens
   // is not over and a lunch not yet eaten as its window opens is not under. Judging a
@@ -68,11 +74,11 @@ export function scoreDay(input: {
 
   let movement: number | null;
   if (input.workedOut) movement = clamp100(60 + Math.min(input.workoutMinutes, 40));
-  else if (running && input.minutes! < MOVEMENT_JUDGED_FROM_HOUR * 60) movement = null;
+  else if (awake && input.minutes! < MOVEMENT_JUDGED_FROM_HOUR * 60) movement = null;
   else movement = 0;
 
   let water: number | null;
-  if (running && input.expectedWaterMl !== undefined) {
+  if (awake && input.expectedWaterMl !== undefined) {
     water = input.expectedWaterMl <= 0 ? null : clamp100((input.waterMl / input.expectedWaterMl) * 100);
   } else {
     water = clamp100((input.waterMl / Math.max(input.waterGoalMl, 1)) * 100);
