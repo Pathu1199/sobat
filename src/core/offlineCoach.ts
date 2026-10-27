@@ -134,10 +134,11 @@ export function answerOffline(question: string, ctx: OfflineCtx, t: T): { text: 
         break;
       }
       lines.push(f(t('oc_left'), { kcal: left, eaten: b.consumed, target: b.target }));
-      const plate = plateLine(ctx, t, plateFor(ctx, p.meal));
+      // The options fit the plate the answer talks about.
+      const slot = plateFor(ctx, p.meal);
+      const plate = plateLine(ctx, t, slot);
       if (plate) lines.push(plate);
       if (b.proteinConsumed < b.proteinTarget * 0.5) lines.push(f(t('oc_protein_push'), { g: Math.round(b.proteinTarget - b.proteinConsumed) }));
-      const slot = p.meal ? ctx.dayPlan.slots.find((s) => s.type === p.meal) : undefined;
       options = ctx.optionsFor(Math.min(left, slot?.budget ?? Math.max(300, b.perMeal)));
       lines.push(t('oc_tap_option'));
       break;

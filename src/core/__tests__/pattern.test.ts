@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allowance, currentSlot, DEFAULT_SHARE, EATEN_NOW_MS, expectedKcalByMinute, openedKcalByMinute, pattern, slotAt, slotForMealAt, slotOf, slotShare, slotStates, withSlot } from '../pattern';
+import { allowance, currentSlot, DEFAULT_SHARE, EATEN_NOW_MS, expectedKcalByMinute, openedKcalByMinute, pattern, settledSlotIds, slotAt, slotForMealAt, slotOf, slotShare, slotStates, withSlot } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { Meal } from '../types';
 
@@ -86,6 +86,14 @@ describe('slotStates', () => {
   it('shows skipped, missed and later', () => {
     const s = slotStates({ routine, target: 1600, meals: [], nowMinutes: 14 * 60, skippedSlots: ['morning'] });
     expect(s.map((x) => x.status)).toEqual(['skipped', 'missed', 'later']);
+  });
+});
+
+describe('settledSlotIds', () => {
+  it('counts a slot eaten, skipped, or holding only a meal the app filled in from the plan, and not one still to come', () => {
+    const filled: Meal = { ...meal('lunch', '13:00', 600, 'lunch'), source: 'auto' };
+    const s = slotStates({ routine, target: 1600, meals: [filled], nowMinutes: 14 * 60, skippedSlots: ['morning'] });
+    expect(settledSlotIds(s)).toEqual(['morning', 'lunch']);
   });
 });
 

@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { dayPlan, fullDayPlan } from '../core/dayPlan';
 import { foodName, toMealItem } from '../core/foods';
 import { newId } from '../core/id';
-import { pattern, slotStates } from '../core/pattern';
+import { pattern, settledSlotIds, slotStates } from '../core/pattern';
 import { avoidedFoodIds, bhajiFor, slotLabel } from '../core/routine';
 import type { MealType } from '../core/types';
 import { fill, makeT } from '../i18n';
@@ -37,9 +37,7 @@ export function FitsCard({ compact }: { compact?: boolean }) {
   const slots = useMemo(() => pattern(state.routine), [state.routine]);
   const loggedSlotIds = useMemo(() => {
     const todayMeals = state.meals.filter((m) => m.date === today);
-    return slotStates({ routine: state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday })
-      .filter((s) => s.status === 'done' || s.status === 'skipped')
-      .map((s) => s.slot.id);
+    return settledSlotIds(slotStates({ routine: state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday }));
   }, [state.routine, state.meals, today, app.targets.kcal, minute, app.skippedToday]);
 
   const plan = useMemo(() => {

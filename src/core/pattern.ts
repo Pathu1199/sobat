@@ -126,6 +126,15 @@ export function slotStates(input: {
   });
 }
 
+/**
+ * The slots settled for the day: eaten or skipped. A slot holding only a meal
+ * the app filled in from the plan counts as eaten as planned. The coach, the
+ * plates and the fits card all go by this.
+ */
+export function settledSlotIds(states: SlotState[]): string[] {
+  return states.filter((s) => s.status === 'done' || s.status === 'skipped').map((s) => s.slot.id);
+}
+
 /** A slot that holds meals, every one of them filled in by the app from the plan and not yet confirmed. */
 export function onlyFilledIn(s: SlotState): boolean {
   return s.meals.length > 0 && s.meals.every((m) => m.source === 'auto');

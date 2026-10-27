@@ -17,7 +17,7 @@ import { intakeFact, lowIntake } from '../../core/intake';
 import { contextFor, dietFrom, isDurableMemory, toPromptLines } from '../../core/memory';
 import { KCAL_FLOOR, mealTypeForHour } from '../../core/nutrition';
 import { planFrom } from '../../core/plan';
-import { pattern, slotStates } from '../../core/pattern';
+import { pattern, settledSlotIds, slotStates } from '../../core/pattern';
 import { journey, journeyFacts } from '../../core/review';
 import { avoidedFoodIds, bhajiFor, routineFacts } from '../../core/routine';
 import type { ChatOption } from '../../core/types';
@@ -145,9 +145,7 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
       // The plates are the pattern's slots still to eat, the way the fits card shows them.
       const clock = new Date();
       const nowMinutes = clock.getHours() * 60 + clock.getMinutes();
-      const loggedSlotIds = slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes, skippedSlots: app.skippedToday })
-        .filter((s) => s.status === 'done' || s.status === 'skipped')
-        .map((s) => s.slot.id);
+      const loggedSlotIds = settledSlotIds(slotStates({ routine: app.state.routine, target: app.targets.kcal, meals: todayMeals, nowMinutes, skippedSlots: app.skippedToday }));
       const dp = dayPlan({
         remaining: app.budget.remaining,
         hour: app.hour,

@@ -27,7 +27,7 @@ const ctx: OfflineCtx = {
   hour: 13,
   plan: { startKg: 98, currentKg: 95.8, goalKg: 85, lostKg: 2.2, toGoKg: 10.8, targetRate: 0.5, actualRate: 0.45, weeksAtTarget: 22, etaAtTarget: '2027-03-08', weeksAtActual: 24, etaAtActual: '2027-03-22', dailyKcal: 1700, proteinG: 110, stage: 'early', daysLogging: 30 },
   journey: { days: 14, loggedDays: 12, avgKcal: 1650, overDays: 3, heavyDays: 1, avgProtein: 70, avgWaterMl: 2100, avgSleepMin: 410, workoutDays: 2, weighIns: 2, avoidSlips: 1, lateDinners: 2 },
-  dayPlan: { remaining: 1280, stop: false, now: 'lunch', slots: [{ type: 'lunch', budget: 640, kcal: 600, protein: 30, picks: [{ food: { id: 'palak' } as never, grams: 150, kcal: 120, protein: 5 }] }] },
+  dayPlan: { remaining: 1280, stop: false, now: 'lunch', slots: [{ id: 'lunch', type: 'lunch', budget: 640, kcal: 600, protein: 30, picks: [{ food: { id: 'palak' } as never, grams: 150, kcal: 120, protein: 5 }] }] },
   advice: [],
   waterMl: 1000,
   waterGoalMl: 3000,
@@ -59,7 +59,7 @@ describe('answerOffline', () => {
     expect(a.options).toHaveLength(0);
   });
 
-  it('picks the plate on now by its slot id, and lists every slot of the day once', () => {
+  describe('with two snack slots', () => {
     const tp = (k: string) => (k === 'oc_plate' ? 'plate {kcal}' : `[${k}]`);
     const pick = { food: { id: 'palak' } as never, grams: 150, kcal: 120, protein: 5 };
     const twoSnacks: OfflineCtx = {
@@ -75,10 +75,20 @@ describe('answerOffline', () => {
         ],
       },
     };
-    expect(answerOffline('kiti calories baki ahet', twoSnacks, tp).text).toContain('plate 200');
-    const day = answerOffline('full day plan dya', twoSnacks, tp).text;
-    expect(day).toContain('plate 100');
-    expect(day).toContain('plate 200');
+
+    it('picks the plate on now by its slot id, and lists every slot of the day once', () => {
+      expect(answerOffline('kiti calories baki ahet', twoSnacks, tp).text).toContain('plate 200');
+      const day = answerOffline('full day plan dya', twoSnacks, tp).text;
+      expect(day.match(/plate 100\b/g)).toHaveLength(1);
+      expect(day.match(/plate 200\b/g)).toHaveLength(1);
+    });
+
+    it('sizes the options for "what to eat now" to the plate on now', () => {
+      const asked: number[] = [];
+      const a = answerOffline('what should I eat now', { ...twoSnacks, optionsFor: (max) => (asked.push(max), ctx.optionsFor(max)) }, tp);
+      expect(a.text).toContain('plate 200');
+      expect(asked).toEqual([200]);
+    });
   });
 });
 

@@ -12,7 +12,7 @@ import type { FoodItem, MealType } from './types';
  * line can be logged with one tap. A seed reshuffles the picks.
  */
 export type Pick = { food: FoodItem; grams: number; kcal: number; protein: number; /** Lighter swaps for the same role: cut this, have that. */ alts?: Pick[] };
-export type SlotPlan = { /** The pattern slot this plate is for. */ id?: string; type: MealType; budget: number; picks: Pick[]; kcal: number; protein: number };
+export type SlotPlan = { /** The pattern slot this plate is for. */ id: string; type: MealType; budget: number; picks: Pick[]; kcal: number; protein: number };
 export type DayPlan = {
   remaining: number;
   /** True when what is left is too little to eat anything but water or fruit. */
