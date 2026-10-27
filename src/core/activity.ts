@@ -116,9 +116,12 @@ const WALK: Activity = (() => {
  * A walk from the walk tile: an activity log like any other (walking, normal
  * effort, at the person's weight then), so its calories are earned back the
  * usual way. Today's is logged now; one added to an earlier day at its noon.
- * Never another activity in its place.
+ * Never another activity in its place. Null for a date after today: nobody
+ * has walked in the future.
  */
-export function walkLog(input: { id: string; date: ISODate; minutes: number; weightKg: number; now: Date }): ActivityLog {
-  const at = input.date === toISODate(input.now) ? input.now : new Date(`${input.date}T12:00:00`);
+export function walkLog(input: { id: string; date: ISODate; minutes: number; weightKg: number; now: Date }): ActivityLog | null {
+  const today = toISODate(input.now);
+  if (input.date > today) return null;
+  const at = input.date === today ? input.now : new Date(`${input.date}T12:00:00`);
   return { id: input.id, date: input.date, at: at.toISOString(), activityId: WALK.id, minutes: input.minutes, intensity: 1, kcal: kcalBurned(WALK, 1, input.minutes, input.weightKg) };
 }

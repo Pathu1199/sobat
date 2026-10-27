@@ -97,6 +97,12 @@ describe('waterLog', () => {
   it('a tap logs now for today and at noon for an earlier day, like a walk', () => {
     const now = new Date('2026-10-27T18:05:00');
     expect(waterLog({ id: 'w1', date: '2026-10-27', ml: 500, now })).toEqual({ id: 'w1', at: now.toISOString(), date: '2026-10-27', ml: 500 });
-    expect(waterLog({ id: 'w2', date: '2026-10-25', ml: 750, now }).at).toBe(new Date('2026-10-25T12:00:00').toISOString());
+    expect(waterLog({ id: 'w2', date: '2026-10-25', ml: 750, now })?.at).toBe(new Date('2026-10-25T12:00:00').toISOString());
+  });
+
+  it('never logs water on a date after today: nothing is drunk in the future', () => {
+    const now = new Date('2026-10-27T23:59:00');
+    expect(waterLog({ id: 'w1', date: '2026-10-28', ml: 500, now })).toBeNull();
+    expect(waterLog({ id: 'w1', date: '2026-10-27', ml: 500, now })).not.toBeNull();
   });
 });

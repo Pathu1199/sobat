@@ -777,3 +777,45 @@ describe('the day a store moved to this version', () => {
   });
 });
 
+describe('records in an odd shape, from sync or an old file', () => {
+  const line = { foodId: 'chapati', unit: 'piece', qty: 2 };
+  const goodMenu = { date: '2026-10-28', editedAt: '', meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [line] }] };
+  const skip = { id: '2026-10-27:lunch', date: '2026-10-27', slotId: 'lunch' };
+  const saved = { id: 's1', name: 'My thali', lines: [line] };
+
+  it('keeps only well-formed menus, skips and saved meals; a malformed one is dropped and the load goes on', () => {
+    const menus = [
+      goodMenu,
+      null,
+      'monday',
+      { date: 5, meals: [] },
+      { date: '2026-10-29' },
+      { date: '2026-10-30', meals: 'none' },
+      { date: '2026-10-31', meals: [null] },
+      { date: '2026-11-01', meals: [{ type: 'lunch', lines: [] }] },
+      { date: '2026-11-02', meals: [{ id: 'lunch' }] },
+      { date: '2026-11-03', meals: [{ id: 'lunch', lines: [null] }] },
+    ];
+    const slotSkips = [skip, null, { id: 1, date: '2026-10-27', slotId: 'x' }, { id: 'a', date: '2026-10-27' }, { id: 'b', date: null, slotId: 'lunch' }];
+    const savedMeals = [saved, null, { id: 's2', lines: [] }, { id: 's3', name: 'x' }, { id: 's4', name: 'y', lines: [7] }, { name: 'z', lines: [] }];
+    const s = migrateState({ ...v1, version: 7, menus, slotSkips, savedMeals }, NOW);
+    expect(s.menus).toEqual([goodMenu]);
+    expect(s.slotSkips).toEqual([skip]);
+    expect(s.savedMeals).toEqual([saved]);
+    // What is left shows, and a second load changes nothing.
+    expect(viewMenu('2026-10-28', s.menus, s.routine, '2026-10-28', foods).meals.find((m) => m.id === 'lunch')?.lines).toEqual([line]);
+    expect(migrateState(s, NOW)).toEqual(s);
+  });
+
+  it('keeps every field of a well-formed record as it was, and a list that is not a list at all is an empty one', () => {
+    const kept = { ...goodMenu, frozen: true };
+    expect(migrateState({ ...v1, version: 7, menus: [kept] }, NOW).menus).toEqual([kept]);
+    const s = migrateState({ ...v1, version: 7, menus: { a: goodMenu }, slotSkips: 'skip', savedMeals: 3 }, NOW);
+    expect([s.menus, s.slotSkips, s.savedMeals]).toEqual([[], [], []]);
+  });
+
+  it('turns a skip key from an older build into a skip as before, beside the well-formed skips kept', () => {
+    const s = migrateState({ ...v1, version: 6, slotSkips: [skip, { id: 'x' }], actionsDone: [{ date: '2026-10-28', key: 'skip_dinner' }] }, NOW);
+    expect(s.slotSkips.map((x) => x.id)).toEqual(['2026-10-27:lunch', '2026-10-28:dinner']);
+  });
+});

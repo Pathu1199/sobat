@@ -67,8 +67,13 @@ export function weightPoints(weights: WeightLog[], width = 100, height = 42, cou
   }));
 }
 
-/** A water log from the water tile: today's is logged now, one added to an earlier day at its noon, the way a walk is. */
-export function waterLog(input: { id: string; date: ISODate; ml: number; now: Date }): WaterLog {
-  const at = input.date === toISODate(input.now) ? input.now : new Date(`${input.date}T12:00:00`);
+/**
+ * A water log from the water tile: today's is logged now, one added to an earlier day at its noon, the way a walk is.
+ * Null for a date after today: nothing is drunk in the future.
+ */
+export function waterLog(input: { id: string; date: ISODate; ml: number; now: Date }): WaterLog | null {
+  const today = toISODate(input.now);
+  if (input.date > today) return null;
+  const at = input.date === today ? input.now : new Date(`${input.date}T12:00:00`);
   return { id: input.id, at: at.toISOString(), date: input.date, ml: input.ml };
 }

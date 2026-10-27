@@ -83,7 +83,7 @@ type Ctx = {
   /** Take a meal away; once its slot would be filled in from the plan, the slot is marked skipped so it is not filled straight back. */
   removeMeal: (id: string) => void;
   updateMeal: (m: Meal) => void;
-  /** One water log on a date, today when none is given. Returns its id, so a tap can be undone. */
+  /** One water log on a date, today when none is given. Returns its id, so a tap can be undone. A date after today logs nothing, and its id then names nothing. */
   addWater: (ml: number, date?: ISODate) => string;
   /** Take one water log away, by its id. */
   removeWater: (id: string) => void;
@@ -148,7 +148,7 @@ type Ctx = {
   runAutoFill: () => void;
   addSavedMeal: (name: string, lines: PlanLine[]) => void;
   removeSavedMeal: (id: string) => void;
-  /** A walk from the walk tile: an activity log, so its calories are earned the usual way. Returns its id, for undo. */
+  /** A walk from the walk tile: an activity log, so its calories are earned the usual way. Returns its id, for undo. A date after today logs nothing, and its id then names nothing. */
   logWalk: (date: ISODate, minutes: number) => string;
   addActivity: (a: ActivityLog) => void;
   removeActivity: (id: string) => void;
@@ -407,7 +407,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateMeal: (m) => update((s) => ({ ...s, meals: s.meals.map((x) => (x.id === m.id ? editedMeal(x, m) : x)) })),
       addWater: (ml, date) => {
         const id = newId();
-        update((s) => ({ ...s, water: [...s.water, waterLog({ id, date: date ?? toISODate(), ml, now: new Date() })] }));
+        update((s) => {
+          const log = waterLog({ id, date: date ?? toISODate(), ml, now: new Date() });
+          return log ? { ...s, water: [...s.water, log] } : s;
+        });
         return id;
       },
       removeWater: (id) => update((s) => (s.water.some((w) => w.id === id) ? { ...s, water: s.water.filter((w) => w.id !== id) } : s)),
@@ -556,7 +559,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }),
       logWalk: (date, minutes) => {
         const id = newId();
-        update((s) => ({ ...s, activities: [...(s.activities ?? []), walkLog({ id, date, minutes, weightKg: s.profile.weightKg, now: new Date() })] }));
+        update((s) => {
+          const log = walkLog({ id, date, minutes, weightKg: s.profile.weightKg, now: new Date() });
+          return log ? { ...s, activities: [...(s.activities ?? []), log] } : s;
+        });
         return id;
       },
       addActivity: (a) => update((s) => ({ ...s, activities: [...(s.activities ?? []), a] })),

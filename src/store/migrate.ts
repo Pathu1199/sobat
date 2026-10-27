@@ -196,6 +196,29 @@ function templateMenus(plan: WeekPlan, monday: ISODate, menus: DayMenu[], routin
   }
 }
 
+/** A planned line or a meal's line list: a list of records, so reading a line never throws. */
+function isLines(v: unknown): v is unknown[] {
+  return Array.isArray(v) && v.every(isRecord);
+}
+
+/** A date's menu as the app reads it: a date, and meals that each have an id and a list of lines. */
+function isMenu(v: unknown): v is DayMenu {
+  return isRecord(v) && typeof v.date === 'string' && Array.isArray(v.meals) && v.meals.every((m) => isRecord(m) && typeof m.id === 'string' && isLines(m.lines));
+}
+
+function isSlotSkip(v: unknown): v is SlotSkip {
+  return isRecord(v) && typeof v.id === 'string' && typeof v.date === 'string' && typeof v.slotId === 'string';
+}
+
+function isSavedMeal(v: unknown): v is SavedMeal {
+  return isRecord(v) && typeof v.id === 'string' && typeof v.name === 'string' && isLines(v.lines);
+}
+
+/** The records of a list that have the shape the app reads; a record in any other shape, from a file or sync, is dropped rather than thrown on later. */
+function wellFormed<T>(v: unknown, ok: (r: unknown) => r is T): T[] {
+  return Array.isArray(v) ? v.filter(ok) : [];
+}
+
 /** A done-key older builds wrote for a skipped slot. */
 function isSkipKey(a: unknown): a is { date: string; key: string } {
   return isRecord(a) && typeof a.date === 'string' && typeof a.key === 'string' && a.key.startsWith(SKIP_PREFIX);
@@ -233,12 +256,12 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
   const weekPlan = rawPlan ? alignOrDrop(rawPlan, routine) : null;
   // Version 7: the one-week template becomes this week's menus, date by date, its index 0 being Sunday. A date that already has a menu keeps it.
   // A day still as the app built it from this pattern is not written, so its date shows the suggestion fitted to the person.
-  const storedMenus = Array.isArray(raw.menus) ? (raw.menus as DayMenu[]) : [];
+  const storedMenus = wellFormed(raw.menus, isMenu);
   const customFoods = Array.isArray(raw.customFoods) ? (raw.customFoods as FoodItem[]) : [];
   const menus = weekPlan ? templateMenus(weekPlan, mondayOf(toISODate(now)), storedMenus, routine, customFoods) : storedMenus;
   // Version 7: a skipped slot is its own record with its date, not a done-key that lasted only the day.
   const actions = Array.isArray(raw.actionsDone) ? (raw.actionsDone as unknown[]) : [];
-  let slotSkips = Array.isArray(raw.slotSkips) ? (raw.slotSkips as SlotSkip[]) : [];
+  let slotSkips = wellFormed(raw.slotSkips, isSlotSkip);
   for (const a of actions) if (isSkipKey(a)) slotSkips = addSkip(slotSkips, a.date, a.key.slice(SKIP_PREFIX.length));
   // A meal eaten in a slot, or a skip, replaces the copy the app filled in there: this runs on every load and every sync
   // landing, so a lunch typed on one device and the one another device filled in are never both counted.
@@ -261,7 +284,7 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
     menus,
     actionsDone: actions.filter((a) => !isSkipKey(a)) as AppState['actionsDone'],
     slotSkips,
-    savedMeals: Array.isArray(raw.savedMeals) ? (raw.savedMeals as SavedMeal[]) : [],
+    savedMeals: wellFormed(raw.savedMeals, isSavedMeal),
     openedDates: Array.isArray(raw.openedDates) ? raw.openedDates.filter((d): d is string => typeof d === 'string') : [],
   };
 }

@@ -49,7 +49,7 @@ describe('activity', () => {
 describe('walkLog', () => {
   it('a walk tap is a normal-effort walk that the earned calories count the usual way', () => {
     const now = new Date('2026-10-27T18:05:00');
-    const log = walkLog({ id: 'w1', date: '2026-10-27', minutes: 10, weightKg: 80, now });
+    const log = walkLog({ id: 'w1', date: '2026-10-27', minutes: 10, weightKg: 80, now })!;
     expect(log).toMatchObject({ id: 'w1', date: '2026-10-27', activityId: 'walk', minutes: 10, intensity: 1, kcal: kcalBurned(walk, 1, 10, 80) });
     expect(log.at).toBe(now.toISOString());
     expect(burnedOn([log], '2026-10-27')).toBe(log.kcal);
@@ -58,7 +58,13 @@ describe('walkLog', () => {
 
   it('a walk added to an earlier day is placed at noon of that day', () => {
     const log = walkLog({ id: 'w1', date: '2026-10-25', minutes: 10, weightKg: 80, now: new Date('2026-10-27T18:05:00') });
-    expect(log.at).toBe(new Date('2026-10-25T12:00:00').toISOString());
+    expect(log?.at).toBe(new Date('2026-10-25T12:00:00').toISOString());
+  });
+
+  it('never logs a walk on a date after today: nobody has walked in the future', () => {
+    const now = new Date('2026-10-27T23:59:00');
+    expect(walkLog({ id: 'w1', date: '2026-10-28', minutes: 10, weightKg: 80, now })).toBeNull();
+    expect(walkLog({ id: 'w1', date: '2026-10-27', minutes: 10, weightKg: 80, now })).not.toBeNull();
   });
 
   it('logs the walking activity, which the activity list holds', () => {
