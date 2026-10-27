@@ -2,7 +2,7 @@ import { addDays, toISODate, weekDates } from './date';
 import { toMealItem } from './foods';
 import { dailyTargets, KCAL_FLOOR } from './nutrition';
 import { slotOf, withSlot, type SlotPoint } from './pattern';
-import { avoidedFoodIds, weekdayOf, type PlanLine, type Routine } from './routine';
+import { avoidedFoodIds, slotMinutes, slotTime, weekdayOf, type PlanLine, type Routine, type RoutineSlot } from './routine';
 import { stable } from './sync';
 import type { AppState, FoodItem, ISODate, Meal, MealItem, MealSource, Profile, SavedMeal, SlotSkip } from './types';
 import { isOffDay } from './week';
@@ -242,19 +242,9 @@ export function skippedOn(skips: SlotSkip[], date: ISODate): string[] {
   return skips.filter((s) => s.date === date).map((s) => s.slotId);
 }
 
-function minutesOf(hhmm: string | undefined): number {
-  const [h, m] = (hhmm ?? '').split(':').map(Number);
-  return (h || 0) * 60 + (m || 0);
-}
-
-/** A clock time to build a date-time from; noon when a menu meal has none. */
-function clockOf(hhmm: string | undefined): string {
-  return hhmm && /^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm) ? hhmm : '12:00';
-}
-
-/** A date's slots as its menu has them, to match meals against. */
+/** A date's slots as its menu has them, to match meals against. A meal's time is read as a slot's is (`slotTime`). */
 export function menuSlots(menu: DayMenu): (SlotPoint & { meal: PlanMeal })[] {
-  return menu.meals.map((m) => ({ id: m.id, type: m.type, minutes: minutesOf(m.time), meal: m }));
+  return menu.meals.map((m) => ({ id: m.id, type: m.type, minutes: slotMinutes(m), meal: m }));
 }
 
 /** The menu's slots that hold any meal on its date, matched the way the day's slots are. */
@@ -273,8 +263,9 @@ export function eatenSlotIds(menu: DayMenu, meals: Meal[]): Set<string> {
  * A meal made from planned lines: one item per line, its grams from the
  * line's measure, its calories from the food database at those grams. A food
  * the person made up keeps its estimated mark. It is logged at the slot's
- * time on that date, or now when that time has not come yet. Null when no
- * line names a food that exists.
+ * time on that date (`slotTime`), or now when that time has not come yet.
+ * Null when no line names a food that exists, and for a date after today:
+ * nothing is logged into the future.
  */
 export function mealFromLines(input: {
   id: string;
@@ -285,13 +276,14 @@ export function mealFromLines(input: {
   source: MealSource;
   now: Date;
 }): Meal | null {
+  if (input.date > toISODate(input.now)) return null;
   const items: MealItem[] = [];
   for (const line of input.lines) {
     const info = lineInfo(line, input.foods);
     if (info && info.grams > 0) items.push(toMealItem(info.food, info.grams, info.food.tags.includes('custom')));
   }
   if (items.length === 0) return null;
-  const planned = new Date(`${input.date}T${clockOf(input.slot.time)}:00`);
+  const planned = new Date(`${input.date}T${slotTime(input.slot)}:00`);
   const at = planned.getTime() > input.now.getTime() ? input.now : planned;
   return {
     id: input.id,
@@ -308,6 +300,22 @@ export function mealFromLines(input: {
 
 /** Minutes after a slot's time before the app fills it in from the plan. */
 export const AUTO_FILL_AFTER_MIN = 90;
+
+/** When the app fills a slot of a date in from the plan: the slot's time that date plus AUTO_FILL_AFTER_MIN, so a 23:00 slot is filled at 00:30 the next day. */
+function autoFillAt(date: ISODate, slot: Pick<RoutineSlot, 'type' | 'time'>): number {
+  return new Date(`${date}T${slotTime(slot)}:00`).getTime() + AUTO_FILL_AFTER_MIN * 60000;
+}
+
+/**
+ * Whether the moment the app fills a slot in from the plan has passed on a
+ * date: always on an earlier date, never on a later one, and today once the
+ * slot's time plus AUTO_FILL_AFTER_MIN has come.
+ */
+export function autoFillPassed(date: ISODate, slot: Pick<RoutineSlot, 'type' | 'time'>, now: Date): boolean {
+  const today = toISODate(now);
+  if (date !== today) return date < today;
+  return now.getTime() >= autoFillAt(date, slot);
+}
 
 /** The id of a meal the app filled in: the same on every device, so two devices filling one slot make one meal, not two. */
 export function autoMealId(date: ISODate, slotId: string): string {
@@ -347,15 +355,14 @@ export function autoFill(input: {
   if (isOffDay(input.offDays, date)) return [];
   const out: Meal[] = [];
   for (const slot of openSlots(menu, input.meals, input.skips)) {
-    const due = new Date(`${date}T${clockOf(slot.time)}:00`).getTime() + AUTO_FILL_AFTER_MIN * 60000;
-    if (now.getTime() < due) continue;
+    if (now.getTime() < autoFillAt(date, slot)) continue;
     const meal = mealFromLines({ id: autoMealId(date, slot.id), date, slot, lines: slot.lines, foods: input.foods, source: 'auto', now });
     if (meal) out.push(meal);
   }
   return out;
 }
 
-/** "Fill this day from plan": every open slot of an older day, the kind the app was never open on, logged as planned. */
+/** "Fill this day from plan": every open slot of an older day, the kind the app was never open on, logged as planned. Nothing for a date after today. */
 export function fillFromPlan(input: { now: Date; menu: DayMenu; meals: Meal[]; skips: SlotSkip[]; foods: FoodItem[] }): Meal[] {
   const { menu } = input;
   const out: Meal[] = [];
@@ -379,15 +386,22 @@ export function withDayConfirmed(meals: Meal[], date: ISODate): Meal[] {
 }
 
 /**
- * The skips after a meal is taken away. A meal that came from the plan and
- * is deleted was not eaten that way: when nothing else is left in its slot
- * that date, the slot is marked skipped, so the app does not fill it straight
- * back in. A meal typed in by hand leaves the skips as they are.
+ * The skips after a meal is taken away. When nothing else is left in its slot
+ * that date and the moment the app fills that slot in from the plan has
+ * passed (`autoFillPassed`), the slot is marked skipped, whatever the meal
+ * was, so the app does not fill it straight back in: a deleted meal from the
+ * plan, or an Undo of one typed in by hand. Before that moment nothing is
+ * marked, so a meal logged into lunch by mistake at 08:00 and taken away
+ * leaves lunch to come. Eating in the slot later lifts the skip, as always.
+ * Today's slot time is the pattern's (today's menu follows it); a slot no
+ * longer in the pattern takes the usual time for the meal's kind.
  */
-export function skipsAfterRemove(skips: SlotSkip[], removed: Meal, rest: Meal[]): SlotSkip[] {
-  if ((removed.source !== 'auto' && removed.source !== 'plan') || !removed.slotId) return skips;
-  if (rest.some((m) => m.date === removed.date && m.slotId === removed.slotId)) return skips;
-  return addSkip(skips, removed.date, removed.slotId);
+export function skipsAfterRemove(skips: SlotSkip[], removed: Meal, rest: Meal[], at: { routine: Routine; now: Date }): SlotSkip[] {
+  const slotId = removed.slotId;
+  if (!slotId) return skips;
+  if (rest.some((m) => m.date === removed.date && m.slotId === slotId)) return skips;
+  const slot = at.routine.slots.find((s) => s.id === slotId) ?? { type: removed.type };
+  return autoFillPassed(removed.date, slot, at.now) ? addSkip(skips, removed.date, slotId) : skips;
 }
 
 /**
@@ -408,13 +422,16 @@ export function settleAuto(meals: Meal[], skips: SlotSkip[]): Meal[] {
 }
 
 /**
- * A meal after the person edits it. Correcting a meal the app filled in
- * confirms it: it now reads as eaten as planned, so a later meal in its slot
- * or another device's meals arriving never take the correction away. Any
- * other meal keeps its source.
+ * A meal after the person edits it. `prev` is the meal as the state holds it
+ * now, `next` the edit, made on the copy the sheet opened with; the source is
+ * the state's, never the copy's, so a meal confirmed while the sheet was open
+ * stays confirmed. Correcting a meal the app filled in confirms it: it now
+ * reads as eaten as planned, so a later meal in its slot or another device's
+ * meals arriving never take the correction away. Any other meal keeps its
+ * source.
  */
 export function editedMeal(prev: Meal, next: Meal): Meal {
-  return prev.source === 'auto' ? { ...next, source: 'plan' } : next;
+  return { ...next, source: prev.source === 'auto' ? 'plan' : prev.source };
 }
 
 /** The parts of the state a meal or a skip changes. */
@@ -435,16 +452,17 @@ export function withMealAdded(state: MealsAndSkips & { routine: Routine }, m: Me
 }
 
 /**
- * A meal taken away. One that came from the plan was not eaten that way, so
- * its slot is marked skipped that date when nothing else is left in it
- * (`skipsAfterRemove`), and the meals are settled again like every other
- * write. The same state when there is no meal with that id.
+ * A meal taken away. Once the app would have filled its slot in from the plan,
+ * the slot is marked skipped that date when nothing else is left in it
+ * (`skipsAfterRemove`), so it is not filled straight back; the meals are
+ * settled again like every other write. The same state when there is no meal
+ * with that id.
  */
-export function withMealRemoved(state: MealsAndSkips, id: string): MealsAndSkips {
+export function withMealRemoved(state: MealsAndSkips & { routine: Routine }, id: string, now: Date): MealsAndSkips {
   const gone = state.meals.find((m) => m.id === id);
   if (!gone) return state;
   const rest = state.meals.filter((m) => m.id !== id);
-  const slotSkips = skipsAfterRemove(state.slotSkips, gone, rest);
+  const slotSkips = skipsAfterRemove(state.slotSkips, gone, rest, { routine: state.routine, now });
   return { meals: settleAuto(rest, slotSkips), slotSkips };
 }
 
@@ -516,7 +534,9 @@ export function withOpened(dates: ISODate[], today: ISODate): ISODate[] {
  * The meals the app fills in right now, across yesterday and today, for a
  * person who has finished setup; a device holding nobody's data stays empty.
  * Nothing is filled on or before the day setup was finished: the meals before
- * it were never planned, and no meal prompt comes that day either. The app
+ * it were never planned, and no meal prompt comes that day either. A setup
+ * date after today is not heeded: it came from a device whose clock ran
+ * ahead, and must not hold auto-fill off on every device. The app
  * counts as open on a date it recorded opening on, or one with usage buckets.
  * A meal already in the list (same id) is not returned again. A date nobody
  * wrote fills in the app's suggestion, fitted when a fit is given.
@@ -532,7 +552,7 @@ export function dueAutoFills(input: {
   const today = toISODate(now);
   const openedDates = Array.from(new Set([...state.openedDates, ...state.usage.map((u) => u.date)]));
   const out: Meal[] = [];
-  const since = state.profile.onboardedOn;
+  const since = state.profile.onboardedOn && state.profile.onboardedOn <= today ? state.profile.onboardedOn : undefined;
   for (const date of [addDays(today, -1), today]) {
     if (since && date <= since) continue;
     const menu = viewMenu(date, state.menus, state.routine, today, foods, fit);

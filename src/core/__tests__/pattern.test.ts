@@ -162,6 +162,27 @@ describe('currentSlot', () => {
       expect(currentSlot(day(NEUTRAL_ROUTINE, meals, 22 * 60), 22 * 60)?.slot.id).toBe('dinner');
     });
 
+    it('is not closed by a meal logged ahead into a slot whose window has not opened: lunch filled in, a tea logged into the snack at 14:45, a real lunch at 15:00 is lunch', () => {
+      const meals = [auto('lunch', '13:00', 'lunch'), typed('snack', '14:45', 'snack')];
+      expect(currentSlot(day(NEUTRAL_ROUTINE, meals, 15 * 60), 15 * 60)?.slot.id).toBe('lunch');
+      const now = new Date('2026-10-12T15:00:00');
+      expect(withSlot(meal('snack', '15:00', 450), { routine: NEUTRAL_ROUTINE, target: 1600, meals, skippedSlots: [], now })).toMatchObject({ slotId: 'lunch', type: 'lunch' });
+    });
+
+    it('beside another slot holding only a filled-in meal, is still picked while its window is the latest opened', () => {
+      const meals = [typed('breakfast', '08:40', 'breakfast'), auto('lunch', '13:00', 'lunch'), auto('snack', '16:00', 'snack')];
+      // At 15:00 the snack's window has not opened: the filled-in snack after lunch leaves lunch open.
+      expect(currentSlot(day(NEUTRAL_ROUTINE, meals, 15 * 60), 15 * 60)?.slot.id).toBe('lunch');
+      // At 17:45 the snack's window is the latest opened, and the filled-in lunch before it changes nothing.
+      expect(currentSlot(day(NEUTRAL_ROUTINE, meals, 17 * 60 + 45), 17 * 60 + 45)?.slot.id).toBe('snack');
+    });
+
+    it('with nothing real all day, at 22:00 is the last slot: every slot filled in, or nothing logged at all', () => {
+      const meals = [auto('breakfast', '08:30', 'breakfast'), auto('lunch', '13:00', 'lunch'), auto('snack', '16:00', 'snack'), auto('dinner', '20:30', 'dinner')];
+      expect(currentSlot(day(NEUTRAL_ROUTINE, meals, 22 * 60), 22 * 60)?.slot.id).toBe('dinner');
+      expect(currentSlot(day(NEUTRAL_ROUTINE, [], 22 * 60), 22 * 60)?.slot.id).toBe('dinner');
+    });
+
     it('is never open when the slot itself is skipped, though its leftover meal reads as done', () => {
       const states = day(routine, [typed('breakfast', '08:40', 'morning'), auto('lunch', '13:00', 'lunch')], 14 * 60, ['lunch']);
       expect(states[1]).toMatchObject({ status: 'done', skipped: true });

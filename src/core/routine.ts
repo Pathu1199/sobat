@@ -472,12 +472,15 @@ export const NEUTRAL_ROUTINE: Routine = {
   slots: DEFAULT_SLOTS,
 };
 
-/** The slot's time, or a sensible one for its meal when none was set (older stores). */
-export function slotTime(slot: RoutineSlot): string {
+/**
+ * The slot's time, or a sensible one for its meal when none was set (older
+ * stores) or it is not a clock time. A date's menu meal is read the same way.
+ */
+export function slotTime(slot: Pick<RoutineSlot, 'type' | 'time'>): string {
   return slot.time && /^([01]\d|2[0-3]):[0-5]\d$/.test(slot.time) ? slot.time : TYPE_TIME[slot.type];
 }
 
-export function slotMinutes(slot: RoutineSlot): number {
+export function slotMinutes(slot: Pick<RoutineSlot, 'type' | 'time'>): number {
   const [h, m] = slotTime(slot).split(':').map(Number);
   return h * 60 + m;
 }

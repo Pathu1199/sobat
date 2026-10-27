@@ -76,6 +76,7 @@ type Ctx = {
   setProfile: (p: Partial<Profile>) => void;
   setSettings: (s: Partial<Settings>) => void;
   addMeal: (m: Meal) => void;
+  /** Take a meal away; once its slot would be filled in from the plan, the slot is marked skipped so it is not filled straight back. */
   removeMeal: (id: string) => void;
   updateMeal: (m: Meal) => void;
   addWater: (ml: number) => void;
@@ -128,13 +129,13 @@ type Ctx = {
   addMenuFood: (day: DayMenu, mealId: string, line: PlanLine) => void;
   editMenuMeal: (day: DayMenu, meal: PlanMeal) => void;
   copyMenuDay: (from: DayMenu, to: ISODate) => void;
-  /** "Ate as planned" for a slot on any date: its planned lines logged with database calories. */
+  /** "Ate as planned" for a slot on any date up to today: its planned lines logged with database calories. A date after today changes nothing. */
   addMealFromPlan: (date: ISODate, slotId: string, source?: MealSource) => void;
   /** A meal the app filled in, confirmed as eaten. */
   confirmMeal: (id: string) => void;
   /** "Day looks right": every filled-in meal of the date confirmed. */
   confirmDay: (date: ISODate) => void;
-  /** "Fill this day from plan": every open slot of an older day logged as planned. */
+  /** "Fill this day from plan": every open slot of an older day logged as planned. A date after today changes nothing. */
   fillDayFromPlan: (date: ISODate) => void;
   /** Fill in the planned meals that are due now; the store also does this on open, every minute and on coming back to the front. */
   runAutoFill: () => void;
@@ -390,8 +391,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addMeal: (m) => update((s) => withMeal(s, m, targets.kcal, new Date())),
       removeMeal: (id) =>
         update((s) => {
-          // A meal from the plan taken away was not eaten that way: its slot is marked skipped, so it is not filled straight back.
-          const next = withMealRemoved(s, id);
+          // A meal taken away once its slot would be filled in from the plan marks the slot skipped, so it is not filled straight back.
+          const next = withMealRemoved(s, id, new Date());
           return next.meals === s.meals ? s : { ...s, ...next };
         }),
       updateMeal: (m) => update((s) => ({ ...s, meals: s.meals.map((x) => (x.id === m.id ? editedMeal(x, m) : x)) })),

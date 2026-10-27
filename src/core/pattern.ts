@@ -150,22 +150,23 @@ export function onlyFilledIn(s: SlotState): boolean {
  * opened, the first open slot of the day; when the day is done, the
  * nearest by time. A slot holding only a meal the app filled in from the plan
  * is still open here, though it counts as eaten, so a real meal eaten in it
- * replaces that copy; but only while no later slot holds a real meal or is
- * skipped: once the day has moved past it, a meal eaten late is not taken
- * for the planned one. A skipped slot is never open, whatever it holds.
- * Null only with no slots.
+ * replaces that copy; but only while no later slot whose window has opened
+ * holds a real meal or is skipped: once the day has moved past it, a meal
+ * eaten late is not taken for the planned one. A tea logged ahead into a slot
+ * whose window has not opened yet has not moved the day on. A skipped slot is
+ * never open, whatever it holds. Null only with no slots.
  */
 export function currentSlot(states: SlotState[], nowMinutes: number): SlotState | null {
   if (states.length === 0) return null;
-  // A slot with a real meal or a skip settles every filled-in slot before it.
-  const settled = (s: SlotState) => s.skipped || s.meals.some((m) => m.source !== 'auto');
-  const lastSettled = states.reduce((at, s, i) => (settled(s) ? i : at), -1);
-  const open = (s: SlotState, i: number) => !s.skipped && (s.status !== 'done' || (onlyFilledIn(s) && i > lastSettled));
   // States are in time order, so the opened ones are a prefix; -1 when none has opened yet.
   let last = -1;
   states.forEach((s, i) => {
     if (nowMinutes >= s.slot.minutes - SLOT_EARLY_MIN) last = i;
   });
+  // An opened slot with a real meal or a skip settles every filled-in slot before it.
+  const settled = (s: SlotState, i: number) => i <= last && (s.skipped || s.meals.some((m) => m.source !== 'auto'));
+  const lastSettled = states.reduce((at, s, i) => (settled(s, i) ? i : at), -1);
+  const open = (s: SlotState, i: number) => !s.skipped && (s.status !== 'done' || (onlyFilledIn(s) && i > lastSettled));
   if (last >= 0 && open(states[last], last)) return states[last];
   const next = states.find((s, i) => i > last && open(s, i));
   if (next) return next;
