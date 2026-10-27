@@ -13,8 +13,8 @@ import { dayView } from '../core/dayView';
 import { foodName } from '../core/foods';
 import { weekPlanView, type DayMenu as Menu } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
-import { defaultPlanWeek, planWeekRows, weekAverage, withReviewedWeek, type PlanRow } from '../core/planWeek';
-import { avoidedFoodIds, slotLabel } from '../core/routine';
+import { defaultPlanWeek, planRowTone, planWeekRows, weekAverage, withReviewedWeek, type PlanRow, type PlanRowTone } from '../core/planWeek';
+import { avoidedFoodIds, slotLabel, weekdayOf } from '../core/routine';
 import { isOffDay } from '../core/week';
 import { balanceDay, lineInfo, swapsFor } from '../core/weekPlan';
 import { fill, makeT } from '../i18n';
@@ -84,6 +84,7 @@ function PlanWeek() {
     return (s && slotLabel(s, lang)) || t(type);
   };
   const statusWord = (r: PlanRow) => t(`planweek_${r.status}`);
+  const TONE: Record<PlanRowTone, string> = { red: C.red, amber: C.amber, accent: C.accentText, dim: C.textDim };
   const unitName = (u: string) => (t(`unit_${u}`) === `unit_${u}` ? u : t(`unit_${u}`));
 
   function moveWeek(by: -1 | 1) {
@@ -93,7 +94,9 @@ function PlanWeek() {
   }
 
   function saveWeek() {
-    app.setSettings({ reviewedWeeks: withReviewedWeek(state.settings.reviewedWeeks, monday) });
+    const next = withReviewedWeek(state.settings.reviewedWeeks, monday);
+    // The same list back means nothing changed, so nothing is written.
+    if (next !== state.settings.reviewedWeeks) app.setSettings({ reviewedWeeks: next });
     fb.haptic('success');
     fb.notify(t('planweek_saved'));
   }
@@ -112,7 +115,7 @@ function PlanWeek() {
 
   function toggleOff(d: string) {
     // Free days are weekdays in the settings: the same weekday is free every week, as the switch says.
-    const wd = new Date(`${d}T12:00:00`).getDay();
+    const wd = weekdayOf(d);
     app.setSettings({ offDays: offDays.includes(wd) ? offDays.filter((x) => x !== wd) : [...offDays, wd].sort((a, b) => a - b) });
   }
 
@@ -135,7 +138,7 @@ function PlanWeek() {
           {rows.map((r, i) => {
             const planned = r.status !== 'off' && r.status !== 'empty';
             const dish = planned && r.mainFoodId ? foods.find((f) => f.id === r.mainFoodId) : undefined;
-            const tone = r.status === 'low' ? C.red : r.status === 'high' ? C.amber : r.status === 'on' ? C.accentText : C.textDim;
+            const tone = TONE[planRowTone(r)];
             const selected = r.date === open;
             const dayLabel = formatDayLabel(r.date, lang);
             return (
@@ -210,8 +213,9 @@ function PlanWeek() {
           <View style={{ gap: S.gap }}>
             <Card>
               <Text style={strong}>{formatDayLabel(day.date, lang)}</Text>
-              <Toggle title={t('plan_free_toggle')} desc={t('plan_free_desc')} on={dayRow.status === 'off'} onToggle={() => toggleOff(day.date)} />
+              <Toggle title={t('plan_free_toggle')} desc={t('plan_free_desc')} on={dayRow.off} onToggle={() => toggleOff(day.date)} />
             </Card>
+            {/* A free day hides its menu, unless what it plans is under the safe minimum: then the menu shows, to put right. */}
             {dayRow.status === 'off' ? null : (
               <>
                 <DayMenu date={day.date} view={view} menu={day} onOpenMeal={() => {}} onLinePress={(row, l) => setSwap({ slotId: row.slotId, idx: l.idx })} onBalance={() => balance(day)} />

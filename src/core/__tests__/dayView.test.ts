@@ -168,8 +168,18 @@ describe('a future day', () => {
     expect(v.rows[1].lines[0].measure).toBe(measureName(chapati, 'piece', 'en'));
   });
 
-  it('plan-only shows any date as plan, today included, so the plan screen can edit it', () => {
+  it('plan-only shows today and later as plan, so the plan screen can edit it', () => {
     expect(states(view(TODAY, [], { planOnly: true }))).toEqual(['plan', 'plan', 'plan', 'plan']);
+  });
+
+  it('plan-only never makes a past day a plan: it offers no Change and is never judged', () => {
+    const v = view('2026-10-25', [], { planOnly: true });
+    expect(v.mode).toBe('past');
+    expect(states(v)).not.toContain('plan');
+    expect(v.rows.flatMap((r) => rowOffers(r))).not.toContain('change');
+    expect([v.judged, v.missing, v.canFill]).toEqual([false, 0, false]);
+    // What it planned is still there to read.
+    expect(v.rows[1].lines.map((l) => l.foodId)).toEqual(['chapati', 'moong-dal']);
   });
 });
 

@@ -74,15 +74,15 @@ export function dayView(input: {
   currentId: string | null;
   foods: FoodItem[];
   lang: Lang;
-  /** Show any date as its plan, today and past days included: the plan screen edits a day's menu, it does not log it. */
+  /** The plan screen's view: today and later as plan, never judged. It edits a day's menu and never logs; a past date keeps its own rows, which offer no Change (the store refuses an edit before today). */
   planOnly?: boolean;
   /** An off day in the person's settings. */
   offDay: boolean;
   /** The first day of the person's record (core/weekStrip.ts `stripSince`, the strip's own start); a date before it is not judged. */
   startDate?: ISODate;
 }): DayView {
-  const mode: DayMode = input.planOnly ? 'future' : dayMode(input.date, input.today);
-  const judged = mode !== 'future' && !outsideRecord(input.date, input.offDay, input.startDate);
+  const mode: DayMode = input.planOnly && input.date >= input.today ? 'future' : dayMode(input.date, input.today);
+  const judged = !input.planOnly && mode !== 'future' && !outsideRecord(input.date, input.offDay, input.startDate);
   const slots = menuSlots(input.menu);
   const dayMeals = input.meals.filter((m) => m.date === input.date);
   const bySlot = new Map<string, Meal[]>(slots.map((s) => [s.id, []]));

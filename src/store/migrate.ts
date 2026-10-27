@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../core/breaks';
-import { mondayOf, toISODate } from '../core/date';
+import { isIsoDate, mondayOf, toISODate } from '../core/date';
 import { addSkip, menusFromTemplate, settleAuto, type DayMenu } from '../core/menu';
 import { slotShare } from '../core/pattern';
 import { canPlace, DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
@@ -175,6 +175,8 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   // A tab list or a card list from sync or an old file can never hide Today, ➕ or Me, or lose a card for good.
   s.tabs = normalizeTabs(s.tabs);
   s.todayCards = normalizeTodayCards(s.todayCards);
+  // The weeks marked as looked over are a list of dates; anything else stored there marks none.
+  s.reviewedWeeks = Array.isArray(raw.reviewedWeeks) ? raw.reviewedWeeks.filter(isIsoDate) : [];
   return s;
 }
 

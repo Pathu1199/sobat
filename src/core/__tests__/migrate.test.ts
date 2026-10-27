@@ -218,6 +218,17 @@ describe('migrateState', () => {
     expect(again.settings.features.mantra).toBe(true);
   });
 
+  it('the weeks marked as looked over load as a list of dates, whatever was stored', () => {
+    const once = migrateState(v1);
+    const withWeeks = (reviewedWeeks: unknown) => migrateState({ ...once, settings: { ...once.settings, reviewedWeeks } }).settings.reviewedWeeks;
+    expect(withWeeks(['2026-10-26', '2026-10-19'])).toEqual(['2026-10-26', '2026-10-19']);
+    expect(withWeeks('2026-10-26')).toEqual([]);
+    expect(withWeeks({ 0: '2026-10-26' })).toEqual([]);
+    expect(withWeeks(null)).toEqual([]);
+    expect(withWeeks(['2026-10-26', 7, 'next week'])).toEqual(['2026-10-26']);
+    expect(once.settings.reviewedWeeks).toEqual([]);
+  });
+
   it('version 7: the week plan becomes this week\'s menus, date by date, with Sunday at index 0', () => {
     const days = Array.from({ length: 7 }, (_, d) => ({ meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: d + 1 }] }] }));
     const out = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile, onboarded: true }, meals: [], routine: { ...DEFAULT_ROUTINE, enabled: true }, weekPlan: { days } }, NOW);
