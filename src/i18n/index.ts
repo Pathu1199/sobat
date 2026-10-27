@@ -1026,6 +1026,7 @@ const en: Dict = {
   me_saved: 'Saved meals', me_saved_empty: 'Meals you save after logging them show here.', me_saved_delete: 'Delete {name}',
   add_bar: '{n} items · {kcal} kcal', add_bar_one: '1 item · {kcal} kcal',
   toast_sleep_saved: 'Sleep saved',
+  qty_less: 'Less {food}', qty_more: 'More {food}', qty_grams: 'Grams',
 };
 
 const mr: Dict = {
@@ -2056,6 +2057,7 @@ const mr: Dict = {
   me_saved: 'जतन केलेली जेवणं', me_saved_empty: 'नोंदवल्यावर जतन केलेली जेवणं इथे दिसतात.', me_saved_delete: '{name} काढा',
   add_bar: '{n} पदार्थ · {kcal} kcal', add_bar_one: '1 पदार्थ · {kcal} kcal',
   toast_sleep_saved: 'झोप नोंदवली',
+  qty_less: '{food} कमी', qty_more: '{food} जास्त', qty_grams: 'ग्रॅम',
 };
 
 const hi: Dict = {
@@ -3084,6 +3086,7 @@ const hi: Dict = {
   me_saved: 'सहेजे हुए खाने', me_saved_empty: 'दर्ज करने के बाद सहेजे गए खाने यहाँ दिखते हैं.', me_saved_delete: '{name} हटाएँ',
   add_bar: '{n} चीज़ें · {kcal} kcal', add_bar_one: '1 चीज़ · {kcal} kcal',
   toast_sleep_saved: 'नींद दर्ज',
+  qty_less: '{food} कम', qty_more: '{food} ज़्यादा', qty_grams: 'ग्राम',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
