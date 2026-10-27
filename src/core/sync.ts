@@ -341,23 +341,24 @@ export function readSavedBase(raw: string | null): SavedBase | null {
 
 /**
  * Where the first sync after binding to an account starts from. Data another
- * account left on the device is wiped before anything syncs, so none of it
- * can reach this one, and the device is tagged as this account's at once,
- * not after a sync that may never come. A saved base only describes the
- * account it was saved for, and only the state it was saved beside: if that
- * state could not be read, nothing on disk is known to be anyone's.
+ * account left on the device is put aside for them before anything syncs
+ * (`aside` names whose it is), so none of it reaches this account and none of
+ * it is lost; the device is tagged as this account's at once, not after a
+ * sync that may never come. A saved base only describes the account it was
+ * saved for, and only the state it was saved beside: if that state could not
+ * be read, nothing on disk is known to be anyone's.
  */
 export function bindStart(o: { uid: string; owner: string | null; saved: SavedBase | null; loaded: boolean }): {
-  wipe: boolean;
+  aside: string | null;
   tag: boolean;
   base: CloudState | null;
   modifiedTime: string | null;
 } {
-  if (!o.loaded) return { wipe: false, tag: false, base: null, modifiedTime: null };
+  if (!o.loaded) return { aside: null, tag: false, base: null, modifiedTime: null };
   const holder = o.owner ?? o.saved?.uid ?? null;
-  if (holder !== null && holder !== o.uid) return { wipe: true, tag: true, base: null, modifiedTime: null };
-  if (!o.saved || o.saved.uid !== o.uid) return { wipe: false, tag: true, base: null, modifiedTime: null };
-  return { wipe: false, tag: true, base: o.saved.base, modifiedTime: o.saved.modifiedTime };
+  if (holder !== null && holder !== o.uid) return { aside: holder, tag: true, base: null, modifiedTime: null };
+  if (!o.saved || o.saved.uid !== o.uid) return { aside: null, tag: true, base: null, modifiedTime: null };
+  return { aside: null, tag: true, base: o.saved.base, modifiedTime: o.saved.modifiedTime };
 }
 
 /**

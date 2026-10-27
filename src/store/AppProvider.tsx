@@ -8,6 +8,7 @@ import { newId } from '../core/id';
 import { prunePhotos } from '../services/photoStore';
 import { useClock } from '../services/useClock';
 import { budget as calcBudget, dailyTargets, sumTotals, type Budget, type Targets } from '../core/nutrition';
+import { switchStored } from '../core/accounts';
 import { burnedOn, eatBack } from '../core/activity';
 import { streak } from '../core/insights';
 import { isOffDay } from '../core/week';
@@ -26,6 +27,8 @@ import { migrateState } from './migrate';
 const KEY = 'sobat.state.v1';
 /** The account file the stored state was last merged with. Only ever written in the same call as the state, and removed with it. */
 export const CLOUD_BASE_KEY = 'sobat.state.v1.cloudBase';
+/** Whose data the stored state is, so another account signing in never sees or syncs it. */
+export const OWNER_KEY = 'sobat.cloud.owner';
 
 const FOODS = foodsJson as unknown as FoodItem[];
 const EXERCISES = exercisesJson as unknown as Exercise[];
@@ -90,6 +93,12 @@ type Ctx = {
   mergeState: (fn: (s: AppState) => AppState) => void;
   /** The state with every change already made applied, including one not rendered yet. */
   readNow: () => Promise<AppState>;
+  /**
+   * Another account signed in here: put this device's data aside for `from`, never thrown away,
+   * and bring back what was aside for `to`, or start empty. Resolves with `to`'s saved sync base,
+   * if one came back. Throws, with nothing changed, if the data could not be put aside.
+   */
+  switchAccount: (from: string, to: string) => Promise<string | null>;
   tipToday: string | null;
   screenMinutesToday: number;
   resetAll: () => void;
@@ -117,6 +126,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // newer than the state beside it would read the missing records as deleted here.
   const pendingBase = useRef<string | null>(null);
   const [baseTick, setBaseTick] = useState(0);
+  // While one account's data is being put aside, no save may write it back over the next one's.
+  const switching = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -146,6 +157,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Taken now, beside the state this render holds, not whatever is pending when the timer fires.
     const base = pendingBase.current;
     saveTimer.current = setTimeout(() => {
+      if (switching.current) return;
       const pairs: [string, string][] = [[KEY, JSON.stringify(state)]];
       if (base !== null) pairs.push([CLOUD_BASE_KEY, base]);
       AsyncStorage.multiSet(pairs)
@@ -167,6 +179,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }),
       ),
     [],
+  );
+
+  const switchAccount = useCallback(
+    async (from: string, to: string) => {
+      switching.current = true;
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      pendingBase.current = null;
+      try {
+        const current = await readNow();
+        const back = await switchStored(
+          AsyncStorage,
+          { state: KEY, base: CLOUD_BASE_KEY, owner: OWNER_KEY },
+          { from, to, current: JSON.stringify(current), empty: JSON.stringify(EMPTY_STATE) },
+        );
+        let next = EMPTY_STATE;
+        try {
+          if (back.state) next = migrateState(JSON.parse(back.state));
+        } catch {
+          // What came back could not be read; the copy on disk is still there for a later load.
+        }
+        setState(next);
+        return back.base;
+      } finally {
+        switching.current = false;
+      }
+    },
+    [readNow],
   );
 
   const saveCloudBase = useCallback((json: string) => {
@@ -336,6 +375,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       },
       mergeState: (fn) => update((s) => migrateState(fn(s))),
       readNow,
+      switchAccount,
       setTip: (text) =>
         update((s) => ({ ...s, tips: [...s.tips.filter((t) => t.date !== today).slice(-30), { date: today, text, lang: s.profile.lang }] })),
       resetAll: () => {
@@ -350,7 +390,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

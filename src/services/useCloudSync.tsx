@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, Platform } from 'react-native';
 import { bindStart, encodeSavedBase, forCloud, landMerge, readSavedBase, RoundStop, sameCloud, signOutPlan, syncRound, type CloudState } from '../core/sync';
-import { CLOUD_BASE_KEY, useApp } from '../store/AppProvider';
+import { CLOUD_BASE_KEY, OWNER_KEY, useApp } from '../store/AppProvider';
 import { STATE_VERSION } from '../store/defaults';
 import { CloudError, cloudConfigured, deleteData, getData, putData } from './cloud';
 import { authApi, useAuth } from './useAuth';
@@ -42,8 +42,6 @@ export type CloudSync = {
   signOut: (force?: boolean) => Promise<'ok' | 'unsynced'>;
 };
 
-/** Whose data this device holds, so another account signing in starts clean. */
-const OWNER_KEY = 'sobat.cloud.owner';
 const PUSH_DELAY_MS = 3000;
 const PULL_EVERY_MS = 5 * 60 * 1000;
 
@@ -55,7 +53,7 @@ const Ctx = createContext<CloudSync | null>(null);
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const app = useApp();
   const { user, ready } = useAuth();
-  const { state, ready: stateReady, storageError, mergeState, readNow, resetAll, saveCloudBase } = app;
+  const { state, ready: stateReady, storageError, mergeState, readNow, resetAll, saveCloudBase, switchAccount } = app;
 
   const configured = cloudConfigured();
   const [status, setStatus] = useState<SyncStatus>(configured ? 'off' : 'unconfigured');
@@ -71,6 +69,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   // Moves on at every bind and sign-out, so a request that went out for one
   // session never lands in the next.
   const epoch = useRef(0);
+  // Binds run one after another: two at once could each put the device's data aside.
+  const binding = useRef<Promise<void>>(Promise.resolve());
   const inFlight = useRef(false);
   const again = useRef(false);
   const stateRef = useRef(state);
@@ -175,10 +175,11 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     [configured, round, fail],
   );
 
-  // Bind to the account: a different account than the device last held
-  // starts clean, the device is tagged as this account's, then the first sync
-  // pulls. With sync not set up there is no first sync, but the tag still
-  // keeps one account's data from showing up under another.
+  // Bind to the account. Another account's data on the device is put aside
+  // for them and this account's comes back if it was put aside here before;
+  // the device is tagged as this account's; then the first sync pulls. With
+  // sync not set up there is no first sync, but the tag still keeps one
+  // account's data from showing up under another.
   useEffect(() => {
     if (!ready || !stateReady) return;
     if (!user) {
@@ -193,32 +194,42 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     if (boundUid.current === user.uid) return;
+    const uid = user.uid;
     let cancelled = false;
-    (async () => {
-      const [owner, saved] = await Promise.all([AsyncStorage.getItem(OWNER_KEY).catch(() => null), AsyncStorage.getItem(CLOUD_BASE_KEY).catch(() => null)]);
-      if (cancelled) return;
-      // The base is loaded before the first merge: without it, deletions and edits made elsewhere since the last run would be undone.
-      const start = bindStart({ uid: user.uid, owner, saved: readSavedBase(saved), loaded: storageError !== 'load' });
-      // Nothing still out for the last session may land from here on.
-      epoch.current += 1;
-      boundUid.current = null;
-      if (start.wipe) {
-        // Someone else's leftovers must not be merged into this account. The
-        // first round reads the state through the update queue, so it already
-        // sees the reset.
-        resetAll();
-      }
-      if (start.tag) await AsyncStorage.setItem(OWNER_KEY, user.uid).catch(() => {});
-      if (cancelled) return;
-      boundUid.current = user.uid;
-      base.current = start.base;
-      baseModifiedTime.current = start.modifiedTime;
-      await sync({ pull: true });
-    })();
+    binding.current = binding.current
+      .then(async () => {
+        if (cancelled || boundUid.current === uid) return;
+        const [owner, saved] = await Promise.all([AsyncStorage.getItem(OWNER_KEY).catch(() => null), AsyncStorage.getItem(CLOUD_BASE_KEY).catch(() => null)]);
+        if (cancelled) return;
+        // The base is loaded before the first merge: without it, deletions and edits made elsewhere since the last run would be undone.
+        const start = bindStart({ uid, owner, saved: readSavedBase(saved), loaded: storageError !== 'load' });
+        // Nothing still out for the last session may land from here on.
+        epoch.current += 1;
+        boundUid.current = null;
+        let first = { base: start.base, modifiedTime: start.modifiedTime };
+        if (start.aside) {
+          try {
+            const back = readSavedBase(await switchAccount(start.aside, uid));
+            if (back?.uid === uid) first = { base: back.base, modifiedTime: back.modifiedTime };
+          } catch (e) {
+            // Could not put it aside: nothing is lost, and nothing syncs into this account.
+            if (configured) fail(e);
+            return;
+          }
+        } else if (start.tag) {
+          await AsyncStorage.setItem(OWNER_KEY, uid).catch(() => {});
+        }
+        if (cancelled) return;
+        boundUid.current = uid;
+        base.current = first.base;
+        baseModifiedTime.current = first.modifiedTime;
+        void sync({ pull: true });
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [configured, ready, stateReady, storageError, user, sync, resetAll]);
+  }, [configured, ready, stateReady, storageError, user, sync, switchAccount, fail]);
 
   // Push a moment after changes settle. Nothing is pushed before the first
   // pull has set a base, so a fresh sign-in never overwrites the account.
