@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { ActivityPanel } from '../../components/ActivityPanel';
+import { WalkSleepTiles } from '../../components/tiles/WalkSleep';
 import { TopBarActions } from '../../components/TopBarActions';
 import { formatDayLabel } from '../../core/date';
 import { buildSession, phaseForWeek, phaseProgress, readiness, shouldEasePlan, weeksSince } from '../../core/fitness';
@@ -204,6 +205,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
       <Page title={t('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />} header={!embedded} wide>
         <Cols weights={[1.3, 1]}>
           <>
+            <WalkSleepTiles />
             <ActivityPanel />
             {hero}
             {moves}
@@ -220,6 +222,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
 
   return (
     <Page title={t('fit_title')} alt={lang === 'en' ? undefined : t('fit_title')} right={<TopBarActions />} header={!embedded}>
+      <WalkSleepTiles />
       <ActivityPanel />
       {hero}
       {moves}

@@ -5,6 +5,9 @@ import { Pressable, Text, View } from 'react-native';
 import { useGame } from '../components/MountainCard';
 import { BADGE_ICON } from '../core/game';
 import { WeightSheet } from '../components/WeightSheet';
+import { StreakTile } from '../components/tiles/StreakTile';
+import { TileRow } from '../components/tiles/TileRow';
+import { WeightTile } from '../components/tiles/WeightTile';
 import { formatDayLabel } from '../core/date';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
@@ -28,6 +31,10 @@ export default function Journey() {
 
   return (
     <Screen>
+      <TileRow>
+        <WeightTile />
+        <StreakTile />
+      </TileRow>
       <Card rail={C.cyan}>
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro color={C.textDim}>{t('journey_title')}</Micro>

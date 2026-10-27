@@ -326,6 +326,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // A day nobody wrote shows the app's suggestion fitted to the person's target, never under the safe minimum, without the foods they avoid.
   // The target counts the person's age, so the fit is worked out again when the date changes, as Today's targets are.
   const fit = useMemo(() => fitOn(state.profile, state.routine, today), [state.profile, state.routine, today]);
+  // The menu a date shows. The same function until the menus, the pattern, the foods or the day change, so a memo that
+  // reads it (the streak, the streak tile's best run) is not worked out again for a bottle of water.
+  const menuOn = useCallback((date: ISODate) => viewMenu(date, state.menus, state.routine, today, planFoods, fit), [state.menus, state.routine, today, planFoods, fit]);
 
   // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run before then.
   // A full day eaten under the safe minimum neither counts nor ends the run; a full day with nothing eaten (under 50 kcal) ends it, today too.
@@ -338,9 +341,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         skips: state.slotSkips,
         offDays: state.settings.offDays ?? [],
         floor: fit.floor,
-        menuOn: (d) => viewMenu(d, state.menus, state.routine, today, planFoods, fit),
+        menuOn,
       }),
-    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, state.menus, planFoods, fit],
+    [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, fit.floor, menuOn],
   );
 
   // Planned meals fill themselves 90 minutes after their slot, and today is noted as a day the app was open: checked once the
@@ -532,7 +535,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const week = viewWeek(mondayOf(today), s.menus, s.routine, today, allFoods(s.customFoods), fitOn(s.profile, s.routine, today));
           return withMenus(s, applyWeekPlan(plan, week, s.menus, new Date()));
         }),
-      menuOn: (date) => viewMenu(date, state.menus, state.routine, today, planFoods, fit),
+      menuOn,
       isSuggestedMenu: (day) => isSuggested(day, state.routine, planFoods, fit),
       suggestionOn: (date) => suggestionFor(date, state.routine, planFoods, fit),
       weekMenus: (monday) => viewWeek(monday, state.menus, state.routine, today, planFoods, fit),
@@ -632,7 +635,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, streakDays, patternMealsLeft, weekPlan]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, menuOn, streakDays, patternMealsLeft, weekPlan]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

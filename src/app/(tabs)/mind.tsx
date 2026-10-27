@@ -5,6 +5,8 @@ import { localHHMM, toISODate } from '../../core/date';
 import { newId } from '../../core/id';
 import { HELPLINES, isCrisisText } from '../../core/guardrails';
 import { CravingSOS } from '../../components/CravingSOS';
+import { BreatheTile } from '../../components/tiles/BreatheTile';
+import { TileRow } from '../../components/tiles/TileRow';
 import { Reframe } from '../../components/Reframe';
 import { TopBarActions } from '../../components/TopBarActions';
 import { makeT } from '../../i18n';
@@ -137,12 +139,21 @@ export default function MindScreen({ embedded }: { embedded?: boolean } = {}) {
       </View>
     ) : null;
 
+  // One minute of slow breathing, as a tile at the top of Mind; a row of two with the second place left empty.
+  const breathe = (
+    <TileRow>
+      <BreatheTile />
+      <View style={{ flex: 1 }} />
+    </TileRow>
+  );
+
   if (wide) {
     return (
       <Page title={t('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />} header={!embedded} wide>
         {crisisCard}
         <Cols weights={[1.1, 1]}>
           <>
+            {breathe}
             {checkIn}
             {toolTiles}
             {toolPanel}
@@ -160,6 +171,7 @@ export default function MindScreen({ embedded }: { embedded?: boolean } = {}) {
   return (
     <Page title={t('mind_title')} alt={lang === 'en' ? undefined : t('mind_title')} right={<TopBarActions />} header={!embedded}>
       {crisisCard}
+      {breathe}
       {checkIn}
       {toolTiles}
       {toolPanel}
