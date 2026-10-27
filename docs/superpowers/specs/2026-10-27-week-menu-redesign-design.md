@@ -381,21 +381,44 @@ The user liked the running water and asked that every tracker look like
 this, each with its own symbol and its own animation. Every animation
 shows the value; none is only decoration.
 
-**One frame, `LivingTile.tsx`**:
-- A square with a 20 radius and a 0.5 hairline border.
-- The icon and name at top left, the big value, and one small line under
-  it.
-- The art layer sits behind the text. Padding and type are identical in
-  every tile.
-- Each tracker supplies only its art, its value and its tap.
+**One frame, `LivingTile.tsx`**. The user saw the first mockup and said the
+positions and numbers looked wrong, so the layout is fixed and the same in
+every tile:
+- A square with a 22 radius and a 0.5 hairline border. Today shows two per
+  row.
+- **The text block is pinned to the top**, 14 from the top and 15 from the
+  sides, in the same place in every tile:
+  - The icon and name: 13, secondary.
+  - The number: 30, medium, tabular figures, with its **unit smaller**
+    (14, secondary).
+  - One short line: 12, secondary.
+- **The art zone is the bottom 42% of the tile.** Art never reaches into
+  the text block. The one exception is the Water tank, whose
+  semi-transparent water rises behind the text; that is the tank's point.
+- **The art's aspect ratio is kept.** No stretching, so a marker such as
+  the flag stays exactly on the summit.
+- **A marker dot sits on the current value** where it helps: the walker on
+  the path, and the climber on the ridge.
+- **Number formats**:
+  - Water: "1.0 L".
+  - Walk: "10 min".
+  - Sleep: "7 h 10 m".
+  - Weight: "98.4 kg".
+  - Streak: "5 days".
+  - Breathe: "1 min", then "0:42" during a session.
+- **The short line says what's left, or the goal**: "4 bottles left", "20
+  min left", "Goal 8 h", "−1.6 kg in 3 weeks", "Best 12", "Tap to start".
+  It becomes "Breathe in" / "Breathe out" during a session. It never says
+  "of 30" without a unit.
+- Each tracker supplies only its art, its value, its line and its tap.
 
 | Tile | Symbol | The art shows the value | Tap |
 |---|---|---|---|
 | Water | droplet | A tank filling from the bottom, with a gentle wave on top | +1 bottle |
-| Walk | walker | A dotted path, drawn from the start toward the goal | +10 min |
+| Walk | walker | A dotted path to a goal ring, drawn from the start, with a walker dot on the current minutes | +10 min |
 | Sleep | moon | A night arc that fills to hours ÷ target, with three faint stars that twinkle | Opens the sleep check-in |
 | Weight | scale | The last 8 weigh-ins as a line that draws itself, with a dot on the latest | Opens the weight entry |
-| Streak | flame | A mountain ridge, climbed toward the flag; full at the best streak | Opens Progress |
+| Streak | flame | A mountain with the flag fixed on the summit; the climbed part of the ridge is drawn and a climber dot sits on today's streak (full at the best streak) | Opens Progress |
 | Breathe | wind | A circle that grows for 4 s and shrinks for 4 s during a 1-minute session | Starts or stops the session |
 
 **Where the tiles appear**:
