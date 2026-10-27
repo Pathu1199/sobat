@@ -1004,7 +1004,7 @@ const en: Dict = {
   show_more: 'Show more',
   show_less: 'Show less',
   tile_unit_l: 'L', tile_unit_min: 'min', tile_unit_h: 'h', tile_unit_m: 'm', tile_unit_day: 'day', tile_unit_days: 'days',
-  tile_bottles_left: '{n} bottles left', tile_bottle_left: '1 bottle left', tile_goal_reached: 'Goal reached today',
+  tile_bottles_left: '{n} bottles left', tile_bottle_left: '1 bottle left', tile_goal_reached: 'Goal reached',
   tile_min_left: '{n} min left', tile_sleep_goal: 'Goal {h} h',
   tile_weight_change: '{kg} kg in {weeks} weeks', tile_weight_change_1: '{kg} kg in a week', tile_weight_goal: 'Goal {kg} kg',
   tile_best: 'Best {n}', tile_tap_to_start: 'Tap to start', tile_walk: 'Walk', tile_streak: 'Streak',
@@ -1020,6 +1020,7 @@ const en: Dict = {
   tile_hint_breathe_stop: 'Stops the breathing session.',
   tile_added_water: 'Added {ml} ml water', tile_added_walk: 'Added {min} min walk',
   tile_bottle_size: 'Bottle size', tile_other_amount: 'Another amount', tile_amount_ml: 'Amount in ml', tile_amount_min: 'Minutes',
+  tile_no_sleep: 'No check-in yet', tile_no_weight: 'No weigh-in yet',
 };
 
 const mr: Dict = {
@@ -2028,7 +2029,7 @@ const mr: Dict = {
   show_more: 'आणखी दाखवा',
   show_less: 'कमी दाखवा',
   tile_unit_l: 'लि', tile_unit_min: 'मि', tile_unit_h: 'ता', tile_unit_m: 'मि', tile_unit_day: 'दिवस', tile_unit_days: 'दिवस',
-  tile_bottles_left: '{n} बाटल्या बाकी', tile_bottle_left: '1 बाटली बाकी', tile_goal_reached: 'आजचं लक्ष्य पूर्ण',
+  tile_bottles_left: '{n} बाटल्या बाकी', tile_bottle_left: '1 बाटली बाकी', tile_goal_reached: 'लक्ष्य पूर्ण',
   tile_min_left: '{n} मि बाकी', tile_sleep_goal: 'लक्ष्य {h} तास',
   tile_weight_change: '{weeks} आठवड्यांत {kg} किलो', tile_weight_change_1: 'एका आठवड्यात {kg} किलो', tile_weight_goal: 'लक्ष्य {kg} किलो',
   tile_best: 'सर्वाधिक {n}', tile_tap_to_start: 'सुरू करायला दाबा', tile_walk: 'चालणं', tile_streak: 'सलग दिवस',
@@ -2044,6 +2045,7 @@ const mr: Dict = {
   tile_hint_breathe_stop: 'श्वासाचा सराव थांबवते.',
   tile_added_water: '{ml} ml पाणी नोंदवलं', tile_added_walk: '{min} मि चालणं नोंदवलं',
   tile_bottle_size: 'बाटलीचा आकार', tile_other_amount: 'दुसरं प्रमाण', tile_amount_ml: 'प्रमाण (ml)', tile_amount_min: 'मिनिटं',
+  tile_no_sleep: 'अजून झोपेची नोंद नाही', tile_no_weight: 'अजून वजन नाही',
 };
 
 const hi: Dict = {
@@ -3050,7 +3052,7 @@ const hi: Dict = {
   show_more: 'और दिखाएँ',
   show_less: 'कम दिखाएँ',
   tile_unit_l: 'ली', tile_unit_min: 'मि', tile_unit_h: 'घं', tile_unit_m: 'मि', tile_unit_day: 'दिन', tile_unit_days: 'दिन',
-  tile_bottles_left: '{n} बोतलें बाकी', tile_bottle_left: '1 बोतल बाकी', tile_goal_reached: 'आज का लक्ष्य पूरा',
+  tile_bottles_left: '{n} बोतलें बाकी', tile_bottle_left: '1 बोतल बाकी', tile_goal_reached: 'लक्ष्य पूरा',
   tile_min_left: '{n} मि बाकी', tile_sleep_goal: 'लक्ष्य {h} घंटे',
   tile_weight_change: '{weeks} हफ़्तों में {kg} किलो', tile_weight_change_1: 'एक हफ़्ते में {kg} किलो', tile_weight_goal: 'लक्ष्य {kg} किलो',
   tile_best: 'सबसे ज़्यादा {n}', tile_tap_to_start: 'शुरू करने के लिए दबाएँ', tile_walk: 'टहलना', tile_streak: 'लगातार दिन',
@@ -3066,6 +3068,7 @@ const hi: Dict = {
   tile_hint_breathe_stop: 'साँस का अभ्यास रोकता है.',
   tile_added_water: '{ml} ml पानी जोड़ा', tile_added_walk: '{min} मि टहलना जोड़ा',
   tile_bottle_size: 'बोतल का आकार', tile_other_amount: 'दूसरी मात्रा', tile_amount_ml: 'मात्रा (ml)', tile_amount_min: 'मिनट',
+  tile_no_sleep: 'अभी नींद दर्ज नहीं', tile_no_weight: 'अभी कोई वज़न नहीं',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

@@ -6,8 +6,9 @@ import { lh } from './theme';
  * box, and every art component draws in that box so a marker such as the flag
  * stays exactly where it belongs. The tile's own type sizes (from the spec's
  * tile layout) scale with the person's text size; at a large size the tile
- * grows taller rather than letting the art reach the words. Pure: the point
- * lookups also run on the UI thread inside animations, so they are worklets.
+ * grows taller rather than letting the art reach the words, and the art keeps
+ * its shape and sits on the bottom edge. Pure: the point lookups also run on
+ * the UI thread inside animations, so they are worklets.
  */
 export type Pt = { x: number; y: number };
 
@@ -15,14 +16,24 @@ export const ART_W = 100;
 export const ART_H = 42;
 /** The share of the tile's height the art may use, from the bottom. */
 export const ART_SHARE = 0.42;
+/**
+ * How the 100 × 42 box fits its zone (the SVG preserveAspectRatio): its shape
+ * kept, as wide as the tile, and seated on the bottom edge, so on a tile
+ * taller than square the mountain's foot and the walk path still stand on it.
+ */
+export const ART_FIT = 'xMidYMax meet';
 /** The words' margins: from the top, and from both sides. */
 export const TILE_TOP = 14;
 export const TILE_SIDE = 15;
 export const TILE_RADIUS = 22;
 /** Space between the name, the number and the short line. */
 export const TILE_LINE_GAP = 2;
-/** Room left under the short line before the art zone starts. */
-const TILE_GAP = 6;
+/**
+ * Room left under the short line before the art zone starts. Small enough
+ * that at text scale 1 a tile two to a row on a 360 point phone (16 point
+ * gutters, the row's 12 point gap: 158 points wide) is still square.
+ */
+const TILE_GAP = 2;
 
 const BASE = { name: 13, number: 30, unit: 14, line: 12 };
 export type TileType = typeof BASE;
@@ -55,7 +66,9 @@ export function toPath(points: Pt[]): string {
   return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${r1(p.x)} ${r1(p.y)}`).join(' ');
 }
 
+/** The length of the line through the points. Runs inside animations. */
 export function polylineLength(points: Pt[]): number {
+  'worklet';
   let total = 0;
   for (let i = 1; i < points.length; i++) total += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
   return total;
@@ -68,9 +81,7 @@ export function pointAlong(points: Pt[], fraction: number): Pt {
   if (points.length === 1 || fraction <= 0) return points[0];
   // The ends exactly, so a full streak sits on the summit and not a rounding error short of it.
   if (fraction >= 1) return points[points.length - 1];
-  let total = 0;
-  for (let i = 1; i < points.length; i++) total += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
-  let want = fraction * total;
+  let want = fraction * polylineLength(points);
   for (let i = 1; i < points.length; i++) {
     const a = points[i - 1];
     const b = points[i];
@@ -108,8 +119,13 @@ export function arcPoints(cx: number, cy: number, r: number, fromDeg: number, to
   return out;
 }
 
-/** The top of the water: a gentle wave `amp` high, filled down to `height`, `width` wide. */
+/**
+ * The top of the water: a gentle wave `amp` high, filled down to `height`,
+ * `width` wide. A wavelength of 0 or less (a tile not measured yet) draws the
+ * top flat rather than stepping along it for ever.
+ */
 export function wavePath(width: number, wavelength: number, amp: number, height: number): string {
+  if (!(wavelength > 0)) return `M0 ${amp} L${r1(width)} ${amp} L${r1(width)} ${height} L0 ${height} Z`;
   const half = wavelength / 2;
   let d = `M0 ${amp}`;
   let up = true;
@@ -149,8 +165,11 @@ export const MOUNTAIN: Pt[] = [
 ];
 export const RIDGE: Pt[] = MOUNTAIN.slice(0, 4);
 export const SUMMIT: Pt = MOUNTAIN[3];
-export const FLAG_TOP: Pt = { x: 64, y: 0 };
-export const FLAG_D = 'M64 0 L73 2.5 L64 5 Z';
+/** The top of the flagpole, straight up from the summit. */
+export const FLAG_TOP: Pt = { x: SUMMIT.x, y: SUMMIT.y - 10 };
+/** The flag, flying to the right from the top of the pole. */
+export const FLAG: Pt[] = [FLAG_TOP, { x: FLAG_TOP.x + 9, y: FLAG_TOP.y + 2.5 }, { x: FLAG_TOP.x, y: FLAG_TOP.y + 5 }];
+export const FLAG_D = `${toPath(FLAG)} Z`;
 
 /** Breathe: a circle in the middle that grows and shrinks between these radii. */
 export const BREATHE_CENTRE: Pt = { x: 50, y: 21 };

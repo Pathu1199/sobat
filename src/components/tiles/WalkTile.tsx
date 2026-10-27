@@ -1,6 +1,6 @@
 import React from 'react';
 import Animated, { useAnimatedProps, type SharedValue } from 'react-native-reanimated';
-import Svg, { Circle, Path } from 'react-native-svg';
+import { Circle, Path } from 'react-native-svg';
 import { walkMinutesOn, walkWords } from '../../core/tileText';
 import { walkTile } from '../../core/tiles';
 import type { ISODate } from '../../core/types';
@@ -8,8 +8,8 @@ import { fill, makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
 import { useApp } from '../../store/AppProvider';
 import { C } from '../../ui/theme';
-import { ART_H, ART_W, pointAlong, polylineLength, toPath, WALK_GOAL, WALK_PATH } from '../../ui/tileGeometry';
-import { LivingTile, shownWords } from './LivingTile';
+import { pointAlong, polylineLength, toPath, WALK_GOAL, WALK_PATH } from '../../ui/tileGeometry';
+import { LivingTile, shownWords, TileArt } from './LivingTile';
 import { useTileProgress } from './motion';
 
 /** Minutes one tap on the walk tile adds. */
@@ -49,7 +49,7 @@ export function WalkTile({ date, onAdded, onHold }: { date: ISODate; onAdded?: (
       }}
       onLongPress={onHold}
       label={fill(t('tile_walk_a11y'), { step: WALK_STEP_MIN, now: minutes, goal })}
-      hint={t('tile_hint_walk')}
+      hint={onHold ? t('tile_hint_walk') : undefined}
     />
   );
 }
@@ -61,11 +61,11 @@ function WalkArt({ level }: { level: SharedValue<number> }) {
     return { cx: p.x, cy: p.y };
   });
   return (
-    <Svg width="100%" height="100%" viewBox={`0 0 ${ART_W} ${ART_H}`}>
+    <TileArt>
       <Path d={WALK_D} stroke={C.accent} strokeOpacity={0.35} strokeWidth={2} strokeDasharray="1 4" strokeLinecap="round" fill="none" />
       <APath d={WALK_D} stroke={C.accent} strokeWidth={2.5} strokeLinecap="round" fill="none" strokeDasharray={`${WALK_LEN} ${WALK_LEN}`} animatedProps={walked} />
       <Circle cx={WALK_GOAL.x} cy={WALK_GOAL.y} r={5} stroke={C.accent} strokeWidth={2} fill={C.accent} fillOpacity={0.25} />
       <ACircle r={3.5} fill={C.accent} animatedProps={walker} />
-    </Svg>
+    </TileArt>
   );
 }

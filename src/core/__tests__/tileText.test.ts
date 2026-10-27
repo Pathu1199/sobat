@@ -4,21 +4,27 @@ import { addSkip, type DayMenu } from '../menu';
 import { KCAL_FLOOR } from '../nutrition';
 import { recordStreak, STREAK_LOOKBACK_DAYS } from '../record';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
+import { fill, makeT } from '../../i18n';
 import {
   bestRun,
   bestStreak,
   breathePhase,
   breatheWords,
   clockText,
+  NO_VALUE,
+  shortDecimal,
   signedKg,
   sleepWords,
   streakWords,
   walkMinutesOn,
   walkWords,
+  waterLabel,
   waterWords,
   weightWords,
 } from '../tileText';
-import type { ActivityLog, Meal } from '../types';
+import type { ActivityLog, Lang, Meal } from '../types';
+
+const LANGS: Lang[] = ['en', 'mr', 'hi'];
 
 describe('water and walk', () => {
   it('shows litres with one decimal and the bottles left, rounded up', () => {
@@ -30,6 +36,23 @@ describe('water and walk', () => {
 
   it('says the goal is reached, and keeps counting the litres past it', () => {
     expect(waterWords(3500, 3000, 750)).toEqual({ parts: [{ num: '3.5', unitKey: 'tile_unit_l' }], line: { key: 'tile_goal_reached' } });
+  });
+
+  it('says "Goal reached" without "today", in every language: the tile shows whichever date is open', () => {
+    expect(makeT('en')('tile_goal_reached')).toBe('Goal reached');
+    for (const lang of LANGS) expect(makeT(lang)('tile_goal_reached')).not.toMatch(/today|आज/i);
+  });
+
+  it('reads the water to a screen reader in litres without a needless ".0": "1.5 of 3 litres"', () => {
+    const say = (ml: number, goalMl: number) => {
+      const l = waterLabel(ml, goalMl);
+      return fill(makeT('en')(l.key), l.params ?? {});
+    };
+    expect(say(1500, 3000)).toBe('Add one bottle of water. 1.5 of 3 litres.');
+    expect(say(0, 2500)).toBe('Add one bottle of water. 0 of 2.5 litres.');
+    expect(shortDecimal(3)).toBe('3');
+    expect(shortDecimal(1.25)).toBe('1.3');
+    expect(shortDecimal(79.5)).toBe('79.5');
   });
 
   it('shows walking minutes and the minutes left, never "of 30" without a unit', () => {
@@ -48,7 +71,32 @@ describe('sleep', () => {
   it('shows hours and minutes, the hour alone when there are no minutes, a dash before the check-in, and the goal', () => {
     expect(sleepWords(430)).toEqual({ parts: [{ num: '7', unitKey: 'tile_unit_h' }, { num: '10', unitKey: 'tile_unit_m' }], line: { key: 'tile_sleep_goal', params: { h: 8 } } });
     expect(sleepWords(420).parts).toEqual([{ num: '7', unitKey: 'tile_unit_h' }]);
-    expect(sleepWords(null).parts).toEqual([{ num: '—' }]);
+    expect(sleepWords(null).parts).toEqual([{ num: NO_VALUE }]);
+  });
+
+  it('says it is empty before the check-in, so a screen reader hears "No check-in yet" and not the dash', () => {
+    expect(sleepWords(null)).toEqual({ parts: [{ num: NO_VALUE }], line: { key: 'tile_sleep_goal', params: { h: 8 } }, empty: { key: 'tile_no_sleep' } });
+    expect(sleepWords(0).empty).toEqual({ key: 'tile_no_sleep' });
+    expect(sleepWords(430).empty).toBeUndefined();
+  });
+});
+
+describe('no value yet', () => {
+  it('is one mark, an en dash', () => {
+    expect(NO_VALUE).toBe('\u2013');
+  });
+
+  it('has a phrase in plain words for screen readers in every language', () => {
+    expect(makeT('en')('tile_no_sleep')).toBe('No check-in yet');
+    expect(makeT('en')('tile_no_weight')).toBe('No weigh-in yet');
+    for (const lang of LANGS) {
+      for (const key of ['tile_no_sleep', 'tile_no_weight']) {
+        const said = makeT(lang)(key);
+        expect(said).not.toBe(key);
+        expect(said).not.toContain(NO_VALUE);
+        if (lang !== 'en') expect(said).not.toBe(makeT('en')(key));
+      }
+    }
   });
 });
 
@@ -65,7 +113,8 @@ describe('weight', () => {
 
   it('shows the goal when there is nothing to compare in the last three weeks, and a dash with no weigh-in', () => {
     expect(weightWords([w('2026-09-20', 101), w('2026-10-27', 98.4)], 80, '2026-10-27').line).toEqual({ key: 'tile_weight_goal', params: { kg: '80' } });
-    expect(weightWords([], 79.5, '2026-10-27')).toEqual({ parts: [{ num: '—' }], line: { key: 'tile_weight_goal', params: { kg: '79.5' } } });
+    expect(weightWords([], 79.5, '2026-10-27')).toEqual({ parts: [{ num: NO_VALUE }], line: { key: 'tile_weight_goal', params: { kg: '79.5' } }, empty: { key: 'tile_no_weight' } });
+    expect(weightWords([w('2026-10-27', 98.4)], 80, '2026-10-27').empty).toBeUndefined();
   });
 
   it('signs a change: a minus sign, a plus, and no sign at zero', () => {

@@ -1,13 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import Svg from 'react-native-svg';
 import type { TileWords } from '../../core/tileText';
 import { fill } from '../../i18n';
 import { C, lh, textScale } from '../../ui/theme';
-import { TILE_LINE_GAP, TILE_RADIUS, TILE_SIDE, TILE_TOP, tileMinHeight, tileType } from '../../ui/tileGeometry';
+import { ART_FIT, ART_H, ART_W, TILE_LINE_GAP, TILE_RADIUS, TILE_SIDE, TILE_TOP, tileMinHeight, tileType } from '../../ui/tileGeometry';
 
 export type TileSize = { w: number; h: number };
-/** A tile's number and line in words: each part with its unit, the line filled in, and the value as one phrase for screen readers. */
+/**
+ * A tile's number and line in words: each part with its unit, the line filled
+ * in, and the value as one phrase for screen readers, which before there is a
+ * value is a phrase such as "No weigh-in yet", never the dash.
+ */
 export type ShownWords = { parts: { num: string; unit?: string }[]; line: string; value: string };
 
 /** Turns a tile's keys (core/tileText.ts) into words in the person's language. */
@@ -16,8 +21,21 @@ export function shownWords(words: TileWords, t: (key: string) => string): ShownW
   return {
     parts,
     line: fill(t(words.line.key), words.line.params ?? {}),
-    value: parts.map((p) => (p.unit ? `${p.num} ${p.unit}` : p.num)).join(' '),
+    value: words.empty ? fill(t(words.empty.key), words.empty.params ?? {}) : parts.map((p) => (p.unit ? `${p.num} ${p.unit}` : p.num)).join(' '),
   };
+}
+
+/**
+ * The art's 100 × 42 drawing box, filling the tile's bottom zone: its shape
+ * kept and seated on the bottom edge (`ART_FIT`), so on a tile taller than
+ * square the art still stands on the bottom. Every tile's art draws in one.
+ */
+export function TileArt({ children }: { children: React.ReactNode }) {
+  return (
+    <Svg width="100%" height="100%" viewBox={`0 0 ${ART_W} ${ART_H}`} preserveAspectRatio={ART_FIT}>
+      {children}
+    </Svg>
+  );
 }
 
 /**
@@ -55,6 +73,7 @@ export function LivingTile({
   onPress: () => void;
   onLongPress?: () => void;
   label: string;
+  /** What a hold does, said by a screen reader; only for a tile that has a hold. */
   hint?: string;
 }) {
   const scale = textScale();

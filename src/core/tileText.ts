@@ -18,7 +18,14 @@ import type { ActivityLog, ISODate, Meal, SlotSkip, WeightLog } from './types';
 export type TilePart = { num: string; unitKey?: string };
 /** The short line under the number: an i18n key and what it fills in. */
 export type TileLine = { key: string; params?: Record<string, string | number> };
-export type TileWords = { parts: TilePart[]; line: TileLine };
+/**
+ * A tile's words. `empty` is there only when the tile has no value yet (it
+ * shows `NO_VALUE`): the phrase a screen reader says in place of the dash.
+ */
+export type TileWords = { parts: TilePart[]; line: TileLine; empty?: TileLine };
+
+/** The mark a tile shows where its value will be, before the first check-in or weigh-in: an en dash. */
+export const NO_VALUE = '–';
 
 /** The night the sleep tile fills toward, in minutes. */
 export const SLEEP_TARGET_MIN = 480;
@@ -33,9 +40,9 @@ export function oneDecimal(n: number): string {
   return (Math.round(n * 10) / 10).toFixed(1);
 }
 
-/** A weight without a needless ".0": 80 → "80", 79.5 → "79.5". */
-function kgText(kg: number): string {
-  return String(Math.round(kg * 10) / 10);
+/** One place after the point at most, without a needless ".0", for a number inside a sentence: 3 → "3", 1.5 → "1.5". */
+export function shortDecimal(n: number): string {
+  return String(Math.round(n * 10) / 10);
 }
 
 /** A change with its sign, the minus a real minus sign: −1.6, +0.4, and 0.0 for no change. */
@@ -53,6 +60,11 @@ export function waterWords(ml: number, goalMl: number, bottleMl: number): TileWo
   return { parts: [{ num: oneDecimal(ml / 1000), unitKey: 'tile_unit_l' }], line };
 }
 
+/** What a screen reader says on the water tile: what one tap does, and the litres against the goal, "1.5 of 3 litres". */
+export function waterLabel(ml: number, goalMl: number): TileLine {
+  return { key: 'tile_water_a11y', params: { now: shortDecimal(ml / 1000), goal: shortDecimal(goalMl / 1000) } };
+}
+
 /** Minutes walked, and the minutes still to go or the goal reached. */
 export function walkWords(minutes: number, goalMin: number): TileWords {
   const w = walkTile(minutes, goalMin);
@@ -62,10 +74,10 @@ export function walkWords(minutes: number, goalMin: number): TileWords {
   };
 }
 
-/** Hours and minutes slept, "7 h 10 m" ("7 h" on the hour); a dash before the check-in. The line is the goal. */
+/** Hours and minutes slept, "7 h 10 m" ("7 h" on the hour); the dash before the check-in. The line is the goal. */
 export function sleepWords(minutes: number | null, targetMin = SLEEP_TARGET_MIN): TileWords {
   const line: TileLine = { key: 'tile_sleep_goal', params: { h: Math.round((targetMin / 60) * 10) / 10 } };
-  if (minutes === null || !(minutes > 0)) return { parts: [{ num: '—' }], line };
+  if (minutes === null || !(minutes > 0)) return { parts: [{ num: NO_VALUE }], line, empty: { key: 'tile_no_sleep' } };
   const total = Math.round(minutes);
   const parts: TilePart[] = [{ num: String(Math.floor(total / 60)), unitKey: 'tile_unit_h' }];
   if (total % 60 > 0) parts.push({ num: String(total % 60), unitKey: 'tile_unit_m' });
@@ -88,16 +100,17 @@ export function weightChange(weights: WeightLog[], today: ISODate, days = WEIGHT
   return { kg: Math.round((latest.kg - first.kg) * 10) / 10, weeks: Math.max(1, Math.round(span / 7)) };
 }
 
-/** The latest weigh-in, and its change over the last three weeks or, with nothing to compare, the goal. */
+/** The latest weigh-in (the dash before the first), and its change over the last three weeks or, with nothing to compare, the goal. */
 export function weightWords(weights: WeightLog[], goalKg: number, today: ISODate): TileWords {
   const latest = [...weights].sort((a, b) => a.date.localeCompare(b.date)).pop();
   const change = weightChange(weights, today);
   const line: TileLine = !change
-    ? { key: 'tile_weight_goal', params: { kg: kgText(goalKg) } }
+    ? { key: 'tile_weight_goal', params: { kg: shortDecimal(goalKg) } }
     : change.weeks === 1
       ? { key: 'tile_weight_change_1', params: { kg: signedKg(change.kg) } }
       : { key: 'tile_weight_change', params: { kg: signedKg(change.kg), weeks: change.weeks } };
-  return { parts: [latest ? { num: oneDecimal(latest.kg), unitKey: 'unit_kg' } : { num: '—' }], line };
+  if (!latest) return { parts: [{ num: NO_VALUE }], line, empty: { key: 'tile_no_weight' } };
+  return { parts: [{ num: oneDecimal(latest.kg), unitKey: 'unit_kg' }], line };
 }
 
 /** Today's streak in days, and the best run, never shown lower than today's. */

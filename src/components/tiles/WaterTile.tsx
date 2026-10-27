@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
-import { oneDecimal, waterWords } from '../../core/tileText';
+import { waterLabel, waterWords } from '../../core/tileText';
 import { waterTile } from '../../core/tiles';
 import type { ISODate } from '../../core/types';
 import { fill, makeT } from '../../i18n';
@@ -31,6 +31,7 @@ export function WaterTile({ date, onAdded, onHold }: { date: ISODate; onAdded?: 
   const ml = app.state.water.filter((w) => w.date === date).reduce((a, w) => a + w.ml, 0);
   const tank = waterTile(ml, waterGoalMl, bottleMl);
   const level = useTileProgress(tank.fraction);
+  const label = waterLabel(ml, waterGoalMl);
   return (
     <LivingTile
       icon="water"
@@ -45,8 +46,8 @@ export function WaterTile({ date, onAdded, onHold }: { date: ISODate; onAdded?: 
         onAdded?.(id, bottleMl);
       }}
       onLongPress={onHold}
-      label={fill(t('tile_water_a11y'), { now: oneDecimal(ml / 1000), goal: oneDecimal(waterGoalMl / 1000) })}
-      hint={t('tile_hint_water')}
+      label={fill(t(label.key), label.params ?? {})}
+      hint={onHold ? t('tile_hint_water') : undefined}
     />
   );
 }
