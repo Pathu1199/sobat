@@ -45,6 +45,7 @@ import {
   type DayMenu,
   type MenuFit,
 } from '../core/menu';
+import { waterLog } from '../core/tiles';
 import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
 import type { PlanDay, PlanMeal, WeekPlan } from '../core/weekPlan';
@@ -65,6 +66,8 @@ type Ctx = {
   ready: boolean;
   state: AppState;
   foods: FoodItem[];
+  /** Every food a planned line or a saved meal can name: the database and the person's own, whatever the diet filter shows. */
+  planFoods: FoodItem[];
   exercises: Exercise[];
   today: string;
   /** Local hour, 0 to 23, kept fresh by the clock rather than read during render. */
@@ -79,7 +82,10 @@ type Ctx = {
   /** Take a meal away; once its slot would be filled in from the plan, the slot is marked skipped so it is not filled straight back. */
   removeMeal: (id: string) => void;
   updateMeal: (m: Meal) => void;
-  addWater: (ml: number) => void;
+  /** One water log on a date, today when none is given. Returns its id, so a tap can be undone. */
+  addWater: (ml: number, date?: ISODate) => string;
+  /** Take one water log away, by its id. */
+  removeWater: (id: string) => void;
   undoWater: () => void;
   addWeight: (w: WeightLog) => void;
   removeWeight: (date: ISODate) => void;
@@ -376,6 +382,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ready,
       state,
       foods: foodsForDiet(planFoods, state.settings.diet),
+      planFoods,
       exercises: EXERCISES,
       today,
       hour,
@@ -396,8 +403,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return next.meals === s.meals ? s : { ...s, ...next };
         }),
       updateMeal: (m) => update((s) => ({ ...s, meals: s.meals.map((x) => (x.id === m.id ? editedMeal(x, m) : x)) })),
-      addWater: (ml) =>
-        update((s) => ({ ...s, water: [...s.water, { id: newId(), at: new Date().toISOString(), date: toISODate(), ml }] })),
+      addWater: (ml, date) => {
+        const id = newId();
+        update((s) => ({ ...s, water: [...s.water, waterLog({ id, date: date ?? toISODate(), ml, now: new Date() })] }));
+        return id;
+      },
+      removeWater: (id) => update((s) => (s.water.some((w) => w.id === id) ? { ...s, water: s.water.filter((w) => w.id !== id) } : s)),
       undoWater: () =>
         update((s) => {
           const d = toISODate();

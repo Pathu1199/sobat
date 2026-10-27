@@ -1,4 +1,5 @@
-import type { WeightLog } from './types';
+import { toISODate } from './date';
+import type { ISODate, WaterLog, WeightLog } from './types';
 
 /**
  * The numbers behind the living tiles, so every tile reads the same way and
@@ -64,4 +65,10 @@ export function weightPoints(weights: WeightLog[], width = 100, height = 42, cou
     x: last.length === 1 ? width / 2 : r1((i / (last.length - 1)) * width),
     y: max === min ? height / 2 : r1(((max - w.kg) / (max - min)) * height),
   }));
+}
+
+/** A water log from the water tile: today's is logged now, one added to an earlier day at its noon, the way a walk is. */
+export function waterLog(input: { id: string; date: ISODate; ml: number; now: Date }): WaterLog {
+  const at = input.date === toISODate(input.now) ? input.now : new Date(`${input.date}T12:00:00`);
+  return { id: input.id, at: at.toISOString(), date: input.date, ml: input.ml };
 }

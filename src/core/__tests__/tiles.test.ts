@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fillFraction, sleepFraction, streakFraction, walkTile, waterTile, weightPoints } from '../tiles';
+import { fillFraction, sleepFraction, streakFraction, walkTile, waterLog, waterTile, weightPoints } from '../tiles';
 
 describe('water', () => {
   it('fills toward the goal, capped at full', () => {
@@ -90,5 +90,13 @@ describe('weightPoints', () => {
     expect(weightPoints([w('2026-09-02', 98), w('2026-09-01', 98)]).map((p) => p.y)).toEqual([21, 21]);
     expect(weightPoints([w('2026-09-01', 98)])).toEqual([{ x: 50, y: 21 }]);
     expect(weightPoints([])).toEqual([]);
+  });
+});
+
+describe('waterLog', () => {
+  it('a tap logs now for today and at noon for an earlier day, like a walk', () => {
+    const now = new Date('2026-10-27T18:05:00');
+    expect(waterLog({ id: 'w1', date: '2026-10-27', ml: 500, now })).toEqual({ id: 'w1', at: now.toISOString(), date: '2026-10-27', ml: 500 });
+    expect(waterLog({ id: 'w2', date: '2026-10-25', ml: 750, now }).at).toBe(new Date('2026-10-25T12:00:00').toISOString());
   });
 });
