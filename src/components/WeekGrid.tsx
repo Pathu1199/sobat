@@ -60,7 +60,7 @@ export function WeekGrid() {
       <Divider />
       <Row style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <Stat label={t('water_goal')} value={`${s.waterGoalDays}/7`} />
-        <Stat label={t('avg_sleep_m')} value={s.avgSleepMinutes !== null ? formatMinutes(s.avgSleepMinutes) : '—'} />
+        <Stat label={t('avg_sleep_m')} value={s.avgSleepMinutes !== null ? formatMinutes(s.avgSleepMinutes, t) : '—'} />
         <Stat label={t('weight_change')} value={s.weightChange !== null ? `${s.weightChange > 0 ? '+' : ''}${s.weightChange} ${t('unit_kg')}` : '—'} color={s.weightChange !== null && s.weightChange < 0 ? C.green : undefined} />
       </Row>
     </Card>

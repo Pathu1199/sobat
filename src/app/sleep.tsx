@@ -99,7 +99,7 @@ export default function SleepScreen({ embedded }: { embedded?: boolean } = {}) {
             <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{score}</Text>
           </Ring>
           <View>
-            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{formatMinutes(minutes)}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{formatMinutes(minutes, t)}</Text>
             <Small>{t('sleep_score')}</Small>
           </View>
         </Row>
@@ -130,7 +130,7 @@ export default function SleepScreen({ embedded }: { embedded?: boolean } = {}) {
             .map((s) => (
               <Row key={s.date} style={{ justifyContent: 'space-between' }}>
                 <Small>{s.date}</Small>
-                <Small>{formatMinutes(s.minutes)}</Small>
+                <Small>{formatMinutes(s.minutes, t)}</Small>
                 <Small color={s.score >= 70 ? C.accentText : C.textDim}>{s.score}</Small>
               </Row>
             ))}

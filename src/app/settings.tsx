@@ -51,6 +51,10 @@ export default function SettingsScreen() {
   const [advanced, setAdvanced] = useState(false);
   const [notifyMsg, setNotifyMsg] = useState<'sent' | 'blocked' | null>(null);
   const [pushMsg, setPushMsg] = useState<'sent' | 'failed' | null>(null);
+  // The app's version from its config (app.json), or none when the build does not carry it.
+  const version = Constants.expoConfig?.version;
+  // Background reminders through the relay exist only where it is set up; the nudges' words name that switch only when it is there.
+  const push = pushConfigured();
 
   async function test() {
     setTesting(true);
@@ -226,7 +230,7 @@ export default function SettingsScreen() {
         <ReminderSettings />
         <Card>
           {/* One switch for everything that speaks up while Sobat is open: the nudges, water among them, the coach's tips, and the relay's water. */}
-          <Toggle title={t('rem_nudges')} desc={t('rem_nudges_desc')} on={s.nudgesEnabled} onToggle={() => app.setSettings({ nudgesEnabled: !s.nudgesEnabled })} />
+          <Toggle title={t('rem_nudges')} desc={t(push ? 'rem_nudges_desc' : 'rem_nudges_desc_open')} on={s.nudgesEnabled} onToggle={() => app.setSettings({ nudgesEnabled: !s.nudgesEnabled })} />
           <Micro>{t('nudge_every')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[30, 60, 90, 120].map((m) => (
@@ -256,7 +260,7 @@ export default function SettingsScreen() {
             />
           </Row>
           {notifyMsg ? <Small color={notifyMsg === 'sent' ? C.green : C.amber}>{t(notifyMsg === 'sent' ? 'test_notification_sent' : 'test_notification_blocked')}</Small> : null}
-          {pushConfigured() ? (
+          {push ? (
             <>
               <Divider />
               <Toggle
@@ -435,7 +439,7 @@ export default function SettingsScreen() {
         <Card>
           <Row style={{ gap: 12 }}>
             <View style={{ flex: 1, gap: 3 }}>
-              <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{`Sobat ${Constants.expoConfig?.version ?? ''}`}</Text>
+              <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{version ? `Sobat ${version}` : 'Sobat'}</Text>
               <Small>{t('made_by')}</Small>
             </View>
           </Row>
@@ -481,7 +485,7 @@ export default function SettingsScreen() {
         </Card>
       </View>
 
-      <Micro>Sobat v0.3 · MIT · your data never leaves your devices.</Micro>
+      <Micro>{[version ? fill(t('footer_version'), { version }) : null, t('footer_privacy')].filter(Boolean).join(' · ')}</Micro>
     </Screen>
   );
 }

@@ -1,4 +1,4 @@
-import { latinDigits } from '../i18n';
+import { fill, latinDigits } from '../i18n';
 import type { ISODate, Lang } from './types';
 
 export function toISODate(d: Date = new Date()): ISODate {
@@ -73,10 +73,11 @@ export function hhmm(d: Date = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-export function formatMinutes(mins: number): string {
+/** A length of time in hours and minutes, in the person's language: "7h 30m", "7 ता 30 मि", "7 घं 30 मि". */
+export function formatMinutes(mins: number, t: (key: string) => string): string {
   const h = Math.floor(mins / 60);
   const m = Math.round(mins % 60);
-  return `${h}h ${String(m).padStart(2, '0')}m`;
+  return fill(t('dur_hm'), { h, m: String(m).padStart(2, '0') });
 }
 
 /** Clock time of an ISO timestamp in the device's own zone. Never slice the string. */

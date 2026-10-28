@@ -11,8 +11,9 @@ import { Logo } from '../ui/Logo';
 import { C, F, lh, M, MICRO, S } from '../ui/theme';
 
 // Colour names, not values: the palette changes with the theme, so each page reads C at render.
+// The first page is Today, Calories left under the week strip, so it wears Today's own icon from the tab bar.
 const PAGES: { icon: keyof typeof Ionicons.glyphMap; color: keyof typeof C }[] = [
-  { icon: 'pie-chart-outline', color: 'accentText' },
+  { icon: 'today-outline', color: 'accentText' },
   { icon: 'restaurant-outline', color: 'cyan' },
   { icon: 'scale-outline', color: 'green' },
 ];

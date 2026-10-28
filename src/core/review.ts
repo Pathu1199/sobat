@@ -142,9 +142,9 @@ export function dayReviewLines(f: DayFacts, t: (key: string) => string): string[
     fill(t('review_water'), { ml: numberText(f.waterMl), goal: numberText(f.waterGoalMl) }),
     f.movedMin !== null ? fill(t('review_moved'), { n: f.movedMin }) : t('review_no_workout'),
   ];
-  if (f.sleep) out.push(fill(t('review_slept'), { time: formatMinutes(f.sleep.minutes), score: f.sleep.score }));
+  if (f.sleep) out.push(fill(t('review_slept'), { time: formatMinutes(f.sleep.minutes, t), score: f.sleep.score }));
   if (f.mood) out.push(f.mood.note ? fill(t('review_mood_note'), { n: f.mood.score, note: f.mood.note }) : fill(t('review_mood'), { n: f.mood.score }));
-  if (f.screenMin > 0) out.push(fill(t('review_screen'), { time: formatMinutes(f.screenMin), long: formatMinutes(f.sittingMin) }));
+  if (f.screenMin > 0) out.push(fill(t('review_screen'), { time: formatMinutes(f.screenMin, t), long: formatMinutes(f.sittingMin, t) }));
   if (f.streakDays > 1) out.push(fill(t('review_streak'), { n: f.streakDays }));
   return out;
 }

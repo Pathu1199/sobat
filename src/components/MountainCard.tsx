@@ -65,7 +65,7 @@ export function MountainCard() {
             <Ionicons name="chevron-forward" size={14} color={C.textFaint} />
           </Row>
         </Row>
-        <Mountain progress={g.progress} startLabel={`${g.plan.startKg} kg`} nowLabel={`${g.plan.currentKg} kg`} goalLabel={`${g.plan.goalKg} kg`} camps={g.camps} trail={g.trail} />
+        <Mountain progress={g.progress} startLabel={`${g.plan.startKg} ${t('unit_kg')}`} nowLabel={`${g.plan.currentKg} ${t('unit_kg')}`} goalLabel={`${g.plan.goalKg} ${t('unit_kg')}`} camps={g.camps} trail={g.trail} />
         <Row style={{ gap: 18 }}>
           <Stat label={t('plan_lost')} value={`${g.plan.lostKg}`} color={C.cyan} />
           <Stat label={t('plan_to_go')} value={`${g.plan.toGoKg}`} />

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { daysBetween, formatDayLabel, formatDayMonth, formatDayMonthYear, formatMoment, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
+import { makeT } from '../../i18n';
+import { daysBetween, formatDayLabel, formatDayMonth, formatDayMonthYear, formatMinutes, formatMoment, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
 describe('local time from ISO strings', () => {
@@ -196,5 +197,15 @@ describe('formatMoment: when something happened, as Settings says the last backu
 
   it('gives back what it was given when that is not a moment', () => {
     expect(formatMoment('not-a-time', 'en')).toBe('not-a-time');
+  });
+});
+
+describe('formatMinutes: a length of time in hours and minutes', () => {
+  it('writes English as before, and Marathi and Hindi with their own short words for hour and minute, never a Latin letter', () => {
+    expect(formatMinutes(6, makeT('en'))).toBe('0h 06m');
+    expect(formatMinutes(450, makeT('en'))).toBe('7h 30m');
+    expect(formatMinutes(366, makeT('mr'))).toBe('6 ता 06 मि');
+    expect(formatMinutes(366, makeT('hi'))).toBe('6 घं 06 मि');
+    for (const lang of ['mr', 'hi'] as const) expect(formatMinutes(75, makeT(lang)), lang).not.toMatch(/[A-Za-z]/);
   });
 });

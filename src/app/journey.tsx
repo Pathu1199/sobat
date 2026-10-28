@@ -35,11 +35,11 @@ export default function Journey() {
           <Micro color={C.textDim}>{t('journey_title')}</Micro>
           <Pill label={`⛰ ${t(`level_${g.level.key}`)}`} color={C.cardAlt} textColor={C.cyan} />
         </Row>
-        <Mountain tall progress={g.progress} startLabel={`${g.plan.startKg} kg`} nowLabel={`${g.plan.currentKg} kg`} goalLabel={`${g.plan.goalKg} kg`} camps={g.camps} trail={g.trail} />
+        <Mountain tall progress={g.progress} startLabel={`${g.plan.startKg} ${t('unit_kg')}`} nowLabel={`${g.plan.currentKg} ${t('unit_kg')}`} goalLabel={`${g.plan.goalKg} ${t('unit_kg')}`} camps={g.camps} trail={g.trail} />
         <Row style={{ gap: 18 }}>
-          <Stat label={t(lost.key)} value={lost.kg} unit="kg" color={g.plan.lostKg > 0 ? C.cyan : undefined} />
-          <Stat label={t('plan_to_go')} value={`${g.plan.toGoKg}`} unit="kg" />
-          <Stat label={t('plan_goal')} value={`${g.plan.goalKg}`} unit="kg" />
+          <Stat label={t(lost.key)} value={lost.kg} unit={t('unit_kg')} color={g.plan.lostKg > 0 ? C.cyan : undefined} />
+          <Stat label={t('plan_to_go')} value={`${g.plan.toGoKg}`} unit={t('unit_kg')} />
+          <Stat label={t('plan_goal')} value={`${g.plan.goalKg}`} unit={t('unit_kg')} />
         </Row>
         <View style={{ gap: 4 }}>
           {g.plan.etaAtTarget && g.plan.toGoKg > 0 ? <Small>{fill(t('plan_goal_by'), { d: formatDayLabel(g.plan.etaAtTarget, lang), r: g.plan.targetRate })}</Small> : null}
@@ -104,7 +104,7 @@ export default function Journey() {
                 <Small>{formatDayLabel(w.date, lang)}</Small>
                 <Row style={{ gap: 6 }}>
                   {diff !== null ? <Micro color={diff < 0 ? C.green : diff > 0 ? C.amber : C.textFaint}>{`${diff > 0 ? '+' : ''}${diff}`}</Micro> : null}
-                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', marginRight: 4 }}>{`${w.kg} kg`}</Text>
+                  <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', marginRight: 4 }}>{`${w.kg} ${t('unit_kg')}`}</Text>
                   {/* Edit and delete on the row, 44-point targets; delete can be undone. */}
                   <Pressable onPress={() => setWeighOpen(true)} accessibilityRole="button" accessibilityLabel={t('edit')} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.cardAlt : 'transparent' })}>
                     <Ionicons name="create-outline" size={20} color={C.textDim} />

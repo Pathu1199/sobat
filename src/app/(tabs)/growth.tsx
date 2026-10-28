@@ -178,16 +178,16 @@ export default function GrowthScreen() {
 
   const sleepChart = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={t('sleep_hours')} meta="7h 30m" />
+      <SectionHeader title={t('sleep_hours')} meta={formatMinutes(450, t)} />
       <Card>
-        <BarChart data={summary.sleepSeries} target={450} color={C.violet} format={(v) => formatMinutes(v)} labels={barLabels} />
+        <BarChart data={summary.sleepSeries} target={450} color={C.violet} format={(v) => formatMinutes(v, t)} labels={barLabels} />
       </Card>
     </View>
   );
 
   const screenCard = (
     <View style={{ gap: 10 }}>
-      <SectionHeader title={t('screen_time')} meta={formatMinutes(screenToday)} />
+      <SectionHeader title={t('screen_time')} meta={formatMinutes(screenToday, t)} />
       <Card>
         <HourStrip hours={hourlyProfile(app.state.usage, app.today)} />
         <Row style={{ justifyContent: 'space-between' }}>
@@ -198,7 +198,7 @@ export default function GrowthScreen() {
         <Divider />
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro>{t('longest_sitting')}</Micro>
-          <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '500' }}>{formatMinutes(sitting)}</Text>
+          <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '500' }}>{formatMinutes(sitting, t)}</Text>
         </Row>
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro>{t('break_compliance')}</Micro>
@@ -236,7 +236,7 @@ export default function GrowthScreen() {
         </Row>
         <Row style={{ justifyContent: 'space-between' }}>
           <Micro>{t('longest_sitting')}</Micro>
-          <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '500' }}>{formatMinutes(sitting)}</Text>
+          <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '500' }}>{formatMinutes(sitting, t)}</Text>
         </Row>
       </Card>
     </View>
@@ -253,7 +253,7 @@ export default function GrowthScreen() {
           <Stat label={t('avg_kcal')} value={String(week.avgKcal)} />
           <Stat label={t('over_days')} value={String(week.overDays)} />
           <Stat label={t('workout_days')} value={String(week.workoutDays)} />
-          <Stat label={t('avg_sleep')} value={week.avgSleepMinutes ? formatMinutes(week.avgSleepMinutes) : '--'} />
+          <Stat label={t('avg_sleep')} value={week.avgSleepMinutes ? formatMinutes(week.avgSleepMinutes, t) : '--'} />
           {week.trend ? (
             <Stat
               label={t('unit_kg')}
@@ -339,7 +339,7 @@ export default function GrowthScreen() {
 function MetricTile({ metric, label, lang, wide }: { metric: Metric; label: string; lang: 'en' | 'mr' | 'hi'; wide: boolean }) {
   const t = makeT(lang);
   const isTime = metric.unit === 'min' && metric.value >= 60;
-  const value = isTime ? formatMinutes(metric.value) : metric.decimals ? metric.value.toFixed(metric.decimals) : String(metric.value);
+  const value = isTime ? formatMinutes(metric.value, t) : metric.decimals ? metric.value.toFixed(metric.decimals) : String(metric.value);
   const unit = isTime ? '' : metric.unit;
   const pct = changePct(metric);
   const good = isImprovement(metric);

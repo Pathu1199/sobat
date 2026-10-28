@@ -37,7 +37,7 @@ export function BreakPanel() {
           <Ionicons name="timer-outline" size={15} color={C.accent} />
           <Micro color={C.accentText}>{t('break_monitor')}</Micro>
         </Row>
-        <Micro>{`${t('screen_time')} ${formatMinutes(screen)}`}</Micro>
+        <Micro>{`${t('screen_time')} ${formatMinutes(screen, t)}`}</Micro>
       </Row>
 
       {monitor.enabled ? (
@@ -69,7 +69,7 @@ export function BreakPanel() {
 
       <Row style={{ justifyContent: 'space-between' }}>
         <Micro>{t('longest_sitting')}</Micro>
-        <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{formatMinutes(sitting)}</Text>
+        <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{formatMinutes(sitting, t)}</Text>
       </Row>
 
       <Row style={{ gap: 8 }}>

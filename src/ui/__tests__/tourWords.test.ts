@@ -32,6 +32,18 @@ describe('the tour and the Guide describe the app as it is', () => {
     }
   });
 
+  it('the office day\'s line describes the breaks the app runs now: look away every 20 minutes, stand up every hour, follow the prompt on screen', () => {
+    const office = (lang: 'en' | 'mr' | 'hi') => GUIDE[lang].find((s) => s.id === 'office')!.lines.join(' ');
+    expect(office('en')).toMatch(/look away .*every 20 minutes/i);
+    expect(office('en')).toMatch(/stand up .*every hour/i);
+    expect(office('en')).toMatch(/prompt on the screen/);
+    // The check-in that asked for these is no longer shown.
+    expect(office('en')).not.toMatch(/glass of water|two minutes|five minutes/);
+    expect(office('mr')).not.toMatch(/ग्लास पाणी|दोन मिनिटे|पाच मिनिटे/);
+    expect(office('hi')).not.toMatch(/गिलास पानी|दो मिनट|पाँच मिनट/);
+    for (const lang of ['mr', 'hi'] as const) expect(office(lang), lang).toMatch(/20/);
+  });
+
   it('has every Guide topic in all three languages, in the same order', () => {
     expect(GUIDE.mr.map((s) => s.id)).toEqual(GUIDE.en.map((s) => s.id));
     expect(GUIDE.hi.map((s) => s.id)).toEqual(GUIDE.en.map((s) => s.id));

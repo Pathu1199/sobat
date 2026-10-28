@@ -67,7 +67,7 @@ export default function CoachScreen() {
         <Stat label={t('kcal_left')} value={String(Math.max(0, app.budget.remaining))} />
         <Stat label={t('protein')} value={`${app.budget.proteinConsumed} / ${app.budget.proteinTarget} g`} />
         <Stat label={t('water')} value={`${app.waterToday} / ${app.state.settings.waterGoalMl} ml`} />
-        <Stat label={t('sleep_title')} value={lastSleep ? `${formatMinutes(lastSleep.minutes)} · ${lastSleep.score}` : '--'} />
+        <Stat label={t('sleep_title')} value={lastSleep ? `${formatMinutes(lastSleep.minutes, t)} · ${lastSleep.score}` : '--'} />
         <Divider />
         <Pressable onPress={() => router.push('/memory')} accessibilityRole="link" style={LINK}>
           <Small color={C.accentText}>{`${app.state.memory.length} ${t('mem_fact')} ›`}</Small>

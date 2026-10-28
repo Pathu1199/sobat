@@ -221,7 +221,8 @@ export function StatusChip({ label, color = C.accent }: { label: string; color?:
 }
 
 /** Two to four choices side by side, one selected. Read out as tabs, with the selected one marked. */
-export function Segmented<T extends string>({ options, value, onChange }: { options: { key: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+/** With `fit`, each section is as wide as its name, kept on one line, for a row that scrolls (SectionTabs); else they share the width. */
+export function Segmented<T extends string>({ options, value, onChange, fit }: { options: { key: T; label: string }[]; value: T; onChange: (v: T) => void; fit?: boolean }) {
   return (
     <View style={st.segmented} accessibilityRole="tablist">
       {options.map((o) => {
@@ -233,8 +234,8 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
             accessibilityRole="tab"
             accessibilityLabel={o.label}
             aria-selected={on}
-            style={[st.segment, on && { backgroundColor: C.card, ...lift(1) }]}>
-            <Text style={[MICRO, { color: on ? C.accentText : C.textDim }]}>{o.label}</Text>
+            style={[st.segment, fit && st.segmentFit, on && { backgroundColor: C.card, ...lift(1) }]}>
+            <Text numberOfLines={fit ? 1 : undefined} style={[MICRO, { color: on ? C.accentText : C.textDim }]}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -579,6 +580,8 @@ function buildStyles() {
     pillText: { fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' },
     segmented: { flexDirection: 'row', backgroundColor: C.cardAlt, borderRadius: 999, padding: 4 },
     segment: { flex: 1, minHeight: S.touch, paddingVertical: 8, paddingHorizontal: 6, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+    // As wide as the name and never narrower, growing to share what the row has left over.
+    segmentFit: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', paddingHorizontal: 12 },
     input: {
       minHeight: 48,
       backgroundColor: C.cardAlt,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SECTION_MIN_WIDTH, SECTION_SCROLL_MIN_WIDTH, sectionRowMinWidth } from '../segmentGeometry';
+import { SECTION_MIN_WIDTH, SECTION_SCROLL_MIN_WIDTH, sectionRowMinWidth, sectionsScroll } from '../segmentGeometry';
 import { S } from '../theme';
 
 describe('the switch between a tab\'s sections', () => {
@@ -20,5 +20,10 @@ describe('the switch between a tab\'s sections', () => {
     expect(SECTION_SCROLL_MIN_WIDTH).toBe(92);
     expect(sectionRowMinWidth(5)).toBe(5 * SECTION_SCROLL_MIN_WIDTH);
     expect(sectionRowMinWidth(4)).toBe(4 * SECTION_MIN_WIDTH);
+  });
+
+  it('sizes each section of a row that scrolls to its own name, kept on one line, so Food\'s आहार नियोजन never wraps at the largest text size; a row of four shares the width', () => {
+    expect(sectionsScroll(5)).toBe(true);
+    expect(sectionsScroll(4)).toBe(false);
   });
 });

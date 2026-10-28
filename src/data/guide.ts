@@ -68,7 +68,7 @@ const en: GuideSection[] = [
     icon: 'cafe-outline',
     title: 'The office day',
     lines: [
-      'With Eye-care breaks switched on in Settings → Features, each break asks for three things: a glass of water, two minutes on your feet, five minutes with your eyes off the screen.',
+      'With Eye-care breaks switched on in Settings → Features, the app asks you to look away from the screen every 20 minutes and to stand up and move every hour. When a break comes, follow the prompt on the screen.',
       'Lunch at the table, not the desk. Log it before you go back.',
       'Change the times in Settings → Office day whenever your shift changes.',
     ],
@@ -177,7 +177,7 @@ const mr: GuideSection[] = [
     icon: 'cafe-outline',
     title: 'ऑफिसचा दिवस',
     lines: [
-      'सेटिंग → सुविधा मध्ये डोळ्यांसाठी विश्रांती चालू असेल तर प्रत्येक ब्रेकला तीन गोष्टी विचारल्या जातात: एक ग्लास पाणी, दोन मिनिटे उभे राहून चालणे, पाच मिनिटे डोळे स्क्रीनपासून दूर.',
+      'सेटिंग → सुविधा मध्ये डोळ्यांसाठी विश्रांती चालू असेल तर अ‍ॅप दर 20 मिनिटांनी स्क्रीनपासून दूर बघायला आणि दर तासाला उठून हालचाल करायला सांगते. ब्रेक आला की स्क्रीनवर सांगितल्याप्रमाणे करा.',
       'जेवण टेबलावर, डेस्कवर नाही. परत जाण्याआधी नोंदवा.',
       'शिफ्ट बदलली की सेटिंग → ऑफिसचा दिवस इथे वेळा बदला.',
     ],
@@ -286,7 +286,7 @@ const hi: GuideSection[] = [
     icon: 'cafe-outline',
     title: 'ऑफिस का दिन',
     lines: [
-      'सेटिंग → सुविधाएँ में आँखों के लिए विराम चालू हो तो हर ब्रेक पर तीन चीज़ें पूछी जाती हैं: एक गिलास पानी, दो मिनट खड़े होकर चलना, पाँच मिनट आँखें स्क्रीन से दूर.',
+      'सेटिंग → सुविधाएँ में आँखों के लिए विराम चालू हो तो ऐप हर 20 मिनट पर स्क्रीन से दूर देखने और हर घंटे उठकर चलने को कहता है. ब्रेक आए तो स्क्रीन पर जो कहा जाए, वही करें.',
       'लंच मेज़ पर, डेस्क पर नहीं. लौटने से पहले दर्ज करें.',
       'शिफ़्ट बदले तो सेटिंग → ऑफिस का दिन में समय बदलें.',
     ],
