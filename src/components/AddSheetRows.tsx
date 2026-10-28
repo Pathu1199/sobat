@@ -5,7 +5,7 @@ import { amountText, formatQty, gramsDraftAfter, gramsText, lineGrams, parseGram
 import { defaultPortion, foodName, inMl, measureName } from '../core/foods';
 import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem, Lang } from '../core/types';
-import { fill, makeT } from '../i18n';
+import { fill, makeT, numberText } from '../i18n';
 import { Btn, Field, Row } from '../ui/components';
 import { QtyStepper } from '../ui/QtyStepper';
 import { C, F, lh, S } from '../ui/theme';
@@ -25,7 +25,7 @@ function SubLine({ words, kcal }: { words: string; kcal: number }) {
           {words}
         </Text>
       ) : null}
-      <Text numberOfLines={1} style={[faint, { flexShrink: 0 }]}>{words ? ` · ${kcal} kcal` : `${kcal} kcal`}</Text>
+      <Text numberOfLines={1} style={[faint, { flexShrink: 0 }]}>{words ? ` · ${numberText(kcal)} kcal` : `${numberText(kcal)} kcal`}</Text>
     </View>
   );
 }
@@ -62,7 +62,7 @@ export function FoodRow({
   const grams = line ? lineGrams(line) : p?.grams ?? 100;
   const kcal = kcalForGrams(food, grams).kcal;
   const measure = line ? amountText(line.count, measureName(food, line.unit, lang)) : p ? measureName(food, p.unit, lang) : '';
-  const sub = measure ? `${measure} · ${kcal} kcal` : `${kcal} kcal`;
+  const sub = measure ? `${measure} · ${numberText(kcal)} kcal` : `${numberText(kcal)} kcal`;
   const step = (by: 1 | -1) => {
     setDraft(gramsDraftAfter('step'));
     onStep(by);
@@ -161,7 +161,7 @@ export function PlannedCard({ title, summary, kcal, lang, onAte, onChange }: { t
   return (
     <View style={{ marginTop: 10, padding: 14, gap: 10, borderRadius: S.radiusSm, borderWidth: 1, borderColor: C.accent, backgroundColor: C.accentDim }}>
       <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{title}</Text>
-      <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{`${summary} · ${kcal} kcal`}</Text>
+      <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{`${summary} · ${numberText(kcal)} kcal`}</Text>
       <Row style={{ gap: 8 }}>
         <Btn small label={t('menu_ate_planned')} onPress={onAte} style={{ flex: 1 }} />
         <Btn small tone="ghost" label={t('menu_change')} onPress={onChange} style={{ flex: 1 }} />
@@ -179,7 +179,7 @@ export function OneTapRow({ icon, title, sub, kcal, label, onPress }: { icon: ke
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={kcal === undefined ? `${label}, ${sub}` : `${label}, ${sub} · ${kcal} kcal`}
+      accessibilityLabel={kcal === undefined ? `${label}, ${sub}` : `${label}, ${sub} · ${numberText(kcal)} kcal`}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch, paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}>
       <View style={{ width: 40, height: 40, borderRadius: 11, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name={icon} size={18} color={C.accentText} />

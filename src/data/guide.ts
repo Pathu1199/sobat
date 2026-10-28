@@ -15,7 +15,7 @@ const en: GuideSection[] = [
     lines: [
       'Once a week, same day, same scale. Sunday morning works well.',
       'Morning, after the toilet, before food or water, light clothes.',
-      'Log it on the Log screen (+) in the Weight box. The plan card reads it from there.',
+      'Tap the Weight tile on Progress, or on Today if you added it in Me → Customize, and enter the number. The weight sheet shows what has changed and whether the plan is working.',
       'Day-to-day swings of 1 to 2 kg are water and food in the gut, not fat. Only the weekly line matters.',
       'If the weekly number has not moved for 3 weeks, tighten the log for a week before changing the plan.',
     ],
@@ -26,9 +26,9 @@ const en: GuideSection[] = [
     title: 'How to log food',
     lines: [
       'Log everything, including the tea, the biscuit and the taste while cooking. Half-logged days look better than they were.',
-      'Your routine meals log in one tap from the Today screen. For anything else, search by name or take a photo.',
+      "Today's menu holds each meal of your eating pattern. Ate it as it says? Tap Ate as planned. For anything else, tap ➕ and search by name, take a photo or scan the barcode.",
       'Check the portion. A katori is 150 g; a chapati 40 g. Change the quantity if yours is bigger.',
-      'Missed a day? Pick the day on the Log screen and add it. An honest late entry beats a blank.',
+      'Missed a day? Tap it on the week strip at the top of Today and fill it in. An honest late entry beats a blank.',
     ],
   },
   {
@@ -37,8 +37,8 @@ const en: GuideSection[] = [
     title: 'What to avoid, and what to have instead',
     lines: [
       'Your avoid list: milk tea with sugar (black tea instead), cashews (badam and akrod instead), shev, namkeen, biscuits and fried bhaji (roasted chana or plain bhel instead).',
-      'When you log one of these, the app says so and offers something to have instead. Take it when you can, and log it honestly when you cannot.',
-      'Edit the list on the routine screen. A rule you set yourself is the only kind that holds.',
+      'The menu the app suggests never holds one of these, and the coach knows the list. When you have one anyway, log it honestly.',
+      'Edit the list in Me → Diet plan and eating pattern → My eating pattern. A rule you set yourself is the only kind that holds.',
       'Nothing is banned. The point is fewer times, not never.',
     ],
   },
@@ -58,8 +58,8 @@ const en: GuideSection[] = [
     icon: 'water-outline',
     title: 'Water',
     lines: [
-      'Three litres a day, spread out. One glass with every break and every meal gets you most of the way.',
-      'The ring on Today shows where you should be by this hour, not just the total.',
+      'Three litres a day, spread out. A bottle with every break and every meal gets you most of the way.',
+      'Each tap on the Water tile on Today adds one bottle, and its line says how many are left. Hold it to change the bottle size or add another amount.',
       'Hunger at 11 or 4 is often thirst. Drink a glass, wait ten minutes, then decide.',
     ],
   },
@@ -68,7 +68,7 @@ const en: GuideSection[] = [
     icon: 'cafe-outline',
     title: 'The office day',
     lines: [
-      'At each break the app asks for three things: a glass of water, two minutes on your feet, five minutes with your eyes off the screen.',
+      'With Eye-care breaks switched on in Settings → Features, each break asks for three things: a glass of water, two minutes on your feet, five minutes with your eyes off the screen.',
       'Lunch at the table, not the desk. Log it before you go back.',
       'Change the times in Settings → Office day whenever your shift changes.',
     ],
@@ -79,7 +79,7 @@ const en: GuideSection[] = [
     title: 'Sleep',
     lines: [
       'Seven hours, same bedtime within half an hour. The morning check-in takes twenty seconds.',
-      'Short sleep makes the next day hungrier. On a bad night the Move tab makes the day easier on its own.',
+      'Short sleep makes the next day hungrier. After a bad night, Move (in Me → Body) makes the day easier on its own.',
       'Dinner before nine and no screen in bed are the two changes that move the sleep score most.',
     ],
   },
@@ -89,7 +89,7 @@ const en: GuideSection[] = [
     title: 'Movement',
     lines: [
       'The morning walk is the base. Twenty to thirty minutes, every day, the same time.',
-      'The Move tab gives a short joint-safe session sized to how you slept. Red days are stretching and breathing, never nothing.',
+      'Move, in Me → Body, gives a short joint-safe session sized to how you slept. Red days are stretching and breathing, never nothing.',
       'Miss three days and the plan gets easier, not louder. Start again from wherever it says.',
     ],
   },
@@ -98,8 +98,8 @@ const en: GuideSection[] = [
     icon: 'analytics-outline',
     title: 'Reading your numbers',
     lines: [
-      'The big number on Today is calories left for the day. Green or blue is fine; red means over.',
-      'The plan card shows kg lost since your first weigh-in, kg to go, and two dates: at the planned rate, and at your real pace.',
+      'Calories left, the big number at the top of Today, is what you can still eat today. Once the day is over its target, it says by how much.',
+      'Tap the Weight tile for what you have lost, what is left to go, and whether the plan is working, in plain words, with one change to make when it is not. Progress shows the smoothed line.',
       'The target is never below a safe floor. If the app raised it, that is on purpose.',
       'Protein matters as much as calories: it keeps muscle while fat goes. Dal, curd, eggs, paneer, chana.',
     ],
@@ -109,9 +109,9 @@ const en: GuideSection[] = [
     icon: 'cloud-upload-outline',
     title: 'Keeping your data safe',
     lines: [
-      'Everything lives on this device. Nothing is uploaded unless you choose to.',
-      'Settings → Google Drive backup keeps one file in your own Drive. Back up weekly, after the weigh-in.',
-      'Settings → Export gives you the same file to keep anywhere; Import brings it onto another device.',
+      "Your logs live on this device and, with sync on, in one file in the app maker's Google Drive. Only you and the app maker can open it.",
+      'Where it is set up, Settings → Back up now keeps a copy in your own Google Drive. Back up weekly, after the weigh-in.',
+      'Settings → Export data gives you the same file to keep anywhere; on the web, Import data brings it onto another device.',
     ],
   },
 ];
@@ -124,7 +124,7 @@ const mr: GuideSection[] = [
     lines: [
       'आठवड्यातून एकदा, त्याच दिवशी, त्याच काट्यावर. रविवार सकाळ चांगली.',
       'सकाळी, शौचानंतर, खाण्या-पिण्याआधी, हलके कपडे.',
-      'नोंद (+) पानावर वजन या चौकटीत लिहा. नियोजन कार्ड तिथूनच वाचते.',
+      'प्रगती पानावरच्या, किंवा मी → मांडणी मधून आजच्या पानावर घेतली असेल तर तिथल्या, वजनाच्या चौकटीवर दाबा आणि आकडा लिहा. वजनाचं पान किती बदललं आणि नियोजन चालतंय का ते दाखवतं.',
       'रोजचे 1–2 किलोचे चढउतार म्हणजे पाणी आणि पोटातले अन्न, चरबी नाही. फक्त आठवड्याची रेषा महत्त्वाची.',
       'तीन आठवडे आकडा हलला नाही तर नियोजन बदलण्याआधी एक आठवडा नोंद काटेकोर करा.',
     ],
@@ -135,9 +135,9 @@ const mr: GuideSection[] = [
     title: 'जेवण कसे नोंदवावे',
     lines: [
       'सगळे नोंदवा, चहा, बिस्किट आणि शिजवताना घेतलेली चवसुद्धा. अर्धवट नोंदवलेले दिवस खरे असतात त्यापेक्षा चांगले दिसतात.',
-      'दिनक्रमातली जेवणे आजच्या पानावरून एका टॅपमध्ये. बाकी काहीही नावाने शोधा किंवा फोटो काढा.',
+      'आजच्या मेन्यूत तुमच्या खाण्याच्या पद्धतीतलं प्रत्येक जेवण आहे. लिहिल्याप्रमाणे खाल्लं? "ठरवल्याप्रमाणे खाल्लं" दाबा. बाकी काहीही असेल तर ➕ दाबा आणि नावाने शोधा, फोटो काढा किंवा बारकोड वाचा.',
       'प्रमाण तपासा. एक वाटी 150 ग्रॅ; एक चपाती 40 ग्रॅ. तुमची मोठी असेल तर संख्या बदला.',
-      'एखादा दिवस राहिला? नोंद पानावर तो दिवस निवडून भरा. उशिरा पण खरी नोंद रिकाम्यापेक्षा बरी.',
+      'एखादा दिवस राहिला? आजच्या पानाच्या वरच्या आठवड्याच्या पट्टीत तो दिवस दाबा आणि भरा. उशिरा पण खरी नोंद रिकाम्यापेक्षा बरी.',
     ],
   },
   {
@@ -146,8 +146,8 @@ const mr: GuideSection[] = [
     title: 'काय टाळावे, त्याऐवजी काय',
     lines: [
       'तुमची टाळायची यादी: दूध-साखरेचा चहा (त्याऐवजी कोरा चहा), काजू (बदाम-अक्रोड), शेव, नमकीन, बिस्किटे आणि भजी (भाजलेले चणे किंवा साधी भेळ).',
-      'यातले काही नोंदवले की अ‍ॅप सांगते आणि पर्याय देते. जमेल तेव्हा पर्याय घ्या, नाही जमले तर खरे नोंदवा.',
-      'यादी दिनक्रम पानावर बदला. स्वतः ठरवलेला नियमच टिकतो.',
+      'अ‍ॅप सुचवत असलेल्या मेन्यूत यातले काहीच नसते, आणि कोचला ही यादी माहीत असते. तरी खाल्ले तर खरे नोंदवा.',
+      'यादी मी → आहार नियोजन आणि खाण्याची पद्धत → माझी खाण्याची पद्धत इथे बदला. स्वतः ठरवलेला नियमच टिकतो.',
       'काहीच बंद नाही. मुद्दा कमी वेळा, कधीच नाही असा नाही.',
     ],
   },
@@ -167,8 +167,8 @@ const mr: GuideSection[] = [
     icon: 'water-outline',
     title: 'पाणी',
     lines: [
-      'दिवसाला तीन लिटर, विभागून. प्रत्येक ब्रेकला आणि जेवणाला एक ग्लास घेतला की बहुतेक झाले.',
-      'आजच्या पानावरचा पट्टा या वेळेपर्यंत किती हवे ते दाखवतो, फक्त एकूण नाही.',
+      'दिवसाला तीन लिटर, विभागून. प्रत्येक ब्रेकला आणि जेवणाला एक बाटली घेतली की बहुतेक झाले.',
+      'आजच्या पानावरच्या पाण्याच्या चौकटीवर प्रत्येक दाबाने एक बाटली नोंदते, आणि खालची ओळ किती बाटल्या बाकी ते सांगते. बाटलीचा आकार बदलायला किंवा दुसरे प्रमाण घालायला दाबून धरा.',
       '11 ला किंवा 4 ला लागलेली भूक बऱ्याचदा तहान असते. एक ग्लास प्या, दहा मिनिटे थांबा, मग ठरवा.',
     ],
   },
@@ -177,7 +177,7 @@ const mr: GuideSection[] = [
     icon: 'cafe-outline',
     title: 'ऑफिसचा दिवस',
     lines: [
-      'प्रत्येक ब्रेकला अ‍ॅप तीन गोष्टी विचारते: एक ग्लास पाणी, दोन मिनिटे उभे राहून चालणे, पाच मिनिटे डोळे स्क्रीनपासून दूर.',
+      'सेटिंग → सुविधा मध्ये डोळ्यांसाठी विश्रांती चालू असेल तर प्रत्येक ब्रेकला तीन गोष्टी विचारल्या जातात: एक ग्लास पाणी, दोन मिनिटे उभे राहून चालणे, पाच मिनिटे डोळे स्क्रीनपासून दूर.',
       'जेवण टेबलावर, डेस्कवर नाही. परत जाण्याआधी नोंदवा.',
       'शिफ्ट बदलली की सेटिंग → ऑफिसचा दिवस इथे वेळा बदला.',
     ],
@@ -188,7 +188,7 @@ const mr: GuideSection[] = [
     title: 'झोप',
     lines: [
       'सात तास, झोपण्याची वेळ अर्ध्या तासाच्या आत तीच. सकाळची नोंद वीस सेकंदांची.',
-      'कमी झोप दुसऱ्या दिवशी भूक वाढवते. वाईट रात्रीनंतर हालचाल पान दिवस आपोआप सोपा करते.',
+      'कमी झोप दुसऱ्या दिवशी भूक वाढवते. वाईट रात्रीनंतर हालचाल (मी → शरीर) दिवस आपोआप सोपा करते.',
       'नऊच्या आत जेवण आणि अंथरुणात स्क्रीन नाही, या दोन गोष्टी झोपेचे गुण सगळ्यात जास्त बदलतात.',
     ],
   },
@@ -198,7 +198,7 @@ const mr: GuideSection[] = [
     title: 'हालचाल',
     lines: [
       'सकाळचा फेरफटका हा पाया. वीस ते तीस मिनिटे, रोज, त्याच वेळी.',
-      'हालचाल पान झोपेनुसार लहान, सांध्यांना सुरक्षित सराव देते. लाल दिवस म्हणजे ताणणे आणि श्वास, कधीच काहीच नाही असे नाही.',
+      'मी → शरीर मधली हालचाल झोपेनुसार लहान, सांध्यांना सुरक्षित सराव देते. लाल दिवस म्हणजे ताणणे आणि श्वास, कधीच काहीच नाही असे नाही.',
       'तीन दिवस चुकले की नियोजन सोपे होते, कठोर नाही. जिथे सांगते तिथून पुन्हा सुरू करा.',
     ],
   },
@@ -207,8 +207,8 @@ const mr: GuideSection[] = [
     icon: 'analytics-outline',
     title: 'आकडे कसे वाचावे',
     lines: [
-      'आजच्या पानावरचा मोठा आकडा म्हणजे दिवसाच्या उरलेल्या कॅलरी. निळा ठीक; लाल म्हणजे जास्त झाले.',
-      'नियोजन कार्ड पहिल्या वजनापासून किती कमी झाले, किती बाकी, आणि दोन तारखा दाखवते: ठरलेल्या वेगाने आणि तुमच्या खऱ्या वेगाने.',
+      'आजच्या पानाच्या वरचा मोठा आकडा, उरलेल्या कॅलरी, म्हणजे आज अजून किती खाता येईल. दिवसाचे लक्ष्य ओलांडले की किती जास्त झाले ते सांगतो.',
+      'वजनाच्या चौकटीवर दाबा: किती कमी झाले, किती बाकी, आणि नियोजन चालतंय का ते साध्या शब्दांत, नसेल तर एक बदल सुचवून. प्रगती पान सरासरी रेषा दाखवते.',
       'लक्ष्य कधीच सुरक्षित किमानाखाली जात नाही. अ‍ॅपने ते वाढवले असेल तर ते मुद्दाम.',
       'प्रथिने कॅलरीइतकीच महत्त्वाची: चरबी जाताना स्नायू टिकवतात. डाळ, दही, अंडी, पनीर, चणे.',
     ],
@@ -218,9 +218,9 @@ const mr: GuideSection[] = [
     icon: 'cloud-upload-outline',
     title: 'डेटा सुरक्षित ठेवणे',
     lines: [
-      'सगळे याच डिव्हाइसवर राहते. तुम्ही ठरवल्याशिवाय काहीही अपलोड होत नाही.',
-      'सेटिंग → Google Drive बॅकअप तुमच्या Drive मध्ये एक फाइल ठेवते. दर आठवड्याला, वजनानंतर बॅकअप घ्या.',
-      'सेटिंग → डेटा बाहेर काढा हीच फाइल कुठेही ठेवायला देते; आत घ्या ती दुसऱ्या डिव्हाइसवर आणते.',
+      'तुमच्या नोंदी या डिव्हाइसवर राहतात, आणि सिंक चालू असेल तर अ‍ॅप बनवणाऱ्याच्या गूगल ड्राइव्हमधल्या एका फाइलमध्ये. ती फक्त तुम्ही आणि अ‍ॅप बनवणारा उघडू शकता.',
+      'जिथे सोय केलेली असेल तिथे सेटिंग → आता बॅकअप घ्या तुमच्या स्वतःच्या गूगल ड्राइव्हमध्ये एक प्रत ठेवते. दर आठवड्याला, वजनानंतर बॅकअप घ्या.',
+      'सेटिंग → डेटा बाहेर काढा हीच फाइल कुठेही ठेवायला देते; वेबवर डेटा आत घ्या ती दुसऱ्या डिव्हाइसवर आणते.',
     ],
   },
 ];
@@ -233,7 +233,7 @@ const hi: GuideSection[] = [
     lines: [
       'हफ़्ते में एक बार, उसी दिन, उसी तराज़ू पर. रविवार सुबह ठीक रहती है.',
       'सुबह, शौच के बाद, खाने-पीने से पहले, हल्के कपड़े.',
-      'दर्ज (+) पेज पर वज़न वाले खाने में लिखें. योजना कार्ड वहीं से पढ़ता है.',
+      'प्रगति पन्ने पर, या मैं → अपनी पसंद से आज वाले पन्ने पर लिया हो तो वहाँ, वज़न वाले खाने को दबाएँ और अंक लिखें. वज़न का पन्ना बताता है कितना बदला और प्लान काम कर रहा है या नहीं.',
       'रोज़ के 1–2 किलो के उतार-चढ़ाव पानी और पेट का खाना हैं, चर्बी नहीं. सिर्फ़ हफ़्ते की रेखा मायने रखती है.',
       'तीन हफ़्ते आँकड़ा न हिले तो योजना बदलने से पहले एक हफ़्ता दर्ज करना कड़ा करें.',
     ],
@@ -244,9 +244,9 @@ const hi: GuideSection[] = [
     title: 'खाना कैसे दर्ज करें',
     lines: [
       'सब दर्ज करें, चाय, बिस्कुट और पकाते समय चखा हुआ भी. आधे दर्ज दिन जितने थे उससे बेहतर दिखते हैं.',
-      'दिनचर्या का खाना आज के पेज से एक टैप में. बाकी कुछ भी नाम से खोजें या फ़ोटो लें.',
+      'आज के मेन्यू में आपके खाने के पैटर्न का हर खाना है. जैसा लिखा है वैसा खाया? "प्लान के मुताबिक़ खाया" दबाएँ. बाकी कुछ भी हो तो ➕ दबाएँ और नाम से खोजें, फ़ोटो लें या बारकोड पढ़ें.',
       'मात्रा जाँचें. एक कटोरी 150 ग्राम; एक रोटी 40 ग्राम. आपकी बड़ी हो तो संख्या बदलें.',
-      'कोई दिन छूट गया? दर्ज पेज पर वह दिन चुनकर भरें. देर से पर सच्ची प्रविष्टि खाली से बेहतर है.',
+      'कोई दिन छूट गया? आज वाले पन्ने के ऊपर की हफ़्ते की पट्टी में वह दिन दबाएँ और भरें. देर से पर सच्ची प्रविष्टि खाली से बेहतर है.',
     ],
   },
   {
@@ -255,8 +255,8 @@ const hi: GuideSection[] = [
     title: 'क्या टालें, उसके बजाय क्या',
     lines: [
       'आपकी परहेज़ सूची: दूध-चीनी वाली चाय (उसके बजाय काली चाय), काजू (बादाम-अखरोट), सेव, नमकीन, बिस्कुट और पकौड़े (भुने चने या सादी भेल).',
-      'इनमें से कुछ दर्ज करने पर ऐप बताता है और विकल्प देता है. जब हो सके विकल्प लें, न हो सके तो सच दर्ज करें.',
-      'सूची दिनचर्या पेज पर बदलें. ख़ुद का बनाया नियम ही टिकता है.',
+      'ऐप जो मेन्यू सुझाता है उसमें इनमें से कुछ नहीं होता, और कोच को यह सूची पता है. फिर भी खा लिया तो सच दर्ज करें.',
+      'सूची मैं → डाइट प्लान और खाने का पैटर्न → मेरा खाने का पैटर्न में बदलें. ख़ुद का बनाया नियम ही टिकता है.',
       'कुछ भी मना नहीं. बात कम बार की है, कभी नहीं की नहीं.',
     ],
   },
@@ -276,8 +276,8 @@ const hi: GuideSection[] = [
     icon: 'water-outline',
     title: 'पानी',
     lines: [
-      'दिन में तीन लीटर, बाँटकर. हर ब्रेक और हर खाने पर एक गिलास से ज़्यादातर हो जाता है.',
-      'आज के पेज की पट्टी बताती है कि इस समय तक कितना होना चाहिए, सिर्फ़ कुल नहीं.',
+      'दिन में तीन लीटर, बाँटकर. हर ब्रेक और हर खाने पर एक बोतल से ज़्यादातर हो जाता है.',
+      'आज वाले पन्ने पर पानी वाले खाने को हर बार दबाने से एक बोतल जुड़ती है, और नीचे की पंक्ति बताती है कितनी बोतलें बाकी हैं. बोतल का आकार बदलने या दूसरी मात्रा जोड़ने के लिए दबाकर रखें.',
       '11 या 4 बजे की भूख अक्सर प्यास होती है. एक गिलास पिएँ, दस मिनट रुकें, फिर तय करें.',
     ],
   },
@@ -286,7 +286,7 @@ const hi: GuideSection[] = [
     icon: 'cafe-outline',
     title: 'ऑफिस का दिन',
     lines: [
-      'हर ब्रेक पर ऐप तीन चीज़ें पूछता है: एक गिलास पानी, दो मिनट खड़े होकर चलना, पाँच मिनट आँखें स्क्रीन से दूर.',
+      'सेटिंग → सुविधाएँ में आँखों के लिए विराम चालू हो तो हर ब्रेक पर तीन चीज़ें पूछी जाती हैं: एक गिलास पानी, दो मिनट खड़े होकर चलना, पाँच मिनट आँखें स्क्रीन से दूर.',
       'लंच मेज़ पर, डेस्क पर नहीं. लौटने से पहले दर्ज करें.',
       'शिफ़्ट बदले तो सेटिंग → ऑफिस का दिन में समय बदलें.',
     ],
@@ -297,7 +297,7 @@ const hi: GuideSection[] = [
     title: 'नींद',
     lines: [
       'सात घंटे, सोने का समय आधे घंटे के भीतर वही. सुबह की जाँच बीस सेकंड की.',
-      'कम नींद अगले दिन भूख बढ़ाती है. बुरी रात के बाद हलचल टैब दिन अपने आप आसान कर देता है.',
+      'कम नींद अगले दिन भूख बढ़ाती है. बुरी रात के बाद हलचल (मैं → शरीर) दिन अपने आप आसान कर देता है.',
       'नौ से पहले खाना और बिस्तर में स्क्रीन नहीं, ये दो बदलाव नींद का स्कोर सबसे ज़्यादा बदलते हैं.',
     ],
   },
@@ -307,7 +307,7 @@ const hi: GuideSection[] = [
     title: 'हलचल',
     lines: [
       'सुबह की सैर आधार है. बीस से तीस मिनट, रोज़, उसी समय.',
-      'हलचल टैब नींद के हिसाब से छोटा, जोड़ों के लिए सुरक्षित सत्र देता है. लाल दिन खिंचाव और साँस हैं, कभी कुछ नहीं नहीं.',
+      'मैं → शरीर में हलचल नींद के हिसाब से छोटा, जोड़ों के लिए सुरक्षित सत्र देता है. लाल दिन खिंचाव और साँस हैं, कभी कुछ नहीं नहीं.',
       'तीन दिन छूटें तो योजना आसान होती है, सख़्त नहीं. जहाँ कहे वहीं से फिर शुरू करें.',
     ],
   },
@@ -316,8 +316,8 @@ const hi: GuideSection[] = [
     icon: 'analytics-outline',
     title: 'अपने आँकड़े पढ़ना',
     lines: [
-      'आज के पेज का बड़ा अंक दिन की बची कैलोरी है. नीला ठीक; लाल मतलब ज़्यादा हो गया.',
-      'योजना कार्ड पहले वज़न से कितना घटा, कितना बाकी, और दो तारीख़ें दिखाता है: तय रफ़्तार से और आपकी असली रफ़्तार से.',
+      'आज वाले पन्ने के ऊपर का बड़ा अंक, बची कैलोरी, बताता है कि आज और कितना खा सकते हैं. दिन का लक्ष्य पार होने पर बताता है कितना ज़्यादा हुआ.',
+      'वज़न वाले खाने को दबाएँ: कितना घटा, कितना बाकी, और प्लान काम कर रहा है या नहीं, सीधे शब्दों में, न हो तो एक बदलाव के साथ. प्रगति पन्ना औसत रेखा दिखाता है.',
       'लक्ष्य कभी सुरक्षित न्यूनतम से नीचे नहीं जाता. ऐप ने बढ़ाया हो तो जानबूझकर.',
       'प्रोटीन कैलोरी जितना ही ज़रूरी: चर्बी जाते समय मांसपेशी बचाता है. दाल, दही, अंडे, पनीर, चना.',
     ],
@@ -327,9 +327,9 @@ const hi: GuideSection[] = [
     icon: 'cloud-upload-outline',
     title: 'डेटा सुरक्षित रखना',
     lines: [
-      'सब कुछ इसी डिवाइस पर रहता है. आपके चुने बिना कुछ अपलोड नहीं होता.',
-      'सेटिंग → Google Drive बैकअप आपके Drive में एक फ़ाइल रखता है. हर हफ़्ते, वज़न के बाद बैकअप लें.',
-      'सेटिंग → डेटा निर्यात वही फ़ाइल कहीं भी रखने देता है; आयात उसे दूसरे डिवाइस पर लाता है.',
+      'आपकी प्रविष्टियाँ इसी डिवाइस पर रहती हैं, और सिंक चालू हो तो ऐप बनाने वाले की गूगल ड्राइव में एक फ़ाइल में. उसे सिर्फ़ आप और ऐप बनाने वाला खोल सकते हैं.',
+      'जहाँ इसकी व्यवस्था हो, वहाँ सेटिंग → अभी बैकअप लें आपकी अपनी गूगल ड्राइव में एक प्रति रखता है. हर हफ़्ते, वज़न के बाद बैकअप लें.',
+      'सेटिंग → डेटा निर्यात वही फ़ाइल कहीं भी रखने देता है; वेब पर डेटा आयात करें उसे दूसरे डिवाइस पर लाता है.',
     ],
   },
 ];

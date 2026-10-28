@@ -18,8 +18,9 @@ const PAGES: { icon: keyof typeof Ionicons.glyphMap; color: keyof typeof C }[] =
 ];
 
 /**
- * Three screens about the app: the day's number, the routine, the weekly
- * habits. Each says one thing. Opened from Me → Guide and Settings → About,
+ * Three screens about the app: Calories left and the week strip, the day's
+ * menu with Ate as planned and ➕, and the weight on Progress. Each says one
+ * thing. Opened from Me → Guide and Settings → About,
  * once setup is done (setup goes on to the permissions screen, not here).
  * Every control is a finger wide on every platform by its own box, the web
  * included, where reach added around a control does not count.

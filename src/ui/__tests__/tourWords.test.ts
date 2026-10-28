@@ -1,0 +1,39 @@
+import { describe, expect, it } from 'vitest';
+import { GUIDE } from '../../data/guide';
+import { t } from '../../i18n';
+
+const TOUR = ['tour_1_t', 'tour_1_b', 'tour_2_t', 'tour_2_b', 'tour_3_t', 'tour_3_b'];
+/** A word in Latin letters; digits, ➕ and the rest are fine. */
+const LATIN = /[A-Za-z]/;
+
+describe('the tour and the Guide describe the app as it is', () => {
+  it('the tour names Calories left, the menu and Ate as planned, ➕, the week strip, the Weight tile on Progress and the Guide in Me', () => {
+    const tour = TOUR.map((k) => t('en', k)).join(' ');
+    for (const words of ['Calories left', 'menu', 'Ate as planned', '➕', 'week strip', 'Weight tile', 'Progress', 'Guide', 'Me']) expect(tour).toContain(words);
+    // Names of screens and cards that are gone.
+    expect(tour).not.toMatch(/\bring\b|plan card|Log on a meal|\? guide/i);
+  });
+
+  it('the coach\'s day plan no longer points to a card on Today', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) expect(t(lang, 'oc_day_plan_tip'), lang).not.toMatch(/What fits|काय बसेल|क्या फ़िट|card|कार्ड/);
+  });
+
+  it('the Guide speaks of the screens there are: no Log screen, plan card or ring', () => {
+    const lines = GUIDE.en.flatMap((s) => s.lines).join(' ');
+    expect(lines).not.toMatch(/Log screen|plan card|The ring|routine screen|Move tab/);
+    expect(lines).toMatch(/Ate as planned/);
+    expect(lines).toMatch(/Weight tile/);
+  });
+
+  it('in Marathi and Hindi, the tour, the Guide and the day plan\'s last line carry no word in Latin letters', () => {
+    for (const lang of ['mr', 'hi'] as const) {
+      for (const k of [...TOUR, 'oc_day_plan_tip']) expect(t(lang, k), `${lang} ${k}`).not.toMatch(LATIN);
+      for (const s of GUIDE[lang]) for (const line of [s.title, ...s.lines]) expect(line, `${lang} ${s.id}`).not.toMatch(LATIN);
+    }
+  });
+
+  it('has every Guide topic in all three languages, in the same order', () => {
+    expect(GUIDE.mr.map((s) => s.id)).toEqual(GUIDE.en.map((s) => s.id));
+    expect(GUIDE.hi.map((s) => s.id)).toEqual(GUIDE.en.map((s) => s.id));
+  });
+});

@@ -101,7 +101,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
             color={doneToday.status === 'done' ? C.accentText : C.textFaint}
           />
           <Small color={doneToday.status === 'done' ? C.accentText : C.textFaint}>
-            {doneToday.status === 'done' ? `${t('done')} · ${doneToday.minutes} min` : t('skip_session')}
+            {doneToday.status === 'done' ? `${t('done')} · ${doneToday.minutes} ${t('tile_unit_min')}` : t('skip_session')}
           </Small>
         </Row>
       ) : (
@@ -170,7 +170,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
         <StatQuad
           items={[
             { label: t('workout_days_m'), value: String(doneCount) },
-            { label: t('walk_target'), value: `${phase.walkMinutes}m` },
+            { label: t('walk_target'), value: `${phase.walkMinutes} ${t('tile_unit_min')}` },
             { label: t('strength_days'), value: String(phase.strengthDays) },
             { label: t('phase_label'), value: String(phase.phase) },
           ]}

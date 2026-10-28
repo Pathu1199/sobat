@@ -56,10 +56,10 @@ export default function SettingsScreen() {
     setResult(null);
     try {
       const models = await listModels(s.ollamaUrl);
-      setResult({ ok: true, text: `${t('connected')} · ${models.length} models · ${models.slice(0, 3).join(', ')}` });
+      setResult({ ok: true, text: `${t('connected')} · ${fill(t('ollama_models'), { n: models.length })} · ${models.slice(0, 3).join(', ')}` });
     } catch {
       const fb = s.ollamaFallbackUrl ? await isUp(s.ollamaFallbackUrl) : false;
-      setResult(fb ? { ok: true, text: `${t('connected')} (fallback)` } : { ok: false, text: `${t('not_connected')} · ${normalizeUrl(s.ollamaUrl)}` });
+      setResult(fb ? { ok: true, text: t('connected_fallback') } : { ok: false, text: `${t('not_connected')} · ${normalizeUrl(s.ollamaUrl)}` });
     } finally {
       setTesting(false);
     }
@@ -337,7 +337,7 @@ export default function SettingsScreen() {
           <ListRow
             icon={<Ionicons name="bookmark-outline" size={16} color={C.violet} />}
             title={t('mem_fact')}
-            sub={`${app.state.memory.length} remembered`}
+            sub={fill(t('mem_count'), { n: app.state.memory.length })}
             onPress={() => router.push('/memory')}
             trailing={<Ionicons name="chevron-forward" size={16} color={C.textFaint} />}
           />

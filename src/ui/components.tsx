@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { numberText } from '../i18n';
 import { useEased, useEntrance } from './animated';
 import { chosenProps } from './chosen';
 import { C, F, lh, lift, MICRO, onThemeChange, S } from './theme';
@@ -334,7 +335,7 @@ export function Bar({ value, max, color = C.accent, height = 4, marker }: { valu
   );
 }
 
-/** A labelled bar row: name on the left, value on the right, bar underneath. */
+/** A labelled bar row: name on the left, value on the right, bar underneath. The numbers are written as everywhere else (1,714), whatever the device's own language. */
 export function MeterRow({
   label,
   alt,
@@ -359,10 +360,10 @@ export function MeterRow({
           <BiText en={label} alt={alt} size={F.small} color={C.textDim} weight="400" />
         </View>
         <Text numberOfLines={1} style={{ color: C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
-          {value.toLocaleString()}
+          {numberText(value)}
           <Text style={{ color: C.textFaint, fontWeight: '400' }}>
             {' / '}
-            {total.toLocaleString()}
+            {numberText(total)}
             {unit ? ` ${unit}` : ''}
           </Text>
         </Text>

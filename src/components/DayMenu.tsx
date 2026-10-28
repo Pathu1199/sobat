@@ -104,7 +104,7 @@ export function DayMenu({
     const id = app.addMealFromPlan(date, row.slotId, 'plan', lines);
     if (id === null) return;
     fb.haptic('success');
-    fb.notify(fill(t('toast_meal_saved'), { kcal: kcalOf(shownLines(row)) }), {
+    fb.notify(fill(t('toast_meal_saved'), { kcal: numberText(kcalOf(shownLines(row))) }), {
       label: t('undo'),
       onPress: () => runUndo(app, undoSteps({ id, date, slotId: row.slotId, ...before })),
     });
@@ -221,7 +221,7 @@ export function DayMenu({
               key={m.id}
               onPress={() => onOpenMeal(m)}
               accessibilityRole="button"
-              accessibilityLabel={fill(t('menu_done_a11y'), { slot: title(row), foods: names(m), kcal: m.kcal })}
+              accessibilityLabel={fill(t('menu_done_a11y'), { slot: title(row), foods: names(m), kcal: numberText(m.kcal) })}
               accessibilityHint={t('menu_open_meal')}
               style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: S.touch, opacity: pressed ? 0.7 : 1 })}>
               {i === 0 ? <Ionicons name="checkmark-circle" size={20} color={C.accentText} /> : <View style={{ width: 20 }} />}
@@ -237,7 +237,7 @@ export function DayMenu({
                   </Text>
                 ) : null}
               </View>
-              <Text style={[small, { fontWeight: '500' }]}>{`${m.kcal} kcal`}</Text>
+              <Text style={[small, { fontWeight: '500' }]}>{`${numberText(m.kcal)} kcal`}</Text>
             </Pressable>
           ))}
           {row.autoIds.length > 0 ? (
@@ -273,7 +273,7 @@ export function DayMenu({
     if (row.state === 'current') {
       return (
         <View style={{ gap: 8, padding: 12, marginVertical: 4, borderRadius: S.radiusSm, borderWidth: 1, borderColor: C.accent, backgroundColor: C.accentDim }}>
-          {head(row, row.lines.length > 0 ? `${row.plannedKcal} kcal` : undefined)}
+          {head(row, row.lines.length > 0 ? `${numberText(row.plannedKcal)} kcal` : undefined)}
           {row.lines.length > 0 ? (
             row.lines.map((l) => (
               <View key={l.idx}>
@@ -290,7 +290,7 @@ export function DayMenu({
     }
     // A later slot today, and a day already past as the plan screen reads it: what it plans, nothing to do there.
     if (row.state === 'later' || row.state === 'kept') {
-      return <View style={{ paddingVertical: 10 }}>{head(row, row.lines.length > 0 ? fill(t('menu_planned_kcal'), { kcal: row.plannedKcal }) : t('menu_nothing_planned'))}</View>;
+      return <View style={{ paddingVertical: 10 }}>{head(row, row.lines.length > 0 ? fill(t('menu_planned_kcal'), { kcal: numberText(row.plannedKcal) }) : t('menu_nothing_planned'))}</View>;
     }
     // Open (a past day, or a slot today passed with nothing in it) and plan (a future day): each planned food with − / +,
     // so Ate this logs the amounts shown. Today and later they edit that date's menu; on a past day they change only the draft,
@@ -298,7 +298,7 @@ export function DayMenu({
     const lines = shownLines(row);
     return (
       <View style={{ gap: 8, paddingVertical: 8 }}>
-        {head(row, lines.length > 0 || draftOf(row) ? `${kcalOf(lines)} kcal` : t('menu_nothing_planned'))}
+        {head(row, lines.length > 0 || draftOf(row) ? `${numberText(kcalOf(lines))} kcal` : t('menu_nothing_planned'))}
         {lines.map((l) => stepperLine(row, l))}
         {offers(row)}
       </View>

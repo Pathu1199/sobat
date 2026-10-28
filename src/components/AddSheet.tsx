@@ -31,7 +31,7 @@ import { slotLabel, type PlanLine } from '../core/routine';
 import type { FoodItem, ISODate, Meal, SavedMeal } from '../core/types';
 import { runUndo } from '../core/undo';
 import { plannedKcal, type PlanMeal } from '../core/weekPlan';
-import { fill, makeT } from '../i18n';
+import { fill, makeT, numberText } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useMinute } from '../services/useClock';
 import { useApp } from '../store/AppProvider';
@@ -193,7 +193,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
     // Refused by the store (nothing logged): nothing is said, and the sheet stays as it was.
     if (id === null) return;
     fb.haptic('success');
-    fb.notify(fill(t('toast_meal_saved'), { kcal }), {
+    fb.notify(fill(t('toast_meal_saved'), { kcal: numberText(kcal) }), {
       label: t('undo'),
       onPress: () => runUndo(app, undoSteps({ id, date, slotId, ...before })),
     });
@@ -262,7 +262,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
     if (!meal) return;
     app.addMeal(meal);
     fb.haptic('success');
-    const words = fill(t('toast_meal_saved'), { kcal: meal.kcal });
+    const words = fill(t('toast_meal_saved'), { kcal: numberText(meal.kcal) });
     // A meal of two or more foods may be one the person eats often: offer to keep it for one-tap logging, unless it is one
     // of their saved meals already. The sheet itself says it was logged, as the toast would sit behind it.
     const lines = linesFromBasket(basket, foods);
@@ -353,7 +353,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
           <OneTapRow
             icon="bookmark-outline"
             title={s.name}
-            sub={fill(t(s.lines.length === 1 ? 'add_bar_one' : 'add_bar'), { n: s.lines.length, kcal: linesKcal(s.lines) })}
+            sub={fill(t(s.lines.length === 1 ? 'add_bar_one' : 'add_bar'), { n: s.lines.length, kcal: numberText(linesKcal(s.lines)) })}
             label={fill(into ? t('add_food_named') : t('add_log_saved'), { food: s.name, name: s.name })}
             onPress={() => logSaved(s)}
           />
@@ -425,7 +425,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
           {basket.length > 0 || mode === 'plan' ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: S.padLg, paddingVertical: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
               <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
-                {fill(t(totals.items === 1 ? 'add_bar_one' : 'add_bar'), { n: totals.items, kcal: totals.kcal })}
+                {fill(t(totals.items === 1 ? 'add_bar_one' : 'add_bar'), { n: totals.items, kcal: numberText(totals.kcal) })}
               </Text>
               <Btn label={mode === 'plan' ? t('add_save_menu') : t('save')} onPress={save} disabled={!slot} style={{ minWidth: 120 }} />
             </View>
