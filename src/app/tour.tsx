@@ -48,8 +48,9 @@ export default function TourScreen() {
   }
 
   function done() {
-    // Skip and Start go to Today, wherever the tour was opened from.
-    router.replace('/');
+    // Skip and Start go to Today, wherever the tour was opened from: back down to the tabs already open under it, not a
+    // second copy of them on top.
+    router.dismissTo('/');
   }
 
   const p = PAGES[page];

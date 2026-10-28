@@ -86,8 +86,9 @@ export default function PermissionsScreen() {
         </Row>
       </Card>
 
-      <Btn label={t('perm_continue')} onPress={() => router.replace('/')} />
-      <Btn tone="ghost" label={t('perm_later')} onPress={() => router.replace('/')} />
+      {/* Down to the tabs when they are already under this page (a reload here opens them beneath it), in their place otherwise. */}
+      <Btn label={t('perm_continue')} onPress={() => router.dismissTo('/')} />
+      <Btn tone="ghost" label={t('perm_later')} onPress={() => router.dismissTo('/')} />
     </Screen>
   );
 }

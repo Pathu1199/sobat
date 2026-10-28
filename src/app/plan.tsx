@@ -248,7 +248,7 @@ function PlanWeek() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={C.textFaint} />
         </Pressable>
-        <Pressable onPress={() => router.push('/food?s=routine')} accessibilityRole="button" accessibilityLabel={t('plan_follows_pattern')} style={{ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start' }}>
+        <Pressable onPress={() => router.navigate('/food?s=routine')} accessibilityRole="button" accessibilityLabel={t('plan_follows_pattern')} style={{ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start' }}>
           <Micro color={C.accentText}>{`${t('plan_follows_pattern')} ›`}</Micro>
         </Pressable>
       </View>

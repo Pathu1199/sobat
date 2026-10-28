@@ -1000,6 +1000,7 @@ const en: Dict = {
   mem_count: '{n} remembered',
   ollama_models: '{n} models',
   connected_fallback: 'Connected through the second address',
+  hdr_back: 'Back',
 };
 
 const mr: Dict = {
@@ -2003,6 +2004,7 @@ const mr: Dict = {
   mem_count: '{n} लक्षात ठेवलेले',
   ollama_models: '{n} मॉडेल',
   connected_fallback: 'दुसऱ्या पत्त्यावरून जोडले',
+  hdr_back: 'मागे',
 };
 
 const hi: Dict = {
@@ -3005,6 +3007,7 @@ const hi: Dict = {
   mem_count: '{n} याद रखे गए',
   ollama_models: '{n} मॉडल',
   connected_fallback: 'दूसरे पते से जुड़ा',
+  hdr_back: 'पीछे',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

@@ -11,6 +11,7 @@ import { notifyNow, requestPermission } from '../services/notify';
 import { pushConfigured, stopPush, testPush } from '../services/push';
 import Constants from 'expo-constants';
 import { OllamaSetup } from '../components/OllamaSetup';
+import { BreakPanel } from '../components/BreakPanel';
 import { BreakSettingsCard } from '../components/BreakSettingsCard';
 import { FeatureSettings } from '../components/FeatureSettings';
 import { ReminderSettings } from '../components/ReminderSettings';
@@ -300,8 +301,14 @@ export default function SettingsScreen() {
       <View style={{ gap: 10 }}>
         <SectionHeader title={t('features_title')} icon={<Ionicons name="options-outline" size={13} color={C.textFaint} />} />
         <FeatureSettings />
-        {/* Only while eye-care breaks are on: the break settings' own switch would otherwise read on while nothing runs. */}
-        {s.features.breaks ? <BreakSettingsCard /> : null}
+        {/* Only while eye-care breaks are on: the next break, pause an hour or take one now, then the break settings, whose own
+            switch would otherwise read on while nothing runs. */}
+        {s.features.breaks ? (
+          <>
+            <BreakPanel />
+            <BreakSettingsCard />
+          </>
+        ) : null}
       </View>
 
       {/* The bottle and the walk goal are also on a long press of their tiles; here they are a tap away for anyone who cannot hold. */}

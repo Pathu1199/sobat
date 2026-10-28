@@ -6,6 +6,7 @@ import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Platform, useColorScheme, View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
 import { BreakToast } from '../components/BreakToast';
+import { HeaderBack } from '../components/HeaderBack';
 import { pageTitle } from '../core/screenTitle';
 import { makeT } from '../i18n';
 import { FeedbackProvider } from '../services/feedback';
@@ -26,6 +27,15 @@ import { usePushSync } from '../services/usePushSync';
 import { useWorkSchedule } from '../services/useWorkSchedule';
 import { AppProvider, useApp } from '../store/AppProvider';
 import { applyTextScale, applyTheme, C, themeMode, type ThemeMode } from '../ui/theme';
+
+/**
+ * The tabs sit under every other page: a link or a reload that opens a page of
+ * the stack (/settings, /plan?date=…) still has the tabs beneath it, so its
+ * back arrow goes somewhere. expo-router 57 names this `anchor`
+ * (`initialRouteName` is its deprecated name); it is used only when a link
+ * opens the app, not when the app moves between its own pages.
+ */
+export const unstable_settings = { anchor: '(tabs)' };
 
 export default function RootLayout() {
   return (
@@ -128,6 +138,8 @@ function AppShell() {
             headerTintColor: C.text,
             headerTitleStyle: { fontWeight: '500' },
             contentStyle: { backgroundColor: C.bg },
+            // A back button a finger wide, named in the person's language, on every page with a header.
+            headerLeft: () => <HeaderBack label={t('hdr_back')} />,
           }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />

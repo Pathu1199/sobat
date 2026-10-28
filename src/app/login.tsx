@@ -31,7 +31,8 @@ export default function Login() {
     setMsg(null);
     try {
       await fn();
-      router.replace('/');
+      // Down to the tabs when a reload of this page opened them beneath it, in its place otherwise.
+      router.dismissTo('/');
     } catch (e) {
       setMsg({ ok: false, key: authErrorKey(e) });
     } finally {

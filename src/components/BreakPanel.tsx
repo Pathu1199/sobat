@@ -1,5 +1,3 @@
-// Nothing shows this panel at the moment, and it is kept on purpose: the eye-care breaks are off by default
-// (settings.features.breaks) and their code stays, so they can be given a place again without being written anew.
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Text, View } from 'react-native';
@@ -10,9 +8,14 @@ import { fill, makeT } from '../i18n';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
 import { Bar, Btn, Card, Micro, Ring, Row } from '../ui/components';
-import { C, F } from '../ui/theme';
+import { C, F, lh } from '../ui/theme';
 
-/** The desktop break panel: a countdown ring, today's compliance, the longest stretch. */
+/**
+ * The eye-care breaks as they run: a countdown ring to the next break,
+ * today's breaks taken, the longest stretch sitting, pause an hour or resume,
+ * a break now, and a longer gap when breaks keep being skipped. In Settings →
+ * Features, under the eye-care breaks switch, only while that switch is on.
+ */
 export function BreakPanel() {
   const app = useApp();
   const monitor = useBreakMonitor();
@@ -40,18 +43,18 @@ export function BreakPanel() {
       {monitor.enabled ? (
         <Row style={{ gap: 16, alignItems: 'center' }}>
           <Ring value={elapsed} max={nextEvery} size={88} stroke={5} color={left <= 1 ? C.amber : C.accent}>
-            <Text style={{ color: C.text, fontSize: F.title, fontWeight: '400' }}>{left}</Text>
+            <Text style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title, true), fontWeight: '400' }}>{left}</Text>
             <Micro>{t('minutes')}</Micro>
           </Ring>
           <View style={{ flex: 1, gap: 10 }}>
             <View>
               <Micro>{monitor.nextKind ? `${t('break_next')} · ${t(`brk_${monitor.nextKind}`)}` : t('break_next')}</Micro>
-              <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{`${left} ${t('minutes')}`}</Text>
+              <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{`${left} ${t('minutes')}`}</Text>
             </View>
             <View style={{ gap: 6 }}>
               <Row style={{ justifyContent: 'space-between' }}>
                 <Micro>{t('break_compliance')}</Micro>
-                <Text style={{ color: stats.compliancePct >= 60 ? C.cyan : C.textDim, fontSize: F.small, fontWeight: '500' }}>
+                <Text style={{ color: stats.compliancePct >= 60 ? C.cyan : C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
                   {stats.taken}
                   <Text style={{ color: C.textFaint, fontWeight: '500' }}> / {todayBreaks.length}</Text>
                 </Text>
@@ -66,7 +69,7 @@ export function BreakPanel() {
 
       <Row style={{ justifyContent: 'space-between' }}>
         <Micro>{t('longest_sitting')}</Micro>
-        <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, fontWeight: '500' }}>{formatMinutes(sitting)}</Text>
+        <Text style={{ color: sitting >= 120 ? C.amber : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{formatMinutes(sitting)}</Text>
       </Row>
 
       <Row style={{ gap: 8 }}>
