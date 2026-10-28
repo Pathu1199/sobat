@@ -6,6 +6,7 @@ import { lowIntake } from '../core/intake';
 import { KCAL_FLOOR } from '../core/nutrition';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
+import { useRecordOn } from '../store/useRecordOn';
 import { Card, Micro, Row, Small } from '../ui/components';
 import { C, F, S } from '../ui/theme';
 
@@ -15,9 +16,11 @@ export function IntakeCard() {
   const router = useRouter();
   const { state, today, targets } = app;
   const t = makeT(state.profile.lang);
+  // The day's record lets a day completed with skips count: one meal and the rest skipped is too little, not half written down.
+  const recordOn = useRecordOn();
   const intake = useMemo(
-    () => lowIntake({ meals: state.meals, today, target: targets.kcal, floor: KCAL_FLOOR[state.profile.sex], offDays: state.settings.offDays ?? [] }),
-    [state.meals, today, targets.kcal, state.profile.sex, state.settings.offDays],
+    () => lowIntake({ meals: state.meals, today, target: targets.kcal, floor: KCAL_FLOOR[state.profile.sex], offDays: state.settings.offDays ?? [], recordOn }),
+    [state.meals, today, targets.kcal, state.profile.sex, state.settings.offDays, recordOn],
   );
   if (!intake) return null;
   return (

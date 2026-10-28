@@ -612,6 +612,16 @@ describe('adding a meal to the state', () => {
     expect(withMealAdded(state([], other), real('m2', 'lunch', '13:30'), 1600, at('13:30')).slotSkips).toBe(other);
   });
 
+  it('a meal dated after today is refused: the meals and the skips stay exactly as they were', () => {
+    const skips = addSkip([], '2026-10-28', 'lunch');
+    const before = state([real('m0', 'lunch', '09:00')], skips);
+    const out = withMealAdded(before, real('m1', 'lunch', '13:30', '2026-10-28'), 1600, at('23:50'));
+    expect(out.meals).toBe(before.meals);
+    expect(out.slotSkips).toBe(before.slotSkips);
+    // Today, a minute before midnight, is still taken.
+    expect(withMealAdded(before, real('m2', 'lunch', '23:59'), 1600, at('23:59')).meals.map((m) => m.id)).toEqual(['m0', 'm2']);
+  });
+
   it('a meal already in the state, by its id, is not added again, so it never counts twice', () => {
     const s = state([filled('lunch')], addSkip([], d, 'dinner'));
     const out = withMealAdded(s, filled('lunch'), 1600, at('15:00'));
@@ -916,11 +926,11 @@ describe('the app\'s suggestion fits the person\'s day', () => {
     expect(isSuggested(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods), NEUTRAL_ROUTINE, foods, fit)).toBe(false);
   });
 
-  it('is the pattern\'s own day when every food is avoided: nothing is added or made bigger, and it still reads as the suggestion', () => {
+  it('is the pattern\'s slots with nothing in them when every food is avoided: nothing avoided is planned, and it still reads as the suggestion', () => {
     const avoidAll: MenuFit = { target: 1800, floor: 1200, avoided: new Set(foods.map((f) => f.id)) };
     for (const date of weekDates(MON)) {
       const shown = viewMenu(date, [], NEUTRAL_ROUTINE, TODAY, foods, avoidAll);
-      expect(shown.meals).toEqual(viewMenu(date, [], NEUTRAL_ROUTINE, TODAY, foods).meals);
+      expect(shown.meals).toEqual(viewMenu(date, [], NEUTRAL_ROUTINE, TODAY, foods).meals.map((m) => ({ ...m, lines: [] })));
       expect(kcal(shown)).toBeLessThan(1200);
       // So the line under the safe minimum, with the way to Balance, still shows.
       expect(isSuggested(shown, NEUTRAL_ROUTINE, foods, avoidAll)).toBe(true);
@@ -961,7 +971,41 @@ describe('the app\'s suggestion fits the person\'s day', () => {
     expect(chapatiGrams(filled)).toBeLessThanOrEqual(chapatiGrams(dueAutoFills({ state, now, foods })));
   });
 
-  it('is what Rebuild puts back: the meals a date nobody wrote shows, as its own copy, so the day reads as the suggestion again', () => {
+  it('never suggests a food the person avoids, on any weekday, fitted or not: a staple, a bhaji of the week, a fixed item, and the app fills none in', () => {
+    // Staples the app adds itself (bread, dal, salad, the breakfast dish), the week's bhaji and a fixed fruit of the example pattern.
+    const avoidedIds = ['chapati', 'poha', 'upma', 'moong-dal', 'varan', 'jowar-bhakri', 'kakdi-koshimbir', 'green-salad', 'palak-bhaji', 'dudhi-bhaji', 'papaya'];
+    const rules = avoidedIds.map((id) => ruleForFood(foods.find((f) => f.id === id)!));
+    const sundayFirst = ['2026-11-01', ...weekDates(MON).slice(0, 6)];
+    for (const base of [NEUTRAL_ROUTINE, { ...DEFAULT_ROUTINE, enabled: true }]) {
+      const mine = { ...base, avoid: [...base.avoid, ...rules] };
+      const fitted = fitFor({ ...EMPTY_STATE.profile, onboarded: true }, mine);
+      for (const date of sundayFirst) {
+        for (const day of [suggestionFor(date, mine, foods, fitted), suggestionFor(date, mine, foods), viewMenu(date, [], mine, TODAY, foods, fitted)]) {
+          const ids = day.meals.flatMap((m) => m.lines.map((l) => l.foodId));
+          expect(ids.filter((id) => avoidedIds.includes(id))).toEqual([]);
+          // Still a day of food: what was avoided gave way to what was allowed.
+          expect(ids.length).toBeGreaterThan(0);
+        }
+        // The day shown is still read as the app's suggestion.
+        expect(isSuggested(viewMenu(date, [], mine, TODAY, foods, fitted), mine, foods, fitted)).toBe(true);
+      }
+      const state = {
+        profile: { ...EMPTY_STATE.profile, onboarded: true },
+        menus: [] as DayMenu[],
+        routine: mine,
+        meals: [] as Meal[],
+        slotSkips: [] as SlotSkip[],
+        usage: [] as typeof EMPTY_STATE.usage,
+        openedDates: [TODAY],
+        settings: { ...EMPTY_STATE.settings, offDays: [] },
+      };
+      const filled = dueAutoFills({ state, now: new Date('2026-10-27T23:00:00'), foods, fit: fitted });
+      expect(filled.length).toBeGreaterThan(0);
+      expect(filled.flatMap((m) => m.items.map((i) => i.foodId)).filter((id) => avoidedIds.includes(id!))).toEqual([]);
+    }
+  });
+
+  it('is the meals a date nobody wrote shows, as its own copy, so a day written back with it reads as the suggestion again', () => {
     const rebuilt = suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit);
     expect(rebuilt.meals).toEqual(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods, fit).meals);
     // Not the pattern's own lines, which are under the target.
@@ -980,7 +1024,7 @@ describe('the app\'s suggestion fits the person\'s day', () => {
     const out = setMenuDay(edited, shownWeek[2], suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit).meals, later);
     expect(menuFor(WED, out)!.editedAt).toBe(later.toISOString());
     expect(isSuggested(viewMenu(WED, out, NEUTRAL_ROUTINE, TODAY, foods, fit), NEUTRAL_ROUTINE, foods, fit)).toBe(true);
-    // Rebuilding a day nobody wrote writes nothing.
+    // Writing the suggestion onto a day nobody wrote writes nothing.
     expect(setMenuDay([], week[2], suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit).meals, later)).toEqual([]);
   });
 

@@ -57,11 +57,14 @@ const fitted = new WeakMap<MenuFit, { routine: Routine; foods: FoodItem[]; days:
 /**
  * What the app suggests for a weekday nobody wrote: the pattern's own lines
  * for it and, given a fit, balanced to the person's day target and never
- * under the safe minimum, or as near as the foods allowed get. The fitted day
- * is shared by every caller, so it never leaves this file uncopied.
+ * under the safe minimum, or as near as the foods allowed get. Never a food
+ * the person avoids (the fit's, else the routine's avoid list): a staple they
+ * avoid is left out and a rotating dish gives way to the next allowed one.
+ * The fitted day is shared by every caller, so it never leaves this file
+ * uncopied.
  */
 function suggestedDay(routine: Routine, weekday: number, foods: FoodItem[], fit?: MenuFit): PlanDay {
-  if (!fit) return planDayFor(routine, weekday, foods);
+  if (!fit) return planDayFor(routine, weekday, foods, avoidedFoodIds(routine));
   let memo = fitted.get(fit);
   if (!memo || memo.routine !== routine || memo.foods !== foods) {
     memo = { routine, foods, days: new Map() };
@@ -69,7 +72,7 @@ function suggestedDay(routine: Routine, weekday: number, foods: FoodItem[], fit?
   }
   let day = memo.days.get(weekday);
   if (!day) {
-    day = balanceDay(planDayFor(routine, weekday, foods), foods, fit.target, fit.avoided, fit.floor).day;
+    day = balanceDay(planDayFor(routine, weekday, foods, fit.avoided), foods, fit.target, fit.avoided, fit.floor).day;
     memo.days.set(weekday, day);
   }
   return day;
@@ -534,12 +537,13 @@ export type MealState = MealsAndSkips & { routine: Routine; menus: DayMenu[] };
  * photo read late, a meal typed for that date, named after today's pattern)
  * goes to the slot its type and time put it in among that date's slots, so
  * it settles the right one. A meal already in the state, by its id, is not
- * added again.
+ * added again, and a meal dated after today is refused: nothing is eaten
+ * before its day, and a future meal would read as eaten in every count.
  */
 export function withMealAdded(state: MealState, m: Meal, target: number, now: Date): MealsAndSkips {
-  // A meal already in the state is not added again, so an Undo that puts back a meal still there never counts it twice.
-  if (state.meals.some((x) => x.id === m.id)) return { meals: state.meals, slotSkips: state.slotSkips };
   const today = toISODate(now);
+  // A meal already in the state is not added again, so an Undo that puts back a meal still there never counts it twice.
+  if (m.date > today || state.meals.some((x) => x.id === m.id)) return { meals: state.meals, slotSkips: state.slotSkips };
   // The pattern is always on, so every meal finds its slot.
   const slots = m.slotId && m.date >= today ? undefined : slotsOn(m.date, state.menus, state.routine, today);
   const own = m.slotId && slots && !slots.some((s) => s.id === m.slotId) ? slotOf({ type: m.type, at: m.at }, slots) : null;

@@ -1,7 +1,7 @@
 import { defaultPortion } from './foods';
 import { kcalForGrams } from './nutrition';
 import { pattern } from './pattern';
-import { slotTime, type PlanLine, type Routine, type RoutineSlot } from './routine';
+import { avoidedFoodIds, slotTime, type PlanLine, type Routine, type RoutineSlot } from './routine';
 import type { FoodItem, MealType } from './types';
 
 /**
@@ -131,9 +131,18 @@ export function swapsFor(line: PlanLine, foods: FoodItem[], avoided: Set<string>
 }
 
 const has = (foods: FoodItem[], id: string) => foods.some((f) => f.id === id);
-const pick = (foods: FoodItem[], ids: string[], i: number) => {
+/**
+ * The `i`th of `ids` the database has, turning round the list; one the person
+ * avoids gives way to the next allowed one after it, so a day whose own pick is
+ * allowed picks the same as with nothing avoided. Null when none is allowed.
+ */
+const pick = (foods: FoodItem[], ids: string[], i: number, avoided?: Set<string>) => {
   const ok = ids.filter((id) => has(foods, id));
-  return ok.length ? ok[i % ok.length] : null;
+  for (let k = 0; k < ok.length; k++) {
+    const id = ok[(i + k) % ok.length];
+    if (!avoided?.has(id)) return id;
+  }
+  return null;
 };
 
 const BREAKFASTS = ['poha', 'upma', 'thalipeeth', 'moong-dal-chilla', 'idli', 'ghavan', 'dalia'];
@@ -153,41 +162,48 @@ function hasRole(lines: PlanLine[], foods: FoodItem[], role: Role): boolean {
  * One slot's lines on one weekday: the day's bhaji where the slot takes it,
  * the person's own fixed items, then the staples a plate is missing (bread,
  * dal, salad for lunch and dinner; the rotating dish for breakfast). A
- * snack is its fixed items only.
+ * snack is its fixed items only. Given the foods the person avoids
+ * (`avoided`), none of them is ever a line: a fixed item or a staple they
+ * avoid is left out, and a bhaji or a rotating dish gives way to the next
+ * one allowed. Without it, the lines are as the old plan screen built them.
  */
-export function slotPlanLines(routine: Routine, slot: RoutineSlot, d: number, foods: FoodItem[]): PlanLine[] {
+export function slotPlanLines(routine: Routine, slot: RoutineSlot, d: number, foods: FoodItem[], avoided?: Set<string>): PlanLine[] {
   const lines: PlanLine[] = [];
+  const allowed = (id: string) => has(foods, id) && !avoided?.has(id);
   const add = (id: string | null, line?: PlanLine) => {
-    if (!id || !has(foods, id) || lines.some((l) => l.foodId === id)) return;
+    if (!id || !allowed(id) || lines.some((l) => l.foodId === id)) return;
     lines.push(line ?? lineFor(foods.find((f) => f.id === id)!));
   };
   if (slot.withBhaji && (slot.type === 'lunch' || slot.type === 'dinner')) {
     const bhaji = routine.week[d] ?? [];
     const i = slot.type === 'lunch' ? 0 : 1;
-    const own = bhaji[i] && has(foods, bhaji[i]) ? bhaji[i] : pick(foods, SPARE_BHAJI, d + (slot.type === 'lunch' ? 0 : 3));
+    const own = bhaji[i] && allowed(bhaji[i]) ? bhaji[i] : pick(foods, SPARE_BHAJI, d + (slot.type === 'lunch' ? 0 : 3), avoided);
     if (own) lines.push({ foodId: own, unit: routine.bhajiUnit || 'katori', qty: 1 });
   }
   for (const l of slot.options[0] ?? []) add(l.foodId, l);
   if (slot.type === 'breakfast') {
-    if (!hasRole(lines, foods, 'breakfast')) add(pick(foods, BREAKFASTS, d));
+    if (!hasRole(lines, foods, 'breakfast')) add(pick(foods, BREAKFASTS, d, avoided));
   } else if (slot.type === 'lunch') {
     if (!hasRole(lines, foods, 'bread') && !hasRole(lines, foods, 'rice')) add('chapati', { foodId: 'chapati', unit: 'piece', qty: 2 });
-    if (!hasRole(lines, foods, 'dal')) add(pick(foods, LUNCH_DALS, d));
+    if (!hasRole(lines, foods, 'dal')) add(pick(foods, LUNCH_DALS, d, avoided));
     if (!hasRole(lines, foods, 'salad')) add('kakdi-koshimbir', { foodId: 'kakdi-koshimbir', unit: 'vati', qty: 1 });
   } else if (slot.type === 'dinner') {
     if (!hasRole(lines, foods, 'bread') && !hasRole(lines, foods, 'rice')) {
-      const b = pick(foods, DINNER_BREADS, d);
+      const b = pick(foods, DINNER_BREADS, d, avoided);
       if (b) add(b, lineFor(foods.find((f) => f.id === b)!, b.includes('bhakri') || b === 'ragi-roti' ? 1 : 2));
     }
-    if (!hasRole(lines, foods, 'dal')) add(pick(foods, DINNER_DALS, d));
+    if (!hasRole(lines, foods, 'dal')) add(pick(foods, DINNER_DALS, d, avoided));
     if (!hasRole(lines, foods, 'salad')) add('green-salad', { foodId: 'green-salad', unit: 'katori', qty: 1 });
   }
   return lines;
 }
 
-/** One weekday from the pattern: a meal per slot, in time order, with that weekday's lines. Empty meals stay, so a slot can be filled later. */
-export function planDayFor(routine: Routine, weekday: number, foods: FoodItem[]): PlanDay {
-  return { meals: pattern(routine).map((p) => ({ id: p.id, type: p.type, time: slotTime(p.slot), lines: slotPlanLines(routine, p.slot, weekday, foods) })) };
+/**
+ * One weekday from the pattern: a meal per slot, in time order, with that weekday's lines. Empty meals stay, so a slot can be filled later.
+ * Given the foods the person avoids, none of them is planned (`slotPlanLines`).
+ */
+export function planDayFor(routine: Routine, weekday: number, foods: FoodItem[], avoided?: Set<string>): PlanDay {
+  return { meals: pattern(routine).map((p) => ({ id: p.id, type: p.type, time: slotTime(p.slot), lines: slotPlanLines(routine, p.slot, weekday, foods, avoided) })) };
 }
 
 /**
@@ -219,7 +235,7 @@ export function alignWeekPlan(plan: WeekPlan, routine: Routine, foods?: FoodItem
   return { days: plan.days.map((day, d) => alignDay(day, routine, d, foods)) };
 }
 
-/** One day reshaped to the current slots, the way alignWeekPlan reshapes each; `weekday` picks the lines a newly added slot gets. */
+/** One day reshaped to the current slots, the way alignWeekPlan reshapes each; `weekday` picks the lines a newly added slot gets, none of them a food the routine avoids. */
 export function alignDay(day: PlanDay, routine: Routine, weekday: number, foods?: FoodItem[]): PlanDay {
   const slots = pattern(routine);
   const meals: PlanMeal[] = [];
@@ -242,7 +258,7 @@ export function alignDay(day: PlanDay, routine: Routine, weekday: number, foods?
   }
   for (const p of slots) {
     if (taken(p.id)) continue;
-    meals.push({ id: p.id, type: p.type, time: slotTime(p.slot), lines: foods ? slotPlanLines(routine, p.slot, weekday, foods) : [] });
+    meals.push({ id: p.id, type: p.type, time: slotTime(p.slot), lines: foods ? slotPlanLines(routine, p.slot, weekday, foods, avoidedFoodIds(routine)) : [] });
   }
   const order = new Map(slots.map((p, i) => [p.id, i]));
   meals.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));

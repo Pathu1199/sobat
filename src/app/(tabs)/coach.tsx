@@ -26,6 +26,7 @@ import { makeT } from '../../i18n';
 import { useAI } from '../../services/useAI';
 import { useAuth } from '../../services/useAuth';
 import { useApp } from '../../store/AppProvider';
+import { useRecordOn } from '../../store/useRecordOn';
 import { BiText, Btn, Card, Divider, Micro, Pill, Row, Small } from '../../ui/components';
 import { C, F, lh, S } from '../../ui/theme';
 import { TopBar } from '../../ui/TopBar';
@@ -40,6 +41,8 @@ export default function CoachScreen() {
   const chatOpen = true;
   const minute = useMinute();
   const advice = useCoach(minute);
+  // The day's record, so the low-intake fact counts a day completed with skips as Today's warning does.
+  const recordOn = useRecordOn();
   const router = useRouter();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
@@ -237,7 +240,7 @@ export default function CoachScreen() {
           app.spentToday,
         ),
       );
-      const intake = intakeFact(lowIntake({ meals: app.state.meals, today: app.today, target: app.targets.kcal, floor: KCAL_FLOOR[app.state.profile.sex], offDays: app.state.settings.offDays ?? [] }));
+      const intake = intakeFact(lowIntake({ meals: app.state.meals, today: app.today, target: app.targets.kcal, floor: KCAL_FLOOR[app.state.profile.sex], offDays: app.state.settings.offDays ?? [], recordOn }));
       if (intake) facts.push(intake);
       facts.push(...toPromptLines(contextFor(app.state.memory, clean, app.today, 10)));
 
