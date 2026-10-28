@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { toTabs } from '../components/toTabs';
 import { useGame } from '../components/useGame';
 import { BADGE_ICON } from '../core/game';
 import { WeightSheet } from '../components/WeightSheet';
@@ -17,7 +17,6 @@ import { C, F, S } from '../ui/theme';
 /** The whole climb: the mountain, the camps, every weigh-in, the level, the week's challenge and every badge. Progress opens it from its climb row; the Weight and Streak tiles are on Progress. */
 export default function Journey() {
   const app = useApp();
-  const router = useRouter();
   const fb = useFeedback();
   const { state } = app;
   const lang = state.profile.lang;
@@ -126,7 +125,7 @@ export default function Journey() {
         })}
       </Card>
 
-      <Pressable onPress={() => router.push('/growth')} accessibilityRole="button" style={{ alignSelf: 'center', minHeight: S.touch, justifyContent: 'center' }}>
+      <Pressable onPress={() => toTabs('/growth', false)} accessibilityRole="button" style={{ alignSelf: 'center', minHeight: S.touch, justifyContent: 'center' }}>
         <Micro color={C.accentText}>{`${t('growth')} ›`}</Micro>
       </Pressable>
       <WeightSheet open={weighOpen} onClose={() => setWeighOpen(false)} />

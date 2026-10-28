@@ -20,17 +20,19 @@ import { useKeyboardUp } from './useKeyboardUp';
  * iOS. A `tall` sheet keeps one height whatever it holds, for a list that
  * fills it; any other is as tall as its content, up to most of the screen.
  * On the web it carries the app's announcement region inside its dialog, so a
- * toast is heard while it is open (`useSheetRegion`).
+ * toast is heard while it is open, and tells the app when its dialog has left
+ * the page after a close, so a toast from the same tap is said only then
+ * (`useSheetRegion`).
  */
 export function SheetFrame({ open, onClose, maxWidth = 520, tall = false, children }: { open: boolean; onClose: () => void; maxWidth?: number; tall?: boolean; children: React.ReactNode }) {
   const wide = useBreakpoint() !== 'mobile';
   const insets = useSafeAreaInsets();
   // Listens to the keyboard only while open: a closed sheet stays mounted on many screens.
   const keyboardUp = useKeyboardUp(open);
-  const region = useSheetRegion(open);
+  const { region, onDismiss } = useSheetRegion(open);
   const radius = S.radius + 4;
   return (
-    <Modal visible={open} transparent animationType={wide ? 'fade' : 'slide'} onRequestClose={onClose}>
+    <Modal visible={open} transparent animationType={wide ? 'fade' : 'slide'} onRequestClose={onClose} onDismiss={onDismiss}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'web' ? undefined : 'padding'}
         style={{ flex: 1, backgroundColor: C.scrim, justifyContent: wide ? 'center' : 'flex-end', alignItems: 'center' }}>

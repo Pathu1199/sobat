@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { toTabs } from '../components/toTabs';
 import { buildSteps, completedExerciseIds, progressAt, stepSeconds, totalSeconds } from '../core/session';
 import { buildSession, readiness, weeksSince } from '../core/fitness';
 import type { Exercise } from '../core/types';
@@ -105,7 +106,8 @@ export default function SessionScreen() {
       felt,
       pain,
     });
-    router.replace('/fit');
+    // Back down to the tabs already under this page, on the workout tab, instead of a second copy of them.
+    toTabs('/fit', false);
   }
 
   const name = (e: Exercise) => (lang === 'mr' ? e.name_mr : lang === 'hi' ? e.name_hi : e.name_en);

@@ -1,8 +1,9 @@
 import { router, type Href } from 'expo-router';
 
 /**
- * Opens a page of the tabs from a page that is shown both on its own, over
- * the tabs (/plan, /history), and as a section inside a tab (Food).
+ * Opens a page of the tabs from a page over them: one shown only on its own
+ * (/journey, /session, /photo, with `inTab` false), or one shown both on its
+ * own and as a section inside a tab (/plan and /history, also Food's).
  *
  * On its own page the tabs are already under it, so the link goes back down
  * to them (`dismissTo`, the stack's POP_TO), and Back from there leaves the

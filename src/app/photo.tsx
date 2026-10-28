@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { FOOD_PHOTO_SCHEMA, foodPhotoPrompt } from '../ai/prompts';
+import { toTabs } from '../components/toTabs';
 import { toISODate } from '../core/date';
 import { newId } from '../core/id';
 import { defaultPortion, foodName, itemName, resolveByName, searchFoods, toMealItem } from '../core/foods';
@@ -185,7 +186,8 @@ export default function PhotoScreen() {
       // Stored so the next similar photo gets your correction as a hint.
       note: changed.length > 0 ? `corrected:${changed[0].rawName}->${changed[0].food!.name_en}` : undefined,
     });
-    router.replace('/');
+    // Back down to the tabs already under this page, on Today, instead of a second copy of them.
+    toTabs('/', false);
   }
 
   return (
