@@ -950,6 +950,7 @@ const en: Dict = {
   rem_nudges_desc_open: 'Water, posture and logging as often as set below, and the coach\'s tips when something needs doing now.',
   brk_suggest_line: '"{kind}" was skipped five times in a row. A longer gap may suit your work better.',
   brk_suggest_set: 'Make "{kind}" every {n} minutes',
+  brk_gap_now: '"{kind}" breaks now every {n} minutes',
 };
 
 const mr: Dict = {
@@ -1903,6 +1904,7 @@ const mr: Dict = {
   rem_nudges_desc_open: 'खाली ठरवलेल्या अंतराने पाणी, बसण्याची पद्धत आणि नोंद, आणि आत्ता काही करायचं असेल तेव्हा कोचच्या सूचना.',
   brk_suggest_line: '"{kind}" सलग पाच वेळा टाळले. जास्त अंतर तुमच्या कामाला बरे पडेल.',
   brk_suggest_set: '"{kind}" दर {n} मिनिटांनी करा',
+  brk_gap_now: '"{kind}" ब्रेक आता दर {n} मिनिटांनी',
 };
 
 const hi: Dict = {
@@ -2855,6 +2857,7 @@ const hi: Dict = {
   rem_nudges_desc_open: 'नीचे तय अंतर पर पानी, बैठने का ढंग और दर्ज करना, और जब अभी कुछ करना हो तब कोच की सलाह.',
   brk_suggest_line: '"{kind}" लगातार पाँच बार छोड़ा गया. लंबा अंतर आपके काम के लिए बेहतर रहेगा.',
   brk_suggest_set: '"{kind}" हर {n} मिनट पर करें',
+  brk_gap_now: '"{kind}" ब्रेक अब हर {n} मिनट पर',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

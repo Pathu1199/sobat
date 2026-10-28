@@ -195,6 +195,8 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
   const morning = Math.max(MORNING_HOUR, input.quietEndHour) * 60;
   // A moment today that has passed would fire at once; one in this very minute stays, so it is not cancelled as it goes out.
   const ahead = (k: number, minutes: number) => k > 0 || minutes >= input.nowMinutes;
+  // From the record's start, as the week strip and the app's own filling in read it: a date after today, from a clock that ran ahead, does not count.
+  const start = recordStart({ onboardedOn: input.onboardedOn, autoFillFrom: input.autoFillFrom }, input.today);
 
   for (let k = 0; k < days; k++) {
     const date = addDays(input.today, k);
@@ -221,8 +223,6 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
     if (input.fillYesterday && k < FILL_DAYS && !quiet(morning) && ahead(k, morning)) {
       const yesterday = addDays(date, -1);
       const state = input.records[yesterday];
-      // From the record's start, as the week strip and the app's own filling in read it: a date after today, from a clock that ran ahead, does not count.
-      const start = recordStart({ onboardedOn: input.onboardedOn, autoFillFrom: input.autoFillFrom }, input.today);
       const started = !start || yesterday > start;
       if (started && (state === 'partial' || state === 'empty')) {
         out.push({ id: `fill:${date}`, date, time: hhmm(morning), title: input.t('rem_fill_title'), body: input.t('rem_fill_body'), data: { kind: 'fill', date: yesterday } });
@@ -576,7 +576,7 @@ export function opList(op: ReminderOp): 'planned' | 'office' | 'daily' {
 /** The daily and the office lists last registered in full, each by value ('' for none), so a run that would register the same list again leaves it. */
 export type HeldLists = { daily: string; office: string };
 
-/** What a run talks to: the ids the phone holds, one step to it (a refusal rejects), and what to set up before a daily or office add. */
+/** What a run talks to: the ids the phone holds (a failed read rejects), one step to it (a refusal rejects), and what to set up before a daily or office add. */
 export type Phone = {
   ids: () => Promise<string[]>;
   apply: (op: ReminderOp) => Promise<void>;
@@ -590,7 +590,8 @@ export type Phone = {
  * holds every time. Each step is tried on its own, so one the phone refuses
  * never stops the rest; a list with a refused step, an add or a cancel
  * (`opList`), stays unsettled and is sent again whole on the next run. A run
- * with nothing refused settles: the next one with the same lists sends
+ * that cannot read what the phone holds sends nothing and settles nothing. A
+ * run with nothing refused settles: the next one with the same lists sends
  * nothing. Returns what is held after it.
  */
 export async function syncReminders(input: {
@@ -607,7 +608,14 @@ export async function syncReminders(input: {
   const office = input.office && officeJson !== input.held.office ? input.office : null;
   if (!daily && !office && !input.planned) return input.held;
   if ((daily || office) && input.phone.setup) await input.phone.setup();
-  const ops = reminderOps({ have: await input.phone.ids(), planned: input.planned, daily, office, nowMs: input.nowMs });
+  let have: string[];
+  try {
+    have = await input.phone.ids();
+  } catch {
+    // Not knowing what the phone holds, the run can neither cancel what is stale nor keep the count under the cap: it sends nothing and marks nothing held, so the next run tries again.
+    return input.held;
+  }
+  const ops = reminderOps({ have, planned: input.planned, daily, office, nowMs: input.nowMs });
   const refused = new Set<ReturnType<typeof opList>>();
   for (const op of ops) {
     try {

@@ -60,6 +60,7 @@ async function apply(op: ReminderOp): Promise<void> {
   else await scheduleAt(op.id, new Date(`${op.reminder.date}T${op.reminder.time}:00`), op.reminder.title, op.reminder.body, { data: op.reminder.data, category: op.reminder.category === 'meal' ? MEAL_CATEGORY : undefined });
 }
 
+// A failed read of what the phone holds rejects (`scheduledIds`), so the run settles nothing and the next one tries again.
 const PHONE: Phone = { ids: scheduledIds, apply, setup: setupAndroidChannel };
 
 /**
@@ -68,9 +69,10 @@ const PHONE: Phone = { ids: scheduledIds, apply, setup: setupAndroidChannel };
  * before any add, so the pending count never passes the phone's cap on the
  * way (`syncReminders`). Each step is tried on its own, so one the OS refuses
  * never stops the rest (the meal-time prompts above all); a list with a
- * refused step, an add or a cancel, is tried again whole on the next run. The
- * planned list is matched against what the phone holds on every run, so a
- * planned cancel refused is tried again anyway.
+ * refused step, an add or a cancel, is tried again whole on the next run, and
+ * so is every list when the phone cannot say what it holds. The planned list
+ * is matched against what the phone holds on every run, so a planned cancel
+ * refused is tried again anyway.
  */
 function reconcile(): void {
   chain = chain

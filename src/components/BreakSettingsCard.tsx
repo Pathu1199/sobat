@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { GAP_CHOICES } from '../core/breaks';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Card, Divider, Field, Micro, Pill, Row, Toggle } from '../ui/components';
@@ -51,7 +52,7 @@ export function BreakSettingsCard() {
               />
               {br[k].enabled ? (
                 <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-                  {(k === 'micro' ? [15, 20, 30, 45] : k === 'long' ? [45, 60, 90, 120] : k === 'posture' ? [20, 30, 45, 60] : [5, 10, 15, 20]).map((m) => (
+                  {GAP_CHOICES[k].map((m) => (
                     <Pill
                       key={m}
                       label={`${m} ${t('tile_unit_min')}`}

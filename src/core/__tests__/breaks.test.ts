@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeT } from '../../i18n';
+import { fill, makeT } from '../../i18n';
 import {
   breaksAsSwitched,
   breakStats,
@@ -7,6 +7,7 @@ import {
   clocksAfter,
   clocksAfterIdle,
   DEFAULT_BREAK_SETTINGS,
+  GAP_CHOICES,
   inQuiet,
   inWindow,
   isPaused,
@@ -261,11 +262,11 @@ describe('breakStats', () => {
 });
 
 describe('suggestLongerInterval', () => {
-  const skipped = (kind: BreakLog['kind'], n: number): BreakLog[] =>
-    Array.from({ length: n }, (_, i) => ({ id: String(i), date: '2026-09-28', at: '', kind, action: 'skipped' as const, workedMinutes: 20, seconds: 20 }));
+  const skipped = (kind: BreakLog['kind'], n: number, workedMinutes = 20): BreakLog[] =>
+    Array.from({ length: n }, (_, i) => ({ id: String(i), date: '2026-09-28', at: '', kind, action: 'skipped' as const, workedMinutes, seconds: 20 }));
 
-  it('suggests a longer gap after five skips of that kind in a row', () => {
-    expect(suggestLongerInterval(skipped('micro', 5), 'micro', 20)).toBe(35);
+  it('suggests the next gap up of the break settings\' choices after five skips of that kind in a row', () => {
+    expect(suggestLongerInterval(skipped('micro', 5), 'micro', 20)).toBe(30);
   });
 
   it('ignores skips of a different kind', () => {
@@ -277,19 +278,63 @@ describe('suggestLongerInterval', () => {
   });
 
   it('counts only skips at the gap now set, so once the longer gap is taken it is not offered again until five more are skipped', () => {
-    // Five skipped after 20 minutes each, and the gap is now 35: they were at the old gap.
-    expect(suggestLongerInterval(skipped('micro', 5), 'micro', 35)).toBeNull();
-    const atNew = skipped('micro', 5).map((l) => ({ ...l, workedMinutes: 35 }));
-    expect(suggestLongerInterval(atNew, 'micro', 35)).toBe(50);
+    // Five skipped after 20 minutes each, and the gap is now 30: they were at the old gap.
+    expect(suggestLongerInterval(skipped('micro', 5), 'micro', 30)).toBeNull();
+    expect(suggestLongerInterval(skipped('micro', 5, 30), 'micro', 30)).toBe(45);
   });
 
-  it('stops suggesting once the gap is already long', () => {
-    expect(suggestLongerInterval(skipped('micro', 5), 'micro', 90)).toBeNull();
+  it('suggests nothing at the top choice: 120 minutes for standing up, 45 for looking away', () => {
+    expect(suggestLongerInterval(skipped('long', 5, 120), 'long', 120)).toBeNull();
+    expect(suggestLongerInterval(skipped('micro', 5, 45), 'micro', 45)).toBeNull();
+  });
+
+  it('suggests the next choice up from a gap of 45 minutes to stand up: 60', () => {
+    expect(suggestLongerInterval(skipped('long', 5, 45), 'long', 45)).toBe(60);
+  });
+
+  it('never shortens the gap: whatever is set, the suggestion is one of the choices and longer, or none', () => {
+    for (const kind of ['micro', 'long', 'posture', 'blink'] as const) {
+      for (let current = 1; current <= 150; current++) {
+        const next = suggestLongerInterval(skipped(kind, 5, current), kind, current);
+        if (next === null) {
+          expect(GAP_CHOICES[kind].some((m) => m > current), `${kind} ${current}`).toBe(false);
+          continue;
+        }
+        expect(GAP_CHOICES[kind], `${kind} ${current}`).toContain(next);
+        expect(next, `${kind} ${current}`).toBeGreaterThan(current);
+        expect(GAP_CHOICES[kind].filter((m) => m > current && m < next), `${kind} ${current}`).toEqual([]);
+      }
+    }
   });
 
   it('resets once a break of that kind is taken', () => {
     const logs = [...skipped('micro', 5), { id: 'x', date: '2026-09-28', at: '', kind: 'micro' as const, action: 'taken' as const, workedMinutes: 20, seconds: 20 }];
     expect(suggestLongerInterval(logs, 'micro', 20)).toBeNull();
+  });
+});
+
+describe('the gap choices the break settings offer', () => {
+  it('are four for each kind, shortest first, and hold each kind\'s gap as the app starts', () => {
+    for (const kind of ['micro', 'long', 'posture', 'blink'] as const) {
+      const c = GAP_CHOICES[kind];
+      expect(c, kind).toHaveLength(4);
+      expect([...c].sort((a, b) => a - b), kind).toEqual([...c]);
+      expect(c, kind).toContain(DEFAULT_BREAK_SETTINGS[kind].everyMinutes);
+    }
+    expect(GAP_CHOICES.long).toEqual([45, 60, 90, 120]);
+  });
+
+  it('once the suggested gap is set, the toast names the break and its new gap in English, Marathi and Hindi', () => {
+    const said = (lang: 'en' | 'mr' | 'hi') => {
+      const t = makeT(lang);
+      return fill(t('brk_gap_now'), { kind: t('brk_long'), n: 90 });
+    };
+    expect(said('en')).toBe('"Stand up and move" breaks now every 90 minutes');
+    for (const lang of ['mr', 'hi'] as const) {
+      expect(said(lang), lang).toContain(makeT(lang)('brk_long'));
+      expect(said(lang), lang).toContain('90');
+      expect(said(lang), lang).not.toMatch(/[A-Za-z{}]/);
+    }
   });
 });
 

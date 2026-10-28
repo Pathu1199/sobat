@@ -237,18 +237,31 @@ export function breakStats(logs: BreakLog[]): BreakStats {
 }
 
 /**
+ * The gaps the break settings offer for each kind, shortest first: Settings →
+ * Features → Break settings shows them as choices, and the break panel's
+ * suggestion is always one of them.
+ */
+export const GAP_CHOICES: Record<BreakKind, readonly number[]> = {
+  micro: [15, 20, 30, 45],
+  long: [45, 60, 90, 120],
+  posture: [20, 30, 45, 60],
+  blink: [5, 10, 15, 20],
+};
+
+/**
  * Skipping the same kind five times running means its interval is wrong for
- * how this person works. Suggest a longer one rather than nagging on. Only
- * skips at the gap now set count: a break comes once its gap has passed, so
- * one skipped at this gap came after at least that long at work (a minute of
- * slack for the clock). Once a longer gap is taken, the skips at the old one
- * no longer ask for another.
+ * how this person works. Suggest a longer one rather than nagging on: the
+ * shortest of the break settings' choices for that kind that is longer than
+ * the gap now set, and none once no choice is longer, so the suggestion never
+ * shortens the gap. Only skips at the gap now set count: a break comes once
+ * its gap has passed, so one skipped at this gap came after at least that
+ * long at work (a minute of slack for the clock). Once a longer gap is taken,
+ * the skips at the old one no longer ask for another.
  */
 export function suggestLongerInterval(logs: BreakLog[], kind: BreakKind, current: number): number | null {
   const forKind = logs.filter((l) => l.kind === kind);
   const recent = forKind.slice(-5);
   if (recent.length < 5) return null;
   if (!recent.every((l) => l.action === 'skipped' && l.workedMinutes >= current - 1)) return null;
-  const next = Math.min(current + 15, 90);
-  return next === current ? null : next;
+  return GAP_CHOICES[kind].find((m) => m > current) ?? null;
 }

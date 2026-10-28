@@ -900,12 +900,16 @@ describe('a run to the phone: a refused cancel is tried again, and a run with no
   const weekly = { id: 'sobat-sched-start@2', weekday: 2, hour: 9, minute: 0, title: '', body: '' };
   const NONE: HeldLists = { daily: '', office: '' };
 
-  /** A phone holding `held`, which refuses the cancels in `refuse` while they are in it. */
+  /** A phone holding `held`, which refuses the cancels in `refuse` while they are in it, and refuses to say what it holds while `unread` is set. */
   function fakePhone(held: string[], refuse: Set<string> = new Set()) {
     const sent: ReminderOp[] = [];
     const ids = new Set(held);
+    const read = { fails: false };
     const phone: Phone = {
-      ids: async () => [...ids],
+      ids: async () => {
+        if (read.fails) throw new Error('unread');
+        return [...ids];
+      },
       apply: async (op) => {
         sent.push(op);
         if (op.kind === 'cancel') {
@@ -914,7 +918,7 @@ describe('a run to the phone: a refused cancel is tried again, and a run with no
         } else ids.add(op.kind === 'at' ? op.id : op.reminder.id);
       },
     };
-    return { phone, sent, ids, refuse };
+    return { phone, sent, ids, refuse, read };
   }
 
   it('never cancels an id the phone does not hold, the daily ones and the long breaks included', () => {
@@ -933,6 +937,23 @@ describe('a run to the phone: a refused cancel is tried again, and a run with no
     expect(p.sent).toEqual([{ kind: 'cancel', id: 'sobat-water' }, { kind: 'cancel', id: 'sobat-water' }]);
     expect(second.daily).toBe('[]');
     expect(p.ids.has('sobat-water')).toBe(false);
+  });
+
+  it('a run that cannot read what the phone holds sends nothing and settles nothing, and the next run does the cancels and settles', async () => {
+    // Water switched off and the long breaks gone: the phone still holds both.
+    const p = fakePhone(['sobat-water', 'sobat-long-break-0']);
+    p.read.fails = true;
+    const first = await syncReminders({ daily: [], office: [weekly], planned: [at], held: NONE, phone: p.phone, nowMs: NOW });
+    expect(first).toEqual(NONE);
+    expect(p.sent).toEqual([]);
+    p.read.fails = false;
+    const second = await syncReminders({ daily: [], office: [weekly], planned: [at], held: first, phone: p.phone, nowMs: NOW });
+    expect(p.sent.filter((o) => o.kind === 'cancel')).toEqual([
+      { kind: 'cancel', id: 'sobat-water' },
+      { kind: 'cancel', id: 'sobat-long-break-0' },
+    ]);
+    expect(second).toEqual({ daily: '[]', office: JSON.stringify([weekly]) });
+    expect([...p.ids].sort()).toEqual(['sobat-r-slot', 'sobat-sched-start@2']);
   });
 
   it('a refused office cancel keeps only the office list unsettled', async () => {

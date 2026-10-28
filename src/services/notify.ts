@@ -207,16 +207,17 @@ export async function scheduleAt(id: string, at: Date, title: string, body: stri
   });
 }
 
-/** Identifiers of everything the OS still holds for this app. Empty on web and on any error. */
+/**
+ * Identifiers of everything the OS still holds for this app; empty on the web.
+ * A failed read rejects rather than answering "nothing": a run that took it
+ * for an empty phone would cancel nothing stale and still count its lists as
+ * registered (`syncReminders`).
+ */
 export async function scheduledIds(): Promise<string[]> {
   const n = loadNative();
   if (!n) return [];
-  try {
-    const all = await n.getAllScheduledNotificationsAsync();
-    return all.map((r) => r.identifier);
-  } catch {
-    return [];
-  }
+  const all = await n.getAllScheduledNotificationsAsync();
+  return all.map((r) => r.identifier);
 }
 
 /** Cancels a pending notification and never fails: before a reminder is registered again under its own id, where nothing held is fine. */

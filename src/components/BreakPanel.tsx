@@ -5,6 +5,7 @@ import { breakStats } from '../core/breaks';
 import { formatMinutes, localHHMM } from '../core/date';
 import { longestStretchMinutes, minutesOn } from '../core/usage';
 import { fill, makeT } from '../i18n';
+import { useFeedback } from '../services/feedback';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
 import { Bar, Btn, Card, Micro, Ring, Row } from '../ui/components';
@@ -14,11 +15,13 @@ import { C, F, lh } from '../ui/theme';
  * The eye-care breaks as they run: a countdown ring to the next break,
  * today's breaks taken, the longest stretch sitting, pause an hour or resume,
  * a break now, and a button that sets a longer gap when breaks keep being
- * skipped. In Settings → Features, under the eye-care breaks switch, only
+ * skipped (the next of the break settings' choices up, `suggestLongerInterval`),
+ * then says the new gap in a toast. In Settings → Features, under the eye-care breaks switch, only
  * while that switch is on.
  */
 export function BreakPanel() {
   const app = useApp();
+  const fb = useFeedback();
   const monitor = useBreakMonitor();
   const t = makeT(app.state.profile.lang);
 
@@ -93,7 +96,11 @@ export function BreakPanel() {
             small
             tone="soft"
             label={fill(t('brk_suggest_set'), { kind: t(`brk_${suggestion.kind}`), n: suggestion.minutes })}
-            onPress={() => app.setBreakSettings({ [suggestion.kind]: { ...app.state.breakSettings[suggestion.kind], everyMinutes: suggestion.minutes } })}
+            onPress={() => {
+              app.setBreakSettings({ [suggestion.kind]: { ...app.state.breakSettings[suggestion.kind], everyMinutes: suggestion.minutes } });
+              // The button goes once the gap is set, so the new gap is said, and heard, in a toast.
+              fb.notify(fill(t('brk_gap_now'), { kind: t(`brk_${suggestion.kind}`), n: suggestion.minutes }));
+            }}
           />
         </View>
       ) : null}
