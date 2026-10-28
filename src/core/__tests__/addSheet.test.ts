@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, offersYesterday, plannedSummary, removeUndoSteps, repeatItems, sheetMode, slotAllowance, slotBefore, slotLine, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
+import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, offersYesterday, plannedSummary, removeUndoSteps, repeatItems, sheetMode, slotAllowance, slotBefore, slotLine, slotLineText, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
 import { addLine, basketFromLines, lineOf, setCount, slotPreview, type BasketLine } from '../basket';
+import { makeT } from '../../i18n';
 import { addSkip } from '../menu';
 import { kcalForGrams } from '../nutrition';
 import { slotStates } from '../pattern';
@@ -122,6 +123,16 @@ describe('slotLine: the line under the slot chips', () => {
       tone: 'over',
     });
     expect(slotLine({ preview, autoKcal: 0, slot: 'Dinner', isToday: false }).parts[1]).toEqual({ key: 'add_over_day', params: { kcal: 50 } });
+  });
+});
+
+describe('slotLineText: the slot line in words', () => {
+  it('writes its calories with a comma for thousands, the same in every language', () => {
+    const preview = slotPreview({ allowance: 400, eaten: 0, autoKcal: 0, basketKcal: 150, dayLeft: 1613 });
+    const line = slotLine({ preview, autoKcal: 0, slot: 'Lunch', isToday: true });
+    expect(slotLineText(line.parts, makeT('en'))).toBe('250 left for Lunch · 1,463 left today');
+    expect(slotLineText(line.parts, makeT('mr'))).toContain('1,463');
+    expect(slotLineText(line.parts, makeT('hi'))).toContain('1,463');
   });
 });
 

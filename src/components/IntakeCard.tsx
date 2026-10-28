@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { lowIntake } from '../core/intake';
 import { KCAL_FLOOR } from '../core/nutrition';
-import { fill, makeT } from '../i18n';
+import { fill, makeT, numberText } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useRecordOn } from '../store/useRecordOn';
 import { Card, Micro, Row, Small } from '../ui/components';
@@ -29,7 +29,7 @@ export function IntakeCard() {
         <Ionicons name="warning-outline" size={20} color={C.red} style={{ marginTop: 2 }} />
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('intake_title')}</Text>
-          <Small color={C.textDim}>{fill(t('intake_body'), { avg: intake.avg, days: intake.days, limit: intake.limit, target: targets.kcal })}</Small>
+          <Small color={C.textDim}>{fill(t('intake_body'), { avg: numberText(intake.avg), days: intake.days, limit: numberText(intake.limit), target: numberText(targets.kcal) })}</Small>
         </View>
       </Row>
       {/* A finger tall on every platform: the web adds no reach around a control, so the box itself is the size. */}

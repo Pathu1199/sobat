@@ -1,5 +1,6 @@
 import { amountText, basketFromItems, basketFromLines, linesFromBasket, type BasketLine } from './basket';
 import { addDays } from './date';
+import { fill, numberText } from '../i18n';
 import { foodName, measureName, toMealItem } from './foods';
 import { skippedOn, type MealsAndSkips } from './menu';
 import { currentSlot, type SlotState } from './pattern';
@@ -169,6 +170,11 @@ export function slotLine(input: { preview: { replaces: boolean; slotLeft: number
   const dayKey = preview.dayLeft >= 0 ? (isToday ? 'log_left_today' : 'add_left_day') : isToday ? 'log_over_today' : 'add_over_day';
   const tone = preview.dayLeft < 0 ? 'over' : !preview.replaces && preview.slotLeft < 0 ? 'warn' : 'calm';
   return { parts: [slotPart, { key: dayKey, params: { kcal: Math.abs(preview.dayLeft) } }], tone };
+}
+
+/** The slot line in words, its parts joined by " · ", the calories written as the app writes them (1,463). */
+export function slotLineText(parts: SlotLinePart[], t: (key: string) => string): string {
+  return parts.map((p) => fill(t(p.key), typeof p.params.kcal === 'number' ? { ...p.params, kcal: numberText(p.params.kcal) } : p.params)).join(' · ');
 }
 
 /**

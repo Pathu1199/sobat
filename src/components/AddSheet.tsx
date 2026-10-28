@@ -14,6 +14,7 @@ import {
   slotAllowance,
   slotBefore,
   slotLine,
+  slotLineText,
   startLines,
   startSlot,
   switchDraft,
@@ -143,7 +144,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
     mode === 'log' && st && slot
       ? slotLine({ preview: slotPreview({ allowance: slotAllowance({ lines: slot.lines, foods, share: st.allowance }), eaten: st.eaten, autoKcal, basketKcal: totals.kcal, dayLeft }), autoKcal, slot: slotName(slot), isToday })
       : null;
-  const lineText = line ? line.parts.map((p) => fill(t(p.key), p.params)).join(' · ') : '';
+  const lineText = line ? slotLineText(line.parts, t) : '';
   const lineColor = line?.tone === 'over' ? C.red : line?.tone === 'warn' ? C.amber : C.textDim;
 
   const recents = useMemo(() => recentFoodIds(state.meals, addDays(today, -30), 8), [state.meals, today]);

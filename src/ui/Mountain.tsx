@@ -1,8 +1,8 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from 'react-native-svg';
 import { useEased } from './animated';
-import { C, F, MICRO } from './theme';
+import { C, F, lh, MICRO } from './theme';
 
 const W = 320;
 const H = 150;
@@ -18,7 +18,10 @@ export type Camp = { p: number; label: string };
  * The journey as a mountain: the foot is the start weight, the peak is the
  * goal, the climber is where the person stands today. Past weigh-ins leave a
  * trail of footprints; camps mark every quarter of the way. The climber eases
- * to a new spot when a weigh-in lands, so a good week is seen, not read.
+ * to a new spot when a weigh-in lands, so a good week is seen, not read. Each
+ * camp's weight is a label in the app's small size, which follows the text
+ * size setting, on a patch of the card so it reads on the slope; it sits over
+ * the drawing, not in it, as the drawing stretches to its box.
  */
 export function Mountain({
   progress,
@@ -77,9 +80,6 @@ export function Mountain({
               <React.Fragment key={c.p}>
                 <Line x1={q.x} y1={q.y} x2={q.x} y2={q.y - 14} stroke={C.textFaint} strokeWidth="1" />
                 <Path d={`M ${q.x} ${q.y - 14} L ${q.x + 9} ${q.y - 11} L ${q.x} ${q.y - 8} Z`} fill={p >= c.p ? C.green : C.textFaint} />
-                <SvgText x={q.x + 2} y={q.y + 14} fill={C.textFaint} fontSize="8" fontWeight="500">
-                  {c.label}
-                </SvgText>
               </React.Fragment>
             );
           })}
@@ -96,10 +96,33 @@ export function Mountain({
           <Circle cx={x - 2.5} cy={y - 8} r="2.6" fill={C.amber} />
           <Circle cx={x} cy={y - 14.5} r="3.6" fill={C.white} stroke={C.accent} strokeWidth="2" />
         </Svg>
+        {/* Each camp's weight, just under its foot, placed by the same share of the box as the drawing. */}
+        {camps.map((c) => {
+          const q = at(c.p);
+          return (
+            <Text
+              key={c.p}
+              style={{
+                position: 'absolute',
+                left: `${((q.x + 2) / W) * 100}%`,
+                top: `${((q.y + 3) / H) * 100}%`,
+                paddingHorizontal: 4,
+                borderRadius: 6,
+                overflow: 'hidden',
+                backgroundColor: C.card,
+                color: C.textDim,
+                fontSize: F.small,
+                lineHeight: lh(F.small),
+                fontWeight: '500',
+              }}>
+              {c.label}
+            </Text>
+          );
+        })}
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Text style={[MICRO, { color: C.textFaint }]}>{startLabel}</Text>
-        <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{nowLabel}</Text>
+        <Text style={{ color: C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{nowLabel}</Text>
         <Text style={[MICRO, { color: C.cyan }]}>{goalLabel}</Text>
       </View>
     </View>

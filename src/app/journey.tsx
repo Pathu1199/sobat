@@ -7,7 +7,7 @@ import { BADGE_ICON } from '../core/game';
 import { WeightSheet } from '../components/WeightSheet';
 import { formatDayLabel } from '../core/date';
 import { lostWords } from '../core/tileText';
-import { fill, makeT } from '../i18n';
+import { fill, makeT, numberText } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, Card, Divider, Micro, Pill, Row, Screen, SectionHeader, Small } from '../ui/components';
@@ -44,7 +44,7 @@ export default function Journey() {
         <View style={{ gap: 4 }}>
           {g.plan.etaAtTarget && g.plan.toGoKg > 0 ? <Small>{fill(t('plan_goal_by'), { d: formatDayLabel(g.plan.etaAtTarget, lang), r: g.plan.targetRate })}</Small> : null}
           {g.plan.toGoKg > 0 && g.plan.actualRate !== null && g.plan.etaAtActual ? <Small color={C.textDim}>{fill(t('plan_actual'), { d: formatDayLabel(g.plan.etaAtActual, lang), r: g.plan.actualRate })}</Small> : null}
-          <Small color={C.textDim}>{fill(t('plan_daily'), { kcal: g.plan.dailyKcal, p: g.plan.proteinG })}</Small>
+          <Small color={C.textDim}>{fill(t('plan_daily'), { kcal: numberText(g.plan.dailyKcal), p: g.plan.proteinG })}</Small>
           <Small color={C.textFaint}>{fill(t('journey_weigh_hint'), { day: t(`wd_${state.settings.weighDay}`) })}</Small>
         </View>
         <Pressable onPress={() => setWeighOpen(true)} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: S.touch, alignSelf: 'flex-start', opacity: pressed ? 0.7 : 1 })}>

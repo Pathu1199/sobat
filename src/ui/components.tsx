@@ -1,9 +1,10 @@
-import React from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { numberText } from '../i18n';
 import { useEased, useEntrance } from './animated';
 import { chosenProps } from './chosen';
+import { STAT_MIN_SCALE, statScale, valueRuns } from './statFit';
 import { C, F, lh, lift, MICRO, onThemeChange, S } from './theme';
 
 // A pressable says whether it is selected or checked with aria-selected / aria-checked, not accessibilityState:
@@ -428,16 +429,49 @@ export function RingStat({ label, value, color }: { label: string; value: number
   );
 }
 
-/** The four-up statistic strip under the decision card. */
+/**
+ * Three or four figures side by side, each a label over its value. The
+ * labels line up at the top of their columns, so one that runs to two lines
+ * (Marathi at a larger text size) leaves the others where they are. A value
+ * stays on one line: its figures at the title size and its words (a unit,
+ * "of") at the small size; a phone shrinks it to fit by itself, and the web,
+ * which cannot, sets them all smaller by as much as the widest needs to fit
+ * its column (`statScale`), so the figures stay one size.
+ */
 export function StatQuad({ items }: { items: { label: string; value: string; color?: string }[] }) {
+  const GAP = 10;
+  // The web's column width, from the row's own layout: its columns share the row equally.
+  const [column, setColumn] = useState(0);
+  const web = Platform.OS === 'web';
+  const scale = web ? Math.min(1, ...items.map((i) => statScale(valueRuns(i.value), F.title, F.small, column))) : 1;
   return (
-    <View style={[st.row, { justifyContent: 'space-between', paddingTop: 4 }]}>
-      {items.map((i) => (
-        <View key={i.label} style={{ alignItems: 'center', flex: 1, gap: 5 }}>
-          <Micro>{i.label}</Micro>
-          <Text style={{ color: i.color ?? C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' }}>{i.value}</Text>
-        </View>
-      ))}
+    <View
+      onLayout={web ? (e) => setColumn((e.nativeEvent.layout.width - GAP * (items.length - 1)) / items.length) : undefined}
+      style={[st.row, { justifyContent: 'space-between', alignItems: 'flex-start', gap: GAP, paddingTop: 4 }]}>
+      {items.map((i) => {
+        const runs = valueRuns(i.value);
+        const size = Math.round(F.title * scale);
+        return (
+          <View key={i.label} style={{ alignItems: 'center', flex: 1, minWidth: 0, gap: 5 }}>
+            <Text style={[MICRO, { color: C.textFaint, textAlign: 'center' }]}>{i.label}</Text>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={STAT_MIN_SCALE}
+              style={{ color: i.color ?? C.text, fontSize: size, lineHeight: lh(size), fontWeight: '500' }}>
+              {runs.map((r, n) =>
+                r.word ? (
+                  <Text key={n} style={{ fontSize: Math.round(F.small * scale), fontWeight: '400' }}>
+                    {r.text}
+                  </Text>
+                ) : (
+                  r.text
+                ),
+              )}
+            </Text>
+          </View>
+        );
+      })}
     </View>
   );
 }

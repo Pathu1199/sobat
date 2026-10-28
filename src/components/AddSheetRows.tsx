@@ -35,7 +35,9 @@ function SubLine({ words, kcal }: { words: string; kcal: number }) {
  * One food in the add sheet. Not in the meal yet: its usual portion and
  * calories, and a + a finger wide. In the meal: how many of which measure and
  * the line's calories, a − / + with any count and a grams box under it; − at
- * the last step takes the food out. The name opens the food sheet to pick
+ * the last step takes the food out. Nothing reaches past the sheet's padding
+ * at 320 pt: the name and the line under it shrink and cut short, and the
+ * grams box wraps under − / + when the two do not fit side by side. The name opens the food sheet to pick
  * another measure; a screen reader hears the words shown, calories included.
  * What is typed in the grams box lives here, so − and + can drop it.
  */
@@ -99,7 +101,9 @@ export function FoodRow({
         )}
       </View>
       {line ? (
-        <Row style={{ gap: 12, paddingLeft: 52 }}>
+        // Under the name. Where − / + and the grams box do not fit side by side (a 320 pt phone, or larger text), the grams box
+        // goes under them, never past the sheet's edge.
+        <Row style={{ gap: 12, rowGap: 8, paddingLeft: 52, flexWrap: 'wrap' }}>
           <QtyStepper value={formatQty(line.count)} onMinus={() => step(-1)} onPlus={() => step(1)} minusLabel={fill(t('qty_less'), { food: name })} plusLabel={fill(t('qty_more'), { food: name })} />
           <GramsBox
             text={gramsText(draft, line)}

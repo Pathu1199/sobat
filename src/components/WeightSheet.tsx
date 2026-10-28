@@ -7,7 +7,7 @@ import { planVerdict, shownPlan } from '../core/plan';
 import { numberIn, PACES } from '../core/setup';
 import { lostWords } from '../core/tileText';
 import type { WeightLog } from '../core/types';
-import { fill, makeT } from '../i18n';
+import { fill, makeT, numberText } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Divider, Field, Micro, Pill, Row, Small } from '../ui/components';
@@ -94,7 +94,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
           <Ionicons name={verdict === 'working' ? 'checkmark-circle' : verdict === 'early' ? 'hourglass-outline' : 'alert-circle-outline'} size={16} color={tone} />
           <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t(`verdict_${verdict}`)}</Text>
         </Row>
-        <Small>{fill(t(`verdict_${verdict}_do`), { rate: plan.targetRate, actual: plan.actualRate ?? 0, kcal: plan.dailyKcal })}</Small>
+        <Small>{fill(t(`verdict_${verdict}_do`), { rate: plan.targetRate, actual: plan.actualRate ?? 0, kcal: numberText(plan.dailyKcal) })}</Small>
         {verdict !== 'early' && verdict !== 'working' ? (
           <Btn small tone="soft" label={t('ask_coach_why')} onPress={() => { onClose(); router.push('/coach?ask=stall'); }} />
         ) : null}
@@ -112,7 +112,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
           <Pill key={r} label={`${r} ${t('unit_kg')}/${t('week_short')}`} active={state.profile.rateKgPerWeek === r} onPress={() => app.setProfile({ rateKgPerWeek: r })} />
         ))}
       </Row>
-      <Small color={C.textFaint}>{fill(t('plan_daily'), { kcal: targets.kcal, p: targets.proteinG })}</Small>
+      <Small color={C.textFaint}>{fill(t('plan_daily'), { kcal: numberText(targets.kcal), p: targets.proteinG })}</Small>
 
       {/* History. The Undo for a removed weigh-in is a line in the removed row's place, where the tap was: the app-wide toast would sit behind this sheet. */}
       {rows.length > 0 ? (
