@@ -387,7 +387,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return states.length > 0 ? states.filter((x) => x.status === 'now' || x.status === 'missed' || x.status === 'later').length : undefined;
   }, [state.routine, state.profile, state.meals, state.slotSkips, today, minute]);
 
-  // This week as the plan screen reads it, worked out only when what it shows changes: a bottle of water rebuilds no week.
+  // This week as the grocery list reads it, worked out only when what it shows changes: a bottle of water rebuilds no week.
   const weekPlan = useMemo(
     () => weekPlanView(viewWeek(mondayOf(today), state.menus, state.routine, today, planFoods, fit)),
     [today, state.menus, state.routine, planFoods, fit],

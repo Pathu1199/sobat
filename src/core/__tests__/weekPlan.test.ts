@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
 import { avoidedFoodIds, DEFAULT_ROUTINE, NEUTRAL_ROUTINE, ruleForFood, type Routine } from '../routine';
 import type { FoodItem } from '../types';
-import { alignWeekPlan, balanceDay, buildWeekPlan, copyToWeekdays, dayStatus, dayTotals, lineInfo, mealTotals, planDayFor, plannedKcal, roleOf, setLine, swapsFor, type WeekPlan } from '../weekPlan';
+import { alignWeekPlan, balanceDay, buildWeekPlan, dayStatus, dayTotals, lineInfo, mealTotals, planDayFor, plannedKcal, roleOf, swapsFor, type WeekPlan } from '../weekPlan';
 
 const foods = foodsJson as FoodItem[];
 const byId = (id: string) => foods.find((f) => f.id === id)!;
@@ -118,19 +118,6 @@ describe('weekPlan', () => {
     const { day } = balanceDay(plan.days[1], foods, before - 300, new Set());
     expect(dayTotals(day, foods).kcal).toBeLessThan(before);
     for (const m of day.meals) for (const l of m.lines) expect(l.qty).toBeGreaterThan(0);
-  });
-
-  it('edits and copies', () => {
-    let plan = buildWeekPlan(DEFAULT_ROUTINE, foods);
-    const lunchIdx = plan.days[1].meals.findIndex((m) => m.id === 'lunch');
-    const chapatiIdx = plan.days[1].meals[lunchIdx].lines.findIndex((l) => l.foodId === 'chapati');
-    plan = setLine(plan, 1, 'lunch', chapatiIdx, { foodId: 'jowar-bhakri', unit: 'piece', qty: 1 });
-    expect(plan.days[1].meals[lunchIdx].lines[chapatiIdx].foodId).toBe('jowar-bhakri');
-    plan = setLine(plan, 1, 'lunch', chapatiIdx, { foodId: 'jowar-bhakri', unit: 'piece', qty: 0 });
-    expect(plan.days[1].meals[lunchIdx].lines.some((l) => l.foodId === 'jowar-bhakri')).toBe(false);
-    const copied = copyToWeekdays(plan, 1);
-    expect(copied.days[3]).toEqual(plan.days[1]);
-    expect(copied.days[0]).toEqual(plan.days[0]);
   });
 
   it('makes one meal per slot of the pattern, in time order, under the slot ids', () => {

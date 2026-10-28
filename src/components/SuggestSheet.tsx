@@ -1,3 +1,6 @@
+// Nothing opens this sheet at the moment, and it is kept on purpose: "What can I eat now?" suggestions are off by default
+// in the redesign, which gave the old Suggest action no entry point, and the code stays so one can be added without
+// writing it anew.
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';

@@ -78,7 +78,7 @@ function suggestedDay(routine: Routine, weekday: number, foods: FoodItem[], fit?
 /**
  * What the app suggests for a date, fitted to the person's day when a fit is
  * given, as a copy of its own to keep or edit: the meals a date nobody wrote
- * shows when there is no earlier week to carry forward. Rebuild puts it back.
+ * shows when there is no earlier week to carry forward.
  */
 export function suggestionFor(date: ISODate, routine: Routine, foods: FoodItem[], fit?: MenuFit): PlanDay {
   return { meals: copyMeals(suggestedDay(routine, weekdayOf(date), foods, fit).meals) };
@@ -626,7 +626,7 @@ export function menusFromTemplate(plan: WeekPlan, monday: ISODate, menus: DayMen
   return missing.length ? [...menus, ...missing] : menus;
 }
 
-/** The week's menus in the old one-week shape, index 0 being Sunday, for the plan screen until it is rebuilt. */
+/** The week's menus in the old one-week shape, index 0 being Sunday, the shape the grocery list reads. */
 export function weekPlanView(week: DayMenu[]): WeekPlan {
   const days: PlanDay[] = Array.from({ length: 7 }, () => ({ meals: [] }));
   for (const m of week) days[weekdayOf(m.date)] = { meals: m.meals };

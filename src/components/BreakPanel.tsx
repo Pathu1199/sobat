@@ -1,3 +1,5 @@
+// Nothing shows this panel at the moment, and it is kept on purpose: the eye-care breaks are off by default
+// (settings.features.breaks) and their code stays, so they can be given a place again without being written anew.
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Text, View } from 'react-native';

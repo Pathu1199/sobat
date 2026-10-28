@@ -5,15 +5,14 @@ import { slotTime, type PlanLine, type Routine, type RoutineSlot } from './routi
 import type { FoodItem, MealType } from './types';
 
 /**
- * The week written down in advance: for each weekday, the meals, and in each
- * meal the foods with a measure and a count. The person edits it line by line
- * (bhakri for chapati, palak for methi, two pieces for three), and every
- * change shows the day's total against the target at once, so a plan that
- * quietly drifts too low is caught before it is eaten.
+ * A day written down in advance: the meals, and in each meal the foods with
+ * a measure and a count. The person edits a date's menu line by line
+ * (core/menu.ts: bhakri for chapati, palak for methi, two pieces for three),
+ * and every change shows the day's total against the target at once, so a
+ * plan that quietly drifts too low is caught before it is eaten.
  *
- * Built from the routine the first time: the weekday bhaji, the fixed fruit,
- * nuts, tea, bhel and taak; lunch and dinner are full plates. Pure functions
- * only; the store keeps the result.
+ * Built from the routine: the weekday bhaji, the fixed fruit, nuts, tea,
+ * bhel and taak; lunch and dinner are full plates. Pure functions only.
  */
 export type PlanMeal = { id: string; type: MealType; time: string; lines: PlanLine[] };
 export type PlanDay = { meals: PlanMeal[] };
@@ -191,7 +190,11 @@ export function planDayFor(routine: Routine, weekday: number, foods: FoodItem[])
   return { meals: pattern(routine).map((p) => ({ id: p.id, type: p.type, time: slotTime(p.slot), lines: slotPlanLines(routine, p.slot, weekday, foods) })) };
 }
 
-/** The week from the pattern: one meal per slot, every day, in time order. */
+/**
+ * The week from the pattern: one meal per slot, every day, in time order. What
+ * the old plan screen built and saved; nothing in the app builds a week any
+ * more, but the tests of the upgrade from that saved week build it this way.
+ */
 export function buildWeekPlan(routine: Routine, foods: FoodItem[]): WeekPlan {
   const days: PlanDay[] = [];
   for (let d = 0; d < 7; d++) days.push(planDayFor(routine, d, foods));
@@ -373,35 +376,4 @@ export function balanceDay(day: PlanDay, foods: FoodItem[], target: number, avoi
     if (!moved) break;
   }
   return { day: cur, changes };
-}
-
-/** Change one line in one meal of one day. A qty of 0 removes the line. */
-export function setLine(plan: WeekPlan, dayIdx: number, mealId: string, lineIdx: number, next: PlanLine | null): WeekPlan {
-  return {
-    days: plan.days.map((d, i) =>
-      i !== dayIdx
-        ? d
-        : {
-            meals: d.meals.map((m) => {
-              if (m.id !== mealId) return m;
-              const lines = m.lines.map((l, j) => (j === lineIdx ? next : l)).filter((l): l is PlanLine => !!l && l.qty > 0);
-              return { ...m, lines };
-            }),
-          },
-    ),
-  };
-}
-
-export function addLine(plan: WeekPlan, dayIdx: number, mealId: string, line: PlanLine): WeekPlan {
-  return { days: plan.days.map((d, i) => (i !== dayIdx ? d : { meals: d.meals.map((m) => (m.id === mealId ? { ...m, lines: [...m.lines, line] } : m)) })) };
-}
-
-export function setDay(plan: WeekPlan, dayIdx: number, day: PlanDay): WeekPlan {
-  return { days: plan.days.map((d, i) => (i === dayIdx ? day : d)) };
-}
-
-/** Copy one day over the weekdays (Monday to Friday), keeping the weekend as it is. */
-export function copyToWeekdays(plan: WeekPlan, fromIdx: number): WeekPlan {
-  const src = plan.days[fromIdx];
-  return { days: plan.days.map((d, i) => (i >= 1 && i <= 5 && i !== fromIdx ? JSON.parse(JSON.stringify(src)) : d)) };
 }

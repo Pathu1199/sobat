@@ -1,3 +1,6 @@
+// Nothing shows this card at the moment, and it is kept on purpose: the breaks of the office day and their check-ins are
+// off by default (schedule.enabled, like the eye-care breaks) and their code stays, so they can be given a place again
+// without being written anew.
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
