@@ -18,8 +18,6 @@ import { chapterStreaks } from '../core/chapter';
 import {
   addMenuLine,
   alignMenus,
-  applyWeekPlan,
-  copyDay,
   editedMeal,
   editedMenus,
   fillFromPlan,
@@ -31,7 +29,6 @@ import {
   setMenuLine,
   setMenuMeal,
   skippedOn,
-  suggestionFor,
   viewMenu,
   viewWeek,
   weekPlanView,
@@ -52,9 +49,10 @@ import { waterMlOn } from '../core/tileText';
 import { withWaterAdded, withWaterRemoved } from '../core/tiles';
 import { isOffDay } from '../core/week';
 import { stripSince } from '../core/weekStrip';
+import { toggleTick } from '../core/grocery';
 import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
-import type { PlanDay, PlanMeal, WeekPlan } from '../core/weekPlan';
+import type { PlanMeal, WeekPlan } from '../core/weekPlan';
 import type { BreakKind, BreakSettings } from '../core/breaks';
 import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MealSource, MoodLog, Profile, SavedMeal, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { allFoods, EMPTY_STATE } from './defaults';
@@ -132,14 +130,10 @@ type Ctx = {
   setRoutine: (r: Partial<Routine>) => void;
   /** This week's menus in the old one-week shape (index 0 = Sunday), for the grocery list. */
   weekPlan: WeekPlan;
-  /** Write an edit made on `weekPlan` back to this week's dates from today on; a date before today is never written. */
-  setWeekPlan: (plan: WeekPlan) => void;
   /** The menu a date shows: stored, or as it starts (a day nobody wrote fitted to the person's day); from today on, following the slots. */
   menuOn: (date: ISODate) => DayMenu;
   /** A day holding just what the app suggests for its weekday, fitted to the person's day: the app's suggestion, not a plan the person shaped. */
   isSuggestedMenu: (day: Pick<DayMenu, 'date' | 'meals'>) => boolean;
-  /** What the app suggests for a date, fitted to the person's day, as a copy of its own: the meals a date nobody wrote shows. Rebuild puts a day back to it. */
-  suggestionOn: (date: ISODate) => PlanDay;
   /** The seven menus of the week starting on `monday`, Monday first. */
   weekMenus: (monday: ISODate) => DayMenu[];
   /**
@@ -151,8 +145,6 @@ type Ctx = {
   editMenuLine: (day: DayMenu, mealId: string, lineIdx: number, next: PlanLine | null | ((line: PlanLine) => PlanLine | null)) => void;
   addMenuFood: (day: DayMenu, mealId: string, line: PlanLine) => void;
   editMenuMeal: (day: DayMenu, meal: PlanMeal) => void;
-  /** One date's meals copied onto another date; a date before today is refused. */
-  copyMenuDay: (from: DayMenu, to: ISODate) => void;
   /**
    * "Ate as planned" for a slot on any date up to today: its planned lines, or the lines given (a past day's draft), logged with
    * database calories. Returns the meal's id, so the tap can be undone; null when the store refuses (a date after today, nothing
@@ -558,21 +550,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return { ...s, routine, menus, meals };
         }),
       weekPlan,
-      setWeekPlan: (plan) =>
-        update((s) => {
-          // The week as the screen showed it, fitted the same way, so only the days that changed are written.
-          const week = viewWeek(mondayOf(today), s.menus, s.routine, today, allFoods(s.customFoods), fitOn(s.profile, s.routine, today));
-          return withMenus(s, applyWeekPlan(plan, week, s.menus, today, new Date()));
-        }),
       menuOn,
       isSuggestedMenu: (day) => isSuggested(day, state.routine, planFoods, fit),
-      suggestionOn: (date) => suggestionFor(date, state.routine, planFoods, fit),
       weekMenus: (monday) => viewWeek(monday, state.menus, state.routine, today, planFoods, fit),
       editMenuDay: (day, meals) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => setMenuDay(ms, d, meals, new Date())))),
       editMenuLine: (day, mealId, lineIdx, next) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => setMenuLine(ms, d, mealId, lineIdx, next, new Date())))),
       addMenuFood: (day, mealId, line) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => addMenuLine(ms, d, mealId, line, new Date())))),
       editMenuMeal: (day, meal) => update((s) => withMenus(s, editedMenus(s.menus, day, today, (ms, d) => setMenuMeal(ms, d, meal, new Date())))),
-      copyMenuDay: (from, to) => update((s) => withMenus(s, copyDay(from, to, s.menus, today, new Date()))),
       addMealFromPlan: (date, slotId, source = 'plan', lines) => {
         const id = newId();
         const now = new Date();
@@ -635,11 +619,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addActivity: (a) => update((s) => ({ ...s, activities: [...(s.activities ?? []), a] })),
       removeActivity: (id) => update((s) => ({ ...s, activities: (s.activities ?? []).filter((x) => x.id !== id) })),
       burnedToday,
-      toggleGrocery: (week, foodId) =>
-        update((s) => {
-          const cur = s.groceryTicks?.week === week ? s.groceryTicks.ids : [];
-          return { ...s, groceryTicks: { week, ids: cur.includes(foodId) ? cur.filter((x) => x !== foodId) : [...cur, foodId] } };
-        }),
+      toggleGrocery: (week, foodId) => update((s) => ({ ...s, groceryTicks: toggleTick(s.groceryTicks, week, foodId) })),
       markCelebrated: (ids) => update((s) => ({ ...s, celebrated: Array.from(new Set([...(s.celebrated ?? []), ...ids])) })),
       setSchedule: (x) => update((s) => ({ ...s, schedule: { ...s.schedule, ...x } })),
       addSpend: (x) =>

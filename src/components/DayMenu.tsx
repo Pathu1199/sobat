@@ -99,11 +99,11 @@ export function DayMenu({
     if (past) {
       // A past day: only the draft changes, never what that day planned.
       const key = draftKey(date, row.slotId);
-      setDrafts((d) => ({ ...d, [key]: stepDraft(d[key] ?? plannedLines(row), l.idx, l.foodId, by) }));
+      setDrafts((d) => ({ ...d, [key]: stepDraft(d[key] ?? plannedLines(row), l.idx, { foodId: l.foodId, unit: l.lineUnit }, by) }));
     } else {
       // Today and later: that date's menu, the step worked out from the line as the store holds it, so quick taps all count,
-      // and only while it is still the food tapped.
-      app.editMenuLine(menu, row.slotId, l.idx, stepFoodLine(l.foodId, by));
+      // and only while it is still the food and measure tapped.
+      app.editMenuLine(menu, row.slotId, l.idx, stepFoodLine({ foodId: l.foodId, unit: l.lineUnit }, by));
     }
     fb.haptic('light');
   }

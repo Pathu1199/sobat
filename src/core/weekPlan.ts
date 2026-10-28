@@ -52,6 +52,15 @@ export function lineInfo(line: PlanLine, foods: FoodItem[], lang: 'en' | 'mr' | 
   return { food, unit: portion.unit, label, grams, kcal: n.kcal, protein: Math.round(n.protein * 10) / 10 };
 }
 
+/**
+ * What lines plan in calories, each from the database, a food gone from it
+ * left out: the one count behind the menu's totals, the coach, the add sheet
+ * and the meal-time prompts, so they never disagree.
+ */
+export function plannedKcal(lines: PlanLine[], foods: FoodItem[]): number {
+  return Math.round(lines.reduce((a, l) => a + (lineInfo(l, foods)?.kcal ?? 0), 0));
+}
+
 export type Totals = { kcal: number; protein: number };
 
 export function mealTotals(meal: PlanMeal, foods: FoodItem[]): Totals {

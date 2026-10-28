@@ -35,6 +35,13 @@ describe('a day with nothing planned', () => {
     expect(rec('2026-10-25', [], { menu: empty('2026-10-25') })).toEqual({ state: 'empty', fromPlan: false, nothingEaten: true, nothingPlanned: true });
   });
 
+  it('a drink on it, nothing skipped, is a day with nothing planned, never meals skipped; a skip that day makes it skipped', () => {
+    const d = '2026-10-25';
+    const tea = [meal(d, 'tea', undefined, 20)];
+    expect(rec(d, tea, { menu: empty(d) })).toEqual({ state: 'full', fromPlan: false, nothingEaten: true, nothingPlanned: true });
+    expect(rec(d, tea, { menu: empty(d), skips: addSkip([], d, 'lunch') })).toMatchObject({ state: 'full', nothingEaten: true, skipped: true });
+  });
+
   it('is full once anything is eaten, and a day with something planned never says nothing was planned', () => {
     expect(rec('2026-10-25', [meal('2026-10-25', 'lunch')], { menu: empty('2026-10-25') }).state).toBe('full');
     expect(rec('2026-10-25', []).nothingPlanned).toBeUndefined();
@@ -108,7 +115,7 @@ describe('recordStreak', () => {
   const allSkipped = (date: string) => ['morning', 'lunch', 'dinner'].reduce<SlotSkip[]>((acc, id) => addSkip(acc, date, id), []);
 
   it('a day settled only by skips is a complete record, but never counts and ends the run: skipping is never rewarded', () => {
-    expect(rec('2026-10-25', [], { skips: allSkipped('2026-10-25') })).toEqual({ state: 'full', fromPlan: false, nothingEaten: true });
+    expect(rec('2026-10-25', [], { skips: allSkipped('2026-10-25') })).toEqual({ state: 'full', fromPlan: false, nothingEaten: true, skipped: true });
     const meals = [...fullDay('2026-10-24'), ...fullDay('2026-10-26')];
     expect(recordStreak({ ...base, skips: allSkipped('2026-10-25'), menuOn: menu, meals })).toBe(1);
   });

@@ -171,7 +171,7 @@ export function answerOffline(question: string, ctx: OfflineCtx, t: T): { text: 
       const v = planVerdict(ctx.plan);
       lines.push(t(`verdict_${v}`));
       lines.push(f(t('oc_evidence'), { logged: ctx.journey.loggedDays, days: ctx.journey.days, avg: ctx.journey.avgKcal, target: ctx.kcalTarget, over: ctx.journey.overDays, heavy: ctx.journey.heavyDays }));
-      lines.push(f(t('oc_evidence2'), { protein: ctx.journey.avgProtein, ptarget: ctx.proteinTarget, water: Math.round(ctx.journey.avgWaterMl / 250), late: ctx.journey.lateDinners, weighs: ctx.journey.weighIns }));
+      lines.push(f(t('oc_evidence2'), { protein: ctx.journey.avgProtein, ptarget: ctx.proteinTarget, water: Math.round(ctx.journey.avgWaterMl / Math.max(1, ctx.bottleMl)), late: ctx.journey.lateDinners, weighs: ctx.journey.weighIns }));
       if (ctx.journey.loggedDays < ctx.journey.days * 0.6) lines.push(t('oc_patchy'));
       else if (ctx.journey.heavyDays >= 2) lines.push(t('oc_heavy_days'));
       else if (ctx.journey.avgKcal > ctx.kcalTarget) lines.push(f(t('oc_avg_over'), { diff: ctx.journey.avgKcal - ctx.kcalTarget }));
@@ -187,9 +187,12 @@ export function answerOffline(question: string, ctx: OfflineCtx, t: T): { text: 
       break;
     }
     case 'water': {
-      // In the person's bottles: whole bottles drunk, the goal in bottles, and the bottles left as the water tile counts them.
+      // In the person's bottles: whole bottles drunk, and the bottles left as the water tile counts them. The goal is what the two
+      // add up to (never more than the goal in bottles, rounded up), so the three never disagree: 2 of 4, 2 to go.
       const bottle = Math.max(1, ctx.bottleMl);
-      lines.push(f(t('oc_water'), { have: Math.floor(ctx.waterMl / bottle), goal: Math.ceil(ctx.waterGoalMl / bottle), togo: waterTile(ctx.waterMl, ctx.waterGoalMl, bottle).bottlesLeft }));
+      const have = Math.floor(ctx.waterMl / bottle);
+      const togo = waterTile(ctx.waterMl, ctx.waterGoalMl, bottle).bottlesLeft;
+      lines.push(f(t('oc_water'), { have, goal: Math.min(Math.ceil(ctx.waterGoalMl / bottle), have + togo), togo }));
       lines.push(t('oc_water_do'));
       break;
     }

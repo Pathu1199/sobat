@@ -84,6 +84,16 @@ describe('coachAdvice', () => {
     expect(late().params.kcal).toBe(500);
   });
 
+  it('never speaks of more planned calories than are left today, as Calories left says', () => {
+    // 1700 kcal target, 1300 eaten: 400 left, so a lunch planned at 640 is spoken of as 400.
+    const due = coachAdvice({ ...base, budget: budget(1300), plannedKcal: { lunch: 640 } }).find((x) => x.key === 'coach_meal_due')!;
+    expect(due.params.kcal).toBe(400);
+    const next = coachAdvice({ ...base, ...clock(14, 30), budget: budget(1500), settledSlotIds: ['breakfast', 'lunch'], plannedKcal: { snack: 300 } }).find((x) => x.key === 'coach_next_meal')!;
+    expect(next.params.kcal).toBe(200);
+    const late = coachAdvice({ ...base, ...clock(21, 30), settledSlotIds: ['breakfast', 'lunch', 'snack'], budget: budget(1400), nextPlate: null, plannedKcal: { dinner: 520 } }).find((x) => x.key === 'coach_late_dinner')!;
+    expect(late.params.kcal).toBe(300);
+  });
+
   it('asks for the first log, a walk, the weigh-in and the morning check-in at the right hours', () => {
     const morning = coachAdvice({ ...base, ...clock(8, 30), meals: [], sleep: [], weights: [{ date: '2026-09-27', kg: 96 }], today: '2026-10-11' /* a Sunday */ });
     expect(morning.map((x) => x.key)).toEqual(expect.arrayContaining(['coach_sleep_checkin', 'coach_weigh']));

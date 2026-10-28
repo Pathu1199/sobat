@@ -1,3 +1,4 @@
+import { numberText } from '../i18n';
 import { toISODate } from './date';
 import { defaultPortion, toMealItem } from './foods';
 import type { PlanLine } from './routine';
@@ -47,15 +48,20 @@ export function steppedLine(line: PlanLine, by: 1 | -1): PlanLine | null {
   return qty > 0 ? { ...line, qty } : null;
 }
 
+/** The line is the one a tap was on: the same food in the same measure (a menu can hold one food in two measures). */
+export function isTapped(line: Pick<PlanLine, 'foodId' | 'unit'>, tapped: Pick<PlanLine, 'foodId' | 'unit'>): boolean {
+  return line.foodId === tapped.foodId && line.unit === tapped.unit;
+}
+
 /**
  * One − or + on the food a tap was on, as the store steps a menu's line: the
- * line as the menu holds it now, stepped while it is still that food, else
- * left as it is. A quick second − can land after the first took its line
- * out, when the line at that place is the next food; that one is never
- * stepped.
+ * line as the menu holds it now, stepped while it is still that food in that
+ * measure, else left as it is. A quick second − can land after the first
+ * took its line out, when the line at that place is the next food, or the
+ * same food in another measure; that one is never stepped.
  */
-export function stepFoodLine(foodId: string, by: 1 | -1): (line: PlanLine) => PlanLine | null {
-  return (line) => (line.foodId === foodId ? steppedLine(line, by) : line);
+export function stepFoodLine(tapped: Pick<PlanLine, 'foodId' | 'unit'>, by: 1 | -1): (line: PlanLine) => PlanLine | null {
+  return (line) => (isTapped(line, tapped) ? steppedLine(line, by) : line);
 }
 
 /**
@@ -300,7 +306,7 @@ export function amountText(count: number, measure: string): string {
  * its place breaks after the dot and the calories start the next line whole.
  */
 export function withKcal(words: string, kcal: number): string {
-  return `${words}\u00A0· ${kcal}\u00A0kcal`;
+  return `${words}\u00A0· ${numberText(kcal)}\u00A0kcal`;
 }
 
 const FRACTIONS: Record<string, string> = { '0.25': '¼', '0.5': '½', '0.75': '¾' };

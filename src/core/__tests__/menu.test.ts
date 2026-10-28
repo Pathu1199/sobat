@@ -245,13 +245,22 @@ describe("the store's menu edits", () => {
   it('step only the food a tap was on: a quick second − landing after the first took its line out never steps the food now in its place', () => {
     const dal: PlanLine = { foodId: 'moong-dal', unit: 'katori', qty: 1 };
     const two: DayMenu = { ...wed, meals: wed.meals.map((m) => (m.id === 'lunch' ? { ...m, lines: [chapati(1), dal] } : m)) };
-    const tap = (ms: DayMenu[], foodId: string, by: 1 | -1) => editedMenus(ms, two, TODAY, (m, d) => setMenuLine(m, d, 'lunch', 0, stepFoodLine(foodId, by), NOW));
+    const tap = (ms: DayMenu[], foodId: string, by: 1 | -1) => editedMenus(ms, two, TODAY, (m, d) => setMenuLine(m, d, 'lunch', 0, stepFoodLine({ foodId, unit: foodId === 'chapati' ? 'piece' : 'katori' }, by), NOW));
     const once = tap([], 'chapati', -1);
     expect(menuFor('2026-10-28', once)!.meals[1].lines).toEqual([dal]);
     // The second − was for the chapati too; the dal now at its place is left as it is, and nothing is written.
     expect(tap(once, 'chapati', -1)).toBe(once);
     // A tap on the dal itself still steps it.
     expect(menuFor('2026-10-28', tap(once, 'moong-dal', 1))!.meals[1].lines).toEqual([{ ...dal, qty: 1.5 }]);
+  });
+
+  it('step only the food and measure a tap was on: the same food in another measure, now in its place, is never stepped', () => {
+    const plate: PlanLine = { foodId: 'chapati', unit: 'plate', qty: 2 };
+    const two: DayMenu = { ...wed, meals: wed.meals.map((m) => (m.id === 'lunch' ? { ...m, lines: [chapati(1), plate] } : m)) };
+    const tap = (ms: DayMenu[]) => editedMenus(ms, two, TODAY, (m, d) => setMenuLine(m, d, 'lunch', 0, stepFoodLine({ foodId: 'chapati', unit: 'piece' }, -1), NOW));
+    const once = tap([]);
+    expect(menuFor('2026-10-28', once)!.meals[1].lines).toEqual([plate]);
+    expect(tap(once)).toBe(once);
   });
 
   it('step a line on the measure\'s grid; − to nothing takes it out', () => {

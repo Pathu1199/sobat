@@ -30,7 +30,7 @@ import { slotStates } from '../core/pattern';
 import { slotLabel, type PlanLine } from '../core/routine';
 import type { FoodItem, ISODate, Meal, SavedMeal } from '../core/types';
 import { runUndo } from '../core/undo';
-import { lineInfo, type PlanMeal } from '../core/weekPlan';
+import { plannedKcal, type PlanMeal } from '../core/weekPlan';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useMinute } from '../services/useClock';
@@ -176,7 +176,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   const yesterdayItems = slot ? repeatItems(yesterdayIn(state.meals, date, slot), foods) : [];
   const saved = state.savedMeals;
   const rows = addRows({ mode, query: deferred, results: results.map((f) => f.id), basket, planned, yesterday: offersYesterday({ mode, basket, items: yesterdayItems, foods }), saved: saved.map((s) => s.id), recents });
-  const linesKcal = (lines: PlanLine[]) => lines.reduce((a, l) => a + (lineInfo(l, foods)?.kcal ?? 0), 0);
+  const linesKcal = (lines: PlanLine[]) => plannedKcal(lines, foods);
   // The same as yesterday and a saved meal add into the meal while foods are being chosen (and always while changing a menu).
   const into = addsIntoMeal(mode, basket);
   const editing = detail ? (basket.find((b) => b.foodId === detail.id) ?? null) : null;

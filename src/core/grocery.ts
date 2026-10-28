@@ -81,6 +81,43 @@ export function groceryWeekKey(day: ISODate, weekStartDay = 0): string {
   return addDays(day, -((weekdayOf(day) - weekStartDay + 7) % 7));
 }
 
+/** The foods ticked off each week's list, by the week's key (`groceryWeekKey`). */
+export type GroceryTicks = Record<string, string[]>;
+
+/** The stored ticks as weeks: the map, or the one week an older version kept (`{ week, ids }`); anything else is nothing ticked. */
+function ticksOf(stored: unknown): GroceryTicks {
+  if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return {};
+  const raw = stored as Record<string, unknown>;
+  const weeks: Record<string, unknown> = typeof raw.week === 'string' && Array.isArray(raw.ids) ? { [raw.week]: raw.ids } : raw;
+  const out: GroceryTicks = {};
+  for (const [week, ids] of Object.entries(weeks)) {
+    if (Array.isArray(ids)) out[week] = ids.filter((id): id is string => typeof id === 'string');
+  }
+  return out;
+}
+
+/** The foods ticked off one week's list. */
+export function tickedIn(stored: unknown, week: string): string[] {
+  return ticksOf(stored)[week] ?? [];
+}
+
+/**
+ * A food ticked, or unticked, on one week's list. Each week keeps its own
+ * ticks, so ticking next week's list never drops this week's; the week ticked
+ * and the latest other week are kept, so old weeks do not pile up, and a week
+ * with nothing ticked is not kept.
+ */
+export function toggleTick(stored: unknown, week: string, foodId: string): GroceryTicks {
+  const all = ticksOf(stored);
+  const cur = all[week] ?? [];
+  const ids = cur.includes(foodId) ? cur.filter((x) => x !== foodId) : [...cur, foodId];
+  const latest = Object.keys(all).filter((w) => w !== week && all[w].length > 0).sort().pop();
+  const out: GroceryTicks = {};
+  if (latest) out[latest] = all[latest];
+  if (ids.length > 0) out[week] = ids;
+  return out;
+}
+
 /**
  * The dates the list covers, of the week from `monday`: all seven, or half a
  * week for someone who shops twice, four dates from the later of today and

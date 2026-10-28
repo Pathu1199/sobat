@@ -67,10 +67,11 @@ export function coachAdvice(input: CoachInput): Advice[] {
   const settled = new Set(input.settledSlotIds);
   const cur = slotAt(input.routine, nowMin);
   const plateOf = (id: string) => (input.nextPlate && input.nextPlate.id === id ? input.nextPlate : null);
-  // A slot with a plan on today's menu is spoken of with its planned calories, as the menu shows them; one without, with its share.
+  // A slot with a plan on today's menu is spoken of with its planned calories, as the menu shows them, but never more than is
+  // left today, as Calories left says; one without, with its share.
   const plannedOf = (id: string): number | null => {
     const kcal = input.plannedKcal?.[id];
-    return kcal !== undefined && kcal > 0 ? kcal : null;
+    return kcal !== undefined && kcal > 0 ? Math.min(b.remaining, kcal) : null;
   };
   // The day's last dinner slot, past its own time and grace with nothing in it.
   const dinner = [...slots].reverse().find((s) => s.type === 'dinner');

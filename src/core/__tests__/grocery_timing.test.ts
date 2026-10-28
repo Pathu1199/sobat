@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { groceryDates, groceryHalfLabel, groceryList, groceryWeekKey } from '../grocery';
+import { groceryDates, groceryHalfLabel, groceryList, groceryWeekKey, tickedIn, toggleTick } from '../grocery';
 import { makeT } from '../../i18n';
 import { DEFAULT_ROUTINE } from '../routine';
 import { dayTiming, fmtDuration } from '../timing';
@@ -88,5 +88,40 @@ describe('dayTiming', () => {
     expect(dayTiming([m('08:30'), m('13:00'), m('20:00')], '2026-10-10').verdict).toBe('good');
     expect(dayTiming([], '2026-10-10').verdict).toBe('none');
     expect(fmtDuration(330)).toBe('5 h 30 m');
+  });
+});
+
+describe('grocery ticks, kept per week', () => {
+  const THIS = '2026-10-26';
+  const NEXT = '2026-11-02';
+
+  it('keeps this week\'s ticks when next week\'s list is ticked, and each list shows only its own', () => {
+    const one = toggleTick(null, THIS, 'poha');
+    const two = toggleTick(one, NEXT, 'chapati');
+    expect(tickedIn(two, THIS)).toEqual(['poha']);
+    expect(tickedIn(two, NEXT)).toEqual(['chapati']);
+    expect(tickedIn(two, '2026-11-09')).toEqual([]);
+  });
+
+  it('unticks a food ticked already, and a week with nothing ticked is not kept', () => {
+    const on = toggleTick(toggleTick(null, THIS, 'poha'), THIS, 'dahi');
+    expect(tickedIn(on, THIS)).toEqual(['poha', 'dahi']);
+    expect(toggleTick(toggleTick(null, THIS, 'poha'), THIS, 'poha')).toEqual({});
+  });
+
+  it('keeps two weeks: the one ticked and the latest other, so old weeks do not pile up', () => {
+    const three = toggleTick(toggleTick(toggleTick(null, '2026-10-19', 'a'), THIS, 'b'), NEXT, 'c');
+    expect(Object.keys(three).sort()).toEqual([THIS, NEXT]);
+    // Ticking an older week again keeps it and the latest week.
+    expect(Object.keys(toggleTick(three, '2026-10-19', 'd')).sort()).toEqual(['2026-10-19', NEXT]);
+  });
+
+  it('reads the one week an older version kept, and anything else as nothing ticked', () => {
+    const old = { week: THIS, ids: ['poha'] };
+    expect(tickedIn(old, THIS)).toEqual(['poha']);
+    expect(tickedIn(old, NEXT)).toEqual([]);
+    expect(toggleTick(old, NEXT, 'chapati')).toEqual({ [THIS]: ['poha'], [NEXT]: ['chapati'] });
+    for (const bad of [undefined, null, 'x', 3, { [THIS]: 'poha' }]) expect(tickedIn(bad, THIS)).toEqual([]);
+    expect(tickedIn({ [THIS]: [1, 'poha'] }, THIS)).toEqual(['poha']);
   });
 });

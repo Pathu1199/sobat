@@ -1,5 +1,5 @@
 import type { UndoStep } from './addSheet';
-import { formatQty, steppedLine } from './basket';
+import { formatQty, isTapped, steppedLine } from './basket';
 import { foodName, measureName } from './foods';
 import { menuSlots, outsideRecord, planFillId, type DayMenu } from './menu';
 import { DAY_ENDS_AT_HOUR } from './nudge';
@@ -24,7 +24,8 @@ export type DayMode = 'past' | 'today' | 'future';
 /** `kept`: a day already past as the plan screen reads it, what it planned and nothing to do there. */
 export type RowState = 'done' | 'skipped' | 'current' | 'open' | 'later' | 'plan' | 'kept';
 /** One planned food: `idx` is its place in the menu meal, so − / + edits the right line; `measure` names one of its measures ("1 katori (150 g)"). */
-export type RowLine = { idx: number; foodId: string; name: string; qty: number; qtyText: string; unit: string; measure: string; grams: number; kcal: number; protein: number };
+/** A planned line as a row shows it. `unit` is the measure shown; `lineUnit` the measure the line is stored in, which a − / + matches. */
+export type RowLine = { idx: number; foodId: string; name: string; qty: number; qtyText: string; unit: string; lineUnit: string; measure: string; grams: number; kcal: number; protein: number };
 export type MenuRow = {
   slotId: string;
   type: MealType;
@@ -150,6 +151,7 @@ export function rowLines(lines: PlanLine[], foods: FoodItem[], lang: Lang): RowL
         qty: line.qty,
         qtyText: formatQty(line.qty),
         unit: info.unit,
+        lineUnit: line.unit,
         measure: measureName(info.food, info.unit, lang),
         grams: info.grams,
         kcal: info.kcal,
@@ -164,12 +166,13 @@ export function rowLines(lines: PlanLine[], foods: FoodItem[], lang: Lang): RowL
  * that day's menu (its record of what was planned): the slot's planned lines
  * until a tap, each step on the measure's grid, and − to nothing takes the
  * food out of the draft. "Ate this" logs the draft. A step on no line changes
- * nothing, and nor does one on a line that is no longer the food tapped (a
- * quick second − after the first took its line out lands on the next food).
+ * nothing, and nor does one on a line that is no longer the food and measure
+ * tapped (a quick second − after the first took its line out lands on the
+ * next food).
  */
-export function stepDraft(lines: PlanLine[], idx: number, foodId: string, by: 1 | -1): PlanLine[] {
+export function stepDraft(lines: PlanLine[], idx: number, tapped: Pick<PlanLine, 'foodId' | 'unit'>, by: 1 | -1): PlanLine[] {
   const line = lines[idx];
-  if (!line || line.foodId !== foodId) return lines;
+  if (!line || !isTapped(line, tapped)) return lines;
   const next = steppedLine(line, by);
   return next ? lines.map((l, i) => (i === idx ? next : l)) : lines.filter((_, i) => i !== idx);
 }

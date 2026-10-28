@@ -21,8 +21,10 @@ export type DayRecord = {
   fromPlan: boolean;
   /** Under `NOTHING_EATEN_KCAL` eaten that day: on a full day, its meals were all skipped (a drink at most), never a day to praise. */
   nothingEaten: boolean;
-  /** An empty day whose menu planned nothing: no meal was missed, so the record does not call it meals missing. Only ever true. */
+  /** A day whose menu planned nothing: no meal was missed, so the record does not call it meals missing. Only ever true. */
   nothingPlanned?: true;
+  /** On a full day with nothing eaten: a meal that day was marked skipped, so it reads as meals skipped. Only ever true. */
+  skipped?: true;
 };
 
 type RecordBase = { today: ISODate; routine: Routine; meals: Meal[]; skips: SlotSkip[]; offDays: number[] };
@@ -31,7 +33,8 @@ export function dayRecord(input: RecordBase & { date: ISODate; menu: DayMenu | n
   const dayMeals = input.meals.filter((m) => m.date === input.date);
   const fromPlan = dayMeals.some((m) => m.source === 'auto');
   const nothingEaten = eatenKcal(dayMeals) < NOTHING_EATEN_KCAL;
-  const at = (state: DayRecordState): DayRecord => ({ state, fromPlan, nothingEaten });
+  const skipped = new Set(skippedOn(input.skips, input.date));
+  const at = (state: DayRecordState): DayRecord => ({ state, fromPlan, nothingEaten, ...(state === 'full' && nothingEaten && skipped.size > 0 ? { skipped: true as const } : {}) });
   if (isOffDay(input.offDays, input.date)) return at('off');
   if (input.date > input.today) return at('planned');
   // Meals are matched against every slot of the date; only the ones with something planned must be settled.
@@ -40,8 +43,7 @@ export function dayRecord(input: RecordBase & { date: ISODate; menu: DayMenu | n
     ? menuSlots(input.menu).map((s) => ({ id: s.id, type: s.type, minutes: s.minutes, planned: s.meal.lines.length > 0 }))
     : pattern(input.routine).map((p) => ({ id: p.id, type: p.type, minutes: p.minutes, planned: true }));
   const required = all.filter((s) => s.planned);
-  if (required.length === 0) return dayMeals.length > 0 ? at('full') : { ...at('empty'), nothingPlanned: true };
-  const skipped = new Set(skippedOn(input.skips, input.date));
+  if (required.length === 0) return { ...at(dayMeals.length > 0 ? 'full' : 'empty'), nothingPlanned: true };
   const eaten = new Set<string>();
   for (const m of dayMeals) {
     const s = slotOf(m, all);

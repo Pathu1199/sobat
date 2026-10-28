@@ -172,6 +172,25 @@ describe('water, in bottles', () => {
     expect(water({ bottleMl: 1000, waterMl: 3200 })).toBe('3 of 3, 0 to go');
   });
 
+  it('says a goal the bottles drunk and the bottles to go add up to, the bottles to go always as the tile says', () => {
+    // 1100 ml of 2100 in 500 ml bottles: 2 drunk, 2 to go (the tile), so the goal reads 4, not 5.
+    expect(water({ waterMl: 1100, waterGoalMl: 2100 })).toBe('2 of 4, 2 to go');
+    expect(water({ waterMl: 2100, waterGoalMl: 2100 })).toBe('4 of 4, 0 to go');
+    for (let ml = 0; ml <= 2100; ml += 50) {
+      const [have, goal, togo] = water({ waterMl: ml, waterGoalMl: 2100 }).match(/\d+/g)!.map(Number);
+      expect(have + togo, `${ml} ml`).toBe(goal);
+    }
+    // Past the goal: more drunk than the goal, nothing to go.
+    expect(water({ waterMl: 3000, waterGoalMl: 2100 })).toBe('6 of 5, 0 to go');
+  });
+
+  it('gives the evidence for a stall in the person\'s bottles, never in glasses', () => {
+    const ev = answerOffline('why is my weight not dropping', { ...ctx, bottleMl: 700 }, (k) => (k === 'oc_evidence2' ? 'water {water}' : `[${k}]`)).text;
+    expect(ev).toContain('water 3');
+    for (const lang of ['en', 'mr', 'hi'] as const) expect(tr(lang, 'oc_evidence2'), lang).not.toMatch(/glass|ग्लास|गिलास/);
+    expect(tr('en', 'oc_evidence2')).toContain('bottles');
+  });
+
   it('says bottles, never glasses, in every language', () => {
     for (const lang of ['en', 'mr', 'hi'] as const) {
       for (const k of ['oc_water', 'oc_water_do']) expect(tr(lang, k), `${lang} ${k}`).not.toMatch(/glass|ग्लास|गिलास/);

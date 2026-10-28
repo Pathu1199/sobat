@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { badges, climbTrail, level, nextWin, weeklyChallenge, xp, type GameInput } from '../game';
+import { badges, climbTrail, keptLevel, level, nextWin, weeklyChallenge, xp, type GameInput } from '../game';
 import type { Meal } from '../types';
 
 const TODAY = '2026-10-07'; // a Wednesday
@@ -42,6 +42,15 @@ describe('game', () => {
     expect(l.next).toBe(300);
     expect(level(950).key).toBe('camp2');
     expect(level(99999).next).toBeNull();
+  });
+
+  it('never takes a camp away once it was reached and celebrated, when a run ends and its points go, as a badge stays', () => {
+    // 950 points was camp 2; the run ended, 50 points went, 900 is still camp 2 by points, 850 is not.
+    expect(keptLevel(850, ['level:camp1', 'level:camp2'])).toMatchObject({ key: 'camp2', index: 2, xp: 850, next: 2000, progress: 0 });
+    expect(keptLevel(850, ['level:camp1'])).toEqual(level(850));
+    expect(keptLevel(850, null)).toEqual(level(850));
+    // Points past the camp kept are the level as ever.
+    expect(keptLevel(2100, ['level:camp2'])).toEqual(level(2100));
   });
 
   it('earns the firsts and the 7-day streak, not the 30', () => {

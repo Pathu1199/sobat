@@ -64,6 +64,20 @@ export function level(points: number): Level {
   return { key: LEVELS[i], index: i, xp: points, next, progress: next === null ? 1 : (points - LEVEL_XP[i]) / span };
 }
 
+/**
+ * The level for these points, never below the highest camp already
+ * celebrated: the streak's part of the points goes when a run ends, but a
+ * camp reached stays reached, as a badge does. Kept above its points, the
+ * level shows the real points and no progress toward the next camp yet.
+ */
+export function keptLevel(points: number, celebrated: string[] | null | undefined): Level {
+  const now = level(points);
+  const best = LEVELS.reduce((top, key, i) => (celebrated?.includes(`level:${key}`) ? Math.max(top, i) : top), 0);
+  if (best <= now.index) return now;
+  const next = best + 1 < LEVEL_XP.length ? LEVEL_XP[best + 1] : null;
+  return { key: LEVELS[best], index: best, xp: points, next, progress: next === null ? 1 : 0 };
+}
+
 export type Badge = { key: string; earned: boolean; progress: number; n: number; target: number };
 
 /**
@@ -220,7 +234,8 @@ export type GameView = {
  * start after today is no chapter yet. Points and badges are the whole
  * journey's: the kilo badges count from the very first start and the points
  * and the streak badges count the streak over the whole journey (`lifetime`),
- * so a new chapter takes none away; a badge already celebrated stays earned.
+ * so a new chapter takes none away; a badge already celebrated stays earned,
+ * and so does a camp of the points' level (`keptLevel`).
  */
 export function gameView(o: {
   state: Pick<AppState, 'profile' | 'weights' | 'meals' | 'water' | 'sleep' | 'steps' | 'workouts' | 'celebrated'> & { settings: Pick<Settings, 'waterGoalMl' | 'weighDay' | 'offDays'> };
@@ -266,7 +281,7 @@ export function gameView(o: {
     camps,
     trail: climbTrail(trailWeights, plan.startKg, plan.goalKg).map((t) => t.p),
     points,
-    level: level(points),
+    level: keptLevel(points, state.celebrated),
     badges: badges(lifetime),
     challenge: weeklyChallenge(input, state.settings.weighDay),
   };

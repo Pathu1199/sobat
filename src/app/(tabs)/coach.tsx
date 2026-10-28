@@ -31,7 +31,7 @@ import { C, F, lh, S } from '../../ui/theme';
 import { TopBar } from '../../ui/TopBar';
 import { useBreakpoint } from '../../ui/useBreakpoint';
 
-export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
+export default function CoachScreen() {
   const app = useApp();
   const { ask, askJSON, ai } = useAI();
   const { canUseAI } = useAuth();
@@ -304,14 +304,12 @@ export default function CoachScreen({ embedded }: { embedded?: boolean } = {}) {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      {embedded ? null : (
       <TopBar
         title={t('coach_title')}
         alt={lang === 'en' ? undefined : t('coach_title')}
         left={wide ? undefined : <IconButton name="chevron-back" label={t('close')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />}
         right={<TopBarActions />}
       />
-      )}
       <View style={{ flex: 1, flexDirection: 'row', maxWidth: S.maxWide, width: '100%', alignSelf: 'center' }}>
         <View style={{ flex: 1 }}>
           <ScrollView

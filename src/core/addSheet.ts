@@ -6,7 +6,7 @@ import { currentSlot, type SlotState } from './pattern';
 import type { PlanLine } from './routine';
 import { stable } from './sync';
 import type { FoodItem, ISODate, Lang, Meal, MealItem, SavedMeal } from './types';
-import { lineInfo, type PlanMeal } from './weekPlan';
+import { lineInfo, plannedKcal, type PlanMeal } from './weekPlan';
 
 /**
  * What the add sheet lists, top to bottom, as rows for one FlatList. With a
@@ -147,7 +147,7 @@ export function menuSave(meals: PlanMeal[], drafts: Record<string, BasketLine[]>
  * of the day.
  */
 export function slotAllowance(input: { lines: PlanLine[]; foods: FoodItem[]; share: number }): number {
-  const planned = input.lines.reduce((a, l) => a + (lineInfo(l, input.foods)?.kcal ?? 0), 0);
+  const planned = plannedKcal(input.lines, input.foods);
   return planned > 0 ? planned : input.share;
 }
 

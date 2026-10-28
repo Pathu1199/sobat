@@ -269,8 +269,8 @@ export type AppState = {
   celebrated?: string[] | null;
   /** Activities done, by the person's own choice. */
   activities: ActivityLog[];
-  /** Grocery lines ticked off, for one week at a time. */
-  groceryTicks?: { week: string; ids: string[] } | null;
+  /** Grocery lines ticked off, each week's on its own (core/grocery.ts `GroceryTicks`); an older version kept one week, `{ week, ids }`, which is still read. */
+  groceryTicks?: Record<string, string[]> | { week: string; ids: string[] } | null;
   /** The menu of each date that was written: edited, or carried over from the old week plan. Other dates show as they start (see core/menu.ts). */
   menus: import('./menu').DayMenu[];
 };

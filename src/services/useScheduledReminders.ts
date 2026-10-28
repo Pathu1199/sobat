@@ -7,7 +7,7 @@ import type { DayRecordState } from '../core/record';
 import { DAILY_IDS, dailyReminders, LONG_BREAK_ID, lastLogDate, MORNING_HOUR, pendingFit, plannedReminders, SLOT_DAYS, weeklyReport, type Reminder } from '../core/reminders';
 import { orderedBlocks } from '../core/schedule';
 import { stripSince } from '../core/weekStrip';
-import { mealTotals } from '../core/weekPlan';
+import { plannedKcal } from '../core/weekPlan';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useRecordOn } from '../store/useRecordOn';
@@ -102,7 +102,7 @@ export function useScheduledReminders() {
     const out: Record<string, number | null> = {};
     for (let k = 0; k < SLOT_DAYS; k++) {
       const date = addDays(today, k);
-      for (const m of menuOn(date).meals) out[`${date}:${m.id}`] = m.lines.length > 0 ? mealTotals(m, planFoods).kcal : null;
+      for (const m of menuOn(date).meals) out[`${date}:${m.id}`] = m.lines.length > 0 ? plannedKcal(m.lines, planFoods) : null;
     }
     return JSON.stringify(out);
   }, [menuOn, planFoods, today]);

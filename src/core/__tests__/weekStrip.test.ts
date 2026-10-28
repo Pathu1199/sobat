@@ -109,6 +109,13 @@ describe('weekStrip: more days', () => {
     expect(markOf(unplanned, TODAY, TODAY, '2026-10-01').mark).toBe('today');
     expect(markOf(r('empty'), '2026-10-20', TODAY, '2026-10-01').mark).toBe('missing');
   });
+
+  it('calls a day "All meals skipped" only when a meal was skipped: a drink on a day that planned nothing is nothing planned', () => {
+    const drink: DayRecord = { state: 'full', fromPlan: false, nothingEaten: true, nothingPlanned: true };
+    expect(markOf(drink, '2026-10-20', TODAY, '2026-10-01').mark).toBe('unplanned');
+    expect(markOf({ ...drink, skipped: true }, '2026-10-20', TODAY, '2026-10-01').mark).toBe('skipped');
+    expect(markOf({ state: 'full', fromPlan: false, nothingEaten: true, skipped: true }, '2026-10-20', TODAY, '2026-10-01').mark).toBe('skipped');
+  });
 });
 
 describe('stripDayLabel: what a screen reader hears for a day', () => {

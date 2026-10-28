@@ -126,3 +126,13 @@ export function formatDayMonthYear(date: ISODate, lang: Lang): string {
 export function formatMonthYear(date: ISODate, lang: Lang): string {
   return formatDate(date, lang, { month: 'long', year: 'numeric' }, date.slice(0, 7));
 }
+
+/** "28 Oct, 14:05": a moment (an ISO timestamp) in the device's own zone, in the chosen language and Latin digits, on the 24-hour clock the app writes times in. The timestamp itself when it cannot be read. */
+export function formatMoment(iso: string, lang: Lang): string {
+  try {
+    const s = new Date(iso).toLocaleString(LOCALE[lang] ?? 'en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    return s && s !== 'Invalid Date' ? latinDigits(s) : iso;
+  } catch {
+    return iso;
+  }
+}

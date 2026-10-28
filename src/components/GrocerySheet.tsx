@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { foodName } from '../core/foods';
-import { groceryDates, groceryHalfLabel, groceryList, groceryWeekKey } from '../core/grocery';
+import { groceryDates, groceryHalfLabel, groceryList, groceryWeekKey, tickedIn } from '../core/grocery';
 import { weekdayOf } from '../core/routine';
 import type { ISODate } from '../core/types';
 import type { WeekPlan } from '../core/weekPlan';
@@ -17,8 +17,8 @@ import { FoodThumb } from './FoodDetailSheet';
  * A week's plan as a shopping list: grouped like the market, with buying
  * amounts, ticked off as things come home. It is the week shown (`monday`,
  * the plan screen's week; this week on Me), and its ticks belong to that
- * week, so next week's ticks never tick this week's list and the list is
- * clean again on the next one.
+ * week: ticking next week's list never ticks or drops this week's, and the
+ * list is clean again on the next one (core/grocery.ts `toggleTick`).
  */
 export function GrocerySheet({ open, onClose, plan, monday }: { open: boolean; onClose: () => void; plan: WeekPlan; monday: ISODate }) {
   const app = useApp();
@@ -34,7 +34,7 @@ export function GrocerySheet({ open, onClose, plan, monday }: { open: boolean; o
   const groups = useMemo(() => groceryList(plan, foods, dayIdxs), [plan, foods, dayIdxs]);
   const week = groceryWeekKey(monday);
   const halfLabel = groceryHalfLabel(half, today, t);
-  const ticked = state.groceryTicks?.week === week ? state.groceryTicks.ids : [];
+  const ticked = tickedIn(state.groceryTicks, week);
   const total = groups.reduce((n, g) => n + g.lines.length, 0);
   const done = groups.reduce((n, g) => n + g.lines.filter((l) => ticked.includes(l.foodId)).length, 0);
 

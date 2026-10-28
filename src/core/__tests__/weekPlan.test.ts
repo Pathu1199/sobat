@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
 import { avoidedFoodIds, DEFAULT_ROUTINE, NEUTRAL_ROUTINE, ruleForFood, type Routine } from '../routine';
 import type { FoodItem } from '../types';
-import { alignWeekPlan, balanceDay, buildWeekPlan, copyToWeekdays, dayStatus, dayTotals, lineInfo, planDayFor, roleOf, setLine, swapsFor, type WeekPlan } from '../weekPlan';
+import { alignWeekPlan, balanceDay, buildWeekPlan, copyToWeekdays, dayStatus, dayTotals, lineInfo, mealTotals, planDayFor, plannedKcal, roleOf, setLine, swapsFor, type WeekPlan } from '../weekPlan';
 
 const foods = foodsJson as FoodItem[];
 const byId = (id: string) => foods.find((f) => f.id === id)!;
@@ -201,5 +201,20 @@ describe('weekPlan', () => {
       const day = alignWeekPlan(noTime, DEFAULT_ROUTINE).days[0];
       expect(day.meals.find((m) => m.id === 'dry-fruit')!.lines).toEqual([{ foodId: 'almonds', unit: 'handful', qty: 1 }]);
     });
+  });
+});
+
+describe('plannedKcal: what lines plan in calories', () => {
+  const foods = foodsJson as unknown as FoodItem[];
+  const lines = [
+    { foodId: 'poha', unit: 'katori', qty: 1.5 },
+    { foodId: 'chapati', unit: 'piece', qty: 2 },
+  ];
+
+  it('counts each line from the database, as the menu totals do, and leaves out a food that is gone', () => {
+    expect(plannedKcal(lines, foods)).toBe(lines.reduce((a, l) => a + lineInfo(l, foods)!.kcal, 0));
+    expect(plannedKcal(lines, foods)).toBe(mealTotals({ id: 'x', type: 'lunch', time: '13:00', lines }, foods).kcal);
+    expect(plannedKcal([...lines, { foodId: 'gone', unit: 'piece', qty: 1 }], foods)).toBe(plannedKcal(lines, foods));
+    expect(plannedKcal([], foods)).toBe(0);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { daysBetween, formatDayLabel, formatDayMonth, formatDayMonthYear, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
+import { daysBetween, formatDayLabel, formatDayMonth, formatDayMonthYear, formatMoment, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
 describe('local time from ISO strings', () => {
@@ -171,5 +171,30 @@ describe('daysBetween', () => {
     expect(daysBetween('2026-12-30', '2027-01-02')).toBe(3);
     expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2);
     expect(daysBetween('2024-02-28', '2024-03-01')).toBe(2);
+  });
+});
+
+describe('formatMoment: when something happened, as Settings says the last backup', () => {
+  // A local time, so the test reads the same in every time zone.
+  const at = new Date(2026, 9, 28, 14, 5).toISOString();
+
+  it('writes the day, the short month and the time on a 24-hour clock, as the app writes times', () => {
+    const s = formatMoment(at, 'en');
+    expect(s).toMatch(/28/);
+    expect(s).toMatch(/Oct/);
+    expect(s).toMatch(/14:05/);
+  });
+
+  it("follows the app's language, not the device's, in the digits the app writes", () => {
+    for (const lang of ['mr', 'hi'] as const) {
+      const s = formatMoment(at, lang);
+      expect(s, lang).toMatch(/14:05/);
+      expect(s, lang).not.toMatch(/[\u0966-\u096F]/);
+      expect(s, lang).not.toBe(formatMoment(at, 'en'));
+    }
+  });
+
+  it('gives back what it was given when that is not a moment', () => {
+    expect(formatMoment('not-a-time', 'en')).toBe('not-a-time');
   });
 });

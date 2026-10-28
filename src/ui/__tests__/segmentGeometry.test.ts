@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SECTION_MIN_WIDTH, sectionRowMinWidth } from '../segmentGeometry';
+import { SECTION_MIN_WIDTH, SECTION_SCROLL_MIN_WIDTH, sectionRowMinWidth } from '../segmentGeometry';
 import { S } from '../theme';
 
 describe('the switch between a tab\'s sections', () => {
@@ -14,5 +14,11 @@ describe('the switch between a tab\'s sections', () => {
 
   it('lets a row of more sections than fit scroll sideways, each as wide as ever', () => {
     expect(sectionRowMinWidth(5)).toBeGreaterThan(375 - 2 * S.gutter);
+  });
+
+  it('gives each section of a row that scrolls anyway 92 points, so Food\'s names in Hindi stay on one line; a row of four keeps 80', () => {
+    expect(SECTION_SCROLL_MIN_WIDTH).toBe(92);
+    expect(sectionRowMinWidth(5)).toBe(5 * SECTION_SCROLL_MIN_WIDTH);
+    expect(sectionRowMinWidth(4)).toBe(4 * SECTION_MIN_WIDTH);
   });
 });

@@ -57,7 +57,9 @@ function markFor(r: DayRecord, date: ISODate, today: ISODate, since: ISODate): S
   if (date < since) return 'none';
   if (r.state === 'off') return 'off';
   if (date > today) return 'planned';
-  if (r.state === 'full') return r.nothingEaten ? 'skipped' : 'full';
+  // A full day with nothing eaten is never praised as full. On a day that planned nothing it is meals skipped only when one was
+  // skipped; a drink there and nothing skipped is a day with nothing planned.
+  if (r.state === 'full') return !r.nothingEaten ? 'full' : r.nothingPlanned && !r.skipped ? 'unplanned' : 'skipped';
   if (date === today) return 'today';
   return r.nothingPlanned ? 'unplanned' : 'missing';
 }

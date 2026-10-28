@@ -5,7 +5,7 @@ import { MANTRAS } from '../../data/mantras';
 import { NUDGES } from '../../data/nudges';
 import { RECIPES } from '../../data/recipes';
 import { ASANAS } from '../../data/yoga';
-import { fill, latinDigits, numberText, t } from '../../i18n';
+import { fill, keysOf, latinDigits, numberText, t } from '../../i18n';
 import { amountText } from '../basket';
 import { formatDayLabel, formatDayMonth, formatDayMonthYear, formatMonthYear } from '../date';
 import { foodName, itemName, measureName, portionLabel } from '../foods';
@@ -45,6 +45,14 @@ describe('one digit style', () => {
     for (const f of foods) {
       expect(foodName(f, 'mr'), f.id).not.toMatch(DEVANAGARI);
       for (const p of f.portions) expect(portionLabel(p, 'mr'), `${f.id} ${p.unit}`).not.toMatch(DEVANAGARI);
+    }
+  });
+
+  it('writes every one of the app\'s own words in Marathi and Hindi with the same digits, key by key', () => {
+    for (const lang of ['mr', 'hi'] as const) {
+      const keys = keysOf(lang);
+      expect(keys.length, lang).toBeGreaterThan(1000);
+      for (const key of keys) expect(t(lang, key), `${lang} ${key}`).not.toMatch(DEVANAGARI);
     }
   });
 

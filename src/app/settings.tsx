@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Linking, Platform, Pressable, Text, View } from 'react-native';
 import { isUp, listModels, normalizeUrl } from '../ai/ollama';
+import { formatMoment } from '../core/date';
 import type { Activity, Lang } from '../core/types';
 import { fill, LANG_NAMES, makeT, numberText } from '../i18n';
 import { notifyNow, requestPermission } from '../services/notify';
@@ -115,7 +116,7 @@ export default function SettingsScreen() {
                 <View style={{ flex: 1 }}>
                   <Small color={C.textDim}>
                     {t(`sync_${sync.status}`)}
-                    {sync.lastSyncAt ? ` · ${fill(t('sync_last'), { when: new Date(sync.lastSyncAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) })}` : ''}
+                    {sync.lastSyncAt ? ` · ${fill(t('sync_last'), { when: formatMoment(sync.lastSyncAt, lang) })}` : ''}
                   </Small>
                 </View>
                 {sync.status !== 'unconfigured' && sync.status !== 'off' ? (
@@ -357,7 +358,7 @@ export default function SettingsScreen() {
             <Small color={C.textFaint}>{t('drive_not_configured')}</Small>
           ) : (
             <>
-              <Micro>{drive.lastBackupAt ? fill(t('drive_last'), { t: new Date(drive.lastBackupAt).toLocaleString() }) : t('drive_never')}</Micro>
+              <Micro>{drive.lastBackupAt ? fill(t('drive_last'), { t: formatMoment(drive.lastBackupAt, lang) }) : t('drive_never')}</Micro>
               <Row style={{ gap: 8 }}>
                 <Btn small label={t('drive_backup')} onPress={drive.backup} disabled={drive.status === 'busy'} style={{ flex: 1 }} />
                 {confirmRestore ? (

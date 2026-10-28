@@ -272,8 +272,13 @@ describe('withKcal: an amount with its calories, never cut off', () => {
     expect(withKcal('3 × 1 वाटी (150 ग्रॅ)', 210)).toBe('3 × 1 वाटी (150 ग्रॅ)\u00A0· 210\u00A0kcal');
     // The one place the line may break near the end is after the dot: the calories then start the next line, whole.
     const line = withKcal('2 × 1 चमचा (मोठा) (15 ग्रॅ)', 1050);
-    expect(line.endsWith('· 1050\u00A0kcal')).toBe(true);
-    expect(line.slice(line.lastIndexOf(' ') + 1)).toBe('1050\u00A0kcal');
+    expect(line.endsWith('· 1,050\u00A0kcal')).toBe(true);
+    expect(line.slice(line.lastIndexOf(' ') + 1)).toBe('1,050\u00A0kcal');
+  });
+
+  it('writes the calories as every total is written, with a comma for thousands', () => {
+    expect(withKcal('1 plate', 1714)).toBe('1 plate\u00A0· 1,714\u00A0kcal');
+    expect(withKcal('1 plate', 950)).toBe('1 plate\u00A0· 950\u00A0kcal');
   });
 });
 
