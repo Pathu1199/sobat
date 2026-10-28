@@ -49,6 +49,15 @@ describe('coachAdvice', () => {
     expect(water?.urgency).toBe('now');
   });
 
+  it('says stop and over as words with nothing to tap, so a tap on them never logs a bottle the person did not ask for', () => {
+    const stop = coachAdvice({ ...base, ...clock(19, 30), budget: budget(1680) }).find((x) => x.key === 'coach_stop');
+    expect(stop?.action).toBe('none');
+    const over = coachAdvice({ ...base, ...clock(19, 30), budget: budget(1900) }).find((x) => x.key === 'coach_over');
+    expect(over?.action).toBe('none');
+    // The water advice is still the tap that adds a bottle.
+    expect(coachAdvice({ ...base, ...clock(19, 30), budget: budget(1680), water: [] }).find((x) => x.key === 'coach_water')?.action).toBe('water');
+  });
+
   it('counts the water to catch up in bottles of the person\'s own size, as a tap on the advice adds one', () => {
     const behind = expectedWaterByHour(19, 3000);
     const at = (bottleMl: number, water: CoachInput['water'] = []) => coachAdvice({ ...base, ...clock(19, 30), water, bottleMl }).find((x) => x.key === 'coach_water')!;
@@ -194,7 +203,7 @@ describe('coachAdvice', () => {
 });
 
 describe('adviceToSay', () => {
-  const urgent: Advice = { key: 'coach_stop', kind: 'stop', urgency: 'now', action: 'water', params: {} };
+  const urgent: Advice = { key: 'coach_water', kind: 'water', urgency: 'now', action: 'water', params: { bottles: 2 } };
   const soon: Advice = { key: 'coach_meal_plate', kind: 'food', urgency: 'soon', action: 'log', params: {} };
   const said = new Set<string>();
   const here = { known: true, active: true, nudgesEnabled: true, mealPrompt: true, hour: 13, quietStartHour: 22, quietEndHour: 7 };
@@ -227,6 +236,6 @@ describe('adviceToSay', () => {
 
   it('never says the same thing twice, and never advice with nothing to do', () => {
     const quiet: Advice = { ...urgent, key: 'coach_win', action: 'none' };
-    expect(adviceToSay({ ...here, advice: [urgent, quiet], said: new Set(['coach_stop']) })).toBeNull();
+    expect(adviceToSay({ ...here, advice: [urgent, quiet], said: new Set(['coach_water']) })).toBeNull();
   });
 });

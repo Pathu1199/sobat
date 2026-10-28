@@ -1099,6 +1099,7 @@ const en: Dict = {
   tile_hold_water: 'Change the bottle size or add another amount', tile_hold_walk: 'Change the walk goal or add other minutes',
   add_ml_of: 'Millilitres of {food}', qty_ml: 'Millilitres',
   setup_bad_sex: 'Choose male or female: the daily target is worked out from it.',
+  coach_water_hint: 'Adds a {ml} ml bottle of water to today.',
 };
 
 const mr: Dict = {
@@ -2202,6 +2203,7 @@ const mr: Dict = {
   tile_hold_water: 'बाटलीचा आकार बदला किंवा दुसरं प्रमाण घाला', tile_hold_walk: 'चालण्याचं लक्ष्य बदला किंवा इतर मिनिटं घाला',
   add_ml_of: '{food} किती मिली', qty_ml: 'मिली',
   setup_bad_sex: 'पुरुष की स्त्री ते निवडा: रोजचं लक्ष्य त्यावरून ठरतं.',
+  coach_water_hint: 'आजच्या नोंदीत {ml} मिली पाण्याची एक बाटली जोडते.',
 };
 
 const hi: Dict = {
@@ -3303,6 +3305,7 @@ const hi: Dict = {
   tile_hold_water: 'बोतल का आकार बदलें या दूसरी मात्रा जोड़ें', tile_hold_walk: 'चलने का लक्ष्य बदलें या दूसरे मिनट जोड़ें',
   add_ml_of: '{food} कितने मिली', qty_ml: 'मिली',
   setup_bad_sex: 'पुरुष या महिला चुनें: रोज़ का लक्ष्य इसी से तय होता है.',
+  coach_water_hint: 'आज में {ml} मिली पानी की एक बोतल जोड़ता है.',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

@@ -144,7 +144,8 @@ export function FoodDetailSheet({
               <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> kcal</Text>
             </Text>
           </View>
-          <Small color={C.textFaint}>{`${grams} g`}</Small>
+          {/* A drink by the cup or glass is counted in ml, as its amount box says. */}
+          <Small color={C.textFaint}>{`${grams} ${inMl(f, m.unit) ? t('tile_unit_ml') : 'g'}`}</Small>
         </Row>
         <View style={{ backgroundColor: C.cardAlt, borderRadius: S.radiusSm, padding: 12, gap: 8 }}>
           <Macro icon="fitness-outline" label={t('protein')} value={n.protein} />

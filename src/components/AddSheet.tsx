@@ -36,12 +36,12 @@ import { useFeedback } from '../services/feedback';
 import { useMinute } from '../services/useClock';
 import { useApp } from '../store/AppProvider';
 import { Btn, Empty, Field, Micro, Pill } from '../ui/components';
+import { IconButton } from '../ui/IconButton';
 import { SheetFrame } from '../ui/Sheet';
 import { C, F, lh, S } from '../ui/theme';
 import { FoodRow, OneTapRow, PlannedCard, SaveAsOffer, ToolsRow } from './AddSheetRows';
 import { CustomFoodForm } from './CustomFoodForm';
 import { FoodDetailSheet } from './FoodDetailSheet';
-import { IconButton } from './TopBarActions';
 
 /**
  * What the add sheet is opened for: a date and a slot, the foods to start

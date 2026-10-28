@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { addDays, formatDayLabel, lastNDates } from '../core/date';
+import { historyHref } from '../core/logLink';
 import { sumTotals } from '../core/nutrition';
 import { fill, makeT } from '../i18n';
 import { isOffDay } from '../core/week';
@@ -14,7 +15,8 @@ type Span = 14 | 30 | 90;
 
 /**
  * Every day's calories, newest first: what was eaten against the target,
- * with protein, water and the meal count. Tap a day to add to or fix it.
+ * with protein, water and the meal count. A day with meals opens on Today,
+ * where it is read and put right; an empty day opens the add sheet for it.
  */
 export default function History() {
   const app = useApp();
@@ -57,7 +59,12 @@ export default function History() {
         const over = d.kcal > targets.kcal;
         const label = d.date === today ? t('tab_today') : d.date === addDays(today, -1) ? t('yesterday') : formatDayLabel(d.date, lang);
         return (
-          <Pressable key={d.date} onPress={() => router.push({ pathname: '/log', params: { date: d.date } })} accessibilityRole="button" style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}>
+          <Pressable
+            key={d.date}
+            onPress={() => router.navigate(historyHref(d.date, today, d.meals))}
+            accessibilityRole="button"
+            accessibilityHint={d.meals > 0 ? t('progress_day_hint') : undefined}
+            style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}>
             <Card rail={d.meals === 0 ? undefined : over ? C.amber : C.green}>
               <Row style={{ justifyContent: 'space-between' }}>
                 <Text style={{ color: d.meals === 0 ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500' }}>{label}</Text>

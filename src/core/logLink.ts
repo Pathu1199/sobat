@@ -1,3 +1,5 @@
+import type { ISODate } from './types';
+
 /**
  * The old /log address. A link to it opens the add sheet once, over Today.
  * The tab bar remembers the tabs seen, so Back from Today could bring /log
@@ -60,4 +62,20 @@ export function webHandOff(state: TabsState, from: string, to: string): 'reset' 
   const at = keys.lastIndexOf(from);
   const behind = at > 0 ? keys[at - 1] : undefined;
   return behind === undefined || behind === today.key ? 'reset' : 'replace';
+}
+
+/** A day on Today: the root for today, `/?date=` for any other day, as the week strip writes it. */
+export type DayHref = { pathname: '/'; params?: { date: ISODate } };
+
+export function todayHref(date: ISODate, today: ISODate): DayHref {
+  return date === today ? { pathname: '/' } : { pathname: '/', params: { date } };
+}
+
+/**
+ * Where a History row goes. A day with meals opens on Today, as a day in the
+ * record calendar does, where it can be read and put right; an empty day, the
+ * row that says Add, opens the add sheet for that day through /log.
+ */
+export function historyHref(date: ISODate, today: ISODate, meals: number): DayHref | { pathname: '/log'; params: { date: ISODate } } {
+  return meals > 0 ? todayHref(date, today) : { pathname: '/log', params: { date } };
 }

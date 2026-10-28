@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { handOff, logLinkStep, webHandOff } from '../logLink';
+import { handOff, historyHref, logLinkStep, todayHref, webHandOff } from '../logLink';
 
 describe('logLinkStep', () => {
   it('a new link opens the sheet', () => {
@@ -90,5 +90,23 @@ describe('webHandOff', () => {
     const { history: _h, ...plain } = tabs(['log-1']);
     expect(webHandOff(plain, 'log-1', 'index')).toBe('replace');
     expect(webHandOff(tabs(['log-1']), 'log-1', 'home')).toBe('replace');
+  });
+});
+
+describe('the address of a day', () => {
+  const TODAY = '2026-10-28';
+
+  it('Today for today, with no date in the address; any other day as ?date=', () => {
+    expect(todayHref(TODAY, TODAY)).toEqual({ pathname: '/' });
+    expect(todayHref('2026-10-25', TODAY)).toEqual({ pathname: '/', params: { date: '2026-10-25' } });
+  });
+
+  it('a History row with meals opens that day on Today, as the record calendar does', () => {
+    expect(historyHref('2026-10-25', TODAY, 3)).toEqual({ pathname: '/', params: { date: '2026-10-25' } });
+    expect(historyHref(TODAY, TODAY, 1)).toEqual({ pathname: '/' });
+  });
+
+  it('an empty History row, the one that says Add, opens the add sheet for that day through /log', () => {
+    expect(historyHref('2026-10-25', TODAY, 0)).toEqual({ pathname: '/log', params: { date: '2026-10-25' } });
   });
 });

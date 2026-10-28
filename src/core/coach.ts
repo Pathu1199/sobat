@@ -81,8 +81,9 @@ export function coachAdvice(input: CoachInput): Advice[] {
 
   // Eating: the slot whose turn it is, with its budget, or the reason to stop.
   // A skipped slot is settled like an eaten one: nothing asks for it and nothing remarks on it.
+  // Stop and over are words with nothing to tap: a tap that logged a bottle here would add water the person never asked for.
   if (b.remaining < 80 && hour >= 12) {
-    out.push({ key: b.remaining <= 0 ? 'coach_over' : 'coach_stop', kind: 'stop', urgency: 'now', action: 'water', params: { kcal: Math.max(0, b.remaining), over: Math.max(0, -b.remaining) } });
+    out.push({ key: b.remaining <= 0 ? 'coach_over' : 'coach_stop', kind: 'stop', urgency: 'now', action: 'none', params: { kcal: Math.max(0, b.remaining), over: Math.max(0, -b.remaining) } });
   } else if (cur && !settled.has(cur.id) && cur.id !== lateDinner?.id && nowMin >= cur.minutes && b.remaining > 0) {
     // Nothing left today (a morning already over the day): no call to eat, so no calories of none or fewer are ever quoted.
     // A late dinner is called once, as late, below; not as its plate as well. A slot the menu plans is its own plate:

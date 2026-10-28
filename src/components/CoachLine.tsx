@@ -5,12 +5,12 @@ import { makeT } from '../i18n';
 import { useMinute } from '../services/useWorkSchedule';
 import { useApp } from '../store/AppProvider';
 import { C, F, lh, S } from '../ui/theme';
-import { adviceText, useAdviceAction } from './CoachStrip';
+import { adviceHint, adviceText, useAdviceAction } from './CoachStrip';
 import { useCoach } from './useCoach';
 
 /**
  * The coach in one sentence: the one thing that matters now, and the tap that does it. Advice with nothing to do is plain words,
- * not a button. Nothing when there is nothing to say.
+ * not a button. A tap on the water advice adds a bottle and says so, with Undo. Nothing when there is nothing to say.
  */
 export function CoachLine() {
   const { state } = useApp();
@@ -32,7 +32,12 @@ export function CoachLine() {
     );
   }
   return (
-    <Pressable onPress={() => act(advice)} accessibilityRole="button" accessibilityLabel={text} style={({ pressed }) => [row, { opacity: pressed ? 0.7 : 1 }]}>
+    <Pressable
+      onPress={() => act(advice)}
+      accessibilityRole="button"
+      accessibilityLabel={text}
+      accessibilityHint={adviceHint(advice, t, state.settings.bottleMl)}
+      style={({ pressed }) => [row, { opacity: pressed ? 0.7 : 1 }]}>
       {icon}
       {words}
       <Ionicons name="chevron-forward" size={16} color={C.textFaint} />
