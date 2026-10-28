@@ -7,10 +7,8 @@ import {
   addSkip,
   alignMenu,
   alignMenus,
-  applyWeekPlan,
   autoFill,
   autoMealId,
-  copyDay,
   dueAutoFills,
   editedMeal,
   editedMenus,
@@ -122,7 +120,6 @@ describe('ensureWeek', () => {
 });
 
 describe('editing one date', () => {
-  const TODAY = '2026-10-27';
   const wed = menu('2026-10-28', 2);
   const thu = menu('2026-10-29', 2);
   const menus = [wed, thu];
@@ -182,34 +179,6 @@ describe('editing one date', () => {
     const out = setMenuDay(menus, wed, menu('2026-10-28', 4).meals, NOW);
     expect(lunchQty(menuFor('2026-10-28', out))).toBe(4);
     expect(menuFor('2026-10-28', out)!.editedAt).toBe(NOW.toISOString());
-  });
-
-  it('a copy is a deliberate act: it is stamped even when the date already had the same meals', () => {
-    // Thursday already holds what Wednesday holds.
-    const out = copyDay(wed, '2026-10-29', menus, TODAY, NOW);
-    expect(out).not.toBe(menus);
-    expect(menuFor('2026-10-29', out)!.editedAt).toBe(NOW.toISOString());
-    // An empty day copied onto a date nobody wrote is stored, stamped.
-    const empty: DayMenu = { date: '2026-10-27', meals: [], editedAt: NOT_EDITED };
-    const copied = copyDay(empty, '2026-10-31', menus, TODAY, NOW);
-    expect(menuFor('2026-10-31', copied)).toEqual({ date: '2026-10-31', meals: [], editedAt: NOW.toISOString() });
-  });
-
-  it('copies a day onto another date as its own copy', () => {
-    const out = copyDay(wed, '2026-10-29', menus, TODAY, NOW);
-    const copy = menuFor('2026-10-29', out)!;
-    expect(copy.meals).toEqual(wed.meals);
-    expect(copy.meals[1].lines[0]).not.toBe(wed.meals[1].lines[0]);
-    expect(copy.editedAt).toBe(NOW.toISOString());
-    expect(menuFor('2026-10-28', out)).toBe(wed);
-  });
-
-  it('refuses a copy onto a date before today, whose menu is its record; a past day can still be copied onto today or later', () => {
-    const mon = menu('2026-10-26', 4);
-    expect(copyDay(wed, '2026-10-26', menus, TODAY, NOW)).toBe(menus);
-    expect(copyDay(wed, '2026-10-20', [], TODAY, NOW)).toEqual([]);
-    expect(lunchQty(menuFor('2026-10-29', copyDay(mon, '2026-10-29', menus, TODAY, NOW)))).toBe(4);
-    expect(lunchQty(menuFor(TODAY, copyDay(mon, TODAY, menus, TODAY, NOW)))).toBe(4);
   });
 });
 
@@ -839,41 +808,6 @@ describe('the plan screen\'s view of this week', () => {
     expect(lunchQty(plan.days[1])).toBe(1);
     expect(lunchQty(plan.days[0])).toBe(7);
   });
-
-  it('writes back only the weekday that changed, to its own date', () => {
-    const stored = [menu('2026-10-26', 1), menu('2026-10-28', 3)];
-    const week = ensureWeek(MON, stored, routine, foods);
-    const plan = weekPlanView(week);
-    const edited = { days: plan.days.map((d, i) => (i === 3 ? { meals: d.meals.map((m) => (m.id === 'lunch' ? { ...m, lines: [chapati(5)] } : m)) } : d)) };
-    const out = applyWeekPlan(edited, week, stored, '2026-10-27', NOW);
-    expect(lunchQty(menuFor('2026-10-28', out))).toBe(5);
-    expect(menuFor('2026-10-28', out)!.editedAt).toBe(NOW.toISOString());
-    expect(menuFor('2026-10-26', out)).toBe(stored[0]);
-    expect(out).toHaveLength(2);
-    expect(applyWeekPlan(plan, week, stored, '2026-10-27', NOW)).toBe(stored);
-  });
-
-  it('a deep copy of the same plan, the way a screen hands it back, changes nothing', () => {
-    const stored = [menu('2026-10-26', 1), menu('2026-10-28', 3)];
-    const week = ensureWeek(MON, stored, routine, foods);
-    const copy = JSON.parse(JSON.stringify(weekPlanView(week)));
-    expect(applyWeekPlan(copy, week, stored, '2026-10-27', NOW)).toBe(stored);
-  });
-
-  it('a week written back leaves every day before today as it was: a past day\'s menu is its record', () => {
-    const stored = [menu('2026-10-26', 1), menu('2026-10-28', 3)];
-    const week = ensureWeek(MON, stored, routine, foods);
-    const plan = weekPlanView(week);
-    // Monday (index 1, before today) and Wednesday (index 3) both changed on screen.
-    const five = (d: { meals: PlanMeal[] }) => ({ meals: d.meals.map((m) => (m.id === 'lunch' ? { ...m, lines: [chapati(5)] } : m)) });
-    const edited = { days: plan.days.map((d, i) => (i === 1 || i === 3 ? five(d) : d)) };
-    const out = applyWeekPlan(edited, week, stored, '2026-10-27', NOW);
-    expect(menuFor('2026-10-26', out)).toBe(stored[0]);
-    expect(lunchQty(menuFor('2026-10-28', out))).toBe(5);
-    // Only the past day changed: nothing is written at all.
-    const pastOnly = { days: plan.days.map((d, i) => (i === 1 ? five(d) : d)) };
-    expect(applyWeekPlan(pastOnly, week, stored, '2026-10-27', NOW)).toBe(stored);
-  });
 });
 
 describe('the calories each slot plans', () => {
@@ -1038,20 +972,16 @@ describe('the app\'s suggestion fits the person\'s day', () => {
     rebuilt.meals[1].lines.push(chapati(4));
     expect(suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit).meals).toEqual(before);
     expect(viewMenu(WED, [], NEUTRAL_ROUTINE, TODAY, foods, fit).meals).toEqual(before);
-    // A Wednesday the person edited, rebuilt through the plan screen's week, is the suggestion again.
+    // A Wednesday the person edited, written back with the suggestion's meals, is the suggestion again.
     const week = viewWeek(MON, [], NEUTRAL_ROUTINE, TODAY, foods, fit);
     const edited = addMenuLine([], week[2], 'snack', { foodId: 'banana', unit: 'medium', qty: 1 }, NOW);
     const shownWeek = viewWeek(MON, edited, NEUTRAL_ROUTINE, TODAY, foods, fit);
-    const plan = weekPlanView(shownWeek);
-    plan.days[3] = suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit);
     const later = new Date('2026-10-27T11:00:00');
-    const out = applyWeekPlan(plan, shownWeek, edited, TODAY, later);
+    const out = setMenuDay(edited, shownWeek[2], suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit).meals, later);
     expect(menuFor(WED, out)!.editedAt).toBe(later.toISOString());
     expect(isSuggested(viewMenu(WED, out, NEUTRAL_ROUTINE, TODAY, foods, fit), NEUTRAL_ROUTINE, foods, fit)).toBe(true);
     // Rebuilding a day nobody wrote writes nothing.
-    const fresh = weekPlanView(week);
-    fresh.days[3] = suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit);
-    expect(applyWeekPlan(fresh, week, [], TODAY, later)).toEqual([]);
+    expect(setMenuDay([], week[2], suggestionFor(WED, NEUTRAL_ROUTINE, foods, fit).meals, later)).toEqual([]);
   });
 
   it('is what the app fills in: the fitted lines, with calories from the food database at their grams', () => {

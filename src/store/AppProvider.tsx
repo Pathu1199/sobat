@@ -48,7 +48,7 @@ import { waterMlOn } from '../core/tileText';
 import { withWaterAdded, withWaterRemoved } from '../core/tiles';
 import { isOffDay } from '../core/week';
 import { stripSince } from '../core/weekStrip';
-import { toggleTick } from '../core/grocery';
+import { groceryThisWeek, toggleTick } from '../core/grocery';
 import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
 import type { PlanMeal, WeekPlan } from '../core/weekPlan';
@@ -608,7 +608,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addActivity: (a) => update((s) => ({ ...s, activities: [...(s.activities ?? []), a] })),
       removeActivity: (id) => update((s) => ({ ...s, activities: (s.activities ?? []).filter((x) => x.id !== id) })),
       burnedToday,
-      toggleGrocery: (week, foodId) => update((s) => ({ ...s, groceryTicks: toggleTick(s.groceryTicks, week, foodId) })),
+      toggleGrocery: (week, foodId) => update((s) => ({ ...s, groceryTicks: toggleTick(s.groceryTicks, week, foodId, groceryThisWeek(today)) })),
       markCelebrated: (ids) => update((s) => ({ ...s, celebrated: Array.from(new Set([...(s.celebrated ?? []), ...ids])) })),
       setSchedule: (x) => update((s) => ({ ...s, schedule: { ...s.schedule, ...x } })),
       addSpend: (x) =>

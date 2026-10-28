@@ -18,7 +18,7 @@ import { FoodThumb } from './FoodDetailSheet';
  * amounts, ticked off as things come home. It is the week shown (`monday`,
  * the plan screen's week; this week on Me), and its ticks belong to that
  * week: ticking next week's list never ticks or drops this week's, and the
- * list is clean again on the next one (core/grocery.ts `toggleTick`).
+ * ticks of a week already past go at the next tick (core/grocery.ts `toggleTick`).
  */
 export function GrocerySheet({ open, onClose, plan, monday }: { open: boolean; onClose: () => void; plan: WeekPlan; monday: ISODate }) {
   const app = useApp();

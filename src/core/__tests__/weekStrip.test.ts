@@ -116,6 +116,14 @@ describe('weekStrip: more days', () => {
     expect(markOf({ ...drink, skipped: true }, '2026-10-20', TODAY, '2026-10-01').mark).toBe('skipped');
     expect(markOf({ state: 'full', fromPlan: false, nothingEaten: true, skipped: true }, '2026-10-20', TODAY, '2026-10-01').mark).toBe('skipped');
   });
+
+  it('today keeps its mark while it planned nothing: the day is still going, and nothing eaten yet is not a day with nothing planned', () => {
+    const nothing: DayRecord = { state: 'full', fromPlan: false, nothingEaten: true, nothingPlanned: true };
+    expect(markOf(nothing, TODAY, TODAY, '2026-10-01')).toEqual({ mark: 'today', light: false });
+    expect(markOf({ ...nothing, state: 'empty' }, TODAY, TODAY, '2026-10-01').mark).toBe('today');
+    // Something eaten today makes it full, as on any day.
+    expect(markOf({ ...nothing, nothingEaten: false }, TODAY, TODAY, '2026-10-01').mark).toBe('full');
+  });
 });
 
 describe('stripDayLabel: what a screen reader hears for a day', () => {

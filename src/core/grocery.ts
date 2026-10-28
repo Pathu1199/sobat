@@ -1,5 +1,5 @@
 import { fill } from '../i18n';
-import { addDays, weekDates } from './date';
+import { addDays, mondayOf, weekDates } from './date';
 import { defaultPortion } from './foods';
 import { weekdayOf } from './routine';
 import type { FoodItem, ISODate } from './types';
@@ -81,6 +81,11 @@ export function groceryWeekKey(day: ISODate, weekStartDay = 0): string {
   return addDays(day, -((weekdayOf(day) - weekStartDay + 7) % 7));
 }
 
+/** The key of this week's list, as Me shows it (`groceryWeekKey` of this week's Monday): the ticks of every week before it can go. */
+export function groceryThisWeek(today: ISODate): string {
+  return groceryWeekKey(mondayOf(today));
+}
+
 /** The foods ticked off each week's list, by the week's key (`groceryWeekKey`). */
 export type GroceryTicks = Record<string, string[]>;
 
@@ -103,17 +108,18 @@ export function tickedIn(stored: unknown, week: string): string[] {
 
 /**
  * A food ticked, or unticked, on one week's list. Each week keeps its own
- * ticks, so ticking next week's list never drops this week's; the week ticked
- * and the latest other week are kept, so old weeks do not pile up, and a week
- * with nothing ticked is not kept.
+ * ticks, so ticking next week's list, or the one after, never drops this
+ * week's: every week from this one on is kept (`thisWeek`, from
+ * `groceryThisWeek`), and the week ticked whatever it is, so only the weeks
+ * before this one go and old weeks do not pile up. A week with nothing ticked
+ * is not kept.
  */
-export function toggleTick(stored: unknown, week: string, foodId: string): GroceryTicks {
+export function toggleTick(stored: unknown, week: string, foodId: string, thisWeek: string): GroceryTicks {
   const all = ticksOf(stored);
   const cur = all[week] ?? [];
   const ids = cur.includes(foodId) ? cur.filter((x) => x !== foodId) : [...cur, foodId];
-  const latest = Object.keys(all).filter((w) => w !== week && all[w].length > 0).sort().pop();
   const out: GroceryTicks = {};
-  if (latest) out[latest] = all[latest];
+  for (const w of Object.keys(all).sort()) if (w !== week && w >= thisWeek && all[w].length > 0) out[w] = all[w];
   if (ids.length > 0) out[week] = ids;
   return out;
 }

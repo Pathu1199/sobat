@@ -250,18 +250,6 @@ export function setMenuMeal(menus: DayMenu[], day: DayMenu, meal: PlanMeal, now:
   return editMeal(menus, day, meal.id, () => meal, now);
 }
 
-/**
- * Copy one date's meals onto another date. The copy is its own, so editing
- * one never edits the other. A copy is a deliberate act, so it is stamped
- * even when the date already held the same meals. A copy onto a date before
- * today is refused, the menus left as they were, as every edit there is: a
- * past day's menu is its record. A past day may still be copied forward.
- */
-export function copyDay(from: DayMenu, to: ISODate, menus: DayMenu[], today: ISODate, now: Date): DayMenu[] {
-  if (to < today) return menus;
-  return writeDay(menus, to, copyMeals(from.meals), now);
-}
-
 /** One skip per date and slot, with an id every device gives it, so two devices skipping the same meal merge into one record. */
 export function skipId(date: ISODate, slotId: string): string {
   return `${date}:${slotId}`;
@@ -643,22 +631,6 @@ export function weekPlanView(week: DayMenu[]): WeekPlan {
   const days: PlanDay[] = Array.from({ length: 7 }, () => ({ meals: [] }));
   for (const m of week) days[weekdayOf(m.date)] = { meals: m.meals };
   return { days };
-}
-
-/**
- * An edit made on that view, written back: each weekday that changed goes to
- * its own date in the week, stamped now; the rest stay as they are. A date
- * before today is never written, whatever the view says: its menu is that
- * day's record.
- */
-export function applyWeekPlan(plan: WeekPlan, week: DayMenu[], menus: DayMenu[], today: ISODate, now: Date): DayMenu[] {
-  let out = menus;
-  for (const day of week) {
-    if (day.date < today) continue;
-    const next = plan.days[weekdayOf(day.date)];
-    if (next && stable(next.meals) !== stable(day.meals)) out = setMenuDay(out, day, next.meals, now);
-  }
-  return out;
 }
 
 /** How many of the dates the app was opened on this device keeps. Only yesterday is ever read. */

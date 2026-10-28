@@ -27,8 +27,6 @@ import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHe
 import { C, F, TEXT_SCALES } from '../ui/theme';
 import { bottleLabel, bottleName, walkGoalLabel, walkGoalName } from '../ui/tileWords';
 
-/** The paces a person can choose, in kilos a week, as setup offers them. */
-
 export default function SettingsScreen() {
   const app = useApp();
   const s = app.state.settings;
