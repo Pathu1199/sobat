@@ -51,6 +51,28 @@ export function fitFor(profile: Profile, routine: Routine, now?: Date): MenuFit 
   return { target: dailyTargets(profile, now).kcal, floor: KCAL_FLOOR[profile.sex], avoided: avoidedFoodIds(routine) };
 }
 
+// The last fit worked out for each profile and pattern, with its date.
+const fits = new WeakMap<Profile, WeakMap<Routine, { date: ISODate; fit: MenuFit }>>();
+
+/**
+ * The fit for the person on a date, worked out at noon (`fitFor`): the same
+ * object while the profile, the pattern and the date stay the same, so the
+ * store's screens and its minute tick read one fit, and the fitted days
+ * below are worked out once a day rather than once a minute.
+ */
+export function fitOn(profile: Profile, routine: Routine, date: ISODate): MenuFit {
+  let byRoutine = fits.get(profile);
+  if (!byRoutine) {
+    byRoutine = new WeakMap();
+    fits.set(profile, byRoutine);
+  }
+  const last = byRoutine.get(routine);
+  if (last && last.date === date) return last.fit;
+  const fit = fitFor(profile, routine, new Date(`${date}T12:00:00`));
+  byRoutine.set(routine, { date, fit });
+  return fit;
+}
+
 // The fitted day of each weekday, worked out once per fit, pattern and food list: the streak alone reads sixty dates.
 const fitted = new WeakMap<MenuFit, { routine: Routine; foods: FoodItem[]; days: Map<number, PlanDay> }>();
 

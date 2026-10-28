@@ -6,6 +6,7 @@ import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE } from '../routine';
 import { DEFAULT_TODAY_CARDS } from '../tabs';
 import foodsJson from '../../data/foods.json';
 import { weekDates } from '../date';
+import { foodsForDiet } from '../foods';
 import { fitFor, isSuggested, menuFor, setMenuLine, viewMenu, withAutoFill } from '../menu';
 import { forCloud, landMerge, RoundStop, stable, syncRound, type CloudState } from '../sync';
 import type { AppState, FoodItem } from '../types';
@@ -300,6 +301,28 @@ describe('migrateState', () => {
     expect(used.routine.slots.map((s) => s.id)).toContain('bhel');
     const none = migrateState({ version: 7, profile: { ...EMPTY_STATE.profile }, meals: [], routine: { ...DEFAULT_ROUTINE, slots: [] } }, NOW);
     expect(none.routine.slots).toEqual(DEFAULT_SLOTS);
+  });
+
+  it('version 7: a week the old Food tab saved as it built it does not count as using the pattern: someone who never used it gets the four meals and no menus, whatever their diet', () => {
+    const example = { ...DEFAULT_ROUTINE, enabled: false };
+    for (const diet of ['veg', 'egg', 'nonveg'] as const) {
+      // What the live app saved the first time the Food tab was opened: the week built from the example, with the foods of the person's diet.
+      const asBuilt = buildWeekPlan(example, foodsForDiet(allFoods([]), diet));
+      const store = { version: 6, profile: { ...EMPTY_STATE.profile, onboarded: true }, settings: { ...EMPTY_STATE.settings, diet }, meals: [], routine: example, weekPlan: asBuilt };
+      const out = migrateState(store, NOW);
+      expect(out.routine.slots.map((s) => s.id)).toEqual(['breakfast', 'lunch', 'snack', 'dinner']);
+      expect(out.routine.avoid).toEqual([]);
+      expect(out.menus).toEqual([]);
+      expect(out.weekPlan).toBeNull();
+      expect(migrateState(out, NOW)).toEqual(out);
+    }
+    // A week the person changed is theirs: the example stays, and the day they changed is stored.
+    const changed = buildWeekPlan(example, foodsForDiet(allFoods([]), 'veg'));
+    changed.days[3] = { meals: changed.days[3].meals.map((m) => (m.id === 'lunch' ? { ...m, lines: [...m.lines, { foodId: 'chapati', unit: 'piece', qty: 3 }] } : m)) };
+    const kept = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile, onboarded: true }, meals: [], routine: example, weekPlan: changed }, NOW);
+    expect(kept.routine.slots.map((s) => s.id)).toEqual(DEFAULT_ROUTINE.slots.map((s) => s.id));
+    expect(kept.menus.map((m) => m.date)).toEqual(['2026-10-28']);
+    expect(migrateState(kept, NOW)).toEqual(kept);
   });
 
   it('version 7: skip keys move to slot skips with their dates, and other done-keys stay', () => {
@@ -904,9 +927,59 @@ describe('records in an odd shape, from sync or an old file', () => {
     expect([s.menus, s.slotSkips, s.savedMeals]).toEqual([[], [], []]);
   });
 
+  it('never throws on a meal, a slot, a weight or a food of the person\'s own that is not a record: it is dropped and the rest loads', () => {
+    const meal = { id: 'm1', at: '2026-10-27T07:30:00.000Z', date: '2026-10-27', type: 'lunch', items: [], kcal: 520, protein: 18, source: 'auto', slotId: 'lunch' };
+    const slots = [null, 7, {}, ...DEFAULT_ROUTINE.slots];
+    const raw = {
+      ...v1,
+      version: 6,
+      meals: [null, meal, 7, 'x'],
+      routine: { ...DEFAULT_ROUTINE, enabled: true, slots },
+      menus: [{ ...goodMenu, meals: [null, ...goodMenu.meals] }],
+      weights: [null, { date: '2026-10-01', kg: 99 }],
+      customFoods: [null],
+      // A week whose meals carry no lines.
+      weekPlan: { days: Array.from({ length: 7 }, () => ({ meals: [{ id: 'lunch', type: 'lunch', time: '13:00' }] })) },
+    };
+    let s = EMPTY_STATE;
+    expect(() => (s = migrateState(raw, NOW))).not.toThrow();
+    expect(s.profile.onboarded).toBe(true);
+    expect(s.meals).toEqual([meal]);
+    expect(s.routine.slots).toEqual(DEFAULT_ROUTINE.slots);
+    expect(s.menus.find((m) => m.date === goodMenu.date)).toEqual(goodMenu);
+    expect(s.profile.startWeightKg).toBe(99);
+    expect(s.customFoods).toEqual([]);
+    expect(migrateState(s, NOW)).toEqual(s);
+    // A load that drops nothing keeps the very lists it was given, so nothing that reads them is worked out again.
+    expect(migrateState(s, NOW).meals).toBe(s.meals);
+    expect(migrateState(s, NOW).customFoods).toBe(s.customFoods);
+    // A version-7 store too, and a list of slots with nothing a slot can be in it.
+    expect(() => migrateState({ ...v1, version: 7, meals: [null], routine: { ...DEFAULT_ROUTINE, slots: [null] } }, NOW)).not.toThrow();
+    expect(migrateState({ ...v1, version: 7, meals: [null], routine: { ...DEFAULT_ROUTINE, slots: [null] } }, NOW).routine.slots).toEqual(DEFAULT_SLOTS);
+  });
+
   it('turns a skip key from an older build into a skip as before, beside the well-formed skips kept', () => {
     const s = migrateState({ ...v1, version: 6, slotSkips: [skip, { id: 'x' }], actionsDone: [{ date: '2026-10-28', key: 'skip_dinner' }] }, NOW);
     expect(s.slotSkips.map((x) => x.id)).toEqual(['2026-10-27:lunch', '2026-10-28:dinner']);
+  });
+});
+
+describe('the lived days the app kept', () => {
+  const line = { foodId: 'chapati', unit: 'piece', qty: 2 };
+  const kept = (date: string, extra: object = {}) => ({ date, editedAt: '', frozen: true as const, meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [line] }], ...extra });
+
+  it('drops one more than 120 days old, on every load and every landing, and keeps a newer one, an edited one and one the app wrote but did not keep', () => {
+    // 28 October 2026 less 120 days is 30 June.
+    const old = kept('2026-06-29');
+    const edge = kept('2026-06-30');
+    const edited = kept('2026-03-01', { editedAt: '2026-03-01T09:00:00.000Z' });
+    const unfrozen = { ...kept('2026-03-02'), frozen: undefined };
+    delete unfrozen.frozen;
+    const s = migrateState({ ...v1, version: 7, menus: [old, edge, edited, unfrozen] }, NOW);
+    expect(s.menus).toEqual([edge, edited, unfrozen]);
+    expect(migrateState(s, NOW)).toEqual(s);
+    // A day later the edge goes too, the same way on every device.
+    expect(migrateState(s, new Date('2026-10-29T10:00:00')).menus).toEqual([edited, unfrozen]);
   });
 });
 

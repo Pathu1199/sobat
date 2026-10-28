@@ -1,12 +1,13 @@
 import { Platform } from 'react-native';
 import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../core/breaks';
-import { isIsoDate, mondayOf, toISODate } from '../core/date';
-import { addSkip, menusFromTemplate, settleAuto, type DayMenu } from '../core/menu';
+import { addDays, isIsoDate, mondayOf, toISODate } from '../core/date';
+import { foodsForDiet } from '../core/foods';
+import { addSkip, menusFromTemplate, NOT_EDITED, settleAuto, type DayMenu } from '../core/menu';
 import { slotShare } from '../core/pattern';
 import { canPlace, DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
 import { forCloud, stable, type CloudState } from '../core/sync';
 import { normalizeTabs, normalizeTodayCards } from '../core/tabs';
-import type { AppState, FoodItem, ISODate, Meal, SavedMeal, SlotSkip } from '../core/types';
+import type { AppState, Diet, FoodItem, ISODate, Meal, SavedMeal, SlotSkip } from '../core/types';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
 import { allFoods, DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER, STATE_VERSION } from './defaults';
 
@@ -91,7 +92,9 @@ function upgradeRoutine(old: unknown, fromVersion: number, hadPlan: boolean): Ap
   // Before version 3 the pattern was on by default, not by choice (version 3 switched every older store off).
   const wasOn = fromVersion >= 3 && r.enabled === true;
   const byType: Record<string, string> = { breakfast: '08:30', lunch: '13:00', snack: '16:00', dinner: '20:30' };
-  r.slots = (Array.isArray(r.slots) ? r.slots : []).map((s) =>
+  // A slot that is not a record with an id (from a damaged file or sync) is dropped, as a malformed skip is, so reading it never throws.
+  const slots: unknown[] = Array.isArray(r.slots) ? r.slots : [];
+  r.slots = slots.filter((s): s is RoutineSlot => isRecord(s) && typeof s.id === 'string').map((s) =>
     s.time ? s : { ...s, time: DEFAULT_ROUTINE.slots.find((d) => d.id === s.id)?.time ?? byType[s.type] ?? '13:00' },
   );
   // Version 6: every slot carries a share of the day's calories (a default slot the curated one, so a migrated routine divides the day like a fresh one), and a store from before it gets a dinner to plan; one removed on purpose later stays removed.
@@ -193,12 +196,20 @@ function alignOrDrop(plan: WeekPlan, routine: AppState['routine']): WeekPlan | n
   }
 }
 
-/** The template's days as menus, leaving out a day still as the app built it; a pattern that cannot be built from what is stored writes every day, as before. */
-function templateMenus(plan: WeekPlan, monday: ISODate, menus: DayMenu[], routine: AppState['routine'], customFoods: FoodItem[]): DayMenu[] {
+/**
+ * The template's days as menus, leaving out a day still as the app built it: the old plan screen built the week from the
+ * foods of the person's diet, their own included. A pattern that cannot be built from what is stored writes every day, as
+ * before; a template that cannot be written at all writes nothing.
+ */
+function templateMenus(plan: WeekPlan, monday: ISODate, menus: DayMenu[], routine: AppState['routine'], customFoods: FoodItem[], diet: Diet): DayMenu[] {
   try {
-    return menusFromTemplate(plan, monday, menus, { routine, foods: allFoods(customFoods) });
+    return menusFromTemplate(plan, monday, menus, { routine, foods: foodsForDiet(allFoods(customFoods), diet) });
   } catch {
-    return menusFromTemplate(plan, monday, menus);
+    try {
+      return menusFromTemplate(plan, monday, menus);
+    } catch {
+      return menus;
+    }
   }
 }
 
@@ -233,6 +244,12 @@ function isSavedMeal(v: unknown): v is SavedMeal {
   return isRecord(v) && typeof v.id === 'string' && typeof v.name === 'string' && isLines(v.lines);
 }
 
+/** The entries of a list that are records at all, the same list when every one is (so a load that drops nothing changes no list). */
+function onlyRecords<T>(list: unknown[]): T[] {
+  const kept = list.filter(isRecord);
+  return (kept.length === list.length ? list : kept) as T[];
+}
+
 /** The records of a list that have the shape the app reads; a record in any other shape, from a file or sync, is dropped rather than thrown on later. */
 function wellFormed<T>(v: unknown, ok: (r: unknown) => r is T): T[] {
   return Array.isArray(v) ? v.filter(ok) : [];
@@ -241,6 +258,22 @@ function wellFormed<T>(v: unknown, ok: (r: unknown) => r is T): T[] {
 /** A done-key older builds wrote for a skipped slot. */
 function isSkipKey(a: unknown): a is { date: string; key: string } {
   return isRecord(a) && typeof a.date === 'string' && typeof a.key === 'string' && a.key.startsWith(SKIP_PREFIX);
+}
+
+/** How long the app keeps a lived day's menu it kept as it showed, in days: longer than the streak looks back (90). */
+export const LIVED_MENU_KEEP_DAYS = 120;
+
+/**
+ * The menus without the lived days the app kept (frozen, never edited) that are more than LIVED_MENU_KEEP_DAYS old. The
+ * whole state is one storage row, and Android cannot read back a row much over 2 MB: one kept day a day would grow it
+ * for good. A day that old is past the streak and the best run; the calendar judges it on the menu it would show now.
+ * An edited menu, and one the app wrote but did not keep, stay. Run on every load and every sync landing, so every
+ * device prunes the same days. The same list when none goes.
+ */
+function withoutOldLivedDays(menus: DayMenu[], today: ISODate): DayMenu[] {
+  const from = addDays(today, -LIVED_MENU_KEEP_DAYS);
+  const kept = menus.filter((m) => !(m.frozen && m.editedAt === NOT_EDITED && m.date < from));
+  return kept.length === menus.length ? menus : kept;
 }
 
 /**
@@ -265,7 +298,8 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
   if (fromVersion < 7) settings.nudgesEnabled = false;
   const profile = { ...EMPTY_STATE.profile, ...(raw.profile as object) } as AppState['profile'];
   if (profile.startWeightKg === undefined) {
-    const weights = Array.isArray(raw.weights) ? ([...(raw.weights as AppState['weights'])].sort((a, b) => a.date.localeCompare(b.date))) : [];
+    const dated = (w: unknown): w is AppState['weights'][number] => isRecord(w) && typeof w.date === 'string';
+    const weights = Array.isArray(raw.weights) ? raw.weights.filter(dated).sort((a, b) => a.date.localeCompare(b.date)) : [];
     profile.startWeightKg = weights[0]?.kg ?? profile.weightKg;
   }
   // A new chapter's day and the first start are optional: an older store has neither and reads as before. One that is not a
@@ -278,21 +312,30 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
   if (fromVersion < 7 && profile.onboarded && !profile.autoFillFrom) profile.autoFillFrom = movedOn;
   // A plan that is not seven days of meals is not a plan; the week starts from the pattern instead.
   const rawPlan = isRecord(raw.weekPlan) && Array.isArray((raw.weekPlan as { days?: unknown }).days) && (raw.weekPlan as { days: unknown[] }).days.length === 7 ? (raw.weekPlan as WeekPlan) : null;
-  const routine = upgradeRoutine(raw.routine, fromVersion, rawPlan !== null);
+  // A food of the person's own that is not a record is not a food.
+  const customFoods = Array.isArray(raw.customFoods) ? onlyRecords<FoodItem>(raw.customFoods) : [];
+  // The routine as someone who planned keeps it, and the old plan reshaped to it.
   // Version 6: plan meals are named after the pattern's slots; older names land on the slot of their type nearest their time.
-  const weekPlan = rawPlan ? alignOrDrop(rawPlan, routine) : null;
+  const keptRoutine = upgradeRoutine(raw.routine, fromVersion, true);
+  const weekPlan = rawPlan ? alignOrDrop(rawPlan, keptRoutine) : null;
   // Version 7: the one-week template becomes this week's menus, date by date, its index 0 being Sunday. A date that already has a menu keeps it.
   // A day still as the app built it from this pattern is not written, so its date shows the suggestion fitted to the person.
+  const monday = mondayOf(toISODate(now));
+  // The plan was the person's only when it holds a day they changed: the old Food tab saved the week it built the first time it
+  // was opened, so a plan as built says nothing about using the pattern, and someone who never did starts from the four meals.
+  const hadPlan = weekPlan !== null && templateMenus(weekPlan, monday, [], keptRoutine, customFoods, settings.diet).length > 0;
+  const routine = hadPlan ? keptRoutine : upgradeRoutine(raw.routine, fromVersion, false);
   const storedMenus = Array.isArray(raw.menus) ? raw.menus.map(readMenu).filter((m): m is DayMenu => m !== null) : [];
-  const customFoods = Array.isArray(raw.customFoods) ? (raw.customFoods as FoodItem[]) : [];
-  const menus = weekPlan ? templateMenus(weekPlan, mondayOf(toISODate(now)), storedMenus, routine, customFoods) : storedMenus;
+  const written = hadPlan && weekPlan ? templateMenus(weekPlan, monday, storedMenus, routine, customFoods, settings.diet) : storedMenus;
+  const menus = withoutOldLivedDays(written, toISODate(now));
   // Version 7: a skipped slot is its own record with its date, not a done-key that lasted only the day.
   const actions = Array.isArray(raw.actionsDone) ? (raw.actionsDone as unknown[]) : [];
   let slotSkips = wellFormed(raw.slotSkips, isSlotSkip);
   for (const a of actions) if (isSkipKey(a)) slotSkips = addSkip(slotSkips, a.date, a.key.slice(SKIP_PREFIX.length));
   // A meal eaten in a slot, or a skip, replaces the copy the app filled in there: this runs on every load and every sync
   // landing, so a lunch typed on one device and the one another device filled in are never both counted.
-  const meals = Array.isArray(raw.meals) ? settleAuto(raw.meals as Meal[], slotSkips) : EMPTY_STATE.meals;
+  // A meal that is not a record (from a damaged file or sync) is dropped, as a malformed skip is, so reading it never throws.
+  const meals = Array.isArray(raw.meals) ? settleAuto(onlyRecords<Meal>(raw.meals), slotSkips) : EMPTY_STATE.meals;
   return {
     ...EMPTY_STATE,
     ...(raw as Partial<AppState>),
@@ -304,6 +347,7 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
     meals,
     // Older stores have no routine; one saved before a field existed gets the default for it.
     routine,
+    customFoods,
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
     // Version 7: the office-day check-ins are off unless switched on again, as the nudges are; the days and times stay.
     schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}), ...(fromVersion < 7 ? { enabled: false } : {}) },

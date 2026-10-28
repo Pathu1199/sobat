@@ -20,7 +20,7 @@ import {
   editedMeal,
   editedMenus,
   fillFromPlan,
-  fitFor,
+  fitOn,
   isSuggested,
   planMeal,
   removeSkip,
@@ -42,7 +42,6 @@ import {
   withSavedMealAt,
   withSkipAdded,
   type DayMenu,
-  type MenuFit,
 } from '../core/menu';
 import { waterMlOn } from '../core/tileText';
 import { withWaterAdded, withWaterRemoved } from '../core/tiles';
@@ -213,15 +212,14 @@ function withMeal(s: AppState, m: Meal, target: number, now: Date): AppState {
   return { ...s, ...withMealAdded(s, m, target, now) };
 }
 
-/** The fit for the person on a date: their target that date (it counts their age), the safe minimum and their avoid list. */
-function fitOn(profile: Profile, routine: Routine, date: ISODate): MenuFit {
-  return fitFor(profile, routine, new Date(`${date}T12:00:00`));
-}
-
-/** The app's own run, now: today marked as a day the app was open and the planned meals that are due filled in, a day nobody wrote as it shows, fitted to the person's day. The same state when there is nothing to do. */
+/**
+ * The app's own run, now: today marked as a day the app was open and the planned meals that are due filled in, a day nobody
+ * wrote as it shows, fitted to the person's day. The same state when there is nothing to do. It reads the fit and the food list
+ * the screens read (`fitOn`, `allFoods` give the same objects for the same state), so a tick each minute works out no fitted day again.
+ */
 function withAutoFillNow(s: AppState): AppState {
   const now = new Date();
-  const fit = fitFor(s.profile, s.routine, now);
+  const fit = fitOn(s.profile, s.routine, toISODate(now));
   return withAutoFill(s, now, allFoods(s.customFoods), fit.target, fit);
 }
 
@@ -578,7 +576,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const menu = viewMenu(date, s.menus, s.routine, today, foods, fitOn(s.profile, s.routine, today));
           // Nothing on an off day or before the person started (the week strip's start), where no meal is missing.
           const offDay = isOffDay(s.settings.offDays, date);
-          const startDate = stripSince(s.profile.onboardedOn, s.meals, today);
+          const startDate = stripSince(s.profile, s.meals, today);
           return fillFromPlan({ now, menu, meals: s.meals, skips: s.slotSkips, foods, offDay, startDate }).reduce((acc, m) => withMeal(acc, m, targets.kcal, now), s);
         }),
       runAutoFill: () => update(withAutoFillNow),

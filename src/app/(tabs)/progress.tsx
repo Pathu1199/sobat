@@ -60,7 +60,7 @@ function Progress() {
   const lang = state.profile.lang;
   const t = makeT(lang);
   const [nutrition, setNutrition] = useState(false);
-  const since = stripSince(state.profile.onboardedOn, state.meals, today);
+  const since = stripSince(state.profile, state.meals, today);
   const recordOn = useRecordOn();
   const full = useMemo(() => fullDays(weekDates(mondayOf(today)), recordOn, today, since), [recordOn, today, since]);
   // Every complete day, meals all skipped too; free days, days with meals missing and days before the start left out; calories as logged.

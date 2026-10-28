@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { EMPTY_STATE } from '../../store/defaults';
+import { allFoods, EMPTY_STATE } from '../../store/defaults';
 import { addDays, weekDates } from '../date';
 import {
   addMenuLine,
@@ -15,6 +15,7 @@ import {
   ensureWeek,
   fillFromPlan,
   fitFor,
+  fitOn,
   hasPlan,
   isSuggested,
   mealFromLines,
@@ -1291,5 +1292,27 @@ describe('slots taken out of the pattern', () => {
     const out = withoutOrphanedAuto(meals, routine, '2026-10-27');
     expect(out.map((m) => m.id)).toEqual(['auto-2026-10-27-lunch', 'auto-2026-10-26-tea', 'manual-2026-10-27-tea', 'plan-2026-10-27-tea']);
     expect(withoutOrphanedAuto(out, routine, '2026-10-27')).toBe(out);
+  });
+});
+
+describe('the fit and the food list the store and its minute tick read', () => {
+  it('is one fit for the same profile, pattern and date, so the fitted days are worked out once a day, not once a minute; a new one when any of them changes', () => {
+    const profile = { ...EMPTY_STATE.profile, onboarded: true };
+    const fit = fitOn(profile, NEUTRAL_ROUTINE, '2026-10-28');
+    expect(fitOn(profile, NEUTRAL_ROUTINE, '2026-10-28')).toBe(fit);
+    // The fit of the date, as the screens worked it out at noon.
+    expect(fit).toEqual(fitFor(profile, NEUTRAL_ROUTINE, new Date('2026-10-28T12:00:00')));
+    expect(fitOn({ ...profile }, NEUTRAL_ROUTINE, '2026-10-28')).not.toBe(fit);
+    expect(fitOn(profile, { ...NEUTRAL_ROUTINE }, '2026-10-28')).not.toBe(fit);
+    expect(fitOn(profile, NEUTRAL_ROUTINE, '2026-10-29')).not.toBe(fit);
+  });
+
+  it('is one food list for the same foods of the person\'s own, and a new one when they change', () => {
+    const own = [{ ...foods[0], id: 'custom-1' }];
+    const list = allFoods(own);
+    expect(allFoods(own)).toBe(list);
+    expect(list.map((f) => f.id)).toEqual([...foods.map((f) => f.id), 'custom-1']);
+    expect(allFoods([...own])).not.toBe(list);
+    expect(allFoods([...own])).toEqual(list);
   });
 });

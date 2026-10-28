@@ -9,8 +9,22 @@ import type { AppState, FoodItem, Profile, Settings } from '../core/types';
 const FOODS = foodsJson as unknown as FoodItem[];
 
 /** Every food there is: the database and the person's own. Planned lines can name any of them, whatever the diet filter shows. */
+// The food list made for each list of the person's own foods.
+const foodLists = new WeakMap<FoodItem[], FoodItem[]>();
+
+/**
+ * Every food: the database and the person's own. The same list for the same
+ * list of their own, so the screens and the store's minute tick read one, and
+ * the fitted days worked out for it (core/menu.ts) are not worked out again.
+ * Never changed in place.
+ */
 export function allFoods(customFoods: FoodItem[]): FoodItem[] {
-  return [...FOODS, ...customFoods];
+  let list = foodLists.get(customFoods);
+  if (!list) {
+    list = [...FOODS, ...customFoods];
+    foodLists.set(customFoods, list);
+  }
+  return list;
 }
 
 export const DEFAULT_PROFILE: Profile = {

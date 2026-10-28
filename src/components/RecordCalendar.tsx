@@ -35,7 +35,7 @@ export function RecordCalendar() {
   const lang = state.profile.lang;
   const t = makeT(lang);
   const [month, setMonth] = useState(today.slice(0, 7));
-  const since = stripSince(state.profile.onboardedOn, state.meals, today);
+  const since = stripSince(state.profile, state.meals, today);
   const steps = monthSteps(month, today, since);
   const weeks = useMemo(() => monthMarks(month, recordOn, today, since), [month, recordOn, today, since]);
 

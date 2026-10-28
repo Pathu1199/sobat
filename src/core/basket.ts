@@ -1,7 +1,7 @@
 import { numberText } from '../i18n';
 import { toISODate } from './date';
 import { defaultPortion, toMealItem } from './foods';
-import type { PlanLine } from './routine';
+import { slotTime, type PlanLine } from './routine';
 import type { FoodItem, ISODate, Meal, MealItem, MealSource } from './types';
 import type { PlanMeal } from './weekPlan';
 
@@ -235,15 +235,13 @@ export function linesFromBasket(basket: BasketLine[], foods: FoodItem[]): PlanLi
   return lines;
 }
 
-/** A clock time to build a date-time from; noon when a slot has none. */
-function clockOf(hhmm: string | undefined): string {
-  return hhmm && /^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm) ? hhmm : '12:00';
-}
-
-/** A meal of these items in a slot on a date: logged now for today, at the slot's time for another day. Typed by hand unless said otherwise. Null with no items. */
+/**
+ * A meal of these items in a slot on a date: logged now for today, at the slot's time for another day (`slotTime`: a slot with
+ * no clock time takes the usual time of its kind, as the menu places it). Typed by hand unless said otherwise. Null with no items.
+ */
 export function itemsMeal(input: { id: string; date: ISODate; slot: Pick<PlanMeal, 'id' | 'type' | 'time'>; items: MealItem[]; now: Date; source?: MealSource }): Meal | null {
   if (input.items.length === 0) return null;
-  const at = input.date === toISODate(input.now) ? input.now : new Date(`${input.date}T${clockOf(input.slot.time)}:00`);
+  const at = input.date === toISODate(input.now) ? input.now : new Date(`${input.date}T${slotTime(input.slot)}:00`);
   return {
     id: input.id,
     at: at.toISOString(),

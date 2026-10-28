@@ -130,7 +130,7 @@ export function useReminderGate(): { known: boolean; active: boolean } {
 export function useScheduledReminders() {
   const app = useApp();
   const { quietStartHour, quietEndHour, offDays, reminders, features, reviewedWeeks } = app.state.settings;
-  const { lang, onboardedOn } = app.state.profile;
+  const { lang, onboardedOn, autoFillFrom } = app.state.profile;
   const mantra = useMantra();
   // The day's line goes out only while it is switched on in Settings.
   const mantraText = features.mantra ? (mantra?.text ?? '') : '';
@@ -184,10 +184,10 @@ export function useScheduledReminders() {
   const morning = Math.max(MORNING_HOUR, quietEndHour) * 60;
   const reportJson = useMemo(() => {
     if (!reminders.weeklyReport) return '';
-    const since = stripSince(onboardedOn, app.state.meals, today);
+    const since = stripSince({ onboardedOn, autoFillFrom }, app.state.meals, today);
     const r = weeklyReport({ today, nowMinutes: minute, atMinutes: morning, since, recordOn, meals: app.state.meals, weights: app.state.weights, goal: app.targets.kcal, t: makeT(lang) });
     return r ? JSON.stringify(r) : '';
-  }, [reminders.weeklyReport, today, minute, morning, onboardedOn, recordOn, app.state.meals, app.state.weights, app.targets.kcal, lang]);
+  }, [reminders.weeklyReport, today, minute, morning, onboardedOn, autoFillFrom, recordOn, app.state.meals, app.state.weights, app.targets.kcal, lang]);
 
   const anyOn = reminders.mealPrompt || reminders.away || reminders.fillYesterday || reminders.planWeek || reminders.weeklyReport;
   const wanted = useMemo(() => {

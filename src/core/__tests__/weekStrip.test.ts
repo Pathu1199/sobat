@@ -29,9 +29,16 @@ describe('weekStrip', () => {
 
 describe('stripSince', () => {
   it('starts on the day setup finished, else the first meal, else today', () => {
-    expect(stripSince('2026-10-20', [{ date: '2026-09-01' }], TODAY)).toBe('2026-10-20');
-    expect(stripSince(undefined, [{ date: '2026-10-05' }, { date: '2026-09-30' }], TODAY)).toBe('2026-09-30');
-    expect(stripSince(undefined, [], TODAY)).toBe(TODAY);
+    expect(stripSince({ onboardedOn: '2026-10-20' }, [{ date: '2026-09-01' }], TODAY)).toBe('2026-10-20');
+    expect(stripSince({}, [{ date: '2026-10-05' }, { date: '2026-09-30' }], TODAY)).toBe('2026-09-30');
+    expect(stripSince({}, [], TODAY)).toBe(TODAY);
+  });
+
+  it('starts a store that moved to this version on the day it moved, not at the first meal ever: the days before had no menu, so none is missing meals', () => {
+    expect(stripSince({ autoFillFrom: '2026-10-20' }, [{ date: '2026-03-01' }], TODAY)).toBe('2026-10-20');
+    // Setup finished again after the move, or a move another device made later: the later of the two.
+    expect(stripSince({ onboardedOn: '2026-10-25', autoFillFrom: '2026-10-20' }, [], TODAY)).toBe('2026-10-25');
+    expect(stripSince({ onboardedOn: '2026-10-10', autoFillFrom: '2026-10-20' }, [{ date: '2026-03-01' }], TODAY)).toBe('2026-10-20');
   });
 });
 

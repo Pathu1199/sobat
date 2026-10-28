@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 import { addDays, formatDayLabel } from './date';
 import type { DayRecord } from './record';
-import type { ISODate, Lang, Meal } from './types';
+import type { ISODate, Lang, Meal, Profile } from './types';
 
 /**
  * The week strip on Today: Monday to Sunday of the week being looked at,
@@ -80,9 +80,14 @@ export function stripDayLabel(d: { date: ISODate; mark: StripMark; light: boolea
   return `${formatDayLabel(d.date, lang)}${today}, ${t(lang, markWords(d.mark))}${plan}`;
 }
 
-/** Where the record starts: the day setup finished, else the first meal ever logged, else today. Days before it have nothing to miss. */
-export function stripSince(onboardedOn: ISODate | undefined, meals: Pick<Meal, 'date'>[], today: ISODate): ISODate {
-  if (onboardedOn) return onboardedOn;
+/**
+ * Where the record starts: the later of the day setup finished and the day the store moved to this version (`autoFillFrom`:
+ * the days lived before it had no menu, so none of them is missing meals); with neither, the first meal ever logged, else
+ * today. Days before it have nothing to miss.
+ */
+export function stripSince(profile: Pick<Profile, 'onboardedOn' | 'autoFillFrom'>, meals: Pick<Meal, 'date'>[], today: ISODate): ISODate {
+  const started = [profile.onboardedOn, profile.autoFillFrom].filter((d): d is ISODate => typeof d === 'string' && d.length > 0).sort().pop();
+  if (started) return started;
   let first = today;
   for (const m of meals) if (m.date < first) first = m.date;
   return first;

@@ -64,7 +64,7 @@ export default function TodayScreen() {
   const menu = app.menuOn(viewed);
   const offDays = state.settings.offDays ?? [];
   // Where the record starts: the week strip's first day with a mark, and the first day the menu can miss a meal.
-  const since = stripSince(state.profile.onboardedOn, state.meals, today);
+  const since = stripSince(state.profile, state.meals, today);
   const dayMeals = state.meals.filter((m) => m.date === viewed);
   const skippedIds = skippedOn(state.slotSkips, viewed);
   // Today, the slot whose turn it is by the person's own pattern.

@@ -244,6 +244,13 @@ describe('the meal it saves', () => {
     expect(itemsMeal({ id: 'm4', date: '2026-10-27', slot: lunch, items: today.items, now: NOW, source: 'plan' })!.source).toBe('plan');
   });
 
+  it("for another day, a slot with no clock time places the meal at the usual time of its kind, as the menu does, not at noon", () => {
+    const items = basketMeal({ id: 'm1', date: '2026-10-27', slot: lunch, basket: [lineOf(food('poha'))], foods, now: NOW })!.items;
+    const at = (slot: { id: string; type: 'breakfast' | 'dinner'; time: string }) => itemsMeal({ id: 'm2', date: '2026-10-25', slot, items, now: NOW })!.at;
+    expect(at({ id: 'dinner', type: 'dinner', time: '' })).toBe(new Date('2026-10-25T20:30:00').toISOString());
+    expect(at({ id: 'breakfast', type: 'breakfast', time: '7 am' })).toBe(new Date('2026-10-25T08:30:00').toISOString());
+  });
+
   it('a slot holding only the meal filled in from the plan is replaced, not counted twice', () => {
     expect(slotPreview({ allowance: 500, eaten: 400, autoKcal: 400, basketKcal: 450, dayLeft: 300 })).toEqual({ replaces: true, slotLeft: 50, dayLeft: 250 });
     expect(slotPreview({ allowance: 500, eaten: 600, autoKcal: 400, basketKcal: 450, dayLeft: 300 })).toEqual({ replaces: false, slotLeft: -550, dayLeft: -150 });
