@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Text, View } from 'react-native';
-import { formatMinutes } from '../core/date';
+import { formatHalfHours, formatMinutes } from '../core/date';
 import { weekdayOf } from '../core/routine';
 import { weekSummary, type WeekDay } from '../core/week';
 import { fill, makeT } from '../i18n';
@@ -53,7 +53,7 @@ export function WeekGrid() {
 
       <Divider />
       <RowOfDots label={t('water')} days={s.days} value={(d) => (d.waterMl > 0 ? `${Math.round(d.waterMl / 250)}` : '·')} ok={(d) => d.waterGoal} />
-      <RowOfDots label={t('sleep_title')} days={s.days} value={(d) => (d.sleepMinutes !== null ? `${Math.round(d.sleepMinutes / 30) / 2}h` : '·')} ok={(d) => (d.sleepMinutes ?? 0) >= 420} />
+      <RowOfDots label={t('sleep_title')} days={s.days} value={(d) => (d.sleepMinutes !== null ? formatHalfHours(d.sleepMinutes, t) : '·')} ok={(d) => (d.sleepMinutes ?? 0) >= 420} />
       <RowOfDots label={t('steps')} days={s.days} value={(d) => (d.steps > 0 ? `${Math.round(d.steps / 1000)}k` : '·')} ok={(d) => d.steps >= 7000} />
       <RowOfDots label={t('add_weight')} days={s.days} value={(d) => (d.weightKg !== null ? `${d.weightKg}` : '·')} ok={(d) => d.weightKg !== null} />
 

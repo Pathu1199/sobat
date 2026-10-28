@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { changePct, isImprovement, previousRangeFor, rangeFor, summarize, trendDirection, type GrowthData } from '../growth';
+import { makeT } from '../../i18n';
+import { changePct, isImprovement, metricUnit, previousRangeFor, rangeFor, summarize, trendDirection, type GrowthData } from '../growth';
 import { addActive } from '../usage';
 import { lastNDates } from '../date';
 import type { Meal, WeightLog } from '../types';
@@ -106,5 +107,21 @@ describe('trend helpers', () => {
     expect(isImprovement(m(1900, 1600, false))).toBe(false);
     expect(isImprovement(m(4, 2, true))).toBe(true);
     expect(isImprovement(m(2, 2, true))).toBeNull();
+  });
+});
+
+describe('metricUnit: the unit a Progress figure is written with', () => {
+  it('names minutes, days and kilos in the person\'s language, never in Latin letters in Marathi or Hindi', () => {
+    expect(metricUnit('min', makeT('en'))).toBe('min');
+    expect(metricUnit('days', makeT('en'))).toBe('days');
+    expect(metricUnit('min', makeT('mr'))).toBe('मि');
+    expect(metricUnit('kg', makeT('hi'))).toBe('किलो');
+    for (const lang of ['mr', 'hi'] as const) {
+      for (const unit of ['min', 'days', 'kg']) expect(metricUnit(unit, makeT(lang)), `${lang} ${unit}`).not.toMatch(/[A-Za-z]/);
+    }
+  });
+
+  it('keeps a unit it has no word for as it is', () => {
+    expect(metricUnit('/5', makeT('mr'))).toBe('/5');
   });
 });

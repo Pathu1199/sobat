@@ -158,6 +158,15 @@ export function summarize(period: Period, today: ISODate, d: GrowthData): Growth
   };
 }
 
+/** The words for a metric's unit, where the app has them in each language; any other unit ("kcal", "/5") is written as it is. */
+const UNIT_WORDS: Record<string, string> = { min: 'tile_unit_min', days: 'tile_unit_days', kg: 'unit_kg', ml: 'tile_unit_ml' };
+
+/** A metric's unit as Progress writes it beside the figure, in the person's language. */
+export function metricUnit(unit: string, t: (key: string) => string): string {
+  const key = UNIT_WORDS[unit];
+  return key ? t(key) : unit;
+}
+
 /** Percentage change, or null when there is nothing to compare against. */
 export function changePct(m: Metric): number | null {
   if (m.previous === null || m.previous === 0) return null;

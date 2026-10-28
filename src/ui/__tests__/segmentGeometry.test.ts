@@ -22,7 +22,7 @@ describe('the switch between a tab\'s sections', () => {
     expect(sectionRowMinWidth(4)).toBe(4 * SECTION_MIN_WIDTH);
   });
 
-  it('sizes each section of a row that scrolls to its own name, kept on one line, so Food\'s आहार नियोजन never wraps at the largest text size; a row of four shares the width', () => {
+  it('makes a row of five sections scroll, each section sized to its own name, and keeps a row of four fixed, sharing the width', () => {
     expect(sectionsScroll(5)).toBe(true);
     expect(sectionsScroll(4)).toBe(false);
   });

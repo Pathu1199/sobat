@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { makeT } from '../../i18n';
-import { daysBetween, formatDayLabel, formatDayMonth, formatDayMonthYear, formatMinutes, formatMoment, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
+import { daysBetween, formatDayLabel, formatDayMonth, formatDayMonthYear, formatHalfHours, formatMinutes, formatMoment, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
 describe('local time from ISO strings', () => {
@@ -207,5 +207,25 @@ describe('formatMinutes: a length of time in hours and minutes', () => {
     expect(formatMinutes(366, makeT('mr'))).toBe('6 ता 06 मि');
     expect(formatMinutes(366, makeT('hi'))).toBe('6 घं 06 मि');
     for (const lang of ['mr', 'hi'] as const) expect(formatMinutes(75, makeT(lang)), lang).not.toMatch(/[A-Za-z]/);
+  });
+
+  it('takes the words for hour and minute from the tiles\' units, so each language has them in one place', () => {
+    const words: Record<string, string> = { dur_hm: '{h}{uh} {m}{um}', tile_unit_h: 'H', tile_unit_m: 'M' };
+    expect(formatMinutes(75, (k) => words[k] ?? k)).toBe('1H 15M');
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const t = makeT(lang);
+      expect(formatMinutes(75, t), lang).toContain(t('tile_unit_h'));
+      expect(formatMinutes(75, t), lang).toContain(t('tile_unit_m'));
+    }
+  });
+});
+
+describe('formatHalfHours: a night\'s sleep to the half hour, short enough for a narrow column', () => {
+  it('writes the hours with the tiles\' unit word, never a Latin letter in Marathi or Hindi', () => {
+    expect(formatHalfHours(450, makeT('en'))).toBe('7.5h');
+    expect(formatHalfHours(420, makeT('en'))).toBe('7h');
+    expect(formatHalfHours(440, makeT('mr'))).toBe('7.5ता');
+    expect(formatHalfHours(400, makeT('hi'))).toBe('6.5घं');
+    for (const lang of ['mr', 'hi'] as const) expect(formatHalfHours(450, makeT(lang)), lang).not.toMatch(/[A-Za-z]/);
   });
 });

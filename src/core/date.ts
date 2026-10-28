@@ -73,11 +73,20 @@ export function hhmm(d: Date = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-/** A length of time in hours and minutes, in the person's language: "7h 30m", "7 ता 30 मि", "7 घं 30 मि". */
+/**
+ * A length of time in hours and minutes, in the person's language: "7h 30m",
+ * "7 ता 30 मि", "7 घं 30 मि". The words for hour and minute are the tiles'
+ * units (`tile_unit_h`, `tile_unit_m`); `dur_hm` only places them.
+ */
 export function formatMinutes(mins: number, t: (key: string) => string): string {
   const h = Math.floor(mins / 60);
   const m = Math.round(mins % 60);
-  return fill(t('dur_hm'), { h, m: String(m).padStart(2, '0') });
+  return fill(t('dur_hm'), { h, m: String(m).padStart(2, '0'), uh: t('tile_unit_h'), um: t('tile_unit_m') });
+}
+
+/** A length of time to the nearest half hour, in hours with the tiles' unit word and no space, for a narrow column: "7.5h", "7.5ता", "7.5घं". */
+export function formatHalfHours(mins: number, t: (key: string) => string): string {
+  return `${Math.round(mins / 30) / 2}${t('tile_unit_h')}`;
 }
 
 /** Clock time of an ISO timestamp in the device's own zone. Never slice the string. */

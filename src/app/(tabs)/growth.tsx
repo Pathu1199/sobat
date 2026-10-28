@@ -5,7 +5,7 @@ import { WeeklyReport } from '../../components/WeeklyReport';
 import { WeekGrid } from '../../components/WeekGrid';
 import { breakStats } from '../../core/breaks';
 import { formatDayLabel, formatMinutes } from '../../core/date';
-import { changePct, isImprovement, summarize, type Metric, type Period } from '../../core/growth';
+import { changePct, isImprovement, metricUnit, summarize, type Metric, type Period } from '../../core/growth';
 import { breakStreak, findPatterns, weeklyStats } from '../../core/insights';
 import { weekWeightChange } from '../../core/tileText';
 import { hourlyProfile, longestStretchMinutes, minutesOn } from '../../core/usage';
@@ -340,7 +340,7 @@ function MetricTile({ metric, label, lang, wide }: { metric: Metric; label: stri
   const t = makeT(lang);
   const isTime = metric.unit === 'min' && metric.value >= 60;
   const value = isTime ? formatMinutes(metric.value, t) : metric.decimals ? metric.value.toFixed(metric.decimals) : String(metric.value);
-  const unit = isTime ? '' : metric.unit;
+  const unit = isTime ? '' : metricUnit(metric.unit, t);
   const pct = changePct(metric);
   const good = isImprovement(metric);
   const deltaColor = good === null ? C.textFaint : good ? C.cyan : C.amber;
