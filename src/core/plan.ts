@@ -143,12 +143,3 @@ export function weighInDue(weights: WeightLog[], today: ISODate, weighDay: numbe
   const wd = new Date(today + 'T12:00:00').getDay();
   return wd === weighDay || wd === (weighDay + 2) % 7;
 }
-
-/**
- * Which line to say today. The day number keeps it from repeating the same
- * sentence every morning; the stage keeps it honest about where things are.
- */
-export function motivationKey(plan: Plan, today: ISODate): string {
-  const n = daysBetween('2026-01-01', today) % 3;
-  return `mot_${plan.stage}_${n}`;
-}

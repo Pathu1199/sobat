@@ -98,7 +98,7 @@ export function pickNudge(ctx: NudgeContext): NudgeChoice {
   return null;
 }
 
-/** The end of the waking day, 21:00: the water pace reaches the whole goal then, and the day score judges water and movement until then at least. */
+/** The end of the waking day, 21:00: the water pace reaches the whole goal then, and from then today offers "Day looks right" as a past day does. */
 export const DAY_ENDS_AT_HOUR = 21;
 
 /** Water should be spread across waking hours, not gulped at night. */

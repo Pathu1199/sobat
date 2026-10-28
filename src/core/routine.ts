@@ -1,6 +1,6 @@
 import { addDays } from './date';
 import { MEAL_WINDOWS } from './nutrition';
-import { defaultPortion, toMealItem } from './foods';
+import { defaultPortion, foodName, toMealItem } from './foods';
 import { tokenize } from './memory';
 import type { FoodItem, ISODate, Lang, Meal, MealItem, MealType } from './types';
 
@@ -13,6 +13,13 @@ import type { FoodItem, ISODate, Lang, Meal, MealItem, MealType } from './types'
 
 /** One line of a planned meal: a database food, a portion unit and how many. */
 export type PlanLine = { foodId: string; unit: string; qty: number };
+
+/** "Chapati × 2" in the chosen language; a food the list does not hold keeps its id. */
+export function lineLabel(line: PlanLine, foods: FoodItem[], lang: Lang): string {
+  const food = foods.find((f) => f.id === line.foodId);
+  const name = food ? foodName(food, lang) : line.foodId;
+  return line.qty === 1 ? name : `${name} × ${line.qty}`;
+}
 
 /** A fixed point in the day. `options` are alternatives; the first is the default. */
 export type RoutineSlot = {
@@ -74,11 +81,6 @@ export type Routine = {
   /** A bhaji chosen for one particular day, on top of the weekly plan. */
   overrides?: Record<ISODate, string[]>;
 };
-
-export const SPEND_CATEGORIES: SpendCategory[] = ['fruit', 'veg', 'dry', 'milk', 'other'];
-
-/** How long a purchase in each category usually lasts, as the default spread. */
-export const DEFAULT_SPREAD: Record<SpendCategory, number> = { fruit: 7, veg: 1, dry: 30, milk: 1, other: 1 };
 
 export const MAX_BHAJI_CHOICES = 2;
 
@@ -336,12 +338,6 @@ export function spentOn(logs: SpendLog[], date: ISODate): number {
     if (l.date <= date && date < addDays(l.date, days)) total += l.rupees / days;
   }
   return Math.round(total);
-}
-
-export function spendStatus(spent: number, min: number, max: number): 'under' | 'in' | 'over' {
-  if (spent > max) return 'over';
-  if (spent >= min) return 'in';
-  return 'under';
 }
 
 /** Old logs stop mattering once their spread has ended. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { expectedWaterByHour, gateStep, inQuietHours, pickNudge, skipStreak } from '../nudge';
+import { DAY_ENDS_AT_HOUR, expectedWaterByHour, gateStep, inQuietHours, pickNudge, skipStreak } from '../nudge';
 import type { NudgeContext } from '../nudge';
 import type { NudgeLog } from '../types';
 
@@ -99,6 +99,12 @@ describe('expectedWaterByHour', () => {
     expect(expectedWaterByHour(6, 3000)).toBe(0);
     expect(expectedWaterByHour(14, 3000)).toBe(1500);
     expect(expectedWaterByHour(22, 3000)).toBe(3000);
+  });
+
+  it('reaches the whole goal at the hour the waking day ends, 21:00, and not before', () => {
+    expect(DAY_ENDS_AT_HOUR).toBe(21);
+    expect(expectedWaterByHour(DAY_ENDS_AT_HOUR - 1, 3000)).toBeLessThan(3000);
+    expect(expectedWaterByHour(DAY_ENDS_AT_HOUR, 3000)).toBe(3000);
   });
 });
 

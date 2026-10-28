@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useGame } from '../../components/MountainCard';
+import { useGame } from '../../components/useGame';
 import { NutrientCard } from '../../components/NutrientCard';
 import { RecordCalendar } from '../../components/RecordCalendar';
 import { StreakTile } from '../../components/tiles/StreakTile';

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useGame } from '../components/MountainCard';
+import { useGame } from '../components/useGame';
 import { BADGE_ICON } from '../core/game';
 import { WeightSheet } from '../components/WeightSheet';
 import { formatDayLabel } from '../core/date';

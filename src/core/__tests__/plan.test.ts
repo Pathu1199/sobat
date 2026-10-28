@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dailyTargets } from '../nutrition';
-import { actualRateKgPerWeek, motivationKey, planFrom, planVerdict, weighInDue } from '../plan';
+import { actualRateKgPerWeek, planFrom, planVerdict, weighInDue } from '../plan';
 import type { Profile, WeightLog } from '../types';
 
 const TODAY = '2026-10-06';
@@ -49,12 +49,6 @@ describe('planFrom', () => {
     expect(planFrom(profile, [w('2026-06-01', 96), w('2026-10-06', 81.5)], targets, TODAY).stage).toBe('close');
     expect(planFrom(profile, [w('2026-06-01', 96), w('2026-10-06', 80)], targets, TODAY).stage).toBe('done');
     expect(planFrom(profile, [w('2026-09-01', 93), w('2026-09-22', 94), w('2026-10-06', 95)], targets, TODAY).stage).toBe('slipping');
-  });
-
-  it('picks a line for the stage that rotates by day', () => {
-    const p = planFrom(profile, [], targets, TODAY);
-    expect(motivationKey(p, TODAY)).toMatch(/^mot_start_[012]$/);
-    expect(motivationKey(p, '2026-10-07')).not.toBe(motivationKey(p, TODAY));
   });
 });
 

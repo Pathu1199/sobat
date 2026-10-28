@@ -10,7 +10,7 @@ import { Banner } from '../ui/Banner';
 import { Sheet } from '../ui/Sheet';
 import { C, F, lh } from '../ui/theme';
 import { useAddSheetOpen } from './AddSheet';
-import { useGame } from './MountainCard';
+import { useGame } from './useGame';
 
 const LEVEL_ICON: Record<string, string> = { camp1: '⛺', camp2: '🏕️', camp3: '🧗', camp4: '🏔️', summit: '🚩' };
 

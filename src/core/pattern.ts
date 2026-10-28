@@ -1,5 +1,5 @@
 import { toISODate } from './date';
-import { SLOT_EARLY_MIN, SLOT_GRACE_MIN, slotMinutes, slotStatus, type Routine, type RoutineSlot, type SlotStatus } from './routine';
+import { SLOT_EARLY_MIN, slotMinutes, slotStatus, type Routine, type RoutineSlot, type SlotStatus } from './routine';
 import type { ISODate, Meal, MealType } from './types';
 
 /**
@@ -242,32 +242,4 @@ export function slotAt(routine: Routine, minutes: number): PatternSlot | null {
   let at = slots[0];
   for (const s of slots) if (minutes >= s.minutes - SLOT_EARLY_MIN) at = s;
   return at;
-}
-
-/**
- * How much of the day's target someone following their own pattern would
- * have eaten by this minute of the day: each slot's share counts in as its
- * window runs, from its time minus the early margin to its time plus the
- * grace. The least a day still running is judged against.
- */
-export function expectedKcalByMinute(target: number, minutes: number, slots: PatternSlot[]): number {
-  const span = SLOT_EARLY_MIN + SLOT_GRACE_MIN;
-  let share = 0;
-  for (const s of slots) share += s.share * Math.min(1, Math.max(0, (minutes - (s.minutes - SLOT_EARLY_MIN)) / span));
-  return Math.round(target * Math.min(1, share));
-}
-
-/**
- * The day's target over every slot whose window has opened by this minute,
- * in full: the most someone following their pattern may have eaten by now.
- * A breakfast eaten as its window opens is all allowed, not over.
- */
-export function openedKcalByMinute(target: number, minutes: number, slots: PatternSlot[]): number {
-  const share = slots.reduce((a, s) => (minutes >= s.minutes - SLOT_EARLY_MIN ? a + s.share : a), 0);
-  return Math.round(target * Math.min(1, share));
-}
-
-/** The minute the last slot's window closes (its time plus the grace): until then the day is still running. */
-export function windowsCloseAt(slots: PatternSlot[]): number {
-  return slots.reduce((a, s) => Math.max(a, s.minutes + SLOT_GRACE_MIN), 0);
 }

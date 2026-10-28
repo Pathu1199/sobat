@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { allowance, clampShare, currentSlot, DEFAULT_SHARE, EATEN_NOW_MS, expectedKcalByMinute, openedKcalByMinute, pattern, settledSlotIds, slotAt, slotForMealAt, slotOf, SHARE_MAX, slotShare, slotStates, withSlot } from '../pattern';
-import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE, type Routine, type RoutineSlot } from '../routine';
+import { allowance, clampShare, currentSlot, DEFAULT_SHARE, EATEN_NOW_MS, pattern, settledSlotIds, slotAt, slotForMealAt, slotOf, SHARE_MAX, slotShare, slotStates, withSlot } from '../pattern';
+import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { Meal } from '../types';
 
 export const slot = (id: string, type: RoutineSlot['type'], time: string, share?: number): RoutineSlot => ({
@@ -358,55 +358,5 @@ describe('slotAt', () => {
   it('before the first window opens is the day\'s first slot; null with no slots', () => {
     expect(slotAt(late, 6 * 60)?.id).toBe('breakfast');
     expect(slotAt({ ...late, slots: [] }, 12 * 60)).toBeNull();
-  });
-});
-
-describe('expectedKcalByMinute', () => {
-  const four = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS });
-
-  it('rises through the day by the slots and reaches the full target by night', () => {
-    expect(expectedKcalByMinute(1800, 4 * 60, four)).toBe(0);
-    expect(expectedKcalByMinute(1800, 6 * 60, four)).toBeLessThan(150);
-    expect(expectedKcalByMinute(1800, 11 * 60, four)).toBe(450);
-    expect(expectedKcalByMinute(1800, 14 * 60, four)).toBe(1080);
-    // The 16:00 snack counts in from 15:30, part of the way at 16:00.
-    expect(expectedKcalByMinute(1800, 16 * 60, four)).toBe(1152);
-    expect(expectedKcalByMinute(1800, 23 * 60, four)).toBe(1800);
-  });
-
-  it('works to the minute: at 08:40 an 08:30 breakfast is part of the way due, not nothing', () => {
-    // Its window runs 08:00 to 09:15; 40 of those 75 minutes have gone.
-    expect(expectedKcalByMinute(1800, 8 * 60 + 40, four)).toBe(240);
-  });
-
-  it('follows a late dinner: at 21:00 a 21:30 dinner is not expected yet', () => {
-    const late = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS.map((s) => (s.id === 'dinner' ? { ...s, time: '21:30' } : s)) });
-    expect(expectedKcalByMinute(1800, 21 * 60, late)).toBe(1260);
-    expect(expectedKcalByMinute(1800, 21 * 60, four)).toBeGreaterThan(1260);
-  });
-
-  it('never goes backwards', () => {
-    let prev = -1;
-    for (let m = 0; m < 1440; m += 5) {
-      const v = expectedKcalByMinute(1800, m, four);
-      expect(v).toBeGreaterThanOrEqual(prev);
-      prev = v;
-    }
-  });
-});
-
-describe('openedKcalByMinute', () => {
-  const four = pattern({ ...DEFAULT_ROUTINE, slots: DEFAULT_SLOTS });
-
-  it('is the whole share of every slot whose window has opened, so a breakfast eaten at 08:40 is all allowed', () => {
-    expect(openedKcalByMinute(1800, 7 * 60 + 59, four)).toBe(0);
-    expect(openedKcalByMinute(1800, 8 * 60, four)).toBe(450);
-    expect(openedKcalByMinute(1800, 8 * 60 + 40, four)).toBe(450);
-    expect(openedKcalByMinute(1800, 12 * 60 + 30, four)).toBe(1080);
-    expect(openedKcalByMinute(1800, 23 * 60, four)).toBe(1800);
-  });
-
-  it('is never below what is due', () => {
-    for (let m = 0; m < 1440; m += 5) expect(openedKcalByMinute(1800, m, four)).toBeGreaterThanOrEqual(expectedKcalByMinute(1800, m, four));
   });
 });

@@ -7,6 +7,7 @@ import {
   DEFAULT_ROUTINE,
   DEFAULT_SLOTS,
   hasBhajiWeek,
+  lineLabel,
   NEUTRAL_ROUTINE,
   planItems,
   planKcal,
@@ -15,7 +16,6 @@ import {
   ruleForFood,
   slotLines,
   slotLogged,
-  spendStatus,
   spentOn,
   toggleBhaji,
   weekdayOf,
@@ -216,17 +216,20 @@ describe('spending', () => {
     expect(spentOn(logs, '2026-09-30')).toBe(0);
   });
 
-  it('places a total against the range', () => {
-    expect(spendStatus(150, 170, 200)).toBe('under');
-    expect(spendStatus(170, 170, 200)).toBe('in');
-    expect(spendStatus(201, 170, 200)).toBe('over');
-  });
-
   it('drops logs only once their spread is long over', () => {
     const logs = [spend('2026-01-01', 10, 1), spend('2026-06-01', 900, 30), spend('2026-09-01', 10, 1)];
     // 120 days back is 7 June; the June month-long buy still ran until 1 July.
     expect(pruneSpend(logs, MON).map((l) => l.date)).toEqual(['2026-06-01', '2026-09-01']);
     expect(pruneSpend(logs, MON, 60).map((l) => l.date)).toEqual(['2026-09-01']);
+  });
+});
+
+describe('lineLabel', () => {
+  it('names the food in the chosen language, with the count when there is more than one', () => {
+    expect(lineLabel({ foodId: 'chapati', unit: 'piece', qty: 1 }, FOODS, 'en')).toBe('Chapati');
+    expect(lineLabel({ foodId: 'chapati', unit: 'piece', qty: 2 }, FOODS, 'mr')).toBe('चपाती × 2');
+    // A food the list does not hold keeps its id rather than vanishing.
+    expect(lineLabel({ foodId: 'gone', unit: 'piece', qty: 3 }, FOODS, 'hi')).toBe('gone × 3');
   });
 });
 

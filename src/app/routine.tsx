@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { lineLabel } from '../components/RoutineCard';
 import { SlotEditor } from '../components/SlotEditor';
 import { foodName, searchFoods } from '../core/foods';
 import { allowance, pattern } from '../core/pattern';
-import { newSlot, ruleForFood, slotLabel, toggleBhaji, updateSlot, type RoutineSlot } from '../core/routine';
+import { lineLabel, newSlot, ruleForFood, slotLabel, toggleBhaji, updateSlot, type RoutineSlot } from '../core/routine';
 import type { FoodItem, Lang } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
