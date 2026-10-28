@@ -139,7 +139,7 @@ function AppShell() {
             headerTitleStyle: { fontWeight: '500' },
             contentStyle: { backgroundColor: C.bg },
             // A back button a finger wide, named in the person's language, on every page with a header.
-            headerLeft: () => <HeaderBack label={t('hdr_back')} />,
+            headerLeft: ({ tintColor }) => <HeaderBack label={t('hdr_back')} tintColor={tintColor} />,
           }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />

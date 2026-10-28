@@ -5,7 +5,7 @@ import { useFeedback } from '../../services/feedback';
 import { useApp } from '../../store/AppProvider';
 import { addedOn, type Added } from '../../ui/tileWords';
 import { TileSheet } from './TileSheet';
-import { addedText, UndoLine, useAddedLine } from './UndoLine';
+import { addedText, UndoLine, useUndoable } from './UndoLine';
 
 /**
  * What every pair of tiles that adds water or a walk shares: the line
@@ -24,22 +24,23 @@ export function useTileAdds(date: ISODate): {
   const fb = useFeedback();
   const t = makeT(app.state.profile.lang);
   const [sheet, setSheet] = useState<'water' | 'walk' | null>(null);
-  const { added: last, show, clear } = useAddedLine((a) => addedText(a, t), t('undo'));
-  const added = addedOn(last, date);
+  // The last thing a tap added, with the line's words for it.
+  const line = useUndoable<Added>((a) => addedText(a, t), t('undo'));
+  const added = addedOn(line.held, date);
 
   function undo() {
     if (!added) return;
     if (added.kind === 'water') app.removeWater(added.id);
     else app.removeActivity(added.id);
     fb.haptic('light');
-    clear();
+    line.clear();
   }
 
   return {
-    show,
+    show: line.show,
     hold: setSheet,
     // Keyed by the record, so a second add of the same amount is said again.
-    undoLine: added ? <UndoLine key={added.id} text={addedText(added, t)} undoLabel={t('undo')} onUndo={undo} /> : null,
-    sheet: <TileSheet kind={sheet} date={date} onClose={() => setSheet(null)} onAdded={show} />,
+    undoLine: added ? <UndoLine key={added.id} text={line.text} undoLabel={line.undoLabel} onUndo={undo} /> : null,
+    sheet: <TileSheet kind={sheet} date={date} onClose={() => setSheet(null)} onAdded={line.show} />,
   };
 }

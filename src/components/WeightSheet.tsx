@@ -125,8 +125,8 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
               return held ? (
                 <UndoLine
                   key={`undo:${held.date}`}
-                  text={t('weight_removed')}
-                  undoLabel={t('undo')}
+                  text={removed.text}
+                  undoLabel={removed.undoLabel}
                   onUndo={() => {
                     app.addWeight(held);
                     fb.haptic('light');

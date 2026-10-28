@@ -201,8 +201,8 @@ export type Win = { id: string; kind: 'badge' | 'level' | 'challenge'; key: stri
  * weekly challenge done; each is shown once. The first time this runs there
  * is no record yet, so everything already earned is marked seen rather than
  * celebrated in a flood. While `waiting` (the add sheet is open, its "Save as
- * my meal?" too, or a toast with Undo is on screen) nothing is celebrated yet;
- * the win waits for it to go.
+ * my meal?" too, or a toast or a line with Undo is on screen) nothing is
+ * celebrated yet; the win waits for it to go.
  */
 export function nextWin(input: { earned: string[]; level: LevelKey; challenge: Challenge; celebrated: string[] | null | undefined; waiting?: boolean }): { seed: string[] | null; next: Win | null } {
   const all: Win[] = [

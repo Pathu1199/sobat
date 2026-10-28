@@ -3,6 +3,7 @@ import { Animated, Platform, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SaidProvider, useAnnounce, useScreenReaderOn } from '../ui/announce';
+import { undoLinesShown } from '../ui/listUndo';
 import { C, F, M, S } from '../ui/theme';
 import { toastMs, toastSpeech } from '../ui/toastWords';
 import { useBreakpoint } from '../ui/useBreakpoint';
@@ -24,11 +25,16 @@ type Feedback = {
    * the page from the start, so words that appear on screen together with their own text are heard too.
    */
   announce: (text: string) => void;
+  /**
+   * Marks an "… · Undo" line under the tiles or in a sheet as on screen (`on`) or gone, by the id of what shows it
+   * (`useUndoable`), so a win waits for it as it waits for a toast with Undo.
+   */
+  undoLine: (id: string, on: boolean) => void;
 };
 
 const Ctx = createContext<Feedback | null>(null);
-/** Whether a toast with a button (Undo) is on screen. Its own context, so the rest of the app does not render again with it. */
-const UndoToastCtx = createContext(false);
+/** Whether a toast with a button (Undo) or an Undo line is on screen. Its own context, so the rest of the app does not render again with it. */
+const UndoShowingCtx = createContext(false);
 
 export function useFeedback(): Feedback {
   const c = useContext(Ctx);
@@ -36,9 +42,12 @@ export function useFeedback(): Feedback {
   return c;
 }
 
-/** True while a toast with a button (Undo) is on screen, so something else that would cover it can wait until it has gone. */
-export function useUndoToastShowing(): boolean {
-  return useContext(UndoToastCtx);
+/**
+ * True while a toast with a button (Undo) or an "… · Undo" line is on screen, so something else that would cover it can
+ * wait until it has gone. Never for long: the toast fades and the line goes after five seconds.
+ */
+export function useUndoShowing(): boolean {
+  return useContext(UndoShowingCtx);
 }
 
 async function vibrate(kind: 'light' | 'success') {
@@ -54,6 +63,8 @@ async function vibrate(kind: 'light' | 'success') {
 export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const [text, setText] = useState<string | null>(null);
   const [action, setAction] = useState<ToastAction | null>(null);
+  // The Undo lines on screen, set from the tap that shows one and from its own timer, never from an effect body.
+  const [lines, setLines] = useState<readonly string[]>([]);
   // eslint-disable-next-line react-hooks/refs
   const opacity = useRef(new Animated.Value(0)).current;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -92,13 +103,15 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     if (timer.current) clearTimeout(timer.current);
   }, []);
 
-  const value = useMemo(() => ({ notify, haptic, announce }), [notify, haptic, announce]);
+  const undoLine = useCallback((id: string, on: boolean) => setLines((shown) => undoLinesShown(shown, id, on)), []);
+
+  const value = useMemo(() => ({ notify, haptic, announce, undoLine }), [notify, haptic, announce, undoLine]);
 
   return (
     <Ctx.Provider value={value}>
-      <UndoToastCtx.Provider value={text !== null && action !== null}>
+      <UndoShowingCtx.Provider value={(text !== null && action !== null) || lines.length > 0}>
         <SaidProvider value={said}>{children}</SaidProvider>
-      </UndoToastCtx.Provider>
+      </UndoShowingCtx.Provider>
       {region}
       {text ? (
         <ToastView

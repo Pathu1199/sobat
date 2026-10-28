@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { useFeedback } from '../../services/feedback';
 import { sayOnPhone } from '../../ui/announce';
 import { C, F, lh, S } from '../../ui/theme';
-import type { Added } from '../../ui/tileWords';
 import { toastSpeech } from '../../ui/toastWords';
 
 export { addedText, type Added } from '../../ui/tileWords';
@@ -14,29 +13,41 @@ export const UNDO_MS = 5000;
 /**
  * What can still be undone, kept for five seconds; a new one replaces it and
  * starts the five seconds again. `words` are the line's words for it, and
- * `undoLabel` its button's name: the web hears both at the tap that shows
- * the line, from the app's region, which is on the page before the line is
- * (the phone hears them from the line itself, once it is on screen).
+ * `undoLabel` its button's name, given here once: the line takes both from
+ * what this returns (`text`, empty while nothing is held, and `undoLabel`).
+ * The web hears them at the tap that shows the line, from the app's region,
+ * which is on the page before the line is (the phone hears them from the line
+ * itself, once it is on screen). While something is held the app knows a line
+ * with Undo is on screen, so a win waits for it (`undoLine`); it is told from
+ * the tap, the timer and the Undo, and when the page or sheet goes.
  */
-export function useUndoable<T>(words: (v: T) => string, undoLabel: string): { held: T | null; show: (v: T) => void; clear: () => void } {
-  const { announce } = useFeedback();
+export function useUndoable<T>(
+  words: (v: T) => string,
+  undoLabel: string,
+): { held: T | null; text: string; undoLabel: string; show: (v: T) => void; clear: () => void } {
+  const { announce, undoLine } = useFeedback();
+  const id = useId();
   const [held, setHeld] = useState<T | null>(null);
   useEffect(() => {
     if (held === null) return;
-    const timer = setTimeout(() => setHeld(null), UNDO_MS);
+    const timer = setTimeout(() => {
+      setHeld(null);
+      undoLine(id, false);
+    }, UNDO_MS);
     return () => clearTimeout(timer);
-  }, [held]);
+  }, [held, id, undoLine]);
+  // A line that leaves with its page or sheet is gone too.
+  useEffect(() => () => undoLine(id, false), [id, undoLine]);
   function show(v: T) {
     setHeld(v);
+    undoLine(id, true);
     if (Platform.OS === 'web') announce(toastSpeech(words(v), undoLabel));
   }
-  return { held, show, clear: () => setHeld(null) };
-}
-
-/** The last thing a tap added, cleared after five seconds; a new tap replaces it and starts the five seconds again. */
-export function useAddedLine(words: (a: Added) => string, undoLabel: string): { added: Added | null; show: (a: Added) => void; clear: () => void } {
-  const { held, show, clear } = useUndoable<Added>(words, undoLabel);
-  return { added: held, show, clear };
+  function clear() {
+    setHeld(null);
+    undoLine(id, false);
+  }
+  return { held, text: held === null ? '' : words(held), undoLabel, show, clear };
 }
 
 /**

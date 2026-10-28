@@ -96,29 +96,35 @@ export function Mountain({
           <Circle cx={x - 2.5} cy={y - 8} r="2.6" fill={C.amber} />
           <Circle cx={x} cy={y - 14.5} r="3.6" fill={C.white} stroke={C.accent} strokeWidth="2" />
         </Svg>
-        {/* Each camp's weight, just under its foot, placed by the same share of the box as the drawing. */}
-        {camps.map((c) => {
-          const q = at(c.p);
-          return (
-            <Text
-              key={c.p}
-              style={{
-                position: 'absolute',
-                left: `${((q.x + 2) / W) * 100}%`,
-                top: `${((q.y + 3) / H) * 100}%`,
-                paddingHorizontal: 4,
-                borderRadius: 6,
-                overflow: 'hidden',
-                backgroundColor: C.card,
-                color: C.textDim,
-                fontSize: F.small,
-                lineHeight: lh(F.small),
-                fontWeight: '500',
-              }}>
-              {c.label}
-            </Text>
-          );
-        })}
+        {/*
+          Each camp's weight, just under its foot, placed by the same share of the box as the drawing. A screen reader
+          skips them, on the web too (aria-hidden): read in a row they are a string of weights with no meaning, and the
+          start, now and goal under the drawing say where the person stands.
+        */}
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden aria-hidden>
+          {camps.map((c) => {
+            const q = at(c.p);
+            return (
+              <Text
+                key={c.p}
+                style={{
+                  position: 'absolute',
+                  left: `${((q.x + 2) / W) * 100}%`,
+                  top: `${((q.y + 3) / H) * 100}%`,
+                  paddingHorizontal: 4,
+                  borderRadius: 6,
+                  overflow: 'hidden',
+                  backgroundColor: C.card,
+                  color: C.textDim,
+                  fontSize: F.small,
+                  lineHeight: lh(F.small),
+                  fontWeight: '500',
+                }}>
+                {c.label}
+              </Text>
+            );
+          })}
+        </View>
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Text style={[MICRO, { color: C.textFaint }]}>{startLabel}</Text>

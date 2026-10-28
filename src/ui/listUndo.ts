@@ -13,3 +13,15 @@ export function withUndoAt<T>(items: readonly T[], at: number | null): WithUndo<
   rows.splice(Math.min(Math.max(0, at), items.length), 0, { kind: 'undo' });
   return rows;
 }
+
+/**
+ * The Undo lines on screen, by the id of what shows each (`useUndoable`):
+ * `id` added as its line appears, taken away as it goes. The same list comes
+ * back when nothing changes, so nothing renders again for it. A win waits
+ * while the list holds any, as it waits for a toast with Undo.
+ */
+export function undoLinesShown(shown: readonly string[], id: string, on: boolean): readonly string[] {
+  const has = shown.includes(id);
+  if (on) return has ? shown : [...shown, id];
+  return has ? shown.filter((x) => x !== id) : shown;
+}

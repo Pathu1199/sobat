@@ -3,7 +3,7 @@ import React, { useEffect, useMemo } from 'react';
 import { Text, View } from 'react-native';
 import { BADGE_ICON, nextWin } from '../core/game';
 import { fill, makeT } from '../i18n';
-import { useFeedback, useUndoToastShowing } from '../services/feedback';
+import { useFeedback, useUndoShowing } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn } from '../ui/components';
 import { Banner } from '../ui/Banner';
@@ -19,8 +19,10 @@ const LEVEL_ICON: Record<string, string> = { camp1: '⛺', camp2: '🏕️', cam
  * challenge done. One at a time, each once, on a flat panel with the
  * points so far. Mounted on Today; says nothing when there is nothing new.
  * A win that lands from the add sheet waits until the sheet has closed, its
- * "Save as my meal?" too, so the two never sit on each other, and a toast with
- * Undo stays uncovered until it has gone, so its Undo can still be reached.
+ * "Save as my meal?" too, so the two never sit on each other. A toast with
+ * Undo, and the tiles' "Added … · Undo" line (or a sheet's "Deleted … · Undo"),
+ * stay uncovered until they have gone, so their Undo can still be reached; the
+ * wait is never long, as each goes on its own after a few seconds.
  */
 export function Celebration() {
   const app = useApp();
@@ -30,7 +32,7 @@ export function Celebration() {
   const g = useGame();
   const earned = useMemo(() => g.badges.filter((b) => b.earned).map((b) => b.key), [g.badges]);
   const sheetOpen = useAddSheetOpen();
-  const undoShowing = useUndoToastShowing();
+  const undoShowing = useUndoShowing();
   const waiting = sheetOpen || undoShowing;
   const { seed, next } = nextWin({ earned, level: g.level.key, challenge: g.challenge, celebrated: app.state.celebrated, waiting });
 

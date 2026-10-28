@@ -5,7 +5,7 @@ import { eatBack, fatGrams, INTENSITY_KEYS, kcalBurned, type Intensity, weekActi
 import { localHHMM } from '../core/date';
 import { newId } from '../core/id';
 import { ACTIVITIES, activityById, activityName, CATEGORY_ORDER, DEFAULT_PICKS, type Activity } from '../data/activities';
-import { fill, makeT } from '../i18n';
+import { fill, makeT, numberText } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, Btn, Card, Divider, Micro, Pill, Ring, Row, Small, Toggle } from '../ui/components';
@@ -43,7 +43,7 @@ export function ActivityPanel() {
     const kcal = kcalBurned(logging, intensity, minutes, state.profile.weightKg);
     app.addActivity({ id: newId(), date: today, at: new Date().toISOString(), activityId: logging.id, minutes, intensity, kcal });
     fb.haptic('success');
-    fb.notify(fill(t('act_saved'), { kcal, g: fatGrams(kcal) }));
+    fb.notify(fill(t('act_saved'), { kcal: numberText(kcal), g: fatGrams(kcal) }));
     setLogging(null);
   }
   function togglePick(id: string) {
@@ -63,8 +63,8 @@ export function ActivityPanel() {
           <View style={{ flex: 1, gap: 4 }}>
             <Micro color={C.textDim}>{t('act_week_title')}</Micro>
             <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{fill(t('act_week_line'), { n: week.minutes, target: week.target, days: week.activeDays })}</Text>
-            <Small color={C.textDim}>{fill(t('act_week_fat'), { kcal: week.kcal, g: week.fatGrams })}</Small>
-            {burned > 0 ? <Small color={C.green}>{fill(t('act_today_line'), { kcal: burned, back: eatBack(burned) })}</Small> : <Small color={C.textFaint}>{t('act_today_none')}</Small>}
+            <Small color={C.textDim}>{fill(t('act_week_fat'), { kcal: numberText(week.kcal), g: week.fatGrams })}</Small>
+            {burned > 0 ? <Small color={C.green}>{fill(t('act_today_line'), { kcal: numberText(burned), back: numberText(eatBack(burned)) })}</Small> : <Small color={C.textFaint}>{t('act_today_none')}</Small>}
           </View>
         </Row>
         <Micro color={C.textFaint}>{t('act_who_note')}</Micro>
@@ -93,7 +93,7 @@ export function ActivityPanel() {
             <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }} numberOfLines={2}>
               {activityName(a, lang)}
             </Text>
-            <Micro color={C.textFaint}>{`${kcalBurned(a, 1, 30, state.profile.weightKg)} kcal / 30 ${t('act_min')}`}</Micro>
+            <Micro color={C.textFaint}>{`${numberText(kcalBurned(a, 1, 30, state.profile.weightKg))} kcal / 30 ${t('act_min')}`}</Micro>
           </Pressable>
         ))}
         <Pressable onPress={() => setChoosing(true)} accessibilityRole="button" style={({ pressed }) => ({ flexBasis: '31%', flexGrow: 1, minHeight: 88, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.borderStrong, padding: 12, alignItems: 'center', justifyContent: 'center', gap: 6, opacity: pressed ? 0.7 : 1 })}>
@@ -117,7 +117,7 @@ export function ActivityPanel() {
                     <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{a ? activityName(a, lang) : l.activityId}</Text>
                     <Text style={{ color: C.textFaint, fontSize: F.small }}>{`${localHHMM(l.at)} · ${l.minutes} ${t('act_min')} · ${t(`act_${INTENSITY_KEYS[l.intensity]}`)}`}</Text>
                   </View>
-                  <Text style={{ color: C.green, fontSize: F.body, fontWeight: '500' }}>{`−${l.kcal}`}</Text>
+                  <Text style={{ color: C.green, fontSize: F.body, fontWeight: '500' }}>{`−${numberText(l.kcal)}`}</Text>
                   <Pressable
                     onPress={() => {
                       app.removeActivity(l.id);
@@ -168,7 +168,7 @@ export function ActivityPanel() {
                 <View>
                   <Micro>{t('act_burn')}</Micro>
                   <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>
-                    {preview}
+                    {numberText(preview)}
                     <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}> kcal</Text>
                   </Text>
                 </View>

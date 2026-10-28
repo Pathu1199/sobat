@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { OFF_SCREEN } from './announce';
 import { stepButtonName } from './stepperWords';
@@ -34,11 +34,17 @@ export function QtyStepper({
 }) {
   // On the web, for a moment after a tap: the amount goes into a region the browser reads as its words change.
   const [heard, setHeard] = useState(false);
+  // The timer that empties the region: a new tap starts it again, and it does not outlive the stepper.
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
   const tap = (fn: () => void) => () => {
     fn();
     if (Platform.OS !== 'web') return;
     setHeard(true);
-    setTimeout(() => setHeard(false), HEARD_MS);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setHeard(false), HEARD_MS);
   };
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
