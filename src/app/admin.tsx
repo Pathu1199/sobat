@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, Text, View } from 'react-native';
+import { RedirectToTabs } from '../components/RedirectToTabs';
 import { fill, makeT } from '../i18n';
 import { adminApi, cloudConfigured, type CloudUser } from '../services/cloud';
 import { authApi, useAuth } from '../services/useAuth';
@@ -59,7 +59,7 @@ export default function Admin() {
     if (isAdmin && cloudConfigured()) void load();
   }, [isAdmin, load]);
 
-  if (ready && !isAdmin) return <Redirect href="/" />;
+  if (ready && !isAdmin) return <RedirectToTabs />;
 
   return (
     <Screen>

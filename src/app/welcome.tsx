@@ -16,7 +16,6 @@ const FEATURES: { icon: keyof typeof Ionicons.glyphMap; titleKey: string; bodyKe
   { icon: 'timer-outline', titleKey: 'w_f5_t', bodyKey: 'w_f5_b' },
   { icon: 'chatbubble-ellipses-outline', titleKey: 'w_f6_t', bodyKey: 'w_f6_b' },
   { icon: 'calendar-outline', titleKey: 'w_f7_t', bodyKey: 'w_f7_b' },
-  { icon: 'wallet-outline', titleKey: 'w_f8_t', bodyKey: 'w_f8_b' },
   { icon: 'phone-portrait-outline', titleKey: 'w_f9_t', bodyKey: 'w_f9_b' },
 ];
 

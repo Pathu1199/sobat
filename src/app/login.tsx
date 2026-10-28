@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { RedirectToTabs } from '../components/RedirectToTabs';
 import { makeT } from '../i18n';
 import { firebaseEnabled } from '../services/firebase';
 import { authApi, authErrorKey, useAuth } from '../services/useAuth';
@@ -23,8 +24,8 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; key: string } | null>(null);
 
-  if (!firebaseEnabled) return <Redirect href="/" />;
-  if (ready && user) return <Redirect href="/" />;
+  if (!firebaseEnabled) return <RedirectToTabs />;
+  if (ready && user) return <RedirectToTabs />;
 
   async function run(fn: () => Promise<unknown>) {
     setBusy(true);
