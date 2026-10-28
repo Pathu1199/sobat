@@ -6,7 +6,7 @@ import { AddSheetProvider } from '../components/AddSheet';
 import { DayMenu } from '../components/DayMenu';
 import { FoodThumb } from '../components/FoodDetailSheet';
 import { GrocerySheet } from '../components/GrocerySheet';
-import { IconButton } from '../components/TopBarActions';
+import { IconButton } from '../ui/IconButton';
 import { amountText, formatQty } from '../core/basket';
 import { addDays, formatDayLabel, formatDayMonth, isIsoDate, mondayOf } from '../core/date';
 import { dayView } from '../core/dayView';

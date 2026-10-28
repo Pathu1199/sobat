@@ -15,7 +15,7 @@ import { StreakTile } from '../../components/tiles/StreakTile';
 import { TileRow } from '../../components/tiles/TileRow';
 import { WaterWalkTiles } from '../../components/tiles/WaterWalk';
 import { WeightTile } from '../../components/tiles/WeightTile';
-import { IconButton } from '../../components/TopBarActions';
+import { IconButton } from '../../ui/IconButton';
 import { WeekStrip } from '../../components/WeekStrip';
 import { addDays, formatDayLabel, isIsoDate, mondayOf } from '../../core/date';
 import { dayMode, dayView } from '../../core/dayView';

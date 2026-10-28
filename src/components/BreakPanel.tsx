@@ -13,8 +13,9 @@ import { C, F, lh } from '../ui/theme';
 /**
  * The eye-care breaks as they run: a countdown ring to the next break,
  * today's breaks taken, the longest stretch sitting, pause an hour or resume,
- * a break now, and a longer gap when breaks keep being skipped. In Settings →
- * Features, under the eye-care breaks switch, only while that switch is on.
+ * a break now, and a button that sets a longer gap when breaks keep being
+ * skipped. In Settings → Features, under the eye-care breaks switch, only
+ * while that switch is on.
  */
 export function BreakPanel() {
   const app = useApp();
@@ -29,6 +30,7 @@ export function BreakPanel() {
   const left = Number.isFinite(monitor.secondsLeft) ? Math.ceil(monitor.secondsLeft / 60) : 0;
   const elapsed = Math.max(0, nextEvery - left);
   const pausedUntilMs = app.state.breakSettings.pausedUntilMs;
+  const suggestion = monitor.suggestion;
 
   return (
     <Card>
@@ -83,8 +85,17 @@ export function BreakPanel() {
       {pausedUntilMs !== null ? (
         <Micro color={C.amber}>{fill(t('brk_paused_until'), { t: localHHMM(new Date(pausedUntilMs).toISOString()) })}</Micro>
       ) : null}
-      {monitor.suggestion ? (
-        <Micro color={C.amber}>{`${t(`brk_${monitor.suggestion.kind}`)} · ${t('break_every')} ${monitor.suggestion.minutes} ${t('minutes')}?`}</Micro>
+      {suggestion ? (
+        // Skipped five times running: says so, and the button sets the longer gap it offers.
+        <View style={{ gap: 8 }}>
+          <Micro color={C.amber}>{fill(t('brk_suggest_line'), { kind: t(`brk_${suggestion.kind}`) })}</Micro>
+          <Btn
+            small
+            tone="soft"
+            label={fill(t('brk_suggest_set'), { kind: t(`brk_${suggestion.kind}`), n: suggestion.minutes })}
+            onPress={() => app.setBreakSettings({ [suggestion.kind]: { ...app.state.breakSettings[suggestion.kind], everyMinutes: suggestion.minutes } })}
+          />
+        </View>
       ) : null}
     </Card>
   );

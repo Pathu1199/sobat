@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allowance, currentSlot, DEFAULT_SHARE, EATEN_NOW_MS, expectedKcalByMinute, openedKcalByMinute, pattern, settledSlotIds, slotAt, slotForMealAt, slotOf, slotShare, slotStates, withSlot } from '../pattern';
+import { allowance, clampShare, currentSlot, DEFAULT_SHARE, EATEN_NOW_MS, expectedKcalByMinute, openedKcalByMinute, pattern, settledSlotIds, slotAt, slotForMealAt, slotOf, SHARE_MAX, slotShare, slotStates, withSlot } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { Meal } from '../types';
 
@@ -45,6 +45,13 @@ describe('pattern', () => {
     expect(slotShare(slot('x', 'snack', '16:00', -4))).toBe(0);
     const zero = pattern({ ...routine, slots: [slot('a', 'lunch', '13:00', 0), slot('b', 'dinner', '20:00', 0)] });
     expect(zero.map((s) => s.share)).toEqual([0.5, 0.5]);
+  });
+
+  it('keeps the share the editor sets between 0 and 60, so its − is off at 0 and its + at 60', () => {
+    expect(SHARE_MAX).toBe(60);
+    expect(clampShare(65)).toBe(SHARE_MAX);
+    expect(clampShare(-5)).toBe(0);
+    expect(clampShare(35)).toBe(35);
   });
 
   it('allowances add up to the target, give or take rounding', () => {

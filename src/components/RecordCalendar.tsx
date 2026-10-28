@@ -10,7 +10,7 @@ import { useRecordOn } from '../store/useRecordOn';
 import { Card } from '../ui/components';
 import { STRIP_CHOSEN, STRIP_MARGIN } from '../ui/stripGeometry';
 import { C, F, lh, S } from '../ui/theme';
-import { IconButton } from './TopBarActions';
+import { IconButton } from '../ui/IconButton';
 import { StripDot } from './WeekStrip';
 
 /** Monday first, as the week strip; values are Date.getDay(). */

@@ -7,7 +7,7 @@ import { makeT } from '../i18n';
 import { chosenProps } from '../ui/chosen';
 import { STRIP_CHOSEN, STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_SIZE, STRIP_RING, stripDot } from '../ui/stripGeometry';
 import { C, F, lh, S } from '../ui/theme';
-import { IconButton } from './TopBarActions';
+import { IconButton } from '../ui/IconButton';
 
 /**
  * Monday to Sunday of the week being looked at, a dot under each day from

@@ -52,7 +52,6 @@ const en: Dict = {
   break_soon: 'Break in {s} seconds',
   break_soon_hint: 'Finish what you are typing.',
   break_monitor: 'Break monitor',
-  break_every: 'Work for',
   break_next: 'Next break in',
   break_off: 'Break monitor is off',
   break_compliance: 'breaks taken',
@@ -1001,6 +1000,8 @@ const en: Dict = {
   footer_version: 'Version {version}',
   footer_privacy: 'Open source, MIT licensed. Your logs live on this device and, with sync on, in one file in the app maker\'s Google Drive; a backup you make goes to your own Google Drive.',
   rem_nudges_desc_open: 'Water, posture and logging as often as set below, and the coach\'s tips when something needs doing now.',
+  brk_suggest_line: '"{kind}" was skipped five times in a row. A longer gap may suit your work better.',
+  brk_suggest_set: 'Make "{kind}" every {n} minutes',
 };
 
 const mr: Dict = {
@@ -1052,7 +1053,6 @@ const mr: Dict = {
   break_soon: '{s} सेकंदात ब्रेक',
   break_soon_hint: 'चालू काम आवरा.',
   break_monitor: 'ब्रेक मॉनिटर',
-  break_every: 'काम करा',
   break_next: 'पुढचा ब्रेक',
   break_off: 'ब्रेक मॉनिटर बंद आहे',
   break_compliance: 'ब्रेक घेतले',
@@ -2005,6 +2005,8 @@ const mr: Dict = {
   footer_version: 'आवृत्ती {version}',
   footer_privacy: 'ओपन सोर्स, एमआयटी परवाना. तुमच्या नोंदी या डिव्हाइसवर राहतात, आणि सिंक चालू असेल तर अ‍ॅप बनवणाऱ्याच्या गूगल ड्राइव्हमधल्या एका फाइलमध्ये; तुम्ही घेतलेला बॅकअप तुमच्या स्वतःच्या गूगल ड्राइव्हमध्ये जातो.',
   rem_nudges_desc_open: 'खाली ठरवलेल्या अंतराने पाणी, बसण्याची पद्धत आणि नोंद, आणि आत्ता काही करायचं असेल तेव्हा कोचच्या सूचना.',
+  brk_suggest_line: '"{kind}" सलग पाच वेळा टाळले. जास्त अंतर तुमच्या कामाला बरे पडेल.',
+  brk_suggest_set: '"{kind}" दर {n} मिनिटांनी करा',
 };
 
 const hi: Dict = {
@@ -2056,7 +2058,6 @@ const hi: Dict = {
   break_soon: '{s} सेकंड में ब्रेक',
   break_soon_hint: 'जो लिख रहे हैं वह पूरा कर लें.',
   break_monitor: 'ब्रेक मॉनिटर',
-  break_every: 'काम करें',
   break_next: 'अगला ब्रेक',
   break_off: 'ब्रेक मॉनिटर बंद है',
   break_compliance: 'ब्रेक लिए',
@@ -3008,6 +3009,8 @@ const hi: Dict = {
   footer_version: 'संस्करण {version}',
   footer_privacy: 'ओपन सोर्स, एमआईटी लाइसेंस. आपकी प्रविष्टियाँ इसी डिवाइस पर रहती हैं, और सिंक चालू हो तो ऐप बनाने वाले की गूगल ड्राइव में एक फ़ाइल में; आपका लिया बैकअप आपकी अपनी गूगल ड्राइव में जाता है.',
   rem_nudges_desc_open: 'नीचे तय अंतर पर पानी, बैठने का ढंग और दर्ज करना, और जब अभी कुछ करना हो तब कोच की सलाह.',
+  brk_suggest_line: '"{kind}" लगातार पाँच बार छोड़ा गया. लंबा अंतर आपके काम के लिए बेहतर रहेगा.',
+  brk_suggest_set: '"{kind}" हर {n} मिनट पर करें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

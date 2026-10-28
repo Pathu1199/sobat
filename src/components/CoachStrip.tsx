@@ -83,22 +83,37 @@ export function CoachStrip({ onSuggest, onWeigh, max = 2 }: { onSuggest?: () => 
         <Micro color={C.textDim}>{t('coach_says')}</Micro>
         {advice.length > max ? <Micro color={C.textFaint}>{fill(t('coach_more'), { n: advice.length - max })}</Micro> : null}
       </Row>
-      {show.map((a) => (
-        <Pressable
-          key={a.key}
-          onPress={() => act(a, { suggest: onSuggest, weigh: onWeigh })}
-          disabled={a.action === 'none'}
-          // Advice with nothing to do is read as words, not as a button that does nothing.
-          accessibilityRole={a.action === 'none' ? 'text' : 'button'}
-          accessibilityHint={adviceHint(a, t, state.settings.bottleMl)}
-          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch, opacity: pressed ? 0.7 : 1 })}>
-          <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name={ICON[a.kind]} size={18} color={tone(a)} />
-          </View>
-          <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{adviceText(a, t)}</Text>
-          {a.action !== 'none' ? <Ionicons name="chevron-forward" size={16} color={C.textFaint} /> : null}
-        </Pressable>
-      ))}
+      {show.map((a) => {
+        const row = { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch } as const;
+        const text = adviceText(a, t);
+        const body = (
+          <>
+            <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name={ICON[a.kind]} size={18} color={tone(a)} />
+            </View>
+            <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{text}</Text>
+          </>
+        );
+        // Advice with nothing to do is plain words, as on CoachLine, not a button that is off.
+        if (a.action === 'none') {
+          return (
+            <View key={a.key} style={row} accessible accessibilityRole="text" accessibilityLabel={text}>
+              {body}
+            </View>
+          );
+        }
+        return (
+          <Pressable
+            key={a.key}
+            onPress={() => act(a, { suggest: onSuggest, weigh: onWeigh })}
+            accessibilityRole="button"
+            accessibilityHint={adviceHint(a, t, state.settings.bottleMl)}
+            style={({ pressed }) => [row, { opacity: pressed ? 0.7 : 1 }]}>
+            {body}
+            <Ionicons name="chevron-forward" size={16} color={C.textFaint} />
+          </Pressable>
+        );
+      })}
     </Card>
   );
 }

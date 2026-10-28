@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { defaultPortion, foodName, portionLabel, searchFoods, unitName } from '../core/foods';
-import { allowance, pattern, slotShare } from '../core/pattern';
+import { allowance, clampShare, pattern, SHARE_MAX, slotShare } from '../core/pattern';
 import { addLine, removeLine, renameSlot, setLineQty, slotLabel, slotTime, updateSlot, type RoutineSlot } from '../core/routine';
 import type { FoodItem, Lang, MealType } from '../core/types';
 import { fill, makeT } from '../i18n';
@@ -36,7 +36,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
     const p = pattern({ ...app.state.routine, slots: updateSlot(app.state.routine.slots, slot.id, slot) }).find((x) => x.id === slot.id);
     return p ? allowance(app.targets.kcal, p) : 0;
   })();
-  const setShare = (next: number) => onChange({ ...slot, share: Math.max(0, Math.min(60, next)) });
+  const setShare = (next: number) => onChange({ ...slot, share: clampShare(next) });
 
   const results = addingTo !== null && query.trim() ? searchFoods(foods, query, 6) : [];
 
@@ -72,6 +72,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
             onMinus={() => setShare(share - 5)}
             onPlus={() => setShare(share + 5)}
             minusDisabled={share <= 0}
+            plusDisabled={share >= SHARE_MAX}
             minusLabel={t('pattern_share_less')}
             plusLabel={t('pattern_share_more')}
           />

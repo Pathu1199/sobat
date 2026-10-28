@@ -12,7 +12,8 @@ import { C, F, lh, S } from './theme';
  * amount shown as its value. The web reads no value on a button, so there the
  * amount is in each name ("Less chapati, 2") and the new amount is read out
  * after a tap on − or +, and only then: a new day's amounts changing on their
- * own are not read out one after another. − is off when it can do nothing.
+ * own are not read out one after another. − is off when it can do nothing,
+ * and so is + where the amount has a top (`plusDisabled`).
  */
 export function QtyStepper({
   value,
@@ -21,6 +22,7 @@ export function QtyStepper({
   minusLabel,
   plusLabel,
   minusDisabled,
+  plusDisabled,
 }: {
   value: string;
   onMinus: () => void;
@@ -28,6 +30,7 @@ export function QtyStepper({
   minusLabel: string;
   plusLabel: string;
   minusDisabled?: boolean;
+  plusDisabled?: boolean;
 }) {
   // On the web, for a moment after a tap: the amount goes into a region the browser reads as its words change.
   const [heard, setHeard] = useState(false);
@@ -41,7 +44,7 @@ export function QtyStepper({
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
       <StepButton icon="remove" label={minusLabel} value={value} onPress={tap(onMinus)} disabled={minusDisabled} />
       <Text style={{ minWidth: 40, textAlign: 'center', color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500', fontVariant: ['tabular-nums'] }}>{value}</Text>
-      <StepButton icon="add" label={plusLabel} value={value} onPress={tap(onPlus)} />
+      <StepButton icon="add" label={plusLabel} value={value} onPress={tap(onPlus)} disabled={plusDisabled} />
       {Platform.OS === 'web' ? (
         <View aria-live="polite" style={OFF_SCREEN}>
           <Text>{heard ? value : ''}</Text>

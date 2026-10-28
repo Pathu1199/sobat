@@ -28,6 +28,14 @@ export function slotShare(slot: RoutineSlot): number {
   return Math.max(0, own);
 }
 
+/** The most of the day one meal can be given in the eating-pattern editor. */
+export const SHARE_MAX = 60;
+
+/** A share the editor may set: from 0 to `SHARE_MAX`. */
+export function clampShare(n: number): number {
+  return Math.max(0, Math.min(SHARE_MAX, n));
+}
+
 export function pattern(routine: Routine): PatternSlot[] {
   const slots = [...routine.slots].sort((a, b) => slotMinutes(a) - slotMinutes(b));
   const weights = slots.map(slotShare);

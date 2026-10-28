@@ -1,6 +1,7 @@
 import React from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSheetRegion } from './announce';
 import { sheetBottomPad } from './sheetPad';
 import { C, F, lh, S } from './theme';
 import { useBreakpoint } from './useBreakpoint';
@@ -18,12 +19,15 @@ import { useKeyboardUp } from './useKeyboardUp';
  * `onRequestClose`), Back on Android, and a screen reader's escape gesture on
  * iOS. A `tall` sheet keeps one height whatever it holds, for a list that
  * fills it; any other is as tall as its content, up to most of the screen.
+ * On the web it carries the app's announcement region inside its dialog, so a
+ * toast is heard while it is open (`useSheetRegion`).
  */
 export function SheetFrame({ open, onClose, maxWidth = 520, tall = false, children }: { open: boolean; onClose: () => void; maxWidth?: number; tall?: boolean; children: React.ReactNode }) {
   const wide = useBreakpoint() !== 'mobile';
   const insets = useSafeAreaInsets();
   // Listens to the keyboard only while open: a closed sheet stays mounted on many screens.
   const keyboardUp = useKeyboardUp(open);
+  const region = useSheetRegion(open);
   const radius = S.radius + 4;
   return (
     <Modal visible={open} transparent animationType={wide ? 'fade' : 'slide'} onRequestClose={onClose}>
@@ -50,6 +54,7 @@ export function SheetFrame({ open, onClose, maxWidth = 520, tall = false, childr
             overflow: 'hidden',
           }}>
           {children}
+          {region}
         </View>
       </KeyboardAvoidingView>
     </Modal>

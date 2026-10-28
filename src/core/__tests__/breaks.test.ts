@@ -276,6 +276,13 @@ describe('suggestLongerInterval', () => {
     expect(suggestLongerInterval(skipped('micro', 4), 'micro', 20)).toBeNull();
   });
 
+  it('counts only skips at the gap now set, so once the longer gap is taken it is not offered again until five more are skipped', () => {
+    // Five skipped after 20 minutes each, and the gap is now 35: they were at the old gap.
+    expect(suggestLongerInterval(skipped('micro', 5), 'micro', 35)).toBeNull();
+    const atNew = skipped('micro', 5).map((l) => ({ ...l, workedMinutes: 35 }));
+    expect(suggestLongerInterval(atNew, 'micro', 35)).toBe(50);
+  });
+
   it('stops suggesting once the gap is already long', () => {
     expect(suggestLongerInterval(skipped('micro', 5), 'micro', 90)).toBeNull();
   });

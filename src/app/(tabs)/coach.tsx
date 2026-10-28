@@ -9,7 +9,8 @@ import { ActivityIndicator, Linking, Pressable, ScrollView, Text, TextInput, Vie
 import { factsFrom, memoryExtractionPrompt, MEMORY_SCHEMA, systemPrompt } from '../../ai/prompts';
 import { adviceText, CoachStrip } from '../../components/CoachStrip';
 import { FitsCard } from '../../components/FitsCard';
-import { IconButton, TopBarActions } from '../../components/TopBarActions';
+import { TopBarActions } from '../../components/TopBarActions';
+import { IconButton } from '../../ui/IconButton';
 import { formatMinutes, toISODate } from '../../core/date';
 import { newId } from '../../core/id';
 import { foodName, itemName, suggestMeals, toMealItem } from '../../core/foods';

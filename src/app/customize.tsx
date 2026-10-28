@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, Text, View } from 'react-native';
-import { IconButton } from '../components/TopBarActions';
+import { IconButton } from '../ui/IconButton';
 import { extraItem } from '../core/bar';
 import { afterMove, askingNow, cardsShown, defaultCustomize, moveCard, replaceTab, toggleCard, toggleTab, type ReplaceQuestion } from '../core/customize';
 import { normalizeTabs, TAB_IDS } from '../core/tabs';

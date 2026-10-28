@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { Animated, Platform, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAnnounce, useScreenReaderOn } from '../ui/announce';
+import { SaidProvider, useAnnounce, useScreenReaderOn } from '../ui/announce';
 import { C, F, M, S } from '../ui/theme';
 import { toastMs, toastSpeech } from '../ui/toastWords';
 import { useBreakpoint } from '../ui/useBreakpoint';
@@ -12,7 +12,9 @@ export type ToastAction = { label: string; onPress: () => void };
 type Feedback = {
   /**
    * A one-line confirmation that fades after two seconds; with an action (Undo), it stays five and can be tapped, ten
-   * while a screen reader is on. A screen reader hears the words and the action's name as the toast appears.
+   * while a screen reader is on, and always ten on the web, which cannot tell whether one is on. A screen reader hears the
+   * words and the action's name as the toast appears, from inside an open sheet on the web; the words leave the page's
+   * region as the toast fades.
    */
   notify: (text: string, action?: ToastAction) => void;
   /** A tap on the phone. Silent on the web. */
@@ -56,14 +58,17 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const readerOn = useScreenReaderOn();
-  // The phone says the toast at once; the web reads it from this region, on the page from the start.
-  const { announce, region } = useAnnounce();
+  // The phone says the toast at once; the web reads it from this region, on the page from the start, or from the top-most open sheet's.
+  const { announce, clear, region, said } = useAnnounce(true);
 
   const notify = useCallback(
     (t: string, a?: ToastAction) => {
       setText(t);
       setAction(a ?? null);
-      announce(toastSpeech(t, a?.label));
+      // The web cannot tell whether a screen reader is on, so a toast with a button there always leaves it the time.
+      const ms = toastMs(!!a, readerOn || Platform.OS === 'web');
+      // The words stay in the region as long as the toast is on screen.
+      announce(toastSpeech(t, a?.label), ms);
       if (timer.current) clearTimeout(timer.current);
       Animated.timing(opacity, { toValue: 1, duration: M.fast, useNativeDriver: true }).start();
       timer.current = setTimeout(() => {
@@ -74,7 +79,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
             setAction(null);
           }
         });
-      }, toastMs(!!a, readerOn));
+      }, ms);
     },
     [opacity, announce, readerOn],
   );
@@ -91,7 +96,9 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <Ctx.Provider value={value}>
-      <UndoToastCtx.Provider value={text !== null && action !== null}>{children}</UndoToastCtx.Provider>
+      <UndoToastCtx.Provider value={text !== null && action !== null}>
+        <SaidProvider value={said}>{children}</SaidProvider>
+      </UndoToastCtx.Provider>
       {region}
       {text ? (
         <ToastView
@@ -101,6 +108,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
           onAction={() => {
             action?.onPress();
             if (timer.current) clearTimeout(timer.current);
+            clear();
             setText(null);
             setAction(null);
             opacity.setValue(0);

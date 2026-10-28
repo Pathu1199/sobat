@@ -11,9 +11,6 @@ import { C } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
 import { useAddSheet } from './AddSheet';
 
-// Pages that put the button beside these actions take it from here.
-export { IconButton };
-
 /** AI status; on a desktop the add button, which opens the add sheet for today; on the phone the coach and settings buttons. */
 export function TopBarActions() {
   const router = useRouter();
