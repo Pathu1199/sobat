@@ -9,15 +9,16 @@ import {
   lastLogDate,
   MORNING_HOUR,
   officeReminders,
-  opList,
   pendingFit,
   PLANNED_PREFIX,
   plannedReminders,
-  reminderOps,
   SLOT_DAYS,
   slotPlans,
+  syncReminders,
   weeklyReport,
   type DailyReminder,
+  type HeldLists,
+  type Phone,
   type Reminder,
   type ReminderOp,
   type WeeklyReminder,
@@ -27,7 +28,7 @@ import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useRecordOn } from '../store/useRecordOn';
 import { firebaseEnabled } from './firebase';
-import { cancel, dismissAll, MEAL_CATEGORY, scheduleAt, scheduleDaily, scheduledIds, scheduleWeekly, setMealCategory, setupAndroidChannel } from './notify';
+import { cancelHeld, dismissAll, MEAL_CATEGORY, scheduleAt, scheduleDaily, scheduledIds, scheduleWeekly, setMealCategory, setupAndroidChannel } from './notify';
 import { useAuth } from './useAuth';
 import { useMinute } from './useClock';
 import { useMantra } from './useMantra';
@@ -48,53 +49,38 @@ let wantedDaily: DailyReminder[] | null = null;
 let wantedOffice: WeeklyReminder[] | null = null;
 let wantedPlanned: Reminder[] | null = null;
 // The daily and office lists last registered in full, so a run that would register the same list again leaves it.
-let dailyHeld = '';
-let officeHeld = '';
+const NONE_HELD: HeldLists = { daily: '', office: '' };
+let held: HeldLists = NONE_HELD;
 
-/** Takes one step to the phone. */
+/** Takes one step to the phone. A cancel the phone refuses rejects, so its list is tried again; `scheduleDaily`'s own cancel first stays quiet. */
 async function apply(op: ReminderOp): Promise<void> {
-  if (op.kind === 'cancel') await cancel(op.id);
+  if (op.kind === 'cancel') await cancelHeld(op.id);
   else if (op.kind === 'daily') await scheduleDaily(op.reminder.id, op.reminder.hour, op.reminder.minute, op.reminder.title, op.reminder.body, op.reminder.data);
   else if (op.kind === 'weekly') await scheduleWeekly(op.reminder.id, op.reminder.weekday, op.reminder.hour, op.reminder.minute, op.reminder.title, op.reminder.body);
   else await scheduleAt(op.id, new Date(`${op.reminder.date}T${op.reminder.time}:00`), op.reminder.title, op.reminder.body, { data: op.reminder.data, category: op.reminder.category === 'meal' ? MEAL_CATEGORY : undefined });
 }
 
+const PHONE: Phone = { ids: scheduledIds, apply, setup: setupAndroidChannel };
+
 /**
  * Brings the phone to the latest lists, after any run already going: the
  * planned ones, the office day and the daily ones in one run, every cancel
  * before any add, so the pending count never passes the phone's cap on the
- * way. Each step is tried on its own, so one the OS refuses never stops the
- * rest (the meal-time prompts above all); a list with a refused step, an add
- * or a cancel (`opList` says whose), is tried again whole on the next run. The
+ * way (`syncReminders`). Each step is tried on its own, so one the OS refuses
+ * never stops the rest (the meal-time prompts above all); a list with a
+ * refused step, an add or a cancel, is tried again whole on the next run. The
  * planned list is matched against what the phone holds on every run, so a
  * planned cancel refused is tried again anyway.
  */
 function reconcile(): void {
   chain = chain
     .then(async () => {
-      const dailyJson = wantedDaily ? JSON.stringify(wantedDaily) : '';
-      const daily = wantedDaily && dailyJson !== dailyHeld ? wantedDaily : null;
-      const officeJson = wantedOffice ? JSON.stringify(wantedOffice) : '';
-      const office = wantedOffice && officeJson !== officeHeld ? wantedOffice : null;
       const planned = wantedPlanned ? wantedPlanned.map((r) => ({ osId: osId(r), reminder: r })) : null;
-      if (!daily && !office && !planned) return;
-      if (daily || office) await setupAndroidChannel();
-      const ops = reminderOps({ have: await scheduledIds(), planned, daily, office, nowMs: Date.now() });
-      const refused = new Set<ReturnType<typeof opList>>();
-      for (const op of ops) {
-        try {
-          await apply(op);
-        } catch {
-          refused.add(opList(op));
-        }
-      }
-      if (daily && !refused.has('daily')) dailyHeld = dailyJson;
-      if (office && !refused.has('office')) officeHeld = officeJson;
+      held = await syncReminders({ daily: wantedDaily, office: wantedOffice, planned, held, phone: PHONE, nowMs: Date.now() });
     })
     .catch(() => {
       // Permission refused or the OS declined. The app still works, and the next run tries the lists again.
-      dailyHeld = '';
-      officeHeld = '';
+      held = NONE_HELD;
     });
 }
 
@@ -200,6 +186,7 @@ export function useScheduledReminders() {
       mealPrompt: reminders.mealPrompt,
       awayLines: reminders.away,
       onboardedOn,
+      autoFillFrom,
       doneSlotIds: doneKey ? doneKey.split(',') : [],
       skips: app.state.slotSkips,
       plannedKcal: JSON.parse(plannedJson) as Record<string, number | null>,
@@ -223,6 +210,7 @@ export function useScheduledReminders() {
     reminders.fillYesterday,
     reminders.planWeek,
     onboardedOn,
+    autoFillFrom,
     today,
     minute,
     routine,

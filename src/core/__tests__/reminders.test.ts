@@ -20,6 +20,7 @@ import {
   promptOutcome,
   REMINDER_ROWS,
   reminderOps,
+  syncReminders,
   reportMonday,
   reportText,
   slotPlans,
@@ -30,6 +31,9 @@ import {
   tapRoute,
   weeklyReport,
   weekReport,
+  type HeldLists,
+  type Phone,
+  type ReminderOp,
   type ReminderInput,
 } from '../reminders';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
@@ -236,6 +240,13 @@ describe('plannedReminders: fill in yesterday', () => {
     expect(plannedReminders({ ...on, nowMinutes: 9 * 60 + 1, records: { '2026-10-11': 'partial', '2026-10-12': 'full' } })).toEqual([]);
     expect(plannedReminders({ ...on, onboardedOn: '2026-10-12', records: partly })).toEqual([]);
     expect(plannedReminders({ ...on, fillYesterday: false, records: partly })).toEqual([]);
+  });
+
+  it('counts from the record\'s start as the rest of the app does: a setup day after today (a clock that ran ahead) never holds it back, and a later start from the plan does', () => {
+    const partly: Record<string, DayRecordState> = { '2026-10-11': 'partial', '2026-10-12': 'partial' };
+    expect(plannedReminders({ ...on, onboardedOn: '2026-10-20', records: partly }).map((x) => x.id)).toEqual(['fill:2026-10-12', 'fill:2026-10-13']);
+    expect(plannedReminders({ ...on, onboardedOn: '2026-09-01', autoFillFrom: '2026-10-12', records: partly })).toEqual([]);
+    expect(plannedReminders({ ...on, onboardedOn: '2026-09-01', autoFillFrom: '2026-10-11', records: partly }).map((x) => x.id)).toEqual(['fill:2026-10-13']);
   });
 
   it('waits for quiet hours to end', () => {
@@ -646,9 +657,8 @@ describe('the phone\'s cap on pending notifications', () => {
       });
       const kinds = ops.map((o) => o.kind);
       expect(kinds.lastIndexOf('cancel')).toBeLessThan(kinds.findIndex((k) => k !== 'cancel'));
-      expect(ops.filter((o) => o.kind === 'cancel').map((o) => o.id).sort()).toEqual(
-        ['sobat-r-old', `${LONG_BREAK_ID}-3`, 'sobat-water', ...Object.values(DAILY_IDS).filter((id) => id !== 'sobat-sleep-checkin' && id !== 'sobat-water'), LONG_BREAK_ID].sort(),
-      );
+      // Only what the phone holds is cancelled: the planned one no longer wanted, the long break and water switched off.
+      expect(ops.filter((o) => o.kind === 'cancel').map((o) => o.id).sort()).toEqual(['sobat-r-old', `${LONG_BREAK_ID}-3`, 'sobat-water'].sort());
       // The daily list is registered whole (a repeating notification is replaced by its id); a planned one the phone holds is left.
       expect(ops.filter((o) => o.kind === 'daily').map((o) => o.kind === 'daily' && o.reminder.id)).toEqual(['sobat-sleep-checkin', `${LONG_BREAK_ID}-1`]);
       expect(ops.filter((o) => o.kind === 'at').map((o) => o.id)).toEqual(['sobat-r-new']);
@@ -880,6 +890,66 @@ describe('opList: the list a step to the phone belongs to, so a refused step has
     expect(lists({ daily: [daily] })).toEqual(['daily']);
     expect(lists({ office: [] })).toEqual(['office']);
     expect(lists({ daily: [] })).toEqual(['daily']);
+  });
+});
+
+describe('a run to the phone: a refused cancel is tried again, and a run with nothing refused settles', () => {
+  const NOW = new Date('2026-10-12T12:00:00').getTime();
+  const water = { id: 'sobat-water', hour: 15, minute: 0, title: '', body: '', data: { kind: 'water' as const } };
+  const at = { osId: 'sobat-r-slot', reminder: { id: 'slot', date: '2026-10-13', time: '13:00', title: '', body: '', data: { kind: 'slot' } } };
+  const weekly = { id: 'sobat-sched-start@2', weekday: 2, hour: 9, minute: 0, title: '', body: '' };
+  const NONE: HeldLists = { daily: '', office: '' };
+
+  /** A phone holding `held`, which refuses the cancels in `refuse` while they are in it. */
+  function fakePhone(held: string[], refuse: Set<string> = new Set()) {
+    const sent: ReminderOp[] = [];
+    const ids = new Set(held);
+    const phone: Phone = {
+      ids: async () => [...ids],
+      apply: async (op) => {
+        sent.push(op);
+        if (op.kind === 'cancel') {
+          if (refuse.has(op.id)) throw new Error('refused');
+          ids.delete(op.id);
+        } else ids.add(op.kind === 'at' ? op.id : op.reminder.id);
+      },
+    };
+    return { phone, sent, ids, refuse };
+  }
+
+  it('never cancels an id the phone does not hold, the daily ones and the long breaks included', () => {
+    expect(reminderOps({ have: [], planned: null, daily: [], office: [], nowMs: NOW })).toEqual([]);
+    expect(reminderOps({ have: ['sobat-mantra'], planned: [], daily: [], office: [], nowMs: NOW })).toEqual([{ kind: 'cancel', id: 'sobat-mantra' }]);
+  });
+
+  it('keeps a list whose cancel was refused unsettled, and the next run sends that cancel again', async () => {
+    const p = fakePhone(['sobat-water'], new Set(['sobat-water']));
+    // Water switched off: the daily list is now empty, and the phone refuses the cancel.
+    const first = await syncReminders({ daily: [], office: null, planned: null, held: NONE, phone: p.phone, nowMs: NOW });
+    expect(first.daily).toBe('');
+    expect(p.sent).toEqual([{ kind: 'cancel', id: 'sobat-water' }]);
+    p.refuse.clear();
+    const second = await syncReminders({ daily: [], office: null, planned: null, held: first, phone: p.phone, nowMs: NOW });
+    expect(p.sent).toEqual([{ kind: 'cancel', id: 'sobat-water' }, { kind: 'cancel', id: 'sobat-water' }]);
+    expect(second.daily).toBe('[]');
+    expect(p.ids.has('sobat-water')).toBe(false);
+  });
+
+  it('a refused office cancel keeps only the office list unsettled', async () => {
+    const p = fakePhone(['sobat-sched-lunch@3'], new Set(['sobat-sched-lunch@3']));
+    const held = await syncReminders({ daily: [water], office: [weekly], planned: null, held: NONE, phone: p.phone, nowMs: NOW });
+    expect(held).toEqual({ daily: JSON.stringify([water]), office: '' });
+  });
+
+  it('settles: a second run with the same lists sends nothing', async () => {
+    const p = fakePhone(['sobat-r-old']);
+    const lists = { daily: [water], office: [weekly], planned: [at] };
+    const held = await syncReminders({ ...lists, held: NONE, phone: p.phone, nowMs: NOW });
+    expect(p.sent.map((o) => o.kind)).toEqual(['cancel', 'at', 'weekly', 'daily']);
+    const n = p.sent.length;
+    const again = await syncReminders({ ...lists, held, phone: p.phone, nowMs: NOW });
+    expect(p.sent).toHaveLength(n);
+    expect(again).toEqual(held);
   });
 });
 

@@ -1,6 +1,6 @@
 import type { BreakSettings } from './breaks';
 import { addDays, isIsoDate, toISODate, weekDates } from './date';
-import { menuSlots, skippedOn, type DayMenu } from './menu';
+import { menuSlots, recordStart, skippedOn, type DayMenu } from './menu';
 import { inQuietHours } from './nudge';
 import { pattern, slotOf } from './pattern';
 import { completeIntake, fullDays } from './progress';
@@ -67,6 +67,8 @@ export type ReminderInput = {
   awayLines: boolean;
   /** The day the person finished setup: no slot prompt on it, and no "fill in" for it or the days before. Missing on older profiles. */
   onboardedOn?: ISODate;
+  /** The day the app began filling in meals from the plan: no "fill in" for it or the days before, as with `onboardedOn` (`recordStart`). */
+  autoFillFrom?: ISODate;
   /** Slots done or skipped today; a meal the app filled in counts as eaten. */
   doneSlotIds: string[];
   /** Slots skipped ahead, on any day: none of them is prompted. */
@@ -219,7 +221,9 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
     if (input.fillYesterday && k < FILL_DAYS && !quiet(morning) && ahead(k, morning)) {
       const yesterday = addDays(date, -1);
       const state = input.records[yesterday];
-      const started = !input.onboardedOn || yesterday > input.onboardedOn;
+      // From the record's start, as the week strip and the app's own filling in read it: a date after today, from a clock that ran ahead, does not count.
+      const start = recordStart({ onboardedOn: input.onboardedOn, autoFillFrom: input.autoFillFrom }, input.today);
+      const started = !start || yesterday > start;
       if (started && (state === 'partial' || state === 'empty')) {
         out.push({ id: `fill:${date}`, date, time: hhmm(morning), title: input.t('rem_fill_title'), body: input.t('rem_fill_body'), data: { kind: 'fill', date: yesterday } });
       }
@@ -513,8 +517,9 @@ export type ReminderOp =
  * holds; `planned` the planned ones to hold, each with its id on the phone,
  * null to leave them as they are; `office` and `daily` the lists to register
  * whole, null to leave them (not known yet, or the same list already
- * registered). A planned one the phone holds is left; one whose moment has
- * passed is not planned, as it would fire at once. The adds go the meal-time
+ * registered). Only ids the phone holds are cancelled. A planned one the
+ * phone holds is left; one whose moment has passed is not planned, as it
+ * would fire at once. The adds go the meal-time
  * prompts first, as they matter most, then the office day, then the daily
  * ones. Pure.
  */
@@ -543,8 +548,9 @@ export function reminderOps(input: {
   }
   if (input.daily) {
     const ids = new Set(input.daily.map((r) => r.id));
-    for (const id of [...Object.values(DAILY_IDS), LONG_BREAK_ID]) if (!ids.has(id)) cancels.add(id);
-    for (const id of input.have) if (id.startsWith(LONG_BREAK_ID) && !ids.has(id)) cancels.add(id);
+    // Only what the phone holds: an id it does not have would be a cancel that can only fail, keeping the list from settling.
+    const daily = new Set<string>(Object.values(DAILY_IDS));
+    for (const id of input.have) if ((daily.has(id) || id.startsWith(LONG_BREAK_ID)) && !ids.has(id)) cancels.add(id);
     for (const reminder of input.daily) adds.push({ kind: 'daily', reminder });
   }
   return [...[...cancels].map((id): ReminderOp => ({ kind: 'cancel', id })), ...adds];
@@ -565,6 +571,55 @@ export function opList(op: ReminderOp): 'planned' | 'office' | 'daily' {
   if (op.id.startsWith(OFFICE_PREFIX)) return 'office';
   if (op.id.startsWith(PLANNED_PREFIX)) return 'planned';
   return 'daily';
+}
+
+/** The daily and the office lists last registered in full, each by value ('' for none), so a run that would register the same list again leaves it. */
+export type HeldLists = { daily: string; office: string };
+
+/** What a run talks to: the ids the phone holds, one step to it (a refusal rejects), and what to set up before a daily or office add. */
+export type Phone = {
+  ids: () => Promise<string[]>;
+  apply: (op: ReminderOp) => Promise<void>;
+  setup?: () => Promise<void>;
+};
+
+/**
+ * One run that brings the phone to the wanted lists (`reminderOps`), each
+ * null until it is known. The daily and office lists go only when they differ
+ * from what is held; the planned ones are matched against what the phone
+ * holds every time. Each step is tried on its own, so one the phone refuses
+ * never stops the rest; a list with a refused step, an add or a cancel
+ * (`opList`), stays unsettled and is sent again whole on the next run. A run
+ * with nothing refused settles: the next one with the same lists sends
+ * nothing. Returns what is held after it.
+ */
+export async function syncReminders(input: {
+  daily: DailyReminder[] | null;
+  office: WeeklyReminder[] | null;
+  planned: { osId: string; reminder: Reminder }[] | null;
+  held: HeldLists;
+  phone: Phone;
+  nowMs: number;
+}): Promise<HeldLists> {
+  const dailyJson = input.daily ? JSON.stringify(input.daily) : '';
+  const daily = input.daily && dailyJson !== input.held.daily ? input.daily : null;
+  const officeJson = input.office ? JSON.stringify(input.office) : '';
+  const office = input.office && officeJson !== input.held.office ? input.office : null;
+  if (!daily && !office && !input.planned) return input.held;
+  if ((daily || office) && input.phone.setup) await input.phone.setup();
+  const ops = reminderOps({ have: await input.phone.ids(), planned: input.planned, daily, office, nowMs: input.nowMs });
+  const refused = new Set<ReturnType<typeof opList>>();
+  for (const op of ops) {
+    try {
+      await input.phone.apply(op);
+    } catch {
+      refused.add(opList(op));
+    }
+  }
+  return {
+    daily: daily && !refused.has('daily') ? dailyJson : input.held.daily,
+    office: office && !refused.has('office') ? officeJson : input.held.office,
+  };
 }
 
 /** The daily reminders this device should hold. Anything registered and not in here is to be cancelled. */

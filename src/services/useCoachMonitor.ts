@@ -15,9 +15,10 @@ import { useMinute } from './useWorkSchedule';
  * any advice that is urgent now is said once, as a toast and a notification.
  * Never in quiet hours, never twice for the same thing on the same day, and
  * never in the first minute after opening, when the screen already shows it.
- * Never a call to eat at a meal's time (`MEAL_TIME_ADVICE`): with the
- * meal-time prompt on, the prompt already asked, so one meal is one ping; the
- * line on Today still shows it.
+ * A call to eat at a meal's time (`MEAL_TIME_ADVICE`) is never sent, the
+ * meal-time prompt on or off: off, the person turned those calls off; on, the
+ * prompt itself asks, so one meal is one ping. The line on Today still shows
+ * it.
  * Silent on a device that is signed out or reset: signing in counts as opening.
  * With the nudges off it does nothing at all, not even read the day, and
  * switching them on counts as opening too.

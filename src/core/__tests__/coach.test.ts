@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adviceToSay, coachAdvice, MEAL_TIME_ADVICE, type Advice, type CoachInput } from '../coach';
+import { adviceToSay, coachAdvice, type Advice, type CoachInput } from '../coach';
 import { expectedWaterByHour } from '../nudge';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, type Routine } from '../routine';
 import type { Budget } from '../nutrition';
@@ -239,12 +239,13 @@ describe('adviceToSay', () => {
     const advice = coachAdvice({ ...base, ...clock(14, 30), plannedKcal: { lunch: 640 } });
     // The line on Today shows the first advice, the call to eat.
     expect(advice[0]).toMatchObject({ key: 'coach_meal_due', urgency: 'now', action: 'log' });
-    const said = adviceToSay({ ...here, advice, said: new Set() });
-    expect(MEAL_TIME_ADVICE).not.toContain(said?.key);
+    // Nothing else is urgent then, so the coach says nothing at all.
+    expect(adviceToSay({ ...here, advice, said: new Set() })).toBeNull();
     // A late dinner too.
     const late = coachAdvice({ ...base, ...clock(21, 30), settledSlotIds: ['breakfast', 'lunch', 'snack'], budget: budget(1000), nextPlate: null, plannedKcal: { dinner: 520 } });
     expect(late.map((x) => x.key)).toContain('coach_late_dinner');
-    expect(MEAL_TIME_ADVICE).not.toContain(adviceToSay({ ...here, hour: 21, advice: late, said: new Set() })?.key);
+    // The late dinner is passed over for the next urgent thing, the water.
+    expect(adviceToSay({ ...here, hour: 21, advice: late, said: new Set() })).toBe(late.find((a) => a.key === 'coach_water'));
   });
 
   it('never says the same thing twice, and never advice with nothing to do', () => {

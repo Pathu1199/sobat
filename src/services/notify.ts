@@ -219,14 +219,20 @@ export async function scheduledIds(): Promise<string[]> {
   }
 }
 
-export async function cancel(id: string): Promise<void> {
-  const n = loadNative();
-  if (!n) return;
+/** Cancels a pending notification and never fails: before a reminder is registered again under its own id, where nothing held is fine. */
+async function cancel(id: string): Promise<void> {
   try {
-    await n.cancelScheduledNotificationAsync(id);
+    await cancelHeld(id);
   } catch {
     // Nothing scheduled under that id.
   }
+}
+
+/** Cancels a pending notification the phone holds, and lets a refusal through, so the caller can try again on its next run. */
+export async function cancelHeld(id: string): Promise<void> {
+  const n = loadNative();
+  if (!n) return;
+  await n.cancelScheduledNotificationAsync(id);
 }
 
 export async function cancelAll(): Promise<void> {
