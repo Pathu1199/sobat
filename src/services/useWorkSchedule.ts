@@ -1,30 +1,28 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import { slotStates } from '../core/pattern';
+import { settledSlotIds, slotStates } from '../core/pattern';
+import { promptDue, slotPlans } from '../core/reminders';
 import { slotLabel, slotsDueBetween } from '../core/routine';
-import { orderedBlocks, startedBetween, toMinutes } from '../core/schedule';
+import { startedBetween } from '../core/schedule';
 import { storyLine, storySeed, type StoryKind } from '../core/storyLines';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useFeedback } from './feedback';
-import { cancel, notifyNow, scheduleDaily, scheduledIds } from './notify';
+import { notifyNow } from './notify';
 import { useMinute } from './useClock';
 import { useReminderGate } from './useScheduledReminders';
 
 // The minute clock lives beside the hour clock, where the store can read it too; the screens still import it from here.
 export { useMinute } from './useClock';
 
-const PREFIX = 'sobat-sched-';
-
-// Runs are chained so a sign-out's cancels never interleave with an earlier run's adds.
-let chain: Promise<void> = Promise.resolve();
-
 /**
- * Says something at the start of each block of the office day. While the app
- * is open, a toast and a notification come from the minute tick; on a phone
- * the blocks are also registered as daily notifications, so they arrive with
- * the app closed. A web app on a phone cannot do that, so there the tick is
- * all there is.
+ * What the app says on its own from the minute tick, on the web and the PC
+ * only: the start of each block of the office day, and the meal-time prompt
+ * for a slot whose time has passed with nothing logged. A phone has both from
+ * the OS (useScheduledReminders: the office day weekly on each day chosen,
+ * the meal-time prompts planned ahead), app closed or not, so it never gets a
+ * second copy from here. A web app cannot be woken, so there the tick is all
+ * there is.
  */
 export function useWorkSchedule() {
   const app = useApp();
@@ -32,15 +30,14 @@ export function useWorkSchedule() {
   const { schedule, profile, routine, settings } = app.state;
   const minute = useMinute();
   const last = useRef(minute);
-  const lastRegistered = useRef<string[]>([]);
   const t = makeT(profile.lang);
-  const { known, active } = useReminderGate();
+  const { active } = useReminderGate();
 
   useEffect(() => {
     const from = last.current;
     last.current = minute;
     // Across midnight the minute count drops; nothing starts at that moment anyway.
-    if (minute <= from || !active) return;
+    if (Platform.OS !== 'web' || minute <= from || !active) return;
     for (const b of startedBetween(schedule, app.today, from, minute)) {
       const title = t(`ntf_${b.kind}`);
       const kind: StoryKind = b.kind === 'break' ? 'break' : b.kind === 'end' ? 'walk' : b.kind === 'start' ? 'mantra' : 'meal';
@@ -52,14 +49,16 @@ export function useWorkSchedule() {
         })
         .catch(() => {});
     }
-    // A routine meal whose time passed with nothing logged against it: ask once, log or skip. Only while the
-    // meal-time prompt is on, and never on the day the person finished setup.
-    if (settings.reminders.mealPrompt && app.today !== profile.onboardedOn) {
+    // A slot whose time passed with nothing logged against it: ask once, log or skip. Only while the meal-time prompt is on,
+    // and by the phone's rules (`promptDue`): never on a free day, on the day the person finished setup, for a slot planned
+    // empty, or for one eaten or skipped.
+    if (settings.reminders.mealPrompt) {
       const todayMeals = app.state.meals.filter((m) => m.date === app.today);
-      const states = slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday });
+      const settled = settledSlotIds(slotStates({ routine, target: app.targets.kcal, meals: todayMeals, nowMinutes: minute, skippedSlots: app.skippedToday }));
+      const plans = slotPlans(app.menuOn(app.today), app.planFoods);
       for (const s of slotsDueBetween(routine, from, minute)) {
-        const st = states.find((x) => x.slot.id === s.id);
-        if (!st || st.status === 'done' || st.status === 'skipped' || app.skippedToday.includes(s.id)) continue;
+        const due = promptDue({ date: app.today, slotId: s.id, offDays: settings.offDays ?? [], onboardedOn: profile.onboardedOn, planned: plans[s.id], settled, skips: app.state.slotSkips });
+        if (!due) continue;
         const title = `${slotLabel(s, profile.lang)}?`;
         notifyNow(title, t('slot_prompt'), { priority: 'high' })
           .then((sent) => {
@@ -71,30 +70,4 @@ export function useWorkSchedule() {
     // Only the minute changing should speak; a schedule edit should not replay the day.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minute]);
-
-  // Native: the OS fires these even with the app closed. One per block, daily.
-  // Slot prompts are planned a week ahead by useScheduledReminders, not here.
-  useEffect(() => {
-    if (Platform.OS === 'web' || !known) return;
-    let stale = false;
-    chain = chain.then(async () => {
-      if (stale) return;
-      // A signed-out or reset device holds none.
-      const blocks = active && schedule.enabled ? orderedBlocks(schedule) : [];
-      for (const b of blocks) {
-        const m = toMinutes(b.start);
-        await scheduleDaily(`${PREFIX}${b.id}`, Math.floor(m / 60), m % 60, t(`ntf_${b.kind}`), t(`ntf_${b.kind}_body`));
-      }
-      const wanted = blocks.map((b) => `${PREFIX}${b.id}`);
-      // Blocks removed in Settings must stop firing too, and so must everything after a sign-out or a reset
-      // and the per-slot dailies older builds registered: the OS's own list, since this run may follow a restart.
-      for (const id of lastRegistered.current) if (!wanted.includes(id)) await cancel(id);
-      for (const id of await scheduledIds()) if (id.startsWith(PREFIX) && !wanted.includes(id)) await cancel(id);
-      lastRegistered.current = wanted;
-    }).catch(() => {});
-    return () => {
-      stale = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schedule, known, active, profile.lang]);
 }

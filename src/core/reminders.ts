@@ -6,9 +6,11 @@ import { pattern, slotOf } from './pattern';
 import { completeIntake, fullDays } from './progress';
 import type { DayRecord, DayRecordState } from './record';
 import { slotLabel, type Routine } from './routine';
+import { orderedBlocks, toMinutes, type WorkSchedule } from './schedule';
 import { shownWeight, signedKg } from './tileText';
-import type { AppState, ISODate, Lang, Meal, Settings, SlotSkip, WeightLog } from './types';
+import type { AppState, FoodItem, ISODate, Lang, Meal, Settings, SlotSkip, WeightLog } from './types';
 import { isOffDay } from './week';
+import { plannedKcal as linesKcal } from './weekPlan';
 import { fill, numberText } from '../i18n';
 
 /**
@@ -109,16 +111,17 @@ export const PENDING_LIMIT = 64;
 /**
  * What fits under the phone's cap, in the order they matter: the meal-time
  * prompts and the other planned reminders first (the soonest of them, as
- * `plannedReminders` sorts them), then the office day's blocks and the daily
- * reminders; the long breaks get what is left (`dailyReminders` with `room`).
- * `planned` is how many of the planned list to hold, `daily` the room for the
- * daily ones. More than 64 planned cannot come up (three days of meal-time
- * prompts and a few morning lines stay far under it), but the cap would hold
- * if it did.
+ * `plannedReminders` sorts them), then the office day's weekly blocks, then
+ * the daily reminders; the long breaks get what is left (`dailyReminders`
+ * with `room`). `planned` is how many of the planned list to hold, `office`
+ * how many of the office day's, `daily` the room for the daily ones. More
+ * than 64 planned cannot come up (three days of meal-time prompts and a few
+ * morning lines stay far under it), but the cap would hold if it did.
  */
-export function pendingFit(planned: number, office: number, limit = PENDING_LIMIT): { planned: number; daily: number } {
+export function pendingFit(planned: number, office: number, limit = PENDING_LIMIT): { planned: number; office: number; daily: number } {
   const kept = Math.min(planned, limit);
-  return { planned: kept, daily: Math.max(0, limit - kept - office) };
+  const work = Math.min(office, limit - kept);
+  return { planned: kept, office: work, daily: Math.max(0, limit - kept - work) };
 }
 
 /** Days planned ahead, today included: a week and a day, so a report worked out on a Monday after its moment is next Monday's. */
@@ -145,6 +148,42 @@ function hhmm(minutes: number): string {
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 }
 
+/**
+ * Whether a slot gets the meal-time prompt on a date: one rule for the
+ * phone's planned prompts and the app's own on the web. Never on a free day,
+ * on the day the person finished setup, for a slot planned empty, or for one
+ * eaten or skipped. The switch, the time of day and quiet hours are the
+ * caller's to judge.
+ */
+export function promptDue(p: {
+  date: ISODate;
+  slotId: string;
+  offDays: number[];
+  onboardedOn?: ISODate;
+  /** The slot's planned calories that day, as `slotPlans` gives them: null for a slot planned empty, missing when its plan is not known. */
+  planned: number | null | undefined;
+  /** Slots eaten or skipped that day, as the record reads them; a meal the app filled in counts as eaten. */
+  settled: string[];
+  /** Slots skipped ahead, on any day. */
+  skips: SlotSkip[];
+}): boolean {
+  if (isOffDay(p.offDays, p.date) || p.date === p.onboardedOn) return false;
+  if (p.planned === null) return false;
+  if (p.settled.includes(p.slotId)) return false;
+  return !skippedOn(p.skips, p.date).includes(p.slotId);
+}
+
+/**
+ * Each slot's planned calories on a day's menu, by slot id; null for a slot
+ * planned empty (no lines). A slot is planned by its lines, as the record
+ * reads it, so lines that add up to no calories (black tea) are a plan.
+ */
+export function slotPlans(menu: DayMenu, foods: FoodItem[]): Record<string, number | null> {
+  const out: Record<string, number | null> = {};
+  for (const m of menu.meals) out[m.id] = m.lines.length > 0 ? linesKcal(m.lines, foods) : null;
+  return out;
+}
+
 export function plannedReminders(input: ReminderInput): Reminder[] {
   const days = input.days ?? PLAN_DAYS;
   const out: Reminder[] = [];
@@ -159,15 +198,13 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
     const date = addDays(input.today, k);
     const off = isOffDay(input.offDays, date);
 
-    const skipped = skippedOn(skips, date);
-    for (const p of k < SLOT_DAYS && !off && date !== input.onboardedOn ? slots : []) {
+    for (const p of k < SLOT_DAYS ? slots : []) {
       if (quiet(p.minutes) || !ahead(k, p.minutes)) continue;
-      if ((k === 0 && input.doneSlotIds.includes(p.id)) || skipped.includes(p.id)) continue;
       const kcal = input.plannedKcal[`${date}:${p.id}`];
-      // Nothing planned there: nothing to ask about.
-      if (kcal === null) continue;
+      if (!promptDue({ date, slotId: p.id, offDays: input.offDays, onboardedOn: input.onboardedOn, planned: kcal, settled: k === 0 ? input.doneSlotIds : [], skips })) continue;
       const label = slotLabel(p.slot, input.lang);
-      const planned = kcal !== undefined;
+      // A slot planned empty never gets here; one whose plan is not known gets the plain question.
+      const planned = typeof kcal === 'number';
       out.push({
         id: `slot:${p.id}:${date}`,
         date,
@@ -426,30 +463,70 @@ export const LONG_BREAK_ID = 'sobat-long-break';
 
 /** Everything planned a week ahead carries this on the phone, so it can be told apart from the daily ones. */
 export const PLANNED_PREFIX = 'sobat-r-';
+/** Every office-day reminder's id starts with this; older builds registered each block daily under it with the block's id alone. */
+export const OFFICE_PREFIX = 'sobat-sched-';
 
-/** One step of bringing the phone's pending notifications to what is wanted. */
-export type ReminderOp = { kind: 'cancel'; id: string } | { kind: 'daily'; reminder: DailyReminder } | { kind: 'at'; id: string; reminder: Reminder };
+/** A reminder the OS repeats every week on one weekday at one clock time, app closed or not: one office block on one working day. */
+export type WeeklyReminder = {
+  id: string;
+  /** 1 is Sunday and 7 Saturday, as the phone counts them (Date.getDay() + 1). */
+  weekday: number;
+  hour: number;
+  minute: number;
+  title: string;
+  body: string;
+};
 
 /**
- * One run that brings the phone to what is wanted, the planned reminders and
- * the daily ones together: every cancel, of either kind, before any add, so
- * the pending count never passes the phone's cap on the way (a cap of 64 that
- * drops the rest without a word). `have` is what the phone holds; `planned`
- * the planned ones to hold, each with its id on the phone, null to leave them
- * as they are; `daily` the daily list to register whole, null to leave it (not
- * known yet, or the same list already registered). A planned one the phone
- * holds is left; one whose moment has passed is not planned, as it would fire
- * at once. Pure.
+ * The office day as the phone holds it: each block at its start, every week
+ * on each weekday the person chose, so a day switched off stays quiet (a
+ * daily reminder cannot pick days). None while the check-ins are off or on a
+ * device that is signed out or reset. A block with a broken time is left out.
  */
-export function reminderOps(input: { have: string[]; planned: { osId: string; reminder: Reminder }[] | null; daily: DailyReminder[] | null; nowMs: number }): ReminderOp[] {
+export function officeReminders(input: { active: boolean; schedule: WorkSchedule; t: (key: string) => string }): WeeklyReminder[] {
+  const { schedule: s, t } = input;
+  if (!input.active || !s.enabled) return [];
+  const days = [...new Set(s.days)].filter((d) => Number.isInteger(d) && d >= 0 && d <= 6).sort((a, b) => a - b);
+  const blocks = orderedBlocks(s);
+  const out: WeeklyReminder[] = [];
+  for (const day of days) {
+    for (const b of blocks) {
+      const m = toMinutes(b.start);
+      out.push({ id: `${OFFICE_PREFIX}${b.id}@${day + 1}`, weekday: day + 1, hour: Math.floor(m / 60), minute: m % 60, title: t(`ntf_${b.kind}`), body: t(`ntf_${b.kind}_body`) });
+    }
+  }
+  return out;
+}
+
+/** One step of bringing the phone's pending notifications to what is wanted. */
+export type ReminderOp =
+  | { kind: 'cancel'; id: string }
+  | { kind: 'daily'; reminder: DailyReminder }
+  | { kind: 'weekly'; reminder: WeeklyReminder }
+  | { kind: 'at'; id: string; reminder: Reminder };
+
+/**
+ * One run that brings the phone to what is wanted, the planned reminders, the
+ * office day and the daily ones together: every cancel, of any kind, before
+ * any add, so the pending count never passes the phone's cap on the way (a
+ * cap of 64 that drops the rest without a word). `have` is what the phone
+ * holds; `planned` the planned ones to hold, each with its id on the phone,
+ * null to leave them as they are; `office` and `daily` the lists to register
+ * whole, null to leave them (not known yet, or the same list already
+ * registered). A planned one the phone holds is left; one whose moment has
+ * passed is not planned, as it would fire at once. The adds go the meal-time
+ * prompts first, as they matter most, then the office day, then the daily
+ * ones. Pure.
+ */
+export function reminderOps(input: {
+  have: string[];
+  planned: { osId: string; reminder: Reminder }[] | null;
+  daily: DailyReminder[] | null;
+  office?: WeeklyReminder[] | null;
+  nowMs: number;
+}): ReminderOp[] {
   const cancels = new Set<string>();
   const adds: ReminderOp[] = [];
-  if (input.daily) {
-    const ids = new Set(input.daily.map((r) => r.id));
-    for (const id of [...Object.values(DAILY_IDS), LONG_BREAK_ID]) if (!ids.has(id)) cancels.add(id);
-    for (const id of input.have) if (id.startsWith(LONG_BREAK_ID) && !ids.has(id)) cancels.add(id);
-    for (const reminder of input.daily) adds.push({ kind: 'daily', reminder });
-  }
   if (input.planned) {
     const want = new Set(input.planned.map((p) => p.osId));
     for (const id of input.have) if (id.startsWith(PLANNED_PREFIX) && !want.has(id)) cancels.add(id);
@@ -458,6 +535,17 @@ export function reminderOps(input: { have: string[]; planned: { osId: string; re
       if (new Date(`${p.reminder.date}T${p.reminder.time}:00`).getTime() <= input.nowMs) continue;
       adds.push({ kind: 'at', id: p.osId, reminder: p.reminder });
     }
+  }
+  if (input.office) {
+    const ids = new Set(input.office.map((r) => r.id));
+    for (const id of input.have) if (id.startsWith(OFFICE_PREFIX) && !ids.has(id)) cancels.add(id);
+    for (const reminder of input.office) adds.push({ kind: 'weekly', reminder });
+  }
+  if (input.daily) {
+    const ids = new Set(input.daily.map((r) => r.id));
+    for (const id of [...Object.values(DAILY_IDS), LONG_BREAK_ID]) if (!ids.has(id)) cancels.add(id);
+    for (const id of input.have) if (id.startsWith(LONG_BREAK_ID) && !ids.has(id)) cancels.add(id);
+    for (const reminder of input.daily) adds.push({ kind: 'daily', reminder });
   }
   return [...[...cancels].map((id): ReminderOp => ({ kind: 'cancel', id })), ...adds];
 }
@@ -476,7 +564,8 @@ export function dailyReminders(input: DailyInput): DailyReminder[] {
   // The day recap, just before things wind down.
   if (input.dayReview) out.push({ id: DAILY_IDS.review, hour: 21, minute: 30, title: t('day_review'), body: t('write_review'), data: { kind: 'review' } });
   const room = Math.max(0, input.room ?? Infinity);
-  const fixed = out.slice(0, room);
+  // A fixed one whose hour falls in quiet hours is dropped: the night is the person's.
+  const fixed = out.filter((r) => !inQuietHours(r.hour, input.quietStartHour, input.quietEndHour)).slice(0, room);
   return [...fixed, ...longBreaks(input).slice(0, room - fixed.length)];
 }
 

@@ -305,7 +305,8 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
     // Older stores have no routine; one saved before a field existed gets the default for it.
     routine,
     spend: Array.isArray(raw.spend) ? (raw.spend as AppState['spend']) : [],
-    schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}) },
+    // Version 7: the office-day check-ins are off unless switched on again, as the nudges are; the days and times stay.
+    schedule: { ...EMPTY_STATE.schedule, ...(isRecord(raw.schedule) ? raw.schedule : {}), ...(fromVersion < 7 ? { enabled: false } : {}) },
     // Its week is in `menus` now.
     weekPlan: null,
     menus,

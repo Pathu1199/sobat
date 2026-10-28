@@ -11,14 +11,18 @@ import {
   daysAway,
   lastLogDate,
   missedDays,
+  OFFICE_PREFIX,
+  officeReminders,
   PENDING_LIMIT,
   pendingFit,
   plannedReminders,
+  promptDue,
   promptOutcome,
   REMINDER_ROWS,
   reminderOps,
   reportMonday,
   reportText,
+  slotPlans,
   firstTap,
   tapKey,
   tapPlan,
@@ -29,10 +33,14 @@ import {
   type ReminderInput,
 } from '../reminders';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
+import { DEFAULT_SCHEDULE, type WorkSchedule } from '../schedule';
 import { shownWeight } from '../tileText';
-import type { Meal } from '../types';
+import type { FoodItem, Meal } from '../types';
+import foodsJson from '../../data/foods.json';
 import { makeT } from '../../i18n';
-import { DEFAULT_SETTINGS } from '../../store/defaults';
+import { DEFAULT_SETTINGS, EMPTY_STATE } from '../../store/defaults';
+
+const foodsList = foodsJson as FoodItem[];
 
 const slot = (id: string, type: RoutineSlot['type'], time: string, share: number): RoutineSlot => ({ id, type, time, label_en: id, label_mr: '', label_hi: '', options: [[]], withBhaji: false, share });
 const routine: Routine = { ...DEFAULT_ROUTINE, enabled: true, slots: [slot('morning', 'breakfast', '08:30', 25), slot('lunch', 'lunch', '13:00', 40), slot('dinner', 'dinner', '19:30', 35)] };
@@ -622,11 +630,11 @@ describe('the phone\'s cap on pending notifications', () => {
   });
 
   it('keeps the planned reminders first, then the daily ones and the office day, and leaves the long breaks what is left', () => {
-    expect(pendingFit(30, 6)).toEqual({ planned: 30, daily: 28 });
-    expect(pendingFit(0, 0)).toEqual({ planned: 0, daily: 64 });
+    expect(pendingFit(30, 6)).toEqual({ planned: 30, office: 6, daily: 28 });
+    expect(pendingFit(0, 0)).toEqual({ planned: 0, office: 0, daily: 64 });
     // More than 64 planned cannot happen (three days of prompts and a few morning lines, as the next test shows), but the cap holds if it did.
-    expect(pendingFit(70, 6)).toEqual({ planned: 64, daily: 0 });
-    expect(pendingFit(60, 6)).toEqual({ planned: 60, daily: 0 });
+    expect(pendingFit(70, 6)).toEqual({ planned: 64, office: 0, daily: 0 });
+    expect(pendingFit(60, 6)).toEqual({ planned: 60, office: 4, daily: 0 });
   });
 
   describe('reminderOps: one run that brings the phone to what is wanted', () => {
@@ -716,5 +724,145 @@ describe('Settings: a switch for every reminder', () => {
     // The evening review says where its tap goes, and the nudges name the switch they speak of, as Settings shows it.
     expect(makeT('en')('rem_review_desc')).toContain('opens Today');
     for (const lang of ['en', 'mr', 'hi'] as const) expect(makeT(lang)('rem_nudges_desc'), lang).toContain(`"${makeT(lang)('push_title')}"`);
+  });
+});
+
+describe('promptDue: one rule for the meal-time prompt, on the phone and in the app', () => {
+  // 2026-10-12 is a Monday, 2026-10-18 a Sunday.
+  const due = { date: '2026-10-12', slotId: 'lunch', offDays: [] as number[], planned: 600 as number | null | undefined, settled: [] as string[], skips: [] as { id: string; date: string; slotId: string }[] };
+
+  it('asks about a slot with a plan, and about one whose plan is not known', () => {
+    expect(promptDue(due)).toBe(true);
+    expect(promptDue({ ...due, planned: undefined })).toBe(true);
+    // Lines that add up to no calories (black tea) are still a plan.
+    expect(promptDue({ ...due, planned: 0 })).toBe(true);
+  });
+
+  it('never on a free day', () => {
+    expect(promptDue({ ...due, offDays: [1] })).toBe(false);
+    expect(promptDue({ ...due, date: '2026-10-18', offDays: [0] })).toBe(false);
+    expect(promptDue({ ...due, offDays: [0] })).toBe(true);
+  });
+
+  it('never for a slot planned empty', () => {
+    expect(promptDue({ ...due, planned: null })).toBe(false);
+  });
+
+  it('never on the day the person finished setup', () => {
+    expect(promptDue({ ...due, onboardedOn: '2026-10-12' })).toBe(false);
+    expect(promptDue({ ...due, onboardedOn: '2026-10-11' })).toBe(true);
+  });
+
+  it('never for a slot eaten or skipped, today or skipped ahead', () => {
+    expect(promptDue({ ...due, settled: ['lunch'] })).toBe(false);
+    expect(promptDue({ ...due, skips: [{ id: skipId('2026-10-12', 'lunch'), date: '2026-10-12', slotId: 'lunch' }] })).toBe(false);
+    expect(promptDue({ ...due, skips: [{ id: skipId('2026-10-13', 'lunch'), date: '2026-10-13', slotId: 'lunch' }] })).toBe(true);
+  });
+
+  it('reads each slot\'s plan off the day\'s menu: its calories, null for one planned empty', () => {
+    const menu: DayMenu = {
+      date: '2026-10-12',
+      editedAt: '',
+      meals: [
+        { id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] },
+        { id: 'dinner', type: 'dinner', time: '19:30', lines: [] },
+      ],
+    } as unknown as DayMenu;
+    const plans = slotPlans(menu, foodsList);
+    expect(plans.dinner).toBeNull();
+    expect(plans.lunch).toBeGreaterThan(0);
+    expect(Object.keys(plans).sort()).toEqual(['dinner', 'lunch']);
+  });
+});
+
+describe('officeReminders: the office day on the phone, one per block on each chosen weekday', () => {
+  const words = (k: string) => k;
+  const office: WorkSchedule = {
+    enabled: true,
+    days: [3, 1],
+    blocks: [
+      { id: 'lunch', kind: 'lunch', start: '13:00', end: '13:30' },
+      { id: 'start', kind: 'start', start: '09:15' },
+      { id: 'bad', kind: 'break', start: 'soon' },
+    ],
+  };
+
+  it('repeats each block weekly on each day chosen, the weekday as the phone counts it (1 is Sunday)', () => {
+    const r = officeReminders({ active: true, schedule: office, t: words });
+    expect(r.map((x) => `${x.id} ${x.weekday} ${x.hour}:${x.minute}`)).toEqual([
+      'sobat-sched-start@2 2 9:15',
+      'sobat-sched-lunch@2 2 13:0',
+      'sobat-sched-start@4 4 9:15',
+      'sobat-sched-lunch@4 4 13:0',
+    ]);
+    expect(r[0]).toMatchObject({ title: 'ntf_start', body: 'ntf_start_body' });
+    expect(r.every((x) => x.id.startsWith(OFFICE_PREFIX))).toBe(true);
+    // Sunday is the phone's 1 and Saturday its 7.
+    expect(officeReminders({ active: true, schedule: { ...office, days: [0, 6] }, t: words }).map((x) => x.weekday)).toEqual([1, 1, 7, 7]);
+  });
+
+  it('a day switched off stays quiet, and so does every day while the check-ins are off or nobody is signed in', () => {
+    expect(officeReminders({ active: true, schedule: { ...office, days: [1] }, t: words }).map((x) => x.weekday)).toEqual([2, 2]);
+    expect(officeReminders({ active: true, schedule: { ...office, days: [] }, t: words })).toEqual([]);
+    expect(officeReminders({ active: true, schedule: { ...office, enabled: false }, t: words })).toEqual([]);
+    expect(officeReminders({ active: false, schedule: office, t: words })).toEqual([]);
+    // A day stored twice or out of the week is read once, or not at all.
+    expect(officeReminders({ active: true, schedule: { ...office, days: [1, 1, 9, -1] }, t: words }).map((x) => x.weekday)).toEqual([2, 2]);
+  });
+
+  it('is off until the person switches the check-ins on', () => {
+    expect(DEFAULT_SCHEDULE.enabled).toBe(false);
+    expect(EMPTY_STATE.schedule.enabled).toBe(false);
+  });
+});
+
+describe('reminderOps: the office day joins the one run', () => {
+  const NOW = new Date('2026-10-12T12:00:00').getTime();
+  const weekly = (id: string, weekday = 2) => ({ id, weekday, hour: 9, minute: 0, title: id, body: '' });
+
+  it('cancels the office reminders no longer wanted, the daily ones older builds left included, before any add', () => {
+    const ops = reminderOps({
+      have: ['sobat-sched-start', 'sobat-sched-lunch@3', 'sobat-sched-start@2', 'sobat-r-x'],
+      planned: null,
+      daily: null,
+      office: [weekly('sobat-sched-start@2'), weekly('sobat-sched-start@4', 4)],
+      nowMs: NOW,
+    });
+    const kinds = ops.map((o) => o.kind);
+    expect(kinds.lastIndexOf('cancel')).toBeLessThan(kinds.findIndex((k) => k !== 'cancel'));
+    expect(ops.filter((o) => o.kind === 'cancel').map((o) => o.id).sort()).toEqual(['sobat-sched-lunch@3', 'sobat-sched-start']);
+    // The office list is registered whole, as the daily one is.
+    expect(ops.filter((o) => o.kind === 'weekly').map((o) => o.kind === 'weekly' && o.reminder.id)).toEqual(['sobat-sched-start@2', 'sobat-sched-start@4']);
+  });
+
+  it('a signed-out device cancels every office reminder; an office list not known yet is left as it is', () => {
+    expect(reminderOps({ have: ['sobat-sched-start@2', 'sobat-water'], planned: null, daily: null, office: [], nowMs: NOW })).toEqual([{ kind: 'cancel', id: 'sobat-sched-start@2' }]);
+    expect(reminderOps({ have: ['sobat-sched-start@2'], planned: null, daily: null, office: null, nowMs: NOW })).toEqual([]);
+  });
+
+  it('adds the meal-time prompts first, then the office day, then the daily ones', () => {
+    const at = { osId: 'sobat-r-slot', reminder: { id: 'slot', date: '2026-10-13', time: '13:00', title: '', body: '', data: { kind: 'slot' } } };
+    const daily = { id: 'sobat-water', hour: 15, minute: 0, title: '', body: '', data: { kind: 'water' as const } };
+    const ops = reminderOps({ have: [], planned: [at], daily: [daily], office: [weekly('sobat-sched-start@2')], nowMs: NOW }).filter((o) => o.kind !== 'cancel');
+    expect(ops.map((o) => o.kind)).toEqual(['at', 'weekly', 'daily']);
+  });
+
+  it('fits the office day under the cap after the planned ones, and the daily ones after both', () => {
+    expect(pendingFit(20, 30)).toEqual({ planned: 20, office: 30, daily: 14 });
+    expect(pendingFit(20, 50)).toEqual({ planned: 20, office: 44, daily: 0 });
+    expect(pendingFit(70, 6)).toEqual({ planned: 64, office: 0, daily: 0 });
+  });
+});
+
+describe('dailyReminders: quiet hours', () => {
+  const day = { active: true, sleepCheckin: true, water: true, dayReview: true, quietStartHour: 22, quietEndHour: 7, mantra: 'Steady.', breaks: { ...DEFAULT_BREAK_SETTINGS, enabled: false }, nowMs: 0, t };
+
+  it('drops a fixed reminder whose hour falls in quiet hours', () => {
+    // Quiet from nine at night to eight in the morning: the 07:30 check-in and the 21:30 review fall in it.
+    expect(dailyReminders({ ...day, quietStartHour: 21, quietEndHour: 8 }).map((r) => r.id)).toEqual(['sobat-mantra', 'sobat-water']);
+    // Quiet through the afternoon, a window that does not wrap midnight.
+    expect(dailyReminders({ ...day, quietStartHour: 14, quietEndHour: 16 }).map((r) => r.id)).toEqual(['sobat-sleep-checkin', 'sobat-mantra', 'sobat-day-review']);
+    // No quiet hours at all keeps all four.
+    expect(dailyReminders({ ...day, quietStartHour: 0, quietEndHour: 0 })).toHaveLength(4);
   });
 });

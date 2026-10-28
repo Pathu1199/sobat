@@ -9,7 +9,7 @@ import { C, F } from '../ui/theme';
 
 const WEEK = [1, 2, 3, 4, 5, 6, 0];
 
-/** The office day, editable: on or off, which days, and every block's times. */
+/** The office day, editable: on or off, which days, and every block's times. Reset puts the days and times back and leaves the switch as it is. */
 export function ScheduleEditor() {
   const app = useApp();
   const s = app.state.schedule;
@@ -35,7 +35,7 @@ export function ScheduleEditor() {
       ))}
       <Row style={{ gap: 8 }}>
         <Btn small tone="soft" label={t('sched_add_break')} onPress={() => app.setSchedule({ blocks: [...s.blocks, newBreak(orderedBlocks(s).filter((b) => b.kind !== 'end').slice(-1)[0] ?? null)] })} style={{ flex: 1 }} />
-        <Btn small tone="ghost" label={t('sched_reset')} onPress={() => app.setSchedule(DEFAULT_SCHEDULE)} style={{ flex: 1 }} />
+        <Btn small tone="ghost" label={t('sched_reset')} onPress={() => app.setSchedule({ days: DEFAULT_SCHEDULE.days, blocks: DEFAULT_SCHEDULE.blocks })} style={{ flex: 1 }} />
       </Row>
       <Small color={C.textFaint}>{t('sched_phone_note')}</Small>
     </Card>
@@ -56,7 +56,7 @@ function BlockRow({ block, first, onChange, onRemove }: { block: ScheduleBlock; 
       <Row style={{ justifyContent: 'space-between' }}>
         <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{t(`blk_${block.kind}`)}</Text>
         {onRemove ? (
-          <Pressable onPress={onRemove} hitSlop={10} accessibilityLabel={t('delete')}>
+          <Pressable onPress={onRemove} accessibilityRole="button" accessibilityLabel={t('delete')} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="close" size={16} color={C.textFaint} />
           </Pressable>
         ) : null}

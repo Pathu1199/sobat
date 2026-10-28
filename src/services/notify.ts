@@ -183,6 +183,22 @@ export async function scheduleDaily(id: string, hour: number, minute: number, ti
   });
 }
 
+/**
+ * A reminder every week on one weekday at a clock time: one office block on
+ * one working day, so a day switched off stays quiet. `weekday` is 1 for
+ * Sunday to 7 for Saturday, as expo-notifications counts them.
+ */
+export async function scheduleWeekly(id: string, weekday: number, hour: number, minute: number, title: string, body: string): Promise<void> {
+  const n = loadNative();
+  if (!n) return;
+  await cancel(id);
+  await n.scheduleNotificationAsync({
+    identifier: id,
+    content: { title, body },
+    trigger: { type: n.SchedulableTriggerInputTypes.WEEKLY, weekday, hour, minute, channelId: 'sobat' },
+  });
+}
+
 export async function scheduleRepeating(id: string, seconds: number, title: string, body: string): Promise<void> {
   const n = loadNative();
   if (!n) return;
@@ -295,6 +311,17 @@ export function clearLastTap(): void {
     n.clearLastNotificationResponse();
   } catch {
     // Nothing to clear.
+  }
+}
+
+/** Takes every notification the app shows off the tray: a device signed out or reset keeps none that a later person could tap. */
+export async function dismissAll(): Promise<void> {
+  const n = loadNative();
+  if (!n) return;
+  try {
+    await n.dismissAllNotificationsAsync();
+  } catch {
+    // Nothing on the tray.
   }
 }
 

@@ -5,6 +5,8 @@ import { activeBlock, blockEnd, checkinKey, DEFAULT_SCHEDULE, fromMinutes, isVal
 const TUE = '2026-10-06';
 const SUN = '2026-10-11';
 const at = (h: number, m = 0) => h * 60 + m;
+// The default office day switched on: it starts off.
+const ON = { ...DEFAULT_SCHEDULE, enabled: true };
 
 describe('times', () => {
   it('validates and converts HH:MM', () => {
@@ -24,25 +26,25 @@ describe('times', () => {
 
 describe('the office day', () => {
   it('knows which block is on and which comes next', () => {
-    expect(activeBlock(DEFAULT_SCHEDULE, TUE, at(9, 20))?.id).toBe('break1');
-    expect(activeBlock(DEFAULT_SCHEDULE, TUE, at(13, 29))?.id).toBe('lunch');
-    expect(activeBlock(DEFAULT_SCHEDULE, TUE, at(13, 30))).toBeNull();
-    expect(activeBlock(DEFAULT_SCHEDULE, TUE, at(18, 5))?.id).toBe('end');
-    expect(nextBlock(DEFAULT_SCHEDULE, TUE, at(10))?.id).toBe('lunch');
-    expect(nextBlock(DEFAULT_SCHEDULE, TUE, at(18, 30))).toBeNull();
+    expect(activeBlock(ON, TUE, at(9, 20))?.id).toBe('break1');
+    expect(activeBlock(ON, TUE, at(13, 29))?.id).toBe('lunch');
+    expect(activeBlock(ON, TUE, at(13, 30))).toBeNull();
+    expect(activeBlock(ON, TUE, at(18, 5))?.id).toBe('end');
+    expect(nextBlock(ON, TUE, at(10))?.id).toBe('lunch');
+    expect(nextBlock(ON, TUE, at(18, 30))).toBeNull();
   });
 
   it('is quiet on a day off or when switched off', () => {
-    expect(isWorkDay(DEFAULT_SCHEDULE, SUN)).toBe(false);
-    expect(activeBlock(DEFAULT_SCHEDULE, SUN, at(9, 20))).toBeNull();
-    expect(nextBlock({ ...DEFAULT_SCHEDULE, enabled: false }, TUE, at(8))).toBeNull();
+    expect(isWorkDay(ON, SUN)).toBe(false);
+    expect(activeBlock(ON, SUN, at(9, 20))).toBeNull();
+    expect(nextBlock({ ...ON, enabled: false }, TUE, at(8))).toBeNull();
   });
 
   it('announces blocks that began inside a tick, not ones already running', () => {
-    expect(startedBetween(DEFAULT_SCHEDULE, TUE, at(9, 14), at(9, 15)).map((b) => b.id)).toEqual(['break1']);
-    expect(startedBetween(DEFAULT_SCHEDULE, TUE, at(9, 15), at(9, 16))).toEqual([]);
+    expect(startedBetween(ON, TUE, at(9, 14), at(9, 15)).map((b) => b.id)).toEqual(['break1']);
+    expect(startedBetween(ON, TUE, at(9, 15), at(9, 16))).toEqual([]);
     // A long gap (the app was asleep) catches up on everything inside it.
-    expect(startedBetween(DEFAULT_SCHEDULE, TUE, at(8, 59), at(13)).map((b) => b.id)).toEqual(['start', 'break1', 'lunch']);
+    expect(startedBetween(ON, TUE, at(8, 59), at(13)).map((b) => b.id)).toEqual(['start', 'break1', 'lunch']);
   });
 
   it('counts minutes left and keys ticks per block', () => {
@@ -52,7 +54,7 @@ describe('the office day', () => {
   });
 
   it('ignores a block with a broken time instead of crashing', () => {
-    const s = { ...DEFAULT_SCHEDULE, blocks: [...DEFAULT_SCHEDULE.blocks, { id: 'x', kind: 'break' as const, start: 'soon' }] };
+    const s = { ...ON, blocks: [...DEFAULT_SCHEDULE.blocks, { id: 'x', kind: 'break' as const, start: 'soon' }] };
     expect(nextBlock(s, TUE, at(8))?.id).toBe('start');
   });
 

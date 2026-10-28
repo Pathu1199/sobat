@@ -58,10 +58,13 @@ describe('buildPushSchedule: the parts of the app switched on in Settings', () =
   const build = (s: AppState) => buildPushSchedule(s, '2026-10-13', (k) => k, 'Asia/Kolkata');
   const withFeatures = (features: Partial<AppState['settings']['features']>): AppState => ({ ...state, settings: { ...state.settings, features: { ...state.settings.features, ...features } } });
 
-  it('sends no short breaks while eye-care breaks are off, whatever the break panel says', () => {
+  it('sends no short breaks while eye-care breaks are off, whatever the break panel says, and none outside an office day switched on', () => {
+    const office = (s: AppState): AppState => ({ ...s, schedule: { ...s.schedule, enabled: true } });
     expect(state.settings.features.breaks).toBe(false);
-    expect(build(state).breaks).toBeNull();
-    expect(build(withFeatures({ breaks: true })).breaks).toMatchObject({ everyMinutes: 20, from: '09:00', to: '18:00', title: 'brk_micro' });
+    expect(build(office(state)).breaks).toBeNull();
+    expect(build(office(withFeatures({ breaks: true }))).breaks).toMatchObject({ everyMinutes: 20, from: '09:00', to: '18:00', title: 'brk_micro' });
+    // The short breaks keep to the working hours: with the office day off, as it starts, there are none.
+    expect(build(withFeatures({ breaks: true })).breaks).toBeNull();
   });
 
   it("sends the day's lines only while the day's line is switched on", () => {

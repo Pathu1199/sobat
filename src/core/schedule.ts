@@ -35,8 +35,9 @@ export const CHECKINS: Record<BlockKind, string[]> = {
 /** How long a moment (start or end of work) stays "now", in minutes. */
 export const MOMENT_MINUTES = 15;
 
+/** Off until the person switches the check-ins on: an app that speaks up five times a working day unasked gets uninstalled. */
 export const DEFAULT_SCHEDULE: WorkSchedule = {
-  enabled: true,
+  enabled: false,
   days: [1, 2, 3, 4, 5, 6],
   blocks: [
     { id: 'start', kind: 'start', start: '09:00' },

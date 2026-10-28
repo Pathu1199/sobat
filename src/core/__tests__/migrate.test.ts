@@ -434,6 +434,21 @@ describe('migrateState', () => {
     expect([away, water, sleepCheckin, dayReview]).toEqual([false, false, false, false]);
   });
 
+  it('version 7: the office-day check-ins are switched off once, and a store already on version 7 keeps its choice', () => {
+    const office = { enabled: true, days: [1, 2, 3, 4, 5], blocks: [{ id: 'start', kind: 'start', start: '10:00' }] };
+    // The live site's people, on version 6, had them on by default: they start off, the days and the times kept.
+    const moved = migrateState({ ...v1, version: 6, schedule: office });
+    expect(moved.schedule).toEqual({ ...office, enabled: false });
+    // A second load is the same; switched on again after the update, they stay on.
+    expect(migrateState(moved)).toEqual(moved);
+    expect(migrateState({ ...moved, schedule: { ...moved.schedule, enabled: true } }).schedule.enabled).toBe(true);
+    // A store already on version 7 keeps its own choice either way.
+    expect(migrateState({ ...v1, version: 7, schedule: office }).schedule.enabled).toBe(true);
+    expect(migrateState({ ...v1, version: 7, schedule: { ...office, enabled: false } }).schedule.enabled).toBe(false);
+    // A store with no office day at all gets the default, off.
+    expect(migrateState({ ...v1, version: 6 }).schedule.enabled).toBe(false);
+  });
+
   it('a nudges switch stored as anything but true or false never turns the meal-time prompt or the nudges on', () => {
     for (const bad of [null, 'yes', 1, 'true', {}]) {
       const s = migrateState({ ...v1, version: 6, settings: { ...v1.settings, nudgesEnabled: bad } }).settings;
