@@ -11,6 +11,8 @@ export type PushSchedule = {
   days: number[];
   blocks: { kind: string; start: string; title: string; body: string }[];
   slots: { id: string; at: string; title: string; body: string }[];
+  /** Free days, 0 = Sunday: no meal is asked about on one. Missing from an older app's schedule, which asks every day. */
+  offDays?: number[];
   breaks: { everyMinutes: number; from: string; to: string; title: string; body: string } | null;
   water: { everyMinutes: number; from: string; to: string; title: string; body: string } | null;
   mantras: { date: string; title: string; text: string }[];
@@ -55,12 +57,14 @@ export function dueAt(s: PushSchedule, now: LocalTime): Reminder[] {
 
   const m = s.mantras.find((x) => x.date === now.date);
   if (m && now.minutes === 8 * 60) out.push({ key: `mantra-${now.date}`, title: m.title, body: m.text, url: '/' });
+  // The weigh day at a quarter to eight, before the day's line at eight.
   if (s.weigh && s.weigh.weekday === now.weekday && now.minutes === 7 * 60 + 45) out.push({ key: `weigh-${now.date}`, title: s.weigh.title, body: s.weigh.body, url: '/' });
 
   if (workDay) {
     for (const b of s.blocks) if (toMinutes(b.start) === now.minutes) out.push({ key: `block-${b.kind}-${now.date}`, title: b.title, body: b.body, url: '/' });
   }
-  for (const sl of s.slots) if (toMinutes(sl.at) === now.minutes) out.push({ key: `slot-${sl.id}-${now.date}`, title: sl.title, body: sl.body, url: '/' });
+  const freeDay = Array.isArray(s.offDays) && s.offDays.includes(now.weekday);
+  if (!freeDay) for (const sl of s.slots) if (toMinutes(sl.at) === now.minutes) out.push({ key: `slot-${sl.id}-${now.date}`, title: sl.title, body: sl.body, url: '/' });
 
   if (workDay && s.breaks) {
     const from = toMinutes(s.breaks.from);

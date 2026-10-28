@@ -37,7 +37,8 @@ const UNSTARTED_CLOCKS: BreakClocks = { micro: 0, long: 0, posture: 0, blink: 0 
  * Breaks are for the person using Sobat here: the settings and the log are
  * theirs. A device that is signed out or reset, or whose store and session are
  * not known yet, runs no clock, so nothing takes the screen, notifies, or
- * writes a break into data that is not theirs.
+ * writes a break into data that is not theirs. Nor does one with eye-care
+ * breaks off: no tick each second and no asking the shell every five.
  */
 function useBreakClock() {
   const app = useApp();
@@ -48,7 +49,8 @@ function useBreakClock() {
   const stored = app.state.breakSettings;
   const settings = useMemo(() => breaksAsSwitched(stored, breaksOn), [stored, breaksOn]);
   const { known, active } = useReminderGate();
-  const on = known && active;
+  // The clock runs only for the person here, and only while eye-care breaks are on; switching them on starts it afresh.
+  const on = known && active && settings.enabled;
 
   const [phase, setPhase] = useState<BreakPhase>('working');
   const [kind, setKind] = useState<BreakKind | null>(null);
@@ -131,8 +133,10 @@ function useBreakClock() {
   }, []);
 
   // The shell knows real system idle time and what is in front. Off the shell
-  // both stay null and the rules fall back to what the window can see.
+  // both stay null and the rules fall back to what the window can see. Asked
+  // only while the clock runs.
   useEffect(() => {
+    if (!on) return;
     const id = setInterval(() => {
       systemIdleSeconds()
         .then((v) => {
@@ -146,7 +150,7 @@ function useBreakClock() {
         .catch(() => {});
     }, 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [on]);
 
   const logsToday = useMemo(() => app.state.breaks.filter((b) => b.date === app.today), [app.state.breaks, app.today]);
 

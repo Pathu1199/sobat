@@ -1,4 +1,5 @@
-import type { NudgeLog } from './types';
+import { toISODate } from './date';
+import type { ISODate, NudgeLog } from './types';
 
 export type NudgeType = 'water' | 'stand' | 'eyes' | 'posture' | 'breathe' | 'progress' | 'log';
 
@@ -27,6 +28,31 @@ export function inQuietHours(hour: number, startHour: number, endHour: number): 
   // Quiet window normally wraps midnight, e.g. 22 to 7.
   if (startHour > endHour) return hour >= startHour || hour < endHour;
   return hour >= startHour && hour < endHour;
+}
+
+/**
+ * How often the app may speak up on its own. One gate for every reminder, so
+ * water, breaks, the coach and the office day together never exceed it: a
+ * minimum gap between two notifications, a daily cap, and quiet hours.
+ */
+export type NotifyGate = { gapMinutes: number; maxPerDay: number; quietStartHour: number; quietEndHour: number };
+/** What the gate remembers: the last one sent, and how many went out on which day. */
+export type GateState = { lastAt: number; sentOn: ISODate | ''; sentCount: number };
+
+/**
+ * Whether one more reminder may go out at `now`, and the gate's record with
+ * it counted; null when it may not (quiet hours, the day's cap reached, or
+ * inside the gap; a 'high' one waits half the gap). The day's count is kept
+ * by the person's own date, so it starts again at their midnight, not UTC's.
+ */
+export function gateStep(gate: NotifyGate, state: GateState, now: Date, priority?: 'high' | 'normal'): GateState | null {
+  if (inQuietHours(now.getHours(), gate.quietStartHour, gate.quietEndHour)) return null;
+  const today = toISODate(now);
+  const count = state.sentOn === today ? state.sentCount : 0;
+  if (count >= gate.maxPerDay) return null;
+  const gapMs = (priority === 'high' ? gate.gapMinutes / 2 : gate.gapMinutes) * 60000;
+  if (now.getTime() - state.lastAt < gapMs) return null;
+  return { lastAt: now.getTime(), sentOn: today, sentCount: count + 1 };
 }
 
 /** How many times this nudge type was skipped in a row today. */

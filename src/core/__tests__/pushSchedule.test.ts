@@ -51,6 +51,13 @@ describe('buildPushSchedule: meal-time prompts', () => {
     const off: AppState = { ...state, settings: { ...state.settings, reminders: { ...state.settings.reminders, mealPrompt: false } } };
     expect(build(off, '2026-10-13').slots).toEqual([]);
   });
+
+  it('sends the free days, so the relay asks about no meal on one, as the phone and the app ask about none', () => {
+    const free: AppState = { ...state, settings: { ...state.settings, offDays: [0, 6] } };
+    expect(build(free, '2026-10-13').offDays).toEqual([0, 6]);
+    expect(build({ ...state, settings: { ...state.settings, offDays: [] } }, '2026-10-13').offDays).toEqual([]);
+    expect(build(state, '2026-10-13').offDays).toEqual(state.settings.offDays);
+  });
 });
 
 describe('buildPushSchedule: the parts of the app switched on in Settings', () => {

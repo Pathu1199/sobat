@@ -11,13 +11,14 @@ import { useApp } from '../store/AppProvider';
 /**
  * The coach's advice for this minute, from the store. Shared by the strip, the
  * Coach tab and the monitor. `nowMinutes` is minutes after midnight, as `useMinute` gives them.
+ * With `on` false it reads nothing and gives no advice: the monitor while the nudges are off.
  */
-export function useCoach(nowMinutes: number): Advice[] {
+export function useCoach(nowMinutes: number, on = true): Advice[] {
   const app = useApp();
   const { state, budget, today, hour, foods, targets, skippedToday, menuOn, planFoods } = app;
   const lang = state.profile.lang;
   return useMemo(() => {
-    if (isOffDay(state.settings.offDays, today)) return [];
+    if (!on || isOffDay(state.settings.offDays, today)) return [];
     const todayMeals = state.meals.filter((m) => m.date === today);
     // The plates and the coach go by the pattern's slots, keyed by id, the way the fits card shows them.
     const settled = settledSlotIds(slotStates({ routine: state.routine, target: targets.kcal, meals: todayMeals, nowMinutes, skippedSlots: skippedToday }));
@@ -54,5 +55,5 @@ export function useCoach(nowMinutes: number): Advice[] {
       plannedKcal: plannedKcalBySlot(menuOn(today), planFoods),
     });
     // The minute is the clock; everything else is read when it ticks or the logs change.
-  }, [nowMinutes, today, hour, budget, state.meals, state.water, state.sleep, state.weights, state.routine, state.settings.waterGoalMl, state.settings.bottleMl, state.settings.weighDay, state.settings.offDays, foods, targets.kcal, skippedToday, app.stepsToday, app.streakDays, state.settings.features.autoPlates, lang, menuOn, planFoods]);
+  }, [on, nowMinutes, today, hour, budget, state.meals, state.water, state.sleep, state.weights, state.routine, state.settings.waterGoalMl, state.settings.bottleMl, state.settings.weighDay, state.settings.offDays, foods, targets.kcal, skippedToday, app.stepsToday, app.streakDays, state.settings.features.autoPlates, lang, menuOn, planFoods]);
 }

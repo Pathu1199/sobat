@@ -83,7 +83,8 @@ export function coachAdvice(input: CoachInput): Advice[] {
   // A skipped slot is settled like an eaten one: nothing asks for it and nothing remarks on it.
   if (b.remaining < 80 && hour >= 12) {
     out.push({ key: b.remaining <= 0 ? 'coach_over' : 'coach_stop', kind: 'stop', urgency: 'now', action: 'water', params: { kcal: Math.max(0, b.remaining), over: Math.max(0, -b.remaining) } });
-  } else if (cur && !settled.has(cur.id) && cur.id !== lateDinner?.id && nowMin >= cur.minutes) {
+  } else if (cur && !settled.has(cur.id) && cur.id !== lateDinner?.id && nowMin >= cur.minutes && b.remaining > 0) {
+    // Nothing left today (a morning already over the day): no call to eat, so no calories of none or fewer are ever quoted.
     // A late dinner is called once, as late, below; not as its plate as well. A slot the menu plans is its own plate:
     // its planned calories, and a tap that logs it from the menu.
     const planned = plannedOf(cur.id);
@@ -157,11 +158,15 @@ export function coachAdvice(input: CoachInput): Advice[] {
   return out.sort((a, c) => ORDER[a.urgency] - ORDER[c.urgency]);
 }
 
+/** The advice that calls a meal at its time: said out loud only while the meal-time prompt is on, as that switch speaks for it. */
+export const MEAL_TIME_ADVICE: readonly string[] = ['coach_meal_due', 'coach_meal_plate', 'coach_late_dinner'];
+
 /**
  * The one piece of advice the coach says out loud now, or null. Only to the
  * person using Sobat here: never on a device that is signed out or reset, or
  * whose store and session are not known yet, never with nudges off or in quiet
- * hours, and never anything already said today (`said`) or with nothing to do.
+ * hours, never a call to eat at a meal's time while the meal-time prompt is
+ * off, and never anything already said today (`said`) or with nothing to do.
  */
 export function adviceToSay(p: {
   advice: Advice[];
@@ -169,11 +174,13 @@ export function adviceToSay(p: {
   known: boolean;
   active: boolean;
   nudgesEnabled: boolean;
+  /** `settings.reminders.mealPrompt`. */
+  mealPrompt: boolean;
   hour: number;
   quietStartHour: number;
   quietEndHour: number;
 }): Advice | null {
   if (!p.known || !p.active || !p.nudgesEnabled) return null;
   if (inQuietHours(p.hour, p.quietStartHour, p.quietEndHour)) return null;
-  return p.advice.find((a) => a.urgency === 'now' && a.action !== 'none' && !p.said.has(a.key)) ?? null;
+  return p.advice.find((a) => a.urgency === 'now' && a.action !== 'none' && !p.said.has(a.key) && (p.mealPrompt || !MEAL_TIME_ADVICE.includes(a.key))) ?? null;
 }

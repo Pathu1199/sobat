@@ -23,8 +23,10 @@ export type PushSchedule = {
   days: number[];
   /** Office blocks: a reminder at each start. */
   blocks: { kind: string; start: string; title: string; body: string }[];
-  /** Routine meals: a "log or skip?" prompt at time + grace. */
+  /** Routine meals: a "log or skip?" prompt at time + grace, on any day but a free one. */
   slots: { id: string; at: string; title: string; body: string }[];
+  /** The free days, 0 = Sunday as Date.getDay() counts: no meal is asked about on one, as the phone and the app ask about none. */
+  offDays: number[];
   /** Short breaks every N minutes between work start and end. */
   breaks: { everyMinutes: number; from: string; to: string; title: string; body: string } | null;
   /** Water every N minutes between the same hours. */
@@ -32,7 +34,7 @@ export type PushSchedule = {
   /** One line a day at eight, precomputed for the week ahead. */
   mantras: { date: ISODate; title: string; text: string }[];
   quiet: { from: number; to: number };
-  /** The weigh day, once a week at eight. */
+  /** The weigh day, once a week at a quarter to eight, before the day's line at eight. */
   weigh: { weekday: number; title: string; body: string } | null;
 };
 
@@ -73,6 +75,7 @@ export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string
       state.settings.reminders.mealPrompt && today !== state.profile.onboardedOn
         ? routine.slots.map((s) => ({ id: s.id, at: addMinutes(slotTime(s), SLOT_GRACE_MIN), title: `${slotLabel(s, lang)}?`, body: t('slot_prompt') }))
         : [],
+    offDays: state.settings.offDays ?? [],
     breaks:
       sched.enabled && br.enabled && br.micro.enabled
         ? { everyMinutes: br.micro.everyMinutes, from: start, to: end, title: t('brk_micro'), body: t('brk_micro_hint') }

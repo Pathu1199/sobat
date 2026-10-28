@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { expectedWaterByHour, inQuietHours, pickNudge, skipStreak } from '../nudge';
+import { expectedWaterByHour, gateStep, inQuietHours, pickNudge, skipStreak } from '../nudge';
 import type { NudgeContext } from '../nudge';
 import type { NudgeLog } from '../types';
 
@@ -99,5 +99,33 @@ describe('expectedWaterByHour', () => {
     expect(expectedWaterByHour(6, 3000)).toBe(0);
     expect(expectedWaterByHour(14, 3000)).toBe(1500);
     expect(expectedWaterByHour(22, 3000)).toBe(3000);
+  });
+});
+
+describe('gateStep: how often the app may speak up on its own', () => {
+  const gate = { gapMinutes: 60, maxPerDay: 8, quietStartHour: 22, quietEndHour: 7 };
+  const at = (iso: string) => new Date(iso);
+
+  it('counts the day\'s cap by the person\'s own date, so it starts again at their midnight, not at UTC\'s', () => {
+    const open = { ...gate, quietStartHour: 0, quietEndHour: 0 };
+    // 03:00 on the 28th in Kolkata is still the 27th in UTC.
+    const now = at('2026-10-28T03:00:00');
+    expect(now.toISOString().slice(0, 10)).toBe('2026-10-27');
+    // Yesterday's eight do not hold back the first one of the new day...
+    const yesterday = { lastAt: at('2026-10-27T21:00:00').getTime(), sentOn: '2026-10-27', sentCount: 8 };
+    expect(gateStep(open, yesterday, now)).toEqual({ lastAt: now.getTime(), sentOn: '2026-10-28', sentCount: 1 });
+    // ...and the new day's eight are not forgotten because UTC is still on yesterday.
+    const today = { lastAt: at('2026-10-28T01:00:00').getTime(), sentOn: '2026-10-28', sentCount: 8 };
+    expect(gateStep(open, today, now)).toBeNull();
+  });
+
+  it('holds back a reminder in quiet hours, past the day\'s cap, or inside the gap; a high one waits half the gap', () => {
+    const now = at('2026-10-28T13:00:00');
+    const fresh = { lastAt: 0, sentOn: '', sentCount: 0 };
+    expect(gateStep(gate, fresh, at('2026-10-28T23:00:00'))).toBeNull();
+    expect(gateStep(gate, { lastAt: 0, sentOn: '2026-10-28', sentCount: 8 }, now)).toBeNull();
+    const recent = { lastAt: now.getTime() - 40 * 60000, sentOn: '2026-10-28', sentCount: 2 };
+    expect(gateStep(gate, recent, now)).toBeNull();
+    expect(gateStep(gate, recent, now, 'high')).toEqual({ lastAt: now.getTime(), sentOn: '2026-10-28', sentCount: 3 });
   });
 });

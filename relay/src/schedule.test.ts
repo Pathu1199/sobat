@@ -46,6 +46,17 @@ describe('dueAt', () => {
   });
 });
 
+describe('dueAt: free days', () => {
+  it('asks about no meal on a free day, and as before on any other day', () => {
+    const free: PushSchedule = { ...S, offDays: [2] };
+    const tue = localTime(at('13:45'), S.tz);
+    expect(dueAt(free, tue).some((r) => r.key.startsWith('slot'))).toBe(false);
+    expect(dueAt({ ...S, offDays: [0] }, tue).map((r) => r.key)).toEqual(['slot-lunch-2026-10-06']);
+    // A schedule from an older app has no free days: every day asks, as before.
+    expect(dueAt(S, tue).map((r) => r.key)).toEqual(['slot-lunch-2026-10-06']);
+  });
+});
+
 describe('dueBetween', () => {
   it('collects what fell in the gap, once, and caps a long gap', () => {
     const keys = dueBetween(S, at('09:16'), at('09:21')).map((r) => r.key);

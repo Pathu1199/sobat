@@ -94,6 +94,23 @@ describe('coachAdvice', () => {
     expect(late.params.kcal).toBe(300);
   });
 
+  it('never quotes no calories or fewer than none: no call to eat while nothing is left today', () => {
+    // A morning already over the day's calories: before noon there is no call to stop yet, and none to eat either.
+    for (const consumed of [1700, 1900]) {
+      const a = coachAdvice({ ...base, ...clock(10, 0), meals: [], settledSlotIds: [], budget: budget(consumed), nextPlate: null });
+      expect(a.find((x) => x.key === 'coach_meal_due' || x.key === 'coach_meal_plate')).toBeUndefined();
+    }
+    // Whatever the hour and however much is left, a number of calories said is always more than none.
+    for (const consumed of [0, 900, 1650, 1700, 2100]) {
+      for (const hour of [8, 9, 11, 13, 17, 20, 22]) {
+        for (const nextPlate of [null, base.nextPlate]) {
+          const a = coachAdvice({ ...base, ...clock(hour, 30), meals: [], settledSlotIds: [], budget: budget(consumed), nextPlate });
+          for (const x of a) if (x.kind === 'food' && 'kcal' in x.params) expect(Number(x.params.kcal), `${x.key} at ${hour} with ${consumed}`).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
   it('asks for the first log, a walk, the weigh-in and the morning check-in at the right hours', () => {
     const morning = coachAdvice({ ...base, ...clock(8, 30), meals: [], sleep: [], weights: [{ date: '2026-09-27', kg: 96 }], today: '2026-10-11' /* a Sunday */ });
     expect(morning.map((x) => x.key)).toEqual(expect.arrayContaining(['coach_sleep_checkin', 'coach_weigh']));
@@ -180,7 +197,7 @@ describe('adviceToSay', () => {
   const urgent: Advice = { key: 'coach_stop', kind: 'stop', urgency: 'now', action: 'water', params: {} };
   const soon: Advice = { key: 'coach_meal_plate', kind: 'food', urgency: 'soon', action: 'log', params: {} };
   const said = new Set<string>();
-  const here = { known: true, active: true, nudgesEnabled: true, hour: 13, quietStartHour: 22, quietEndHour: 7 };
+  const here = { known: true, active: true, nudgesEnabled: true, mealPrompt: true, hour: 13, quietStartHour: 22, quietEndHour: 7 };
 
   it('says the first urgent advice to the person who is here', () => {
     expect(adviceToSay({ ...here, advice: [soon, urgent], said })).toBe(urgent);
@@ -197,6 +214,15 @@ describe('adviceToSay', () => {
   it('says nothing with nudges off or in quiet hours', () => {
     expect(adviceToSay({ ...here, nudgesEnabled: false, advice: [urgent], said })).toBeNull();
     expect(adviceToSay({ ...here, hour: 23, advice: [urgent], said })).toBeNull();
+  });
+
+  it('says no meal-time advice while the meal-time prompt is off, and the rest as before', () => {
+    const due: Advice = { key: 'coach_meal_due', kind: 'food', urgency: 'now', action: 'log', params: { meal: 'lunch', kcal: 500 } };
+    const plate: Advice = { ...due, key: 'coach_meal_plate', action: 'plan' };
+    const late: Advice = { key: 'coach_late_dinner', kind: 'food', urgency: 'now', action: 'log', params: { slot: 'dinner', kcal: 400 } };
+    expect(adviceToSay({ ...here, mealPrompt: false, advice: [due, plate, late], said })).toBeNull();
+    expect(adviceToSay({ ...here, mealPrompt: false, advice: [late, urgent], said })).toBe(urgent);
+    expect(adviceToSay({ ...here, mealPrompt: true, advice: [late, urgent], said })).toBe(late);
   });
 
   it('never says the same thing twice, and never advice with nothing to do', () => {

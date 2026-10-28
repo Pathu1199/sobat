@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import exercisesJson from '../data/exercises.json';
-import { AppState as RNAppState } from 'react-native';
 import { mondayOf, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
 import { newId } from '../core/id';
@@ -365,25 +364,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { days: streakDays, best: bestStreakDays, lifetimeDays: lifetimeStreakDays, lifetimeBest: lifetimeBestStreakDays } = streaks;
 
   // Planned meals fill themselves 90 minutes after their slot, and today is noted as a day the app was open: checked once the
-  // store is loaded, then every minute (which also catches midnight) and whenever the app comes back to the front. Never while
-  // one account's data is being put aside.
+  // store is loaded, then on each turn of the shared minute clock, which also catches midnight and catches up when the app
+  // comes back to the front. Never while one account's data is being put aside.
   useEffect(() => {
     if (!ready) return;
-    const run = () => {
-      if (switching.current) return;
-      setState(withAutoFillNow);
-    };
-    const first = setTimeout(run, 0);
-    const timer = setInterval(run, 60000);
-    const sub = RNAppState.addEventListener('change', (st) => {
-      if (st === 'active') run();
-    });
-    return () => {
-      clearTimeout(first);
-      clearInterval(timer);
-      sub.remove();
-    };
-  }, [ready]);
+    const run = setTimeout(() => {
+      if (!switching.current) setState(withAutoFillNow);
+    }, 0);
+    return () => clearTimeout(run);
+  }, [ready, today, minute]);
 
   // The meals left today are the pattern's slots not yet eaten or skipped, read at this minute; a pattern with no slots leaves
   // it to the fixed windows. A number of its own, so the minute ticking over rebuilds nothing else.
