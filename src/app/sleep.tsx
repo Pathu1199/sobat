@@ -1,29 +1,35 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
-import { formatMinutes, localDate, localHHMM, minutesBetween } from '../core/date';
-import { buildSleepLog, prefillAnswers, sleepDebt, sleepFlags, sleepScore } from '../core/sleep';
+import { formatDayLabel, formatMinutes, localDate, localHHMM, minutesBetween } from '../core/date';
+import { buildSleepLog, prefillAnswers, sleepDay, sleepDebt, sleepFlags, sleepScore } from '../core/sleep';
 import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Divider, Field, H2, H3, Pill, Ring, Row, Screen, Small } from '../ui/components';
 import { C, F } from '../ui/theme';
 
-/** The sleep check-in. As its own page, saving goes back; inside a tab (`embedded`), it stays and says it was saved. */
+/**
+ * The sleep check-in. As its own page, saving goes back; inside a tab
+ * (`embedded`), it stays and says it was saved. It is for today, or for the
+ * earlier day a link names (`?date=`, from the Sleep tile on a past day).
+ */
 export default function SleepScreen({ embedded }: { embedded?: boolean } = {}) {
   const app = useApp();
   const router = useRouter();
   const fb = useFeedback();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
+  const { date } = useLocalSearchParams<{ date?: string }>();
+  const day = sleepDay(date, app.today);
 
-  // Guess from the last thing logged yesterday and the first thing today.
+  // Guess from the last thing logged the day before and the first thing on the day.
   const guess = useMemo(() => {
     const all = [...app.state.meals.map((m) => m.at), ...app.state.water.map((w) => w.at), ...app.state.moods.map((m) => m.at)].sort();
-    const yesterdayLast = all.filter((a) => localDate(a) < app.today).slice(-1)[0];
-    const todayFirst = all.filter((a) => localDate(a) === app.today)[0];
-    return prefillAnswers(yesterdayLast ? localHHMM(yesterdayLast) : null, todayFirst ? localHHMM(todayFirst) : null);
-  }, [app.state.meals, app.state.water, app.state.moods, app.today]);
+    const dayBeforeLast = all.filter((a) => localDate(a) < day).slice(-1)[0];
+    const dayFirst = all.filter((a) => localDate(a) === day)[0];
+    return prefillAnswers(dayBeforeLast ? localHHMM(dayBeforeLast) : null, dayFirst ? localHHMM(dayFirst) : null);
+  }, [app.state.meals, app.state.water, app.state.moods, day]);
 
   const [bed, setBed] = useState(guess.bed);
   const [wake, setWake] = useState(guess.wake);
@@ -38,7 +44,7 @@ export default function SleepScreen({ embedded }: { embedded?: boolean } = {}) {
   const low = score < 55;
 
   function save() {
-    app.addSleep(buildSleepLog(app.today, { bed, wake, quality, wakeups, energy }));
+    app.addSleep(buildSleepLog(day, { bed, wake, quality, wakeups, energy }));
     if (embedded) {
       // Going back from a tab would leave it for another tab, so the check-in stays on screen.
       fb.haptic('success');
@@ -52,6 +58,7 @@ export default function SleepScreen({ embedded }: { embedded?: boolean } = {}) {
     <Screen>
       <Card>
         <H2>{t('sleep_checkin')}</H2>
+        {day !== app.today ? <Small color={C.text}>{formatDayLabel(day, lang)}</Small> : null}
         <Small>{t('sleep_prefill_hint')}</Small>
 
         <Row style={{ gap: 12 }}>

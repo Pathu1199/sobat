@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { formatDayLabel } from '../core/date';
 import { planVerdict, shownPlan } from '../core/plan';
-import { PACES } from '../core/setup';
+import { numberIn, PACES } from '../core/setup';
 import { lostWords } from '../core/tileText';
 import type { WeightLog } from '../core/types';
 import { fill, makeT } from '../i18n';
@@ -31,28 +31,29 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
   const t = makeT(lang);
   const [kg, setKg] = useState('');
   const [goal, setGoal] = useState(String(state.profile.goalWeightKg));
-  const removed = useUndoable<WeightLog>();
+  const removed = useUndoable<WeightLog>(() => t('weight_removed'), t('undo'));
 
   const sorted = useMemo(() => [...state.weights].sort((a, b) => b.date.localeCompare(a.date)), [state.weights]);
   const todayEntry = sorted.find((w) => w.date === today);
   const last = sorted[0];
   const plan = useMemo(() => shownPlan(state.profile, state.weights, targets, today), [state.profile, state.weights, targets, today]);
   const verdict = planVerdict(plan);
-  const value = parseFloat(kg);
-  const valid = Number.isFinite(value) && value >= 25 && value <= 350;
+  // Typed with a decimal comma or in Devanagari digits, as setup reads it.
+  const value = numberIn(kg, 25, 350);
 
   function save() {
-    if (!valid) return;
+    if (value === null) return;
     app.addWeight({ date: today, kg: value });
     setKg('');
     fb.haptic('success');
-    fb.notify(`${value} ${t('unit_kg')}`);
+    // The reading at the top of the sheet becomes this one. A toast would sit behind the sheet, so the words are only said.
+    fb.announce(fill(t('weight_saved'), { kg: `${value} ${t('unit_kg')}` }));
   }
 
   function saveGoal(v: string) {
     setGoal(v);
-    const n = parseFloat(v);
-    if (Number.isFinite(n) && n >= 30 && n <= 300) app.setProfile({ goalWeightKg: n });
+    const n = numberIn(v, 30, 300);
+    if (n !== null) app.setProfile({ goalWeightKg: n });
   }
 
   // The newest eight weigh-ins, with the Undo line where the removed one stood: after every reading newer than it.
@@ -76,7 +77,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
       </Row>
       <Row style={{ gap: 10 }}>
         <Field value={kg} onChangeText={setKg} keyboardType="numeric" placeholder={todayEntry ? `${todayEntry.kg}` : t('weight_enter')} />
-        <Btn label={todayEntry ? t('edit') : t('save')} onPress={save} disabled={!valid} />
+        <Btn label={todayEntry ? t('edit') : t('save')} onPress={save} disabled={value === null} />
       </Row>
 
       {/* Change */}
@@ -146,7 +147,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
                       removed.show(w);
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel={t('delete')}
+                    accessibilityLabel={fill(t('weight_remove_day'), { date: formatDayLabel(w.date, lang) })}
                     style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.redSoft : 'transparent' })}>
                     <Ionicons name="trash-outline" size={18} color={C.textFaint} />
                   </Pressable>

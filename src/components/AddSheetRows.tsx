@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { amountText, formatQty, gramsDraftAfter, gramsText, lineGrams, parseGrams, type BasketLine } from '../core/basket';
 import { defaultPortion, foodName, inMl, measureName } from '../core/foods';
 import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem, Lang } from '../core/types';
 import { fill, makeT, numberText } from '../i18n';
+import { sayOnPhone } from '../ui/announce';
 import { Btn, Field, Row } from '../ui/components';
 import { QtyStepper } from '../ui/QtyStepper';
 import { C, F, lh, S } from '../ui/theme';
@@ -204,16 +205,23 @@ export function OneTapRow({ icon, title, sub, kcal, label, onPress }: { icon: ke
 /**
  * After a logged meal of two or more foods: the line saying it was logged
  * (the app-wide toast would sit behind the sheet), and an offer to keep it as
- * one of the person's meals, under a name they choose.
+ * one of the person's meals, under a name they choose. The phone says the
+ * line once the offer is on screen and the focus is in the name box (TalkBack
+ * drops a line said before the focus moves); the web has heard it already, at
+ * the save, from the app's region, as a region coming onto the page with its
+ * words in it is not read.
  */
 export function SaveAsOffer({ lang, logged, onSave, onSkip }: { lang: Lang; logged: string; onSave: (name: string) => void; onSkip: () => void }) {
   const t = makeT(lang);
   const [name, setName] = useState('');
+  useEffect(() => {
+    sayOnPhone(logged);
+  }, [logged]);
   return (
     <View style={{ padding: S.padLg, gap: 12 }}>
       <Row style={{ gap: 8 }}>
         <Ionicons name="checkmark-circle" size={18} color={C.accentText} />
-        <Text accessibilityLiveRegion="polite" style={{ flex: 1, color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>
+        <Text style={{ flex: 1, color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>
           {logged}
         </Text>
       </Row>

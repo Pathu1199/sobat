@@ -24,7 +24,8 @@ export function SavedMealsSheet({ open, onClose }: { open: boolean; onClose: () 
   const fb = useFeedback();
   const t = makeT(app.state.profile.lang);
   const meals = app.state.savedMeals;
-  const deleted = useUndoable<{ meal: SavedMeal; index: number }>();
+  const deletedWords = (d: { meal: SavedMeal }) => fill(t('me_saved_deleted'), { name: d.meal.name });
+  const deleted = useUndoable<{ meal: SavedMeal; index: number }>(deletedWords, t('undo'));
   const rows = withUndoAt(meals, deleted.held ? deleted.held.index : null);
   return (
     <Sheet open={open} title={t('me_saved')} onClose={onClose}>
@@ -39,7 +40,7 @@ export function SavedMealsSheet({ open, onClose }: { open: boolean; onClose: () 
               <View key={`undo:${held.meal.id}`}>
                 {line}
                 <UndoLine
-                  text={fill(t('me_saved_deleted'), { name: held.meal.name })}
+                  text={deletedWords(held)}
                   undoLabel={t('undo')}
                   onUndo={() => {
                     app.restoreSavedMeal(held.meal, held.index);

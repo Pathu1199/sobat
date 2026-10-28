@@ -53,6 +53,16 @@ export function walkGoalName(min: number, t: (key: string) => string): string {
 }
 
 /**
+ * Whether a key on a tile opens what its hold opens (the water or walk sheet):
+ * Shift+Enter, the way on a keyboard with no context menu key, a Mac's. Enter
+ * or Space alone is the tap, and Shift+Enter with Control, Alt or Command is
+ * left to the browser.
+ */
+export function opensHold(e: { key: string; shiftKey: boolean; ctrlKey?: boolean; altKey?: boolean; metaKey?: boolean }): boolean {
+  return e.key === 'Enter' && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey;
+}
+
+/**
  * How a screen reader takes a tile. With a tap or a hold it is a button (a
  * hold alone still makes it one, so the hold is never dropped). With neither
  * it is the tile read as one phrase, its label: text on a phone, and on the

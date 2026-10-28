@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import Animated, { useAnimatedProps, type SharedValue } from 'react-native-reanimated';
 import { Circle, Path } from 'react-native-svg';
+import { sleepHref } from '../../core/logLink';
 import { SLEEP_TARGET_MIN, sleepWords } from '../../core/tileText';
 import { sleepFraction } from '../../core/tiles';
 import type { ISODate } from '../../core/types';
@@ -17,7 +18,7 @@ const ACircle = Animated.createAnimatedComponent(Circle);
 const ARC_D = toPath(NIGHT_ARC);
 const ARC_LEN = polylineLength(NIGHT_ARC);
 
-/** Sleep: the night arc fills to hours slept over eight, with three faint stars that twinkle. A tap opens the sleep check-in. */
+/** Sleep: the night arc fills to hours slept over eight, with three faint stars that twinkle. A tap opens the sleep check-in for the day shown. */
 export function SleepTile({ date }: { date: ISODate }) {
   const app = useApp();
   const router = useRouter();
@@ -34,7 +35,7 @@ export function SleepTile({ date }: { date: ISODate }) {
       words={words}
       done={(minutes ?? 0) >= SLEEP_TARGET_MIN}
       art={<SleepArt level={level} />}
-      onPress={() => router.push('/sleep')}
+      onPress={() => router.push(sleepHref(date, app.today))}
       label={fill(t('tile_open_a11y'), { name, value: words.value, line: words.line })}
       hint={t('tile_hint_sleep')}
     />

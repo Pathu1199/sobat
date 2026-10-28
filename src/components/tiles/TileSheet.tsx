@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { sheetAmount } from '../../core/tiles';
+import { BOTTLES, sheetAmount, WALK_GOALS } from '../../core/tiles';
 import type { ISODate } from '../../core/types';
 import { makeT } from '../../i18n';
 import { useFeedback } from '../../services/feedback';
@@ -8,10 +8,6 @@ import { useApp } from '../../store/AppProvider';
 import { Btn, Field, Micro, Pill, Row } from '../../ui/components';
 import { Sheet } from '../../ui/Sheet';
 import { bottleLabel, bottleName, walkGoalLabel, walkGoalName, type Added } from '../../ui/tileWords';
-
-/** The bottle sizes and walk goals offered here and in Settings. */
-export const BOTTLES = [500, 750, 1000];
-export const WALK_GOALS = [20, 30, 45, 60];
 
 /**
  * A long press on the water or walk tile: the bottle size or the walk goal,

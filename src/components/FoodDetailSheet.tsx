@@ -90,12 +90,12 @@ export function FoodDetailSheet({
   }
 
   return (
-    <Sheet open title="" onClose={onClose}>
-      <View style={{ gap: 14, marginTop: -8 }}>
+    // The food's name is the sheet's title, read as its heading.
+    <Sheet open title={name} onClose={onClose}>
+      <View style={{ gap: 14 }}>
         <Row style={{ gap: 14, alignItems: 'flex-start' }}>
           <FoodThumb food={f} lang={lang} size={88} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' }}>{name}</Text>
             {lang !== 'en' ? <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>{f.name_en}</Text> : null}
             <Row style={{ gap: 6, flexWrap: 'wrap' }}>
               {style ? <Pill label={t(`style_${style}`)} /> : null}

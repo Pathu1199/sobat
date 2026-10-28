@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { fillFraction, sheetAmount, sleepFraction, streakFraction, walkTile, waterLog, waterTile, weightPoints, withWaterAdded, withWaterRemoved } from '../tiles';
+import { DEFAULT_SETTINGS } from '../../store/defaults';
+import { BOTTLES, fillFraction, sheetAmount, sleepFraction, streakFraction, walkTile, waterLog, waterTile, weightPoints, withWaterAdded, WALK_GOALS, withWaterRemoved } from '../tiles';
 
 describe('water', () => {
   it('fills toward the goal, capped at full', () => {
@@ -156,5 +157,14 @@ describe('another amount, typed in the long-press sheet', () => {
       expect(sheetAmount('water', text), text).toBeNull();
       expect(sheetAmount('walk', text), text).toBeNull();
     }
+  });
+});
+
+describe('the bottle sizes and walk goals on offer', () => {
+  it('include the ones a new person starts with, so a chip is chosen from the start, smallest first', () => {
+    expect(BOTTLES).toContain(DEFAULT_SETTINGS.bottleMl);
+    expect(WALK_GOALS).toContain(DEFAULT_SETTINGS.walkGoalMin);
+    expect([...BOTTLES].sort((a, b) => a - b)).toEqual([...BOTTLES]);
+    expect([...WALK_GOALS].sort((a, b) => a - b)).toEqual([...WALK_GOALS]);
   });
 });

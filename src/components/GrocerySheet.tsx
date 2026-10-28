@@ -10,7 +10,7 @@ import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Micro, Pill, Row, Small } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
-import { C, F, S } from '../ui/theme';
+import { C, F, lh, S } from '../ui/theme';
 import { FoodThumb } from './FoodDetailSheet';
 
 /**
@@ -63,16 +63,17 @@ export function GrocerySheet({ open, onClose, plan, monday }: { open: boolean; o
                     onPress={() => app.toggleGrocery(week, l.foodId)}
                     accessibilityRole="checkbox"
                     aria-checked={on}
-                    style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, paddingVertical: 4, opacity: pressed ? 0.7 : on ? 0.55 : 1 })}>
+                    // A ticked row is struck through and its words dimmer, never faded: every word keeps 4.5:1 on the sheet.
+                    style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, paddingVertical: 4, opacity: pressed ? 0.7 : 1 })}>
                     <View style={{ width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: on ? C.accent : C.borderStrong, backgroundColor: on ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
                       {on ? <Ionicons name="checkmark" size={16} color={C.onAccent} /> : null}
                     </View>
                     <FoodThumb food={l.food} lang={lang} size={34} />
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', textDecorationLine: on ? 'line-through' : 'none' }}>{foodName(l.food, lang)}</Text>
-                      <Text style={{ color: C.textFaint, fontSize: F.small }}>{fill(t('grocery_times'), { n: l.times })}</Text>
+                      <Text style={{ color: on ? C.textDim : C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500', textDecorationLine: on ? 'line-through' : 'none' }}>{foodName(l.food, lang)}</Text>
+                      <Text style={{ color: C.textFaint, fontSize: F.small, lineHeight: lh(F.small) }}>{fill(t('grocery_times'), { n: l.times })}</Text>
                     </View>
-                    <Text style={{ color: on ? C.textFaint : C.text, fontSize: F.body, fontWeight: '500', minWidth: 64, textAlign: 'right' }}>{unitLabel(l.unit, l.amount)}</Text>
+                    <Text style={{ color: on ? C.textDim : C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500', minWidth: 64, textAlign: 'right' }}>{unitLabel(l.unit, l.amount)}</Text>
                   </Pressable>
                 );
               })}

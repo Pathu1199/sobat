@@ -49,7 +49,8 @@ export function RecordCalendar() {
         <IconButton name="chevron-forward" label={t('progress_next_month')} onPress={() => setMonth((m) => shiftMonth(m, 1))} disabled={!steps.next} />
       </View>
       <View style={{ marginHorizontal: STRIP_MARGIN, gap: 2 }}>
-        <View style={{ flexDirection: 'row' }} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+        {/* The weekday letters are hidden from a screen reader, on the web too (aria-hidden): each day's name says its weekday. */}
+        <View style={{ flexDirection: 'row' }} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden aria-hidden>
           {WEEKDAYS.map((wd) => (
             <Text key={wd} numberOfLines={1} style={{ flex: 1, textAlign: 'center', color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>
               {t(`wd_${wd}`)}

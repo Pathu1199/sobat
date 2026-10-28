@@ -24,7 +24,7 @@ export function useTileAdds(date: ISODate): {
   const fb = useFeedback();
   const t = makeT(app.state.profile.lang);
   const [sheet, setSheet] = useState<'water' | 'walk' | null>(null);
-  const { added: last, show, clear } = useAddedLine();
+  const { added: last, show, clear } = useAddedLine((a) => addedText(a, t), t('undo'));
   const added = addedOn(last, date);
 
   function undo() {

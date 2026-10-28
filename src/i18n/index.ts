@@ -1001,6 +1001,8 @@ const en: Dict = {
   ollama_models: '{n} models',
   connected_fallback: 'Connected through the second address',
   hdr_back: 'Back',
+  weight_saved: 'Weight saved: {kg}',
+  weight_remove_day: 'Remove the weigh-in of {date}',
 };
 
 const mr: Dict = {
@@ -2005,6 +2007,8 @@ const mr: Dict = {
   ollama_models: '{n} मॉडेल',
   connected_fallback: 'दुसऱ्या पत्त्यावरून जोडले',
   hdr_back: 'मागे',
+  weight_saved: 'वजन नोंदवलं: {kg}',
+  weight_remove_day: '{date} ची वजनाची नोंद काढा',
 };
 
 const hi: Dict = {
@@ -3008,6 +3012,8 @@ const hi: Dict = {
   ollama_models: '{n} मॉडल',
   connected_fallback: 'दूसरे पते से जुड़ा',
   hdr_back: 'पीछे',
+  weight_saved: 'वज़न दर्ज किया: {kg}',
+  weight_remove_day: '{date} की वज़न की एंट्री हटाएँ',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

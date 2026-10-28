@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { createContext, useContext, useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, ScrollView, Text, View } from 'react-native';
+import { FlatList, Platform, ScrollView, Text, View } from 'react-native';
 import {
   addRows,
   addsIntoMeal,
@@ -264,9 +264,11 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
     fb.haptic('success');
     const words = fill(t('toast_meal_saved'), { kcal: numberText(meal.kcal) });
     // A meal of two or more foods may be one the person eats often: offer to keep it for one-tap logging, unless it is one
-    // of their saved meals already. The sheet itself says it was logged, as the toast would sit behind it.
+    // of their saved meals already. The sheet itself says it was logged, as the toast would sit behind it; the web hears it
+    // now, from the app's region, and the phone from the offer once it is on screen.
     const lines = linesFromBasket(basket, foods);
     if (lines.length >= 2 && !alreadySaved(lines, state.savedMeals)) {
+      if (Platform.OS === 'web') fb.announce(words);
       setOffer({ lines, logged: words });
       return;
     }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { handOff, historyHref, logLinkStep, todayHref, webHandOff } from '../logLink';
+import { handOff, historyHref, logLinkStep, sleepHref, todayHref, webHandOff } from '../logLink';
 
 describe('logLinkStep', () => {
   it('a new link opens the sheet', () => {
@@ -108,5 +108,15 @@ describe('the address of a day', () => {
 
   it('an empty History row, the one that says Add, opens the add sheet for that day through /log', () => {
     expect(historyHref('2026-10-25', TODAY, 0)).toEqual({ pathname: '/log', params: { date: '2026-10-25' } });
+  });
+});
+
+describe('sleepHref', () => {
+  const TODAY = '2026-10-28';
+
+  it('the Sleep tile on an earlier day opens the check-in for that day; today and a later day open it for today', () => {
+    expect(sleepHref('2026-10-25', TODAY)).toEqual({ pathname: '/sleep', params: { date: '2026-10-25' } });
+    expect(sleepHref(TODAY, TODAY)).toEqual({ pathname: '/sleep' });
+    expect(sleepHref('2026-12-01', TODAY)).toEqual({ pathname: '/sleep' });
   });
 });

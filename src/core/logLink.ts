@@ -79,3 +79,8 @@ export function todayHref(date: ISODate, today: ISODate): DayHref {
 export function historyHref(date: ISODate, today: ISODate, meals: number): DayHref | { pathname: '/log'; params: { date: ISODate } } {
   return meals > 0 ? todayHref(date, today) : { pathname: '/log', params: { date } };
 }
+
+/** Where the Sleep tile goes: the check-in for the day shown when it is an earlier day (`?date=`), for today otherwise. */
+export function sleepHref(date: ISODate, today: ISODate): { pathname: '/sleep'; params?: { date: ISODate } } {
+  return date < today ? { pathname: '/sleep', params: { date } } : { pathname: '/sleep' };
+}

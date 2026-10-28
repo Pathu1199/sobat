@@ -6,7 +6,7 @@ import { localHHMM } from '../core/date';
 import { defaultPortion, itemName, scaleMealItem, toMealItem } from '../core/foods';
 import type { Meal, MealItem } from '../core/types';
 import { runUndo } from '../core/undo';
-import { fill, makeT } from '../i18n';
+import { fill, makeT, numberText } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { BiText, Btn, Divider, Micro, Pill, Row } from '../ui/components';
@@ -24,7 +24,6 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
   const [items, setItems] = useState<MealItem[]>(meal?.items ?? []);
   const [opened, setOpened] = useState<number[]>([]);
   const [openId, setOpenId] = useState<string | null>(meal?.id ?? null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // The working copy resets whenever a different meal (or none) opens. Doing
   // this during render, rather than in an effect, keeps the first paint in
@@ -34,7 +33,6 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
     setOpenId(mealId);
     setItems(meal?.items ?? []);
     setOpened((meal?.items ?? []).map((i) => i.grams));
-    setConfirmDelete(false);
   }
 
   if (!meal) return null;
@@ -59,7 +57,7 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
   function save() {
     app.updateMeal({ ...current, items, kcal, protein });
     fb.haptic('success');
-    fb.notify(t('toast_meal_saved').replace('{kcal}', String(kcal)));
+    fb.notify(fill(t('toast_meal_saved'), { kcal: numberText(kcal) }));
     onClose();
   }
 
@@ -121,14 +119,8 @@ export function MealSheet({ meal, onClose }: { meal: Meal | null; onClose: () =>
           <Micro>{`kcal · ${protein} g ${t('protein')}`}</Micro>
         </View>
         <Row style={{ gap: 8 }}>
-          {confirmDelete ? (
-            <>
-              <Btn small tone="danger" label={t('delete')} onPress={remove} />
-              <Btn small tone="ghost" label={t('cancel')} onPress={() => setConfirmDelete(false)} />
-            </>
-          ) : (
-            <Btn small tone="ghost" label={t('delete')} onPress={() => setConfirmDelete(true)} />
-          )}
+          {/* No confirm step: the toast after a delete has Undo, so a wrong tap is one more tap to put right. */}
+          <Btn small tone="ghost" label={t('delete')} onPress={remove} />
           <Btn small label={t('save')} onPress={save} disabled={!changed || items.length === 0} />
         </Row>
       </Row>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { t } from '../../i18n';
-import { setupBlocks, setupNumber, setupProblems, setupTarget, STEP_OF } from '../setup';
+import { numberIn, setupBlocks, setupNumber, setupProblems, setupTarget, STEP_OF } from '../setup';
 import type { Profile } from '../types';
 
 const NOW = new Date('2026-10-28T12:00:00');
@@ -61,6 +61,15 @@ describe('setup answers', () => {
     expect(setupNumber('७२')).toBe(72);
     expect(setupNumber('72.')).toBe(72);
     for (const s of ['-5', '7 2', '72kg', '.5', '1.2.3', 'abc']) expect(Number.isNaN(setupNumber(s)), s).toBe(true);
+  });
+
+  it('reads a weight typed in the weight sheet with a decimal comma or in Devanagari digits, and only inside its range', () => {
+    expect(numberIn('72,5', 25, 350)).toBe(72.5);
+    expect(numberIn('७२.५', 25, 350)).toBe(72.5);
+    expect(numberIn('७२,५', 25, 350)).toBe(72.5);
+    expect(numberIn('25', 25, 350)).toBe(25);
+    expect(numberIn('350', 25, 350)).toBe(350);
+    for (const s of ['', '20', '351', '72kg', '-72']) expect(numberIn(s, 25, 350), s).toBeNull();
   });
 
   it('holds a step back for a problem on that step or an earlier one, never a later one', () => {

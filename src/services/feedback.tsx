@@ -17,14 +17,26 @@ type Feedback = {
   notify: (text: string, action?: ToastAction) => void;
   /** A tap on the phone. Silent on the web. */
   haptic: (kind: 'light' | 'success') => void;
+  /**
+   * Says a line to a screen reader with no toast: on the phone at once, on the web from the region the toasts use, kept on
+   * the page from the start, so words that appear on screen together with their own text are heard too.
+   */
+  announce: (text: string) => void;
 };
 
 const Ctx = createContext<Feedback | null>(null);
+/** Whether a toast with a button (Undo) is on screen. Its own context, so the rest of the app does not render again with it. */
+const UndoToastCtx = createContext(false);
 
 export function useFeedback(): Feedback {
   const c = useContext(Ctx);
   if (!c) throw new Error('useFeedback must be used inside FeedbackProvider');
   return c;
+}
+
+/** True while a toast with a button (Undo) is on screen, so something else that would cover it can wait until it has gone. */
+export function useUndoToastShowing(): boolean {
+  return useContext(UndoToastCtx);
 }
 
 async function vibrate(kind: 'light' | 'success') {
@@ -75,11 +87,11 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     if (timer.current) clearTimeout(timer.current);
   }, []);
 
-  const value = useMemo(() => ({ notify, haptic }), [notify, haptic]);
+  const value = useMemo(() => ({ notify, haptic, announce }), [notify, haptic, announce]);
 
   return (
     <Ctx.Provider value={value}>
-      {children}
+      <UndoToastCtx.Provider value={text !== null && action !== null}>{children}</UndoToastCtx.Provider>
       {region}
       {text ? (
         <ToastView

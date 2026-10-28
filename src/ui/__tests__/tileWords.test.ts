@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_VALUE, sleepWords, waterWords, weightWords } from '../../core/tileText';
 import { makeT } from '../../i18n';
 import type { Lang } from '../../core/types';
-import { addedOn, addedText, bottleLabel, bottleName, shownWords, tileRole, walkGoalLabel, walkGoalName } from '../tileWords';
+import { addedOn, addedText, bottleLabel, bottleName, opensHold, shownWords, tileRole, walkGoalLabel, walkGoalName } from '../tileWords';
 
 const LANGS: Lang[] = ['en', 'mr', 'hi'];
 
@@ -103,5 +103,20 @@ describe('how a screen reader takes a tile', () => {
     expect(tileRole({ tap: false, hold: false }, 'ios')).toBe('text');
     expect(tileRole({ tap: false, hold: false }, 'android')).toBe('text');
     expect(tileRole({ tap: false, hold: false }, 'web')).toBe('image');
+  });
+});
+
+describe('opensHold', () => {
+  it('Shift+Enter opens what a hold opens, the way on a keyboard with no context menu key (a Mac)', () => {
+    expect(opensHold({ key: 'Enter', shiftKey: true })).toBe(true);
+  });
+
+  it('Enter or Space alone is the tap, and Shift with any other key, or with Control, Alt or Command too, is not the hold', () => {
+    expect(opensHold({ key: 'Enter', shiftKey: false })).toBe(false);
+    expect(opensHold({ key: ' ', shiftKey: true })).toBe(false);
+    expect(opensHold({ key: 'a', shiftKey: true })).toBe(false);
+    expect(opensHold({ key: 'Enter', shiftKey: true, ctrlKey: true })).toBe(false);
+    expect(opensHold({ key: 'Enter', shiftKey: true, altKey: true })).toBe(false);
+    expect(opensHold({ key: 'Enter', shiftKey: true, metaKey: true })).toBe(false);
   });
 });

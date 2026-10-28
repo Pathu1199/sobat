@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
+import { OFF_SCREEN } from './announce';
 import { stepButtonName } from './stepperWords';
 import { C, F, lh, S } from './theme';
 
@@ -9,8 +10,9 @@ import { C, F, lh, S } from './theme';
  * web adds no reach around a control, so the box itself is that size) and is
  * named for screen readers with what it changes ("Less chapati"), and says the
  * amount shown as its value. The web reads no value on a button, so there the
- * amount is in each name ("Less chapati, 2") and the amount between them is
- * read out when a tap changes it. − is off when it can do nothing.
+ * amount is in each name ("Less chapati, 2") and the new amount is read out
+ * after a tap on − or +, and only then: a new day's amounts changing on their
+ * own are not read out one after another. − is off when it can do nothing.
  */
 export function QtyStepper({
   value,
@@ -27,18 +29,30 @@ export function QtyStepper({
   plusLabel: string;
   minusDisabled?: boolean;
 }) {
+  // On the web, for a moment after a tap: the amount goes into a region the browser reads as its words change.
+  const [heard, setHeard] = useState(false);
+  const tap = (fn: () => void) => () => {
+    fn();
+    if (Platform.OS !== 'web') return;
+    setHeard(true);
+    setTimeout(() => setHeard(false), HEARD_MS);
+  };
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-      <StepButton icon="remove" label={minusLabel} value={value} onPress={onMinus} disabled={minusDisabled} />
-      <Text
-        aria-live={Platform.OS === 'web' ? 'polite' : undefined}
-        style={{ minWidth: 40, textAlign: 'center', color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500', fontVariant: ['tabular-nums'] }}>
-        {value}
-      </Text>
-      <StepButton icon="add" label={plusLabel} value={value} onPress={onPlus} />
+      <StepButton icon="remove" label={minusLabel} value={value} onPress={tap(onMinus)} disabled={minusDisabled} />
+      <Text style={{ minWidth: 40, textAlign: 'center', color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500', fontVariant: ['tabular-nums'] }}>{value}</Text>
+      <StepButton icon="add" label={plusLabel} value={value} onPress={tap(onPlus)} />
+      {Platform.OS === 'web' ? (
+        <View aria-live="polite" style={OFF_SCREEN}>
+          <Text>{heard ? value : ''}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
+
+/** How long the amount stays in the web's region after a tap, long enough to be read once. */
+const HEARD_MS = 1500;
 
 function StepButton({ icon, label, value, onPress, disabled }: { icon: 'add' | 'remove'; label: string; value: string; onPress: () => void; disabled?: boolean }) {
   return (

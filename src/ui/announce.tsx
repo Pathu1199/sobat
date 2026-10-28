@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, Platform, Text, View, type ViewStyle } from 'react-native';
 
-// On the page for a screen reader, off it for the eye.
-const OFF_SCREEN: ViewStyle = { position: 'absolute', left: -10000, top: 0, width: 1, height: 1, overflow: 'hidden' };
+/** On the page for a screen reader, off it for the eye. */
+export const OFF_SCREEN: ViewStyle = { position: 'absolute', left: -10000, top: 0, width: 1, height: 1, overflow: 'hidden' };
 
 /**
  * Says a line to a screen reader on the phone (iOS after what it is already

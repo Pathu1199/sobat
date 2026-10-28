@@ -87,6 +87,10 @@ export function withWaterRemoved(water: WaterLog[], id: string): WaterLog[] {
   return water.some((w) => w.id === id) ? water.filter((w) => w.id !== id) : water;
 }
 
+/** The bottle sizes, in ml, and the walk goals, in minutes, offered in a tile's long-press sheet and in Settings. */
+export const BOTTLES: readonly number[] = [500, 750, 1000];
+export const WALK_GOALS: readonly number[] = [20, 30, 45, 60];
+
 /** What the long-press sheet takes as another amount: 10 ml to 3 L of water, 1 to 300 minutes of walking. */
 export const SHEET_RANGE = { water: { min: 10, max: 3000 }, walk: { min: 1, max: 300 } } as const;
 

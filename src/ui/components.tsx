@@ -552,7 +552,8 @@ function buildStyles() {
     btnSmall: { minHeight: S.touch, paddingVertical: 8, paddingHorizontal: 14 },
     btnText: { fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' },
     btnTextSmall: { fontSize: F.small, lineHeight: lh(F.small) },
-    pill: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: 999, borderWidth: S.hairline },
+    // Words centred, so a single digit sits in the middle of a chip a finger wide.
+    pill: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: 999, borderWidth: S.hairline, alignItems: 'center' },
     pillText: { fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' },
     segmented: { flexDirection: 'row', backgroundColor: C.cardAlt, borderRadius: 999, padding: 4 },
     segment: { flex: 1, minHeight: S.touch, paddingVertical: 8, paddingHorizontal: 6, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },

@@ -31,6 +31,13 @@ export function setupNumber(text: string): number {
   return /^\d+(\.\d*)?$/.test(s) ? Number(s) : NaN;
 }
 
+/** A number typed in a box, read as `setupNumber` reads it, when it lies from `min` to `max`; null for anything else. */
+export function numberIn(text: string, min: number, max: number): number | null {
+  const n = setupNumber(text);
+  // NaN fails both comparisons, so an empty box or a word gives null too.
+  return n >= min && n <= max ? n : null;
+}
+
 export function setupProblems(input: SetupInput, now: Date = new Date()): SetupField[] {
   const out: SetupField[] = [];
   const height = setupNumber(input.height);

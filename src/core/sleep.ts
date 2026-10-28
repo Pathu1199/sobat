@@ -1,7 +1,16 @@
-import { minutesBetween } from './date';
-import type { SleepLog } from './types';
+import { isIsoDate, minutesBetween } from './date';
+import type { ISODate, SleepLog } from './types';
 
 export const IDEAL_MINUTES = 450; // 7h30
+
+/**
+ * The day a sleep check-in is saved for: the earlier day its link names (the
+ * Sleep tile on a past day), today otherwise, for no date, one that is not a
+ * date, or a day still to come, when nobody has slept yet.
+ */
+export function sleepDay(param: unknown, today: ISODate): ISODate {
+  return isIsoDate(param) && param < today ? param : today;
+}
 
 export type SleepAnswers = { bed: string; wake: string; quality: number; wakeups: number; energy: number };
 

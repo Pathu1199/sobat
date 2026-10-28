@@ -4,7 +4,7 @@ import { Platform, Pressable, Text, View, type LayoutChangeEvent, type ViewStyle
 import Svg from 'react-native-svg';
 import { C, lh, textScale } from '../../ui/theme';
 import { ART_FIT, ART_H, ART_W, TILE_LINE_GAP, TILE_RADIUS, TILE_SIDE, TILE_TOP, tileMinHeight, tileType } from '../../ui/tileGeometry';
-import { tileRole, type ShownWords } from '../../ui/tileWords';
+import { opensHold, tileRole, type ShownWords } from '../../ui/tileWords';
 
 export { shownWords, type ShownWords } from '../../ui/tileWords';
 
@@ -35,7 +35,8 @@ export function TileArt({ children }: { children: React.ReactNode }) {
  * not a button, just the tile, read by a screen reader as one phrase (its
  * label), on the web too (`tileRole`). The hold is also an action a screen
  * reader offers by name (`holdLabel`), and on the web the context menu key,
- * Shift+F10 or a right click opens it, since a key held down is no hold.
+ * Shift+F10, Shift+Enter (for a Mac, which has no context menu key) or a right
+ * click opens it, since a key held down is no hold.
  */
 export function LivingTile({
   icon,
@@ -125,12 +126,19 @@ export function LivingTile({
     );
   }
   // The web's context menu, from the keyboard or a right click, opens the hold; a long touch has opened it already and marks its menu, so it never opens twice.
+  // Shift+Enter opens it too. It is caught on the way down, before the press handler takes Enter as a tap, so it never also adds.
   const webHold =
     Platform.OS === 'web' && onLongPress
       ? {
           onContextMenu: (e: { defaultPrevented: boolean; preventDefault: () => void }) => {
             if (e.defaultPrevented) return;
             e.preventDefault();
+            onLongPress();
+          },
+          onKeyDownCapture: (e: { key: string; shiftKey: boolean; ctrlKey: boolean; altKey: boolean; metaKey: boolean; preventDefault: () => void; stopPropagation: () => void }) => {
+            if (!opensHold(e)) return;
+            e.preventDefault();
+            e.stopPropagation();
             onLongPress();
           },
         }

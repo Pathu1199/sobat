@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bedtimeRegularity, buildSleepLog, sleepDebt, sleepFlags, sleepScore } from '../sleep';
+import { bedtimeRegularity, buildSleepLog, sleepDay, sleepDebt, sleepFlags, sleepScore } from '../sleep';
 import { minutesBetween } from '../date';
 
 describe('minutesBetween', () => {
@@ -81,5 +81,16 @@ describe('sleepFlags', () => {
       buildSleepLog(`2026-09-1${i}`, { bed: '23:00', wake: '07:00', quality: 4, wakeups: 0, energy: 4 }),
     );
     expect(sleepFlags(logs)).toHaveLength(0);
+  });
+});
+
+describe('sleepDay', () => {
+  const today = '2026-10-28';
+  it('saves the check-in for the earlier day a link names', () => {
+    expect(sleepDay('2026-10-25', today)).toBe('2026-10-25');
+  });
+
+  it('saves for today with no date, a date that is not one, today itself or a day still to come', () => {
+    for (const d of [undefined, '', 'yesterday', '2026-02-30', ['2026-10-25'], today, '2026-10-29']) expect(sleepDay(d, today), String(d)).toBe(today);
   });
 });

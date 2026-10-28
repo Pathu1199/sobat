@@ -64,8 +64,8 @@ export function WeightTrendCard() {
           </Text>
           <Small color={change && change.kg < 0 ? C.green : C.textDim}>{changeWords}</Small>
           {line ? (
-            // The numbers are in the words; the line only shows their shape, so a screen reader passes it by.
-            <View style={{ height: 48 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            // The numbers are in the words; the line only shows their shape, so a screen reader passes it by, on the web too.
+            <View style={{ height: 48 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden>
               <Svg width="100%" height="100%" viewBox={`0 0 ${SPARK_W} ${SPARK_H}`} preserveAspectRatio="none">
                 <Path d={line} stroke={C.accent} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
               </Svg>
