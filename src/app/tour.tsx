@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Animated, Easing, Pressable, Text, View } from 'react-native';
+import { Animated, Easing, Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -83,7 +83,9 @@ export default function TourScreen() {
               onPress={() => go(i)}
               accessibilityRole="button"
               accessibilityLabel={fill(t('tour_page'), { n: i + 1, m: PAGES.length })}
-              aria-selected={i === page}
+              // The web says "current"; the phone, which has no aria-current, says "selected".
+              aria-current={i === page ? 'step' : undefined}
+              aria-selected={Platform.OS === 'web' ? undefined : i === page}
               style={{ minWidth: S.touch, minHeight: S.touch, alignItems: 'center', justifyContent: 'center' }}>
               <View style={{ width: i === page ? 22 : 7, height: 7, borderRadius: 4, backgroundColor: i === page ? C.accent : C.borderStrong }} />
             </Pressable>

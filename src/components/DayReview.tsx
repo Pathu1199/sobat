@@ -15,12 +15,13 @@ import { C } from '../ui/theme';
  * The end-of-day recap, shown on Today in the evening while its reminder is
  * on (`dayReviewShown`). The model writes it from the day's sentences; with no
  * model to ask, the sentences themselves are the recap, in the person's
- * language. Writing it also stores a one-line day note in memory, which is
- * what lets tomorrow's advice know how today went.
+ * language, at once, with no wait on a model that is not there. Writing it
+ * also stores a one-line day note in memory, which is what lets tomorrow's
+ * advice know how today went.
  */
 export function DayReview() {
   const app = useApp();
-  const { ask } = useAI();
+  const { ask, online } = useAI();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const [busy, setBusy] = useState(false);
@@ -48,7 +49,17 @@ export function DayReview() {
     };
   }
 
+  // The day's own sentences, in the person's language: the recap when there is no model to ask.
+  function writePlain() {
+    setText(dayReviewLines(dayFacts(), t).join(' '));
+    app.rememberText(summaryLine(), 'episode', 'auto');
+  }
+
   async function write() {
+    if (!online) {
+      writePlain();
+      return;
+    }
     setBusy(true);
     try {
       // The model is told the day in English and answers in the person's language.
@@ -71,10 +82,8 @@ export function DayReview() {
       // Kept as a day note so tomorrow has context, not just today's screen.
       app.rememberText(summaryLine(), 'episode', 'auto');
     } catch {
-      // No model to ask: the day's own sentences, in the person's language.
-      const plain = dayReviewLines(dayFacts(), t).join(' ');
-      setText(plain);
-      app.rememberText(summaryLine(), 'episode', 'auto');
+      // The model did not answer after all.
+      writePlain();
     } finally {
       setBusy(false);
     }

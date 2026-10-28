@@ -23,7 +23,7 @@ import { skippedOn } from '../../core/menu';
 import { currentSlot, slotStates } from '../../core/pattern';
 import { pendingCount } from '../../core/queue';
 import { weekRecord } from '../../core/record';
-import { dayReviewShown, todayBlocks, type PairTile } from '../../core/todayLayout';
+import { dayReviewShown, todayBlocks, withReview, type PairTile } from '../../core/todayLayout';
 import type { Meal } from '../../core/types';
 import { isOffDay } from '../../core/week';
 import { stripSince, weekStrip } from '../../core/weekStrip';
@@ -79,7 +79,7 @@ export default function TodayScreen() {
   const records = weekRecord({ monday, today, routine: state.routine, meals: state.meals, skips: state.slotSkips, offDays, menuOn: app.menuOn });
   const days = weekStrip({ monday, today, viewed, records, since });
 
-  // The evening review, while its reminder is on: the reminder at 21:30 opens Today, where it is.
+  // The evening review, while its reminder is on: the reminder at 21:30 opens Today, where it is, within the page's five blocks.
   const review = dayReviewShown({ on: state.settings.reminders.dayReview, mode, hour: app.hour, hasData: app.budget.consumed > 0 || state.sleep.some((s) => s.date === today) });
 
   const queued = pendingCount(state.photoQueue);
@@ -100,7 +100,8 @@ export default function TodayScreen() {
       {/* Days in a row under the safe minimum are said plainly, today only; nothing shows otherwise. */}
       {mode === 'today' ? <IntakeCard /> : null}
       {/* A day still to come has no night to check in yet, so todayBlocks leaves its Sleep tile out; the day's line shows only while it is switched on. */}
-      {todayBlocks(state.settings.todayCards, mode, state.settings.features.mantra).map((b, i) => {
+      {withReview(todayBlocks(state.settings.todayCards, mode, state.settings.features.mantra), review).map((b, i) => {
+        if (b.kind === 'review') return <DayReview key="review" />;
         if (b.kind === 'menu') return <DayMenu key="menu" date={viewed} view={view} menu={menu} onOpenMeal={setOpenMeal} />;
         // The coach and the mantra speak about now; nothing is drunk or walked on a day still to come.
         if (b.kind === 'coach') return mode === 'today' ? <CoachLine key="coach" /> : null;
@@ -115,7 +116,6 @@ export default function TodayScreen() {
           </TileRow>
         );
       })}
-      {review ? <DayReview /> : null}
       <Small color={C.textFaint}>{t('medical_note')}</Small>
       <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
       {mode === 'today' ? <Celebration /> : null}

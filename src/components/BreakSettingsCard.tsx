@@ -54,7 +54,7 @@ export function BreakSettingsCard() {
                   {(k === 'micro' ? [15, 20, 30, 45] : k === 'long' ? [45, 60, 90, 120] : k === 'posture' ? [20, 30, 45, 60] : [5, 10, 15, 20]).map((m) => (
                     <Pill
                       key={m}
-                      label={`${m}m`}
+                      label={`${m} ${t('tile_unit_min')}`}
                       active={br[k].everyMinutes === m}
                       onPress={() => app.setBreakSettings({ [k]: { ...br[k], everyMinutes: m } } as Partial<typeof br>)}
                     />
@@ -138,7 +138,7 @@ export function BreakSettingsCard() {
           <Divider />
           <Row style={{ justifyContent: 'space-between' }}>
             <Micro>{t('break_compliance')}</Micro>
-            <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>
+            <Text style={{ color: C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
               {app.state.breaks.filter((b) => b.action === 'taken').length}
               <Text style={{ color: C.textFaint, fontWeight: '500' }}> / {app.state.breaks.length}</Text>
             </Text>

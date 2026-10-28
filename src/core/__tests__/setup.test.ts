@@ -5,7 +5,7 @@ import type { Profile } from '../types';
 
 const NOW = new Date('2026-10-28T12:00:00');
 const TODAY = '2026-10-28';
-const ok = { birthYear: '1990', height: '170', weight: '82', goal: '68' };
+const ok = { sex: 'female' as const, birthYear: '1990', height: '170', weight: '82', goal: '68' };
 
 describe('setupProblems', () => {
   it('accepts a grown-up with sensible numbers', () => {
@@ -18,7 +18,7 @@ describe('setupProblems', () => {
   });
 
   it('takes empty boxes as problems, never as zero', () => {
-    expect(setupProblems({ birthYear: '', height: '', weight: '', goal: '' }, NOW)).toEqual(['year', 'height', 'weight', 'goal']);
+    expect(setupProblems({ sex: null, birthYear: '', height: '', weight: '', goal: '' }, NOW)).toEqual(['sex', 'year', 'height', 'weight', 'goal']);
     expect(setupProblems({ ...ok, height: '17o' }, NOW)).toEqual(['height']);
   });
 
@@ -39,7 +39,13 @@ describe('setupProblems', () => {
   });
 
   it('reads a year and numbers typed with Devanagari digits', () => {
-    expect(setupProblems({ birthYear: '१९९०', height: '१७०', weight: '८२', goal: '६८' }, NOW)).toEqual([]);
+    expect(setupProblems({ sex: 'male', birthYear: '१९९०', height: '१७०', weight: '८२', goal: '६८' }, NOW)).toEqual([]);
+  });
+
+  it('wants male or female chosen: nothing is chosen for the person, so the first step holds until one is', () => {
+    expect(setupProblems({ ...ok, sex: null }, NOW)).toEqual(['sex']);
+    expect(setupBlocks(setupProblems({ ...ok, sex: null }, NOW), 1)).toEqual(['sex']);
+    expect(setupProblems({ ...ok, sex: 'male' }, NOW)).toEqual([]);
   });
 });
 
@@ -48,7 +54,7 @@ describe('setup answers', () => {
     expect(setupNumber('72,5')).toBe(72.5);
     expect(setupNumber(' 80 ')).toBe(80);
     expect(Number.isNaN(setupNumber(''))).toBe(true);
-    expect(STEP_OF).toEqual({ year: 1, height: 1, weight: 2, goal: 2 });
+    expect(STEP_OF).toEqual({ sex: 1, year: 1, height: 1, weight: 2, goal: 2 });
   });
 
   it('reads Devanagari digits and a number still being typed, and nothing else', () => {
@@ -58,10 +64,10 @@ describe('setup answers', () => {
   });
 
   it('holds a step back for a problem on that step or an earlier one, never a later one', () => {
-    const all = setupProblems({ birthYear: '', height: '', weight: '', goal: '' }, NOW);
+    const all = setupProblems({ sex: null, birthYear: '', height: '', weight: '', goal: '' }, NOW);
     expect(setupBlocks(all, 0)).toEqual([]);
-    expect(setupBlocks(all, 1)).toEqual(['year', 'height']);
-    expect(setupBlocks(all, 2)).toEqual(['year', 'height', 'weight', 'goal']);
+    expect(setupBlocks(all, 1)).toEqual(['sex', 'year', 'height']);
+    expect(setupBlocks(all, 2)).toEqual(['sex', 'year', 'height', 'weight', 'goal']);
     expect(setupBlocks(['goal'], 3)).toEqual(['goal']);
     expect(setupBlocks(['goal'], 1)).toEqual([]);
   });
@@ -70,7 +76,7 @@ describe('setup answers', () => {
 describe('setup words', () => {
   const KEYS = [
     'setup_step', 'setup_lang_title', 'setup_about_title', 'setup_weight_title', 'setup_done_title', 'setup_eg', 'setup_back', 'setup_range',
-    'setup_bad_year', 'setup_bad_height', 'setup_bad_weight', 'setup_bad_goal', 'setup_target_line', 'setup_goal_line', 'setup_hold_line',
+    'setup_bad_sex', 'setup_bad_year', 'setup_bad_height', 'setup_bad_weight', 'setup_bad_goal', 'setup_target_line', 'setup_goal_line', 'setup_hold_line',
   ];
   const blanks = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
 
@@ -126,6 +132,33 @@ describe('setupTarget', () => {
   it('has no date when the plan keeps the weight where it is', () => {
     const t = setupTarget({ ...base, goalWeightKg: 82 }, TODAY, NOW);
     expect(t.hold).toBe(true);
+    expect(t.reach).toBeNull();
+  });
+
+  // A woman of 66, 155 cm, mostly sitting: her upkeep is a little above the safe minimum, so the minimum leaves little pace.
+  const slow: Profile = { ...base, sex: 'female', birthYear: 1960, heightCm: 155, weightKg: 57, startWeightKg: 57, goalWeightKg: 50 };
+
+  it('has no date, only the floor note, when the pace the safe minimum leaves is under 0.1 kg a week', () => {
+    const t = setupTarget(slow, TODAY, NOW);
+    expect(t.floored).toBe(true);
+    expect(t.reach).toBeNull();
+  });
+
+  it('has no date when the goal is more than two years away, however steady the pace', () => {
+    // 12 kg at 0.11 kg a week: late in 2028, past two years.
+    const far = setupTarget({ ...slow, weightKg: 62, startWeightKg: 62 }, TODAY, NOW);
+    expect(far.floored).toBe(true);
+    expect(far.reach).toBeNull();
+    // 20 kg at 0.27 kg a week comes in March 2028, inside two years: the date stays.
+    expect(setupTarget({ ...slow, birthYear: 1975, heightCm: 158, weightKg: 68, startWeightKg: 68, goalWeightKg: 48 }, TODAY, NOW).reach).toEqual({ rateKg: 0.27, goalKg: 48, date: '2028-03-30' });
+  });
+
+  it('has no date and keeps the floor note when the upkeep itself is under the safe minimum', () => {
+    // A woman of 76, 150 cm and 47 kg: her upkeep is about 1040 kcal, under the 1200 kcal minimum the target is raised to.
+    const t = setupTarget({ ...slow, birthYear: 1950, heightCm: 150, weightKg: 47, startWeightKg: 47, goalWeightKg: 43 }, TODAY, NOW);
+    expect(t.kcal).toBe(1200);
+    expect(t.floored).toBe(true);
+    expect(t.hold).toBe(false);
     expect(t.reach).toBeNull();
   });
 });

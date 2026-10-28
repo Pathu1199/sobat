@@ -13,7 +13,8 @@ import type { AppState, ISODate, Lang } from './types';
  * nothing more: times, labels in the person's language, and the next week of
  * mantras. No food, weight, mood or sleep ever leaves the device. It follows
  * the same switches as the app: no short breaks while eye-care breaks are
- * off, and no day's line while it is off.
+ * off, no day's line while it is off, and water and the weigh day only while
+ * the nudges are on.
  */
 export type PushSchedule = {
   v: 1;
@@ -83,7 +84,8 @@ export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string
     // The day's line goes out only while it is switched on in Settings.
     mantras: state.settings.features.mantra ? mantras : [],
     quiet: { from: state.settings.quietStartHour, to: state.settings.quietEndHour },
-    weigh: { weekday: state.settings.weighDay ?? 1, title: t('weigh_q'), body: t('weigh_hint') },
+    // The weigh day is a nudge, as water is: it goes out only while the nudges are switched on.
+    weigh: state.settings.nudgesEnabled ? { weekday: state.settings.weighDay ?? 1, title: t('weigh_q'), body: t('weigh_hint') } : null,
   };
 }
 

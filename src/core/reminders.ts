@@ -1,5 +1,4 @@
 import type { BreakSettings } from './breaks';
-import { cardsShown } from './customize';
 import { addDays, isIsoDate, toISODate, weekDates } from './date';
 import { menuSlots, skippedOn, type DayMenu } from './menu';
 import { inQuietHours } from './nudge';
@@ -113,7 +112,9 @@ export const PENDING_LIMIT = 64;
  * `plannedReminders` sorts them), then the office day's blocks and the daily
  * reminders; the long breaks get what is left (`dailyReminders` with `room`).
  * `planned` is how many of the planned list to hold, `daily` the room for the
- * daily ones.
+ * daily ones. More than 64 planned cannot come up (three days of meal-time
+ * prompts and a few morning lines stay far under it), but the cap would hold
+ * if it did.
  */
 export function pendingFit(planned: number, office: number, limit = PENDING_LIMIT): { planned: number; daily: number } {
   const kept = Math.min(planned, limit);
@@ -298,16 +299,15 @@ export function weeklyReport(input: {
 /**
  * Where a tap on a notification goes: Today on the day it is about, the plan
  * screen at next week, or Progress for the report; for a daily one, the
- * check-in for the morning check-in, the day's line where it is shown (Today
- * while its card is on Today, Mind otherwise), and Today for the rest.
+ * check-in for the morning check-in, and Today for the rest, the day's line
+ * included.
  */
-export function tapRoute(data: Record<string, unknown>, today: ISODate, opts: { mantraOnToday?: boolean } = {}): string {
+export function tapRoute(data: Record<string, unknown>, today: ISODate): string {
   const date = isIsoDate(data.date) ? data.date : null;
   if (data.kind === 'slot' || data.kind === 'fill') return date && date !== today ? `/?date=${date}` : '/';
   if (data.kind === 'planweek') return date ? `/plan?date=${date}` : '/plan';
   if (data.kind === 'report') return '/progress';
   if (data.kind === 'sleep') return '/sleep';
-  if (data.kind === 'mantra') return opts.mantraOnToday ? '/' : '/mind';
   return '/';
 }
 
@@ -352,11 +352,9 @@ export function tapPlan(input: {
   menuOn: (date: ISODate) => DayMenu;
   meals: Meal[];
   skips: SlotSkip[];
-  /** The day's line has its card on Today (and is switched on): its tap opens Today rather than Mind. */
-  mantraOnToday?: boolean;
 }): TapPlan {
   const { data } = input;
-  const route = tapRoute(data, input.today, { mantraOnToday: input.mantraOnToday });
+  const route = tapRoute(data, input.today);
   if (input.action !== 'ate' || data.kind !== 'slot' || !isIsoDate(data.date) || typeof data.slotId !== 'string' || data.date > input.today) return { route, ate: null };
   const outcome = promptOutcome({ menu: input.menuOn(data.date), meals: input.meals, skips: input.skips, slotId: data.slotId });
   return { route, ate: { date: data.date, slotId: data.slotId, outcome } };
@@ -367,19 +365,17 @@ export function tapPlan(input: {
  * date on the clock at the tap (`now`), never the store's own, which on an
  * app the tap has just woken can still be yesterday: a prompt for this
  * morning would read as a day still to come and log nothing, and a tap just
- * after midnight on yesterday's prompt would open the new day. The day's line
- * opens Today only while its card is shown there.
+ * after midnight on yesterday's prompt would open the new day.
  */
 export function tapPlanAt(input: {
   action: 'open' | 'ate';
   data: Record<string, unknown>;
   now: Date;
   menuOn: (date: ISODate) => DayMenu;
-  state: Pick<AppState, 'meals' | 'slotSkips'> & { settings: Pick<Settings, 'todayCards' | 'features'> };
+  state: Pick<AppState, 'meals' | 'slotSkips'>;
 }): TapPlan {
-  const { meals, slotSkips, settings } = input.state;
-  const mantraOnToday = cardsShown(settings.todayCards, settings.features.mantra).on.some((c) => c.id === 'mantra');
-  return tapPlan({ action: input.action, data: input.data, today: toISODate(input.now), menuOn: input.menuOn, meals, skips: slotSkips, mantraOnToday });
+  const { meals, slotSkips } = input.state;
+  return tapPlan({ action: input.action, data: input.data, today: toISODate(input.now), menuOn: input.menuOn, meals, skips: slotSkips });
 }
 
 /**
@@ -427,6 +423,44 @@ export type DailyInput = {
 export const DAILY_IDS = { sleep: 'sobat-sleep-checkin', mantra: 'sobat-mantra', water: 'sobat-water', dinner: 'sobat-dinner', review: 'sobat-day-review' } as const;
 /** Every long-break reminder's id starts with this; older builds used it alone, for one repeating notification. */
 export const LONG_BREAK_ID = 'sobat-long-break';
+
+/** Everything planned a week ahead carries this on the phone, so it can be told apart from the daily ones. */
+export const PLANNED_PREFIX = 'sobat-r-';
+
+/** One step of bringing the phone's pending notifications to what is wanted. */
+export type ReminderOp = { kind: 'cancel'; id: string } | { kind: 'daily'; reminder: DailyReminder } | { kind: 'at'; id: string; reminder: Reminder };
+
+/**
+ * One run that brings the phone to what is wanted, the planned reminders and
+ * the daily ones together: every cancel, of either kind, before any add, so
+ * the pending count never passes the phone's cap on the way (a cap of 64 that
+ * drops the rest without a word). `have` is what the phone holds; `planned`
+ * the planned ones to hold, each with its id on the phone, null to leave them
+ * as they are; `daily` the daily list to register whole, null to leave it (not
+ * known yet, or the same list already registered). A planned one the phone
+ * holds is left; one whose moment has passed is not planned, as it would fire
+ * at once. Pure.
+ */
+export function reminderOps(input: { have: string[]; planned: { osId: string; reminder: Reminder }[] | null; daily: DailyReminder[] | null; nowMs: number }): ReminderOp[] {
+  const cancels = new Set<string>();
+  const adds: ReminderOp[] = [];
+  if (input.daily) {
+    const ids = new Set(input.daily.map((r) => r.id));
+    for (const id of [...Object.values(DAILY_IDS), LONG_BREAK_ID]) if (!ids.has(id)) cancels.add(id);
+    for (const id of input.have) if (id.startsWith(LONG_BREAK_ID) && !ids.has(id)) cancels.add(id);
+    for (const reminder of input.daily) adds.push({ kind: 'daily', reminder });
+  }
+  if (input.planned) {
+    const want = new Set(input.planned.map((p) => p.osId));
+    for (const id of input.have) if (id.startsWith(PLANNED_PREFIX) && !want.has(id)) cancels.add(id);
+    for (const p of input.planned) {
+      if (input.have.includes(p.osId)) continue;
+      if (new Date(`${p.reminder.date}T${p.reminder.time}:00`).getTime() <= input.nowMs) continue;
+      adds.push({ kind: 'at', id: p.osId, reminder: p.reminder });
+    }
+  }
+  return [...[...cancels].map((id): ReminderOp => ({ kind: 'cancel', id })), ...adds];
+}
 
 /** The daily reminders this device should hold. Anything registered and not in here is to be cancelled. */
 export function dailyReminders(input: DailyInput): DailyReminder[] {

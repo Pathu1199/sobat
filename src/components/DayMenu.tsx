@@ -15,23 +15,10 @@ import { isOffDay } from '../core/week';
 import { fill, makeT, numberText } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
-import { Bar, Btn, Card, Divider, Row, SectionHeader } from '../ui/components';
+import { Bar, Btn, Card, Divider, Pill, Row, SectionHeader } from '../ui/components';
 import { QtyStepper } from '../ui/QtyStepper';
 import { C, F, lh, S } from '../ui/theme';
 import { useAddSheet } from './AddSheet';
-
-/** A chip that is a finger tall on every platform: the box itself is 44, the pill sits in its middle. */
-function Chip({ label, a11y, onPress }: { label: string; a11y?: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y ?? label} style={{ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start' }}>
-      {({ pressed }) => (
-        <View style={{ paddingVertical: 7, paddingHorizontal: 13, borderRadius: 999, borderWidth: S.hairline, borderColor: C.border, backgroundColor: C.cardAlt, opacity: pressed ? 0.8 : 1 }}>
-          <Text style={{ color: C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{label}</Text>
-        </View>
-      )}
-    </Pressable>
-  );
-}
 
 /**
  * The day's menu, one row per slot (core/dayView.ts decides each row's state
@@ -254,9 +241,11 @@ export function DayMenu({
             </Pressable>
           ))}
           {row.autoIds.length > 0 ? (
-            <Chip
+            <Pill
               label={t('menu_from_plan')}
-              a11y={fill(t('menu_confirm_a11y'), { slot: title(row) })}
+              color={C.cardAlt}
+              style={{ alignSelf: 'flex-start' }}
+              accessibilityLabel={fill(t('menu_confirm_a11y'), { slot: title(row) })}
               onPress={() => {
                 row.autoIds.forEach((id) => app.confirmMeal(id));
                 fb.haptic('light');
@@ -319,7 +308,7 @@ export function DayMenu({
   const floor = KCAL_FLOOR[state.profile.sex];
   const note = view.mode === 'future' ? planNote({ kcal: view.plannedKcal, target: targets.kcal, floor, suggested: app.isSuggestedMenu(menu), hasPlan: view.required > 0 }) : null;
   // The plan screen gives Balance at the foot of the menu; elsewhere a day too low links to the plan screen, opened on that date.
-  const openPlan = onBalance ? null : <Chip label={t('menu_open_plan')} onPress={() => router.push({ pathname: '/plan', params: { date } })} />;
+  const openPlan = onBalance ? null : <Pill label={t('menu_open_plan')} color={C.cardAlt} style={{ alignSelf: 'flex-start' }} onPress={() => router.push({ pathname: '/plan', params: { date } })} />;
 
   return (
     <Card>

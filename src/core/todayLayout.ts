@@ -15,7 +15,7 @@ import type { TodayCardId } from './types';
  * anything that is not a list gets the default. Pure.
  */
 export type PairTile = 'weight' | 'sleep' | 'climb';
-export type TodayBlock = { kind: 'menu' } | { kind: 'coach' } | { kind: 'waterWalk' } | { kind: 'steps' } | { kind: 'mantra' } | { kind: 'pair'; tiles: PairTile[] };
+export type TodayBlock = { kind: 'menu' } | { kind: 'coach' } | { kind: 'waterWalk' } | { kind: 'steps' } | { kind: 'mantra' } | { kind: 'pair'; tiles: PairTile[] } | { kind: 'review' };
 
 const SINGLE_TILES: string[] = ['weight', 'sleep', 'climb'];
 
@@ -37,6 +37,26 @@ export function todayBlocks(cards: unknown, mode: DayMode = 'today', mantraOn = 
   }
   flush();
   return out;
+}
+
+/** Blocks under the top card (the week strip and calories left): five on the page in all. */
+export const BLOCKS_UNDER_TOP = 4;
+
+/** The cards Today starts with; every other block is one the person switched on. */
+const CORE_BLOCKS: TodayBlock['kind'][] = ['menu', 'coach', 'waterWalk'];
+
+/**
+ * Today's blocks with the evening review (`dayReviewShown`). While there is
+ * room it comes last, so with the cards Today starts with it is the fifth
+ * block; on a page already full it takes the place of the last card the
+ * person switched on, never a sixth block, and never the menu, the coach line
+ * or Water and Walk. Pure.
+ */
+export function withReview(blocks: TodayBlock[], review: boolean): TodayBlock[] {
+  if (!review) return blocks;
+  const optional = blocks.map((b) => !CORE_BLOCKS.includes(b.kind)).lastIndexOf(true);
+  if (blocks.length < BLOCKS_UNDER_TOP || optional < 0) return [...blocks, { kind: 'review' }];
+  return blocks.map((b, i) => (i === optional ? { kind: 'review' } : b));
 }
 
 /** What "Calories left" says, as i18n keys and numbers; the words are the component's. */

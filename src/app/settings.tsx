@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { Linking, Platform, Pressable, Text, View } from 'react-native';
 import { isUp, listModels, normalizeUrl } from '../ai/ollama';
 import { formatMoment } from '../core/date';
-import type { Activity, Lang } from '../core/types';
+import { ACTIVITIES, PACES } from '../core/setup';
+import type { Lang } from '../core/types';
 import { fill, LANG_NAMES, makeT, numberText } from '../i18n';
 import { notifyNow, requestPermission } from '../services/notify';
 import { pushConfigured, stopPush, testPush } from '../services/push';
@@ -22,13 +23,11 @@ import { useCloudSync } from '../services/useCloudSync';
 import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
 import { DEFAULT_OLLAMA_URL } from '../store/defaults';
-import { Btn, Card, Choice, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
+import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
 import { C, F, TEXT_SCALES } from '../ui/theme';
 import { bottleLabel, bottleName, walkGoalLabel, walkGoalName } from '../ui/tileWords';
 
 /** The paces a person can choose, in kilos a week, as setup offers them. */
-const PACES = [0.25, 0.5, 0.75, 1];
-const ACTIVITIES: Activity[] = ['sedentary', 'light', 'moderate', 'active'];
 
 export default function SettingsScreen() {
   const app = useApp();
@@ -207,14 +206,14 @@ export default function SettingsScreen() {
           <Micro>{t('activity_q')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {ACTIVITIES.map((a) => (
-              <Choice key={a} label={t(a)} on={profile.activity === a} onPress={() => app.setProfile({ activity: a })} />
+              <Pill key={a} label={t(a)} active={profile.activity === a} onPress={() => app.setProfile({ activity: a })} />
             ))}
           </Row>
           <Divider />
           <Micro>{t('rate_q')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {PACES.map((r) => (
-              <Choice key={r} label={`${r} ${t('unit_kg')}`} on={profile.rateKgPerWeek === r} onPress={() => app.setProfile({ rateKgPerWeek: r })} />
+              <Pill key={r} label={`${r} ${t('unit_kg')}`} active={profile.rateKgPerWeek === r} onPress={() => app.setProfile({ rateKgPerWeek: r })} />
             ))}
           </Row>
           <Small color={C.textDim}>{fill(t('plan_daily'), { kcal: numberText(app.targets.kcal), p: app.targets.proteinG })}</Small>
@@ -232,7 +231,7 @@ export default function SettingsScreen() {
           <Micro>{t('nudge_every')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[30, 60, 90, 120].map((m) => (
-              <Pill key={m} label={`${m}m`} active={s.nudgeMinutes === m} onPress={() => app.setSettings({ nudgeMinutes: m })} />
+              <Pill key={m} label={`${m} ${t('tile_unit_min')}`} active={s.nudgeMinutes === m} onPress={() => app.setSettings({ nudgeMinutes: m })} />
             ))}
           </Row>
           <Divider />
@@ -240,7 +239,7 @@ export default function SettingsScreen() {
           <Small color={C.textFaint}>{t('notify_gap_desc')}</Small>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[30, 60, 90, 120, 180].map((m) => (
-              <Pill key={m} label={m < 60 ? `${m}m` : m % 60 === 0 ? `${m / 60}h` : `${Math.floor(m / 60)}h ${m % 60}m`} active={(s.notifyGapMinutes ?? 60) === m} onPress={() => app.setSettings({ notifyGapMinutes: m })} />
+              <Pill key={m} label={m < 60 ? `${m} ${t('tile_unit_min')}` : m % 60 === 0 ? `${m / 60} ${t('tile_unit_h')}` : `${Math.floor(m / 60)} ${t('tile_unit_h')} ${m % 60} ${t('tile_unit_min')}`} active={(s.notifyGapMinutes ?? 60) === m} onPress={() => app.setSettings({ notifyGapMinutes: m })} />
             ))}
           </Row>
           <Row style={{ gap: 8 }}>

@@ -11,17 +11,18 @@ import { clearLastTap, dismiss, lastTap, onTap, type TapResponse } from './notif
 import { useReminderGate } from './useScheduledReminders';
 
 // Every tap acted on since the app started, one per delivery (`TapResponse.key`). Kept outside the hook: the shell remounts
-// (the theme, a sign-in), and a tap that started the app can be read at start and still reach the listener after.
-// On Android a JS reload (a development build only) empties this while the tap that started the app can be handed over
-// again. A meal it logged is still on the record then: its slot is settled, so `promptOutcome` finds nothing to do, and
-// the store refuses a meal whose id it already holds.
+// (the theme, a sign-in), and a tap that started the app can be read at start and still reach the listener after. This
+// only saves a second toast: what stops a tap handed over again from logging twice is the slot itself. On Android a JS
+// reload (a development build only) empties this while the tap that started the app can be handed over again; the meal
+// it logged is on the record, its slot settled, so `promptOutcome` finds nothing to do (a new log would carry a new id,
+// so no id check could catch it).
 let handled: ReadonlySet<string> = new Set();
 
 /**
  * Acts on a tap on a notification. The body opens the page it is about:
  * Today on that day for a meal-time prompt or "fill in yesterday", next
  * week's plan, or Progress for the report; a daily one opens its own page
- * (the check-in, the day's line where it is shown, Today for the rest).
+ * (the check-in, and Today for the rest, the day's line included).
  * "Ate as planned" logs that date's slot from its plan through the store
  * (database calories, with an Undo), or confirms the meal the app filled in
  * meanwhile, or does nothing for a slot already settled; it says which,
@@ -30,7 +31,9 @@ let handled: ReadonlySet<string> = new Set();
  * (`tapPlanAt`), never the store's, which can still be yesterday's on an app
  * the tap has just woken. A day still to come gets nothing logged. A tap that
  * launched the app is read once the store and the session are known; later
- * ones come through the listener; each is acted on once (`firstTap`). A tap
+ * ones come through the listener; the same delivery read both ways is acted
+ * on once (`firstTap`), and a tap that comes again however it comes never
+ * logs twice, as its slot is settled by then (`promptOutcome`). A tap
  * made while nobody is signed in, or on a device that was reset, is forgotten,
  * never acted on at the next sign-in. Not on the web, which keeps its in-app
  * prompts.

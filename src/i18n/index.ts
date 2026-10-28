@@ -1083,10 +1083,10 @@ const en: Dict = {
   rem_planweek: 'Plan next week', rem_planweek_desc: 'Sunday at 18:00, unless next week is already saved.',
   rem_report: 'Weekly report', rem_report_desc: 'Monday at 9:00: last week\'s full days, average calories and weight change, on Progress.',
   rem_sleep: 'Morning check-in', rem_sleep_desc: 'At 7:30: how you slept.', rem_water: 'Water', rem_water_desc: 'Once, at 15:00.',
-  rem_review: 'Evening review', rem_review_desc: 'At 21:30, and on Today in the evening: today in five lines.', rem_away: 'After days away', rem_away_desc: 'A short line after two to four days with nothing logged, then quiet.',
+  rem_review: 'Evening review', rem_review_desc: 'At 21:30; a tap opens Today, which shows today in five lines in the evening.', rem_away: 'After days away', rem_away_desc: 'A short line after two to four days with nothing logged, then quiet.',
   rem_web_note: 'In a browser and on the PC, reminders show while Sobat is open: the meal-time prompt and the nudges below. The others come on the phone.',
   rem_nudges: 'Nudges while Sobat is open',
-  rem_nudges_desc: 'Water, posture and logging as often as set below, and the coach\'s tips when something needs doing now. With reminders when Sobat is closed switched on, water comes that way too.',
+  rem_nudges_desc: 'Water, posture and logging as often as set below, and the coach\'s tips when something needs doing now. With "Reminders when Sobat is closed" switched on, water and the weigh day come that way too.',
   features_title: 'Features', feat_breaks: 'Eye-care breaks', feat_breaks_desc: 'Look away every 20 minutes and stand up every hour while you work.',
   feat_mantra: 'The day\'s line', feat_mantra_desc: 'A short line each morning, at 8:00 and as a card you can add to Today.',
   feat_plates: 'What fits today', feat_plates_desc: 'Plates the app puts together from what is left of the day, on the Coach page.',
@@ -1098,6 +1098,7 @@ const en: Dict = {
   brk_settings: 'Break settings',
   tile_hold_water: 'Change the bottle size or add another amount', tile_hold_walk: 'Change the walk goal or add other minutes',
   add_ml_of: 'Millilitres of {food}', qty_ml: 'Millilitres',
+  setup_bad_sex: 'Choose male or female: the daily target is worked out from it.',
 };
 
 const mr: Dict = {
@@ -2185,10 +2186,10 @@ const mr: Dict = {
   rem_planweek: 'पुढच्या आठवड्याचं नियोजन', rem_planweek_desc: 'रविवारी संध्याकाळी 6 वाजता, पुढचा आठवडा जतन केला नसेल तर.',
   rem_report: 'आठवड्याचा अहवाल', rem_report_desc: 'सोमवारी सकाळी 9 वाजता: मागच्या आठवड्याचे पूर्ण दिवस, सरासरी कॅलरी आणि वजनातला बदल, प्रगती पानावर.',
   rem_sleep: 'सकाळची विचारपूस', rem_sleep_desc: 'सकाळी 7:30 वाजता: झोप कशी झाली.', rem_water: 'पाणी', rem_water_desc: 'एकदा, दुपारी 3 वाजता.',
-  rem_review: 'संध्याकाळचा आढावा', rem_review_desc: 'रात्री 9:30 वाजता, आणि संध्याकाळी आजच्या पानावर: आजचा दिवस पाच ओळींत.', rem_away: 'काही दिवस नोंद नसल्यास', rem_away_desc: 'दोन ते चार दिवस काहीच नोंदलं नाही तर एक छोटी ओळ, मग शांत.',
+  rem_review: 'संध्याकाळचा आढावा', rem_review_desc: 'रात्री 9:30 वाजता; टॅप केलं की आजचं पान उघडतं, तिथे संध्याकाळी आजचा दिवस पाच ओळींत दिसतो.', rem_away: 'काही दिवस नोंद नसल्यास', rem_away_desc: 'दोन ते चार दिवस काहीच नोंदलं नाही तर एक छोटी ओळ, मग शांत.',
   rem_web_note: 'ब्राउझरमध्ये आणि PC वर Sobat उघडं असताना आठवणी दिसतात: जेवणाच्या वेळची आठवण आणि खालच्या सूचना. बाकीच्या फोनवर येतात.',
   rem_nudges: 'Sobat उघडं असताना सूचना',
-  rem_nudges_desc: 'खाली ठरवलेल्या अंतराने पाणी, बसण्याची पद्धत आणि नोंद, आणि आत्ता काही करायचं असेल तेव्हा कोचच्या सूचना. "सोबत बंद असतानाही आठवणी" चालू असेल तर पाण्याची आठवण तिथूनही येते.',
+  rem_nudges_desc: 'खाली ठरवलेल्या अंतराने पाणी, बसण्याची पद्धत आणि नोंद, आणि आत्ता काही करायचं असेल तेव्हा कोचच्या सूचना. "सोबत बंद असतानाही आठवणी" चालू असेल तर पाण्याची आणि वजनाच्या दिवसाची आठवण तिथूनही येते.',
   features_title: 'सुविधा', feat_breaks: 'डोळ्यांसाठी विश्रांती', feat_breaks_desc: 'काम करताना दर 20 मिनिटांनी दूर पाहा आणि दर तासाला उठा.',
   feat_mantra: 'आजची ओळ', feat_mantra_desc: 'रोज सकाळी एक छोटी ओळ, 8 वाजता आणि आजच्या पानावर जोडता येणारं कार्ड म्हणून.',
   feat_plates: 'आज काय बसतं', feat_plates_desc: 'दिवसाच्या उरलेल्या कॅलरींमधून ॲपने बनवलेली ताटं, कोचच्या पानावर.',
@@ -2200,6 +2201,7 @@ const mr: Dict = {
   brk_settings: 'ब्रेकची सेटिंग',
   tile_hold_water: 'बाटलीचा आकार बदला किंवा दुसरं प्रमाण घाला', tile_hold_walk: 'चालण्याचं लक्ष्य बदला किंवा इतर मिनिटं घाला',
   add_ml_of: '{food} किती मिली', qty_ml: 'मिली',
+  setup_bad_sex: 'पुरुष की स्त्री ते निवडा: रोजचं लक्ष्य त्यावरून ठरतं.',
 };
 
 const hi: Dict = {
@@ -3285,10 +3287,10 @@ const hi: Dict = {
   rem_planweek: 'अगले हफ़्ते की योजना', rem_planweek_desc: 'रविवार शाम 6 बजे, अगर अगला हफ़्ता सहेजा न हो.',
   rem_report: 'हफ़्ते की रिपोर्ट', rem_report_desc: 'सोमवार सुबह 9 बजे: पिछले हफ़्ते के पूरे दिन, औसत कैलोरी और वज़न में बदलाव, प्रगति पेज पर.',
   rem_sleep: 'सुबह का हालचाल', rem_sleep_desc: 'सुबह 7:30 बजे: नींद कैसी रही.', rem_water: 'पानी', rem_water_desc: 'एक बार, दोपहर 3 बजे.',
-  rem_review: 'शाम की समीक्षा', rem_review_desc: 'रात 9:30 बजे, और शाम को आज के पन्ने पर: आज का दिन पाँच पंक्तियों में.', rem_away: 'कुछ दिन दर्ज न हो तो', rem_away_desc: 'दो से चार दिन कुछ दर्ज न हो तो एक छोटी पंक्ति, फिर चुप.',
+  rem_review: 'शाम की समीक्षा', rem_review_desc: 'रात 9:30 बजे; टैप करने पर आज का पन्ना खुलता है, जहाँ शाम को आज का दिन पाँच पंक्तियों में दिखता है.', rem_away: 'कुछ दिन दर्ज न हो तो', rem_away_desc: 'दो से चार दिन कुछ दर्ज न हो तो एक छोटी पंक्ति, फिर चुप.',
   rem_web_note: 'ब्राउज़र में और PC पर Sobat खुला हो तब याद दिखती है: खाने के वक़्त की याद और नीचे के संकेत. बाकी फ़ोन पर आती हैं.',
   rem_nudges: 'Sobat खुला हो तब संकेत',
-  rem_nudges_desc: 'नीचे तय अंतर पर पानी, बैठने का ढंग और दर्ज करना, और जब अभी कुछ करना हो तब कोच की सलाह. "सोबत बंद होने पर भी याद दिलाना" चालू हो तो पानी की याद वहाँ से भी आती है.',
+  rem_nudges_desc: 'नीचे तय अंतर पर पानी, बैठने का ढंग और दर्ज करना, और जब अभी कुछ करना हो तब कोच की सलाह. "सोबत बंद होने पर भी याद दिलाना" चालू हो तो पानी और वज़न के दिन की याद वहाँ से भी आती है.',
   features_title: 'सुविधाएँ', feat_breaks: 'आँखों के लिए विराम', feat_breaks_desc: 'काम करते समय हर 20 मिनट दूर देखें और हर घंटे उठें.',
   feat_mantra: 'आज की पंक्ति', feat_mantra_desc: 'हर सुबह एक छोटी पंक्ति, 8 बजे और आज के पन्ने पर जोड़ने लायक कार्ड के रूप में.',
   feat_plates: 'आज क्या फिट बैठता है', feat_plates_desc: 'दिन की बची कैलोरी से ऐप की बनाई थालियाँ, कोच के पन्ने पर.',
@@ -3300,6 +3302,7 @@ const hi: Dict = {
   brk_settings: 'ब्रेक की सेटिंग',
   tile_hold_water: 'बोतल का आकार बदलें या दूसरी मात्रा जोड़ें', tile_hold_walk: 'चलने का लक्ष्य बदलें या दूसरे मिनट जोड़ें',
   add_ml_of: '{food} कितने मिली', qty_ml: 'मिली',
+  setup_bad_sex: 'पुरुष या महिला चुनें: रोज़ का लक्ष्य इसी से तय होता है.',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

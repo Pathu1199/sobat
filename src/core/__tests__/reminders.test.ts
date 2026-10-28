@@ -6,6 +6,7 @@ import { skipId } from '../menu';
 import type { DayRecord, DayRecordState } from '../record';
 import {
   DAILY_IDS,
+  LONG_BREAK_ID,
   dailyReminders,
   daysAway,
   lastLogDate,
@@ -15,6 +16,7 @@ import {
   plannedReminders,
   promptOutcome,
   REMINDER_ROWS,
+  reminderOps,
   reportMonday,
   reportText,
   firstTap,
@@ -252,6 +254,18 @@ describe('plannedReminders: plan next week and the weekly report', () => {
     expect(plannedReminders({ ...quiet, planWeek: false })).toEqual([]);
   });
 
+  it('plans the second Sunday too when today is a Sunday, each for the week after it, and a week already saved is left out', () => {
+    // Sunday 18 October before six: this evening's and next Sunday's, both inside the eight days planned ahead.
+    const sunday = { ...quiet, today: '2026-10-18', nowMinutes: 10 * 60, planWeek: true };
+    expect(plannedReminders(sunday).map((r) => [r.id, r.data.date])).toEqual([
+      ['planweek:2026-10-18', '2026-10-19'],
+      ['planweek:2026-10-25', '2026-10-26'],
+    ]);
+    expect(plannedReminders({ ...sunday, reviewedWeeks: ['2026-10-19'] }).map((r) => r.id)).toEqual(['planweek:2026-10-25']);
+    // After six on that Sunday, only next Sunday's is still to come.
+    expect(plannedReminders({ ...sunday, nowMinutes: 19 * 60 }).map((r) => r.id)).toEqual(['planweek:2026-10-25']);
+  });
+
   it('the report on the Monday it was worked out for, at nine', () => {
     expect(plannedReminders({ ...quiet, today: '2026-10-13', report: { monday: '2026-10-19', text: '5 of 7 full' } })).toEqual([
       { id: 'report:2026-10-19', date: '2026-10-19', time: '09:00', title: 'rem_report_title', body: '5 of 7 full', data: { kind: 'report', date: '2026-10-19' } },
@@ -324,7 +338,11 @@ describe('weekReport: the week before a Monday, by the rules Progress uses', () 
     const keys = ['prompt_title', 'prompt_body', 'rem_fill_title', 'rem_fill_body', 'rem_planweek_title', 'rem_planweek_body', 'rem_report_title', 'rem_report_full', 'rem_report_avg', 'rem_report_weight'];
     for (const lang of ['en', 'mr', 'hi'] as const) {
       const words = makeT(lang);
-      for (const k of keys) expect(words(k), `${lang} ${k}`).not.toBe(k);
+      for (const k of keys) {
+        expect(words(k), `${lang} ${k}`).not.toBe(k);
+        // The prompt's title is only the slot and its calories, the same in every language.
+        if (lang !== 'en' && k !== 'prompt_title') expect(words(k), `${lang} ${k}`).not.toBe(makeT('en')(k));
+      }
       const line = reportText(weekReport(input)!, words);
       expect(line, lang).toMatch(/3/);
       expect(line, lang).toMatch(/1,383/);
@@ -421,15 +439,13 @@ describe('a tap on a notification', () => {
     expect(tapRoute({}, '2026-10-12')).toBe('/');
   });
 
-  it('a daily reminder opens its own page: the check-in, Today for water, the review and a break, and the day\'s line where it is shown', () => {
+  it('a daily reminder opens its own page: the check-in, and Today for water, the review, a break and the day\'s line', () => {
     expect(tapRoute({ kind: 'sleep' }, '2026-10-12')).toBe('/sleep');
     expect(tapRoute({ kind: 'water' }, '2026-10-12')).toBe('/');
     expect(tapRoute({ kind: 'review' }, '2026-10-12')).toBe('/');
     expect(tapRoute({ kind: 'break' }, '2026-10-12')).toBe('/');
-    // The day's line opens Today while its card is on Today, and Mind otherwise.
-    expect(tapRoute({ kind: 'mantra' }, '2026-10-12', { mantraOnToday: true })).toBe('/');
-    expect(tapRoute({ kind: 'mantra' }, '2026-10-12', { mantraOnToday: false })).toBe('/mind');
-    expect(tapRoute({ kind: 'mantra' }, '2026-10-12')).toBe('/mind');
+    // The day's line always opens Today.
+    expect(tapRoute({ kind: 'mantra' }, '2026-10-12')).toBe('/');
   });
 
   // A meal-time prompt for lunch on 12 October, tapped on its button or its body.
@@ -455,12 +471,10 @@ describe('a tap on a notification', () => {
   });
 
   it('a tap on a daily reminder goes through the same plan: its page, and nothing logged', () => {
-    const daily = (data: Record<string, unknown>, mantraOnToday?: boolean) =>
-      tapPlan({ action: 'open', data, today: '2026-10-12', menuOn: (date) => ({ ...menu, date }), meals: [], skips: [], mantraOnToday });
+    const daily = (data: Record<string, unknown>) => tapPlan({ action: 'open', data, today: '2026-10-12', menuOn: (date) => ({ ...menu, date }), meals: [], skips: [] });
     expect(daily({ kind: 'sleep' })).toEqual({ route: '/sleep', ate: null });
     expect(daily({ kind: 'water' })).toEqual({ route: '/', ate: null });
-    expect(daily({ kind: 'mantra' }, true)).toEqual({ route: '/', ate: null });
-    expect(daily({ kind: 'mantra' }, false)).toEqual({ route: '/mind', ate: null });
+    expect(daily({ kind: 'mantra' })).toEqual({ route: '/', ate: null });
   });
 
   it('logs nothing into a day still to come, nor from a notification whose data is damaged or not a meal-time prompt', () => {
@@ -496,9 +510,9 @@ describe('a tap on a notification', () => {
     expect(arrives('open', { kind: 'fill', date: '2026-10-12' }, '2026-10-13T09:00:00').route).toBe('/?date=2026-10-12');
   });
 
-  it('the day\'s line opens Today while its card is shown there, and Mind otherwise', () => {
+  it('the day\'s line opens Today, whether its card is shown there or not', () => {
     expect(arrives('open', { kind: 'mantra' }, '2026-10-12T08:00:00', true).route).toBe('/');
-    expect(arrives('open', { kind: 'mantra' }, '2026-10-12T08:00:00', false).route).toBe('/mind');
+    expect(arrives('open', { kind: 'mantra' }, '2026-10-12T08:00:00', false).route).toBe('/');
   });
 
   it('acts on a tap once: read at start and from the listener it is one tap; the button and the body, or a reminder back the next day, are new ones', () => {
@@ -610,8 +624,38 @@ describe('the phone\'s cap on pending notifications', () => {
   it('keeps the planned reminders first, then the daily ones and the office day, and leaves the long breaks what is left', () => {
     expect(pendingFit(30, 6)).toEqual({ planned: 30, daily: 28 });
     expect(pendingFit(0, 0)).toEqual({ planned: 0, daily: 64 });
+    // More than 64 planned cannot happen (three days of prompts and a few morning lines, as the next test shows), but the cap holds if it did.
     expect(pendingFit(70, 6)).toEqual({ planned: 64, daily: 0 });
     expect(pendingFit(60, 6)).toEqual({ planned: 60, daily: 0 });
+  });
+
+  describe('reminderOps: one run that brings the phone to what is wanted', () => {
+    const at = (id: string, date = '2026-10-13', time = '13:00') => ({ osId: `sobat-r-${id}`, reminder: { id, date, time, title: id, body: '', data: { kind: 'slot' } } });
+    const daily = (id: string) => ({ id, hour: 8, minute: 0, title: id, body: '', data: { kind: 'break' as const } });
+    const NOW = new Date('2026-10-12T12:00:00').getTime();
+
+    it('does every cancel, of either kind, before any add, so the count never passes the cap on the way', () => {
+      const ops = reminderOps({
+        have: ['sobat-r-old', 'sobat-r-keep', `${LONG_BREAK_ID}-3`, 'sobat-water'],
+        planned: [at('keep'), at('new')],
+        daily: [daily('sobat-sleep-checkin'), daily(`${LONG_BREAK_ID}-1`)],
+        nowMs: NOW,
+      });
+      const kinds = ops.map((o) => o.kind);
+      expect(kinds.lastIndexOf('cancel')).toBeLessThan(kinds.findIndex((k) => k !== 'cancel'));
+      expect(ops.filter((o) => o.kind === 'cancel').map((o) => o.id).sort()).toEqual(
+        ['sobat-r-old', `${LONG_BREAK_ID}-3`, 'sobat-water', ...Object.values(DAILY_IDS).filter((id) => id !== 'sobat-sleep-checkin' && id !== 'sobat-water'), LONG_BREAK_ID].sort(),
+      );
+      // The daily list is registered whole (a repeating notification is replaced by its id); a planned one the phone holds is left.
+      expect(ops.filter((o) => o.kind === 'daily').map((o) => o.kind === 'daily' && o.reminder.id)).toEqual(['sobat-sleep-checkin', `${LONG_BREAK_ID}-1`]);
+      expect(ops.filter((o) => o.kind === 'at').map((o) => o.id)).toEqual(['sobat-r-new']);
+    });
+
+    it('leaves a kind not known yet, or already held, as it is, and never plans a moment already past', () => {
+      const ops = reminderOps({ have: ['sobat-r-old', 'sobat-water'], planned: [at('gone', '2026-10-12', '11:00')], daily: null, nowMs: NOW });
+      expect(ops).toEqual([{ kind: 'cancel', id: 'sobat-r-old' }]);
+      expect(reminderOps({ have: ['sobat-r-old'], planned: null, daily: null, nowMs: NOW })).toEqual([]);
+    });
   });
 
   it('cuts the long breaks to the room left, after the check-in, the line, water and the review, earliest first', () => {
@@ -665,7 +709,12 @@ describe('Settings: a switch for every reminder', () => {
       for (const k of keys) {
         expect(words(k), `${lang} ${k}`).not.toBe(k);
         expect(words(k), `${lang} ${k}`).not.toMatch(/[\u0966-\u096F\u2014]|\b(TDEE|BMR|XP)\b/);
+        // Marathi and Hindi have words of their own, never the English left in place.
+        if (lang !== 'en') expect(words(k), `${lang} ${k}`).not.toBe(makeT('en')(k));
       }
     }
+    // The evening review says where its tap goes, and the nudges name the switch they speak of, as Settings shows it.
+    expect(makeT('en')('rem_review_desc')).toContain('opens Today');
+    for (const lang of ['en', 'mr', 'hi'] as const) expect(makeT(lang)('rem_nudges_desc'), lang).toContain(`"${makeT(lang)('push_title')}"`);
   });
 });

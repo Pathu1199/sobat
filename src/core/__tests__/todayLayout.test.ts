@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { caloriesLeft, dayReviewShown, todayBlocks } from '../todayLayout';
+import { caloriesLeft, dayReviewShown, todayBlocks, withReview } from '../todayLayout';
 
 const on = (id: string) => ({ id, on: true });
 const off = (id: string) => ({ id, on: false });
@@ -137,5 +137,23 @@ describe('dayReviewShown', () => {
     expect(dayReviewShown({ ...evening, mode: 'past' })).toBe(false);
     expect(dayReviewShown({ ...evening, mode: 'future' })).toBe(false);
     expect(dayReviewShown({ ...evening, hasData: false })).toBe(false);
+  });
+});
+
+describe('withReview: the evening review within the five blocks', () => {
+  const menu = { kind: 'menu' as const };
+  const coach = { kind: 'coach' as const };
+  const waterWalk = { kind: 'waterWalk' as const };
+
+  it('comes after the cards while there is room: with the cards Today starts with, it is the fifth block', () => {
+    expect(withReview([menu, coach, waterWalk], true)).toEqual([menu, coach, waterWalk, { kind: 'review' }]);
+    expect(withReview([menu, coach, waterWalk], false)).toEqual([menu, coach, waterWalk]);
+  });
+
+  it('takes the place of the last card the person added, never a sixth block, and never in place of the menu, the coach or Water and Walk', () => {
+    const steps = { kind: 'steps' as const };
+    const pair = { kind: 'pair' as const, tiles: ['weight' as const] };
+    expect(withReview([menu, steps, coach, waterWalk], true)).toEqual([menu, { kind: 'review' }, coach, waterWalk]);
+    expect(withReview([menu, pair, coach, steps, waterWalk], true)).toEqual([menu, pair, coach, { kind: 'review' }, waterWalk]);
   });
 });

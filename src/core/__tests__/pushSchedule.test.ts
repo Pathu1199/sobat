@@ -71,4 +71,11 @@ describe('buildPushSchedule: the parts of the app switched on in Settings', () =
     expect(on).toHaveLength(7);
     expect(on[0]).toMatchObject({ date: '2026-10-13', title: 'mantra_title' });
   });
+
+  it('sends the weigh day, like water, only while the nudges are switched on', () => {
+    const nudges = (on: boolean): AppState => ({ ...state, settings: { ...state.settings, nudgesEnabled: on, weighDay: 3 } });
+    expect(build(nudges(false)).weigh).toBeNull();
+    expect(build(nudges(false)).water).toBeNull();
+    expect(build(nudges(true)).weigh).toEqual({ weekday: 3, title: 'weigh_q', body: 'weigh_hint' });
+  });
 });

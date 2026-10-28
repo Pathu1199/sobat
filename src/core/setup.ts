@@ -1,20 +1,28 @@
 import { latinDigits } from '../i18n';
+import { daysBetween } from './date';
 import { dailyTargets, healthyWeightRange, isAdultBirthYear } from './nutrition';
 import { planFrom } from './plan';
-import type { ISODate, Profile } from './types';
+import type { Activity, ISODate, Profile, Sex } from './types';
 
 /**
- * What setup checks before it moves on. Every box starts empty, so an empty
- * or unreadable answer is a problem, never a zero: a year of an adult in four
+ * What setup checks before it moves on. Every box starts empty and nothing
+ * is chosen for the person, so an empty or unreadable answer is a problem,
+ * never a zero or a guess: male or female chosen, a year of an adult in four
  * digits, a height of 120 to 230 cm, a weight of 30 to 300 kg, and a goal no
  * lower than the healthy minimum for that height. Digits typed on a Marathi
  * or Hindi keyboard read as the same numbers. Pure.
  */
-export type SetupField = 'year' | 'height' | 'weight' | 'goal';
-export type SetupInput = { birthYear: string; height: string; weight: string; goal: string };
+export type SetupField = 'sex' | 'year' | 'height' | 'weight' | 'goal';
+export type SetupInput = { sex: Sex | null; birthYear: string; height: string; weight: string; goal: string };
 
 /** The step each answer is asked on, counting the language as step 0: 1 about you, 2 weight and goal. */
-export const STEP_OF: Record<SetupField, 1 | 2> = { year: 1, height: 1, weight: 2, goal: 2 };
+export const STEP_OF: Record<SetupField, 1 | 2> = { sex: 1, year: 1, height: 1, weight: 2, goal: 2 };
+
+/** How active a day is, as setup and Settings offer it, the least first. */
+export const ACTIVITIES: readonly Activity[] = ['sedentary', 'light', 'moderate', 'active'];
+
+/** The paces a week, in kg, that setup, Settings and the weight sheet offer. */
+export const PACES: readonly number[] = [0.25, 0.5, 0.75, 1];
 
 /** A number typed in a box, a decimal comma read as a point; NaN for anything else, an empty box included. */
 export function setupNumber(text: string): number {
@@ -28,6 +36,7 @@ export function setupProblems(input: SetupInput, now: Date = new Date()): SetupF
   const height = setupNumber(input.height);
   const weight = setupNumber(input.weight);
   const goal = setupNumber(input.goal);
+  if (input.sex !== 'male' && input.sex !== 'female') out.push('sex');
   if (!isAdultBirthYear(latinDigits(input.birthYear), now)) out.push('year');
   const heightOk = height >= 120 && height <= 230;
   if (!heightOk) out.push('height');
@@ -59,15 +68,24 @@ export type SetupTarget = {
   reach: { rateKg: number; goalKg: number; date: ISODate } | null;
 };
 
+/** Slower than this a week, the goal gets no date: it would be years off. */
+export const SLOWEST_DATED_PACE_KG = 0.1;
+/** Further off than this, the goal gets no date: two years is too far to plan by. */
+export const FARTHEST_DATED_GOAL_DAYS = 730;
+
 /**
  * The last step's words: the day's calories and protein, and when the goal
  * would come. The date is worked out at the pace the target really gives,
- * which is slower than the one chosen when the safe minimum raised it.
+ * which is slower than the one chosen when the safe minimum raised it. A pace
+ * under 0.1 kg a week, or a date more than two years away, gets no date: the
+ * floor note says why the pace is slow.
  */
 export function setupTarget(profile: Profile, today: ISODate, now?: Date): SetupTarget {
   const targets = dailyTargets(profile, now);
   const plan = planFrom(profile, [{ date: today, kg: profile.weightKg }], targets, today);
   const hold = targets.hold !== null;
-  const reach = !hold && plan.etaAtTarget && plan.toGoKg > 0 ? { rateKg: targets.rateKgPerWeek, goalKg: plan.goalKg, date: plan.etaAtTarget } : null;
+  const dated =
+    !hold && !!plan.etaAtTarget && plan.toGoKg > 0 && targets.rateKgPerWeek >= SLOWEST_DATED_PACE_KG && daysBetween(today, plan.etaAtTarget) <= FARTHEST_DATED_GOAL_DAYS;
+  const reach = dated && plan.etaAtTarget ? { rateKg: targets.rateKgPerWeek, goalKg: plan.goalKg, date: plan.etaAtTarget } : null;
   return { kcal: targets.kcal, proteinG: targets.proteinG, floored: targets.floored, hold, reach };
 }

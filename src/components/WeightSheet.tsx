@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { formatDayLabel } from '../core/date';
 import { planVerdict, shownPlan } from '../core/plan';
+import { PACES } from '../core/setup';
 import { lostWords } from '../core/tileText';
 import type { WeightLog } from '../core/types';
 import { fill, makeT } from '../i18n';
@@ -14,8 +15,6 @@ import { withUndoAt } from '../ui/listUndo';
 import { Sheet } from '../ui/Sheet';
 import { C, F, lh } from '../ui/theme';
 import { UndoLine, useUndoable } from './tiles/UndoLine';
-
-const RATES = [0.25, 0.5, 0.75, 1];
 
 /**
  * The weight, properly: today's reading (or the last one carried forward),
@@ -108,7 +107,7 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
       </Row>
       <Micro>{t('rate_q')}</Micro>
       <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-        {RATES.map((r) => (
+        {PACES.map((r) => (
           <Pill key={r} label={`${r} ${t('unit_kg')}/${t('week_short')}`} active={state.profile.rateKgPerWeek === r} onPress={() => app.setProfile({ rateKgPerWeek: r })} />
         ))}
       </Row>

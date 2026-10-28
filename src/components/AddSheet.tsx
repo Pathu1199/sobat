@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { createContext, useContext, useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { FlatList, ScrollView, Text, View } from 'react-native';
 import {
   addRows,
   addsIntoMeal,
@@ -35,7 +35,7 @@ import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useMinute } from '../services/useClock';
 import { useApp } from '../store/AppProvider';
-import { Btn, Empty, Field, Micro } from '../ui/components';
+import { Btn, Empty, Field, Micro, Pill } from '../ui/components';
 import { SheetFrame } from '../ui/Sheet';
 import { C, F, lh, S } from '../ui/theme';
 import { FoodRow, OneTapRow, PlannedCard, SaveAsOffer, ToolsRow } from './AddSheetRows';
@@ -78,28 +78,6 @@ export function AddSheetProvider({ children }: { children: React.ReactNode }) {
         {request ? <AddSheet key={request.n} request={request} onClose={() => setRequest(null)} /> : null}
       </AddOpenCtx.Provider>
     </AddCtx.Provider>
-  );
-}
-
-/** A slot chip: the whole 44 pt box is the button on every platform, the chip drawn inside it; the chosen one is announced as selected. */
-function SlotChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} aria-selected={active} style={{ minHeight: S.touch, justifyContent: 'center' }}>
-      {({ pressed }) => (
-        <View
-          style={{
-            paddingVertical: 7,
-            paddingHorizontal: 13,
-            borderRadius: 999,
-            borderWidth: S.hairline,
-            borderColor: active ? C.accent : C.border,
-            backgroundColor: active ? C.accent : C.card,
-            opacity: pressed ? 0.8 : 1,
-          }}>
-          <Text style={{ color: active ? C.onAccent : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{label}</Text>
-        </View>
-      )}
-    </Pressable>
   );
 }
 
@@ -414,7 +392,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
           <View style={{ gap: 4, paddingBottom: 8 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: S.padLg }}>
               {menu.meals.map((m) => (
-                <SlotChip key={m.id} label={`${slotName(m)} ${m.time}`} active={slot?.id === m.id} onPress={() => pickSlot(m.id)} />
+                <Pill key={m.id} label={`${slotName(m)} ${m.time}`} active={slot?.id === m.id} onPress={() => pickSlot(m.id)} />
               ))}
             </ScrollView>
             {lineText ? <Text style={{ color: lineColor, fontSize: F.small, lineHeight: lh(F.small), paddingHorizontal: S.padLg }}>{lineText}</Text> : null}

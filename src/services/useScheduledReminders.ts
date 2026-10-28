@@ -4,7 +4,7 @@ import { breaksAsSwitched, type BreakSettings } from '../core/breaks';
 import { addDays } from '../core/date';
 import { settledSlotIds, slotStates } from '../core/pattern';
 import type { DayRecordState } from '../core/record';
-import { DAILY_IDS, dailyReminders, LONG_BREAK_ID, lastLogDate, MORNING_HOUR, pendingFit, plannedReminders, SLOT_DAYS, weeklyReport, type Reminder } from '../core/reminders';
+import { dailyReminders, lastLogDate, MORNING_HOUR, pendingFit, PLANNED_PREFIX, plannedReminders, reminderOps, SLOT_DAYS, weeklyReport, type DailyReminder, type Reminder } from '../core/reminders';
 import { orderedBlocks } from '../core/schedule';
 import { stripSince } from '../core/weekStrip';
 import { plannedKcal } from '../core/weekPlan';
@@ -17,9 +17,6 @@ import { useAuth } from './useAuth';
 import { useMinute } from './useClock';
 import { useMantra } from './useMantra';
 
-/** Everything planned a week ahead carries this, so it can be told apart from the daily ones. */
-const PLANNED = 'sobat-r-';
-
 /** A short signature of when and what a reminder says and does, so a changed slot time, plan, name or language replaces the pending notification instead of leaving the old one. */
 function signature(r: Reminder): string {
   const s = `${r.time}\n${r.title}\n${r.body}\n${r.category ?? ''}\n${JSON.stringify(r.data)}`;
@@ -27,13 +24,48 @@ function signature(r: Reminder): string {
   for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
   return h.toString(36);
 }
-const osId = (r: Reminder) => `${PLANNED}${r.id}@${signature(r)}`;
+const osId = (r: Reminder) => `${PLANNED_PREFIX}${r.id}@${signature(r)}`;
 
-// Runs are chained so two never interleave their cancels and adds.
+// One chain for every reminder, so two runs never interleave, and each run does every cancel before any add (`reminderOps`).
 let chain: Promise<void> = Promise.resolve();
-let dailyChain: Promise<void> = Promise.resolve();
-// The daily list last registered in full, so a run that would register the same list again does nothing.
+// The latest lists wanted, each null until its effect has run: a run reads both as they are when it starts.
+let wantedDaily: DailyReminder[] | null = null;
+let wantedPlanned: Reminder[] | null = null;
+// The daily list last registered in full, so a run that would register the same list again leaves it.
 let dailyHeld = '';
+
+/**
+ * Brings the phone to the latest lists, after any run already going: the
+ * planned and the daily ones in one run, every cancel before any add, so the
+ * pending count never passes the phone's cap on the way.
+ */
+function reconcile(): void {
+  chain = chain
+    .then(async () => {
+      const dailyJson = wantedDaily ? JSON.stringify(wantedDaily) : '';
+      const daily = wantedDaily && dailyJson !== dailyHeld ? wantedDaily : null;
+      const planned = wantedPlanned ? wantedPlanned.map((r) => ({ osId: osId(r), reminder: r })) : null;
+      if (!daily && !planned) return;
+      if (daily) await setupAndroidChannel();
+      const ops = reminderOps({ have: await scheduledIds(), planned, daily, nowMs: Date.now() });
+      for (const op of ops) {
+        if (op.kind === 'cancel') await cancel(op.id);
+        else if (op.kind === 'daily') await scheduleDaily(op.reminder.id, op.reminder.hour, op.reminder.minute, op.reminder.title, op.reminder.body, op.reminder.data);
+        else {
+          try {
+            await scheduleAt(op.id, new Date(`${op.reminder.date}T${op.reminder.time}:00`), op.reminder.title, op.reminder.body, { data: op.reminder.data, category: op.reminder.category === 'meal' ? MEAL_CATEGORY : undefined });
+          } catch {
+            // One refused reminder must not stop the rest.
+          }
+        }
+      }
+      if (daily) dailyHeld = dailyJson;
+    })
+    .catch(() => {
+      // Permission refused or the OS declined. The app still works, and the next run tries the daily list again.
+      dailyHeld = '';
+    });
+}
 
 /**
  * Whether this device may hold reminders, and whether that is known yet.
@@ -58,8 +90,9 @@ export function useReminderGate(): { known: boolean; active: boolean } {
  * so a logged slot's prompt is cancelled and a quiet week stays covered. All
  * of them, with the office day's blocks, stay under the phone's cap of 64
  * pending notifications (`pendingFit`): the planned ones first, the long
- * breaks cut to what is left. The web and the PC keep their in-app prompts
- * instead.
+ * breaks cut to what is left; one run at a time takes both lists to the phone,
+ * every cancel before any add (`reminderOps`), so the count never passes the
+ * cap on the way. The web and the PC keep their in-app prompts instead.
  */
 export function useScheduledReminders() {
   const app = useApp();
@@ -180,7 +213,7 @@ export function useScheduledReminders() {
   // or a reset clears them and the repeating long break older builds left goes too.
   useEffect(() => {
     if (Platform.OS === 'web' || !known) return;
-    const want = dailyReminders({
+    wantedDaily = dailyReminders({
       active,
       sleepCheckin,
       water,
@@ -193,62 +226,14 @@ export function useScheduledReminders() {
       t: makeT(lang),
       room,
     });
-    const json = JSON.stringify(want);
-    let stale = false;
-    dailyChain = dailyChain
-      .then(async () => {
-        // The same list as the last one registered in full: the OS holds it already.
-        if (stale || json === dailyHeld) return;
-        await setupAndroidChannel();
-        const ids = new Set(want.map((r) => r.id));
-        for (const id of [...Object.values(DAILY_IDS), LONG_BREAK_ID]) if (!ids.has(id)) await cancel(id);
-        for (const id of await scheduledIds()) if (id.startsWith(LONG_BREAK_ID) && !ids.has(id)) await cancel(id);
-        for (const r of want) await scheduleDaily(r.id, r.hour, r.minute, r.title, r.body, r.data);
-        dailyHeld = json;
-      })
-      .catch(() => {
-        // Permission refused or the OS declined. The app still works, and the next run tries again.
-        dailyHeld = '';
-      });
-    return () => {
-      stale = true;
-    };
+    reconcile();
   }, [known, active, sleepCheckin, water, dayReview, quietStartHour, quietEndHour, lang, breaksJson, mantraText, room]);
 
   // Runs once the store and the session are known, whoever is there: after a sign-out or a reset `wanted` is
   // empty and the planned week is cancelled. Never on a store that failed to load, whose empty state is not the person's.
   useEffect(() => {
     if (Platform.OS === 'web' || !known) return;
-    let stale = false;
-    const list = JSON.parse(wantedJson) as Reminder[];
-    chain = chain
-      .then(async () => {
-        if (stale) return;
-        const have = (await scheduledIds()).filter((id) => id.startsWith(PLANNED));
-        const want = new Map(list.map((r) => [osId(r), r]));
-        for (const id of have) {
-          if (stale) return;
-          if (!want.has(id)) await cancel(id);
-        }
-        const now = Date.now();
-        for (const [id, r] of want) {
-          if (stale) return;
-          if (have.includes(id)) continue;
-          const at = new Date(`${r.date}T${r.time}:00`);
-          // A moment already past would fire at once; the next tick plans the rest.
-          if (at.getTime() <= now) continue;
-          try {
-            await scheduleAt(id, at, r.title, r.body, { data: r.data, category: r.category === 'meal' ? MEAL_CATEGORY : undefined });
-          } catch {
-            // One refused reminder must not stop the rest.
-          }
-        }
-      })
-      .catch(() => {
-        // Permission refused or the OS declined. The app still works.
-      });
-    return () => {
-      stale = true;
-    };
+    wantedPlanned = JSON.parse(wantedJson) as Reminder[];
+    reconcile();
   }, [wantedJson, known]);
 }

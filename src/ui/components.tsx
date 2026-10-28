@@ -160,7 +160,13 @@ export function Btn({
   );
 }
 
-/** A chip. With onPress it is a button, and `active` is announced as selected. */
+/**
+ * A chip, the one chip of the app. With onPress it is a button a finger wide
+ * and tall on every platform, the web and the phone alike: the 44 point box
+ * itself is the button (nothing reaches past it), the chip drawn in its middle;
+ * `active` is announced as selected. `style` places the box (a chip alone in a
+ * column sits at its start with `alignSelf`).
+ */
 export function Pill({
   label,
   color,
@@ -169,6 +175,7 @@ export function Pill({
   active,
   tone,
   accessibilityLabel,
+  style,
 }: {
   label: string;
   color?: string;
@@ -178,52 +185,27 @@ export function Pill({
   tone?: string;
   /** What a screen reader says for a chip whose words alone do not say what it sets ("Bottle size 500 ml" for "500 ml"); the words otherwise. */
   accessibilityLabel?: string;
+  style?: ViewStyle;
 }) {
   const bg = active ? C.accent : color ?? C.card;
   const bd = active ? C.accent : tone ?? C.border;
   const fg = active ? C.onAccent : textColor ?? C.text;
-  const body = (
-    <View style={[st.pill, { backgroundColor: bg, borderColor: bd }]}>
+  const body = (pressed: boolean) => (
+    <View style={[st.pill, { backgroundColor: bg, borderColor: bd, opacity: pressed ? 0.8 : 1 }]}>
       <Text style={[st.pillText, { color: fg }]}>{label}</Text>
     </View>
   );
   // Only a chip given `active` claims a state; an action chip ("History ›") is not "not selected".
   return onPress ? (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} aria-selected={active} style={PILL_REACH}>
-      {body}
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} aria-selected={active} style={[PILL_REACH, style]}>
+      {({ pressed }) => body(pressed)}
     </Pressable>
   ) : (
-    body
+    body(false)
   );
 }
 
 /** A status chip: a coloured dot and a small label, used in headers. */
-/**
- * One choice of a few, a finger tall on every platform: the box itself is 44,
- * the web included, and the chip sits in its middle. Setup and Settings use
- * it; it says whether it is chosen.
- */
-export function Choice({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} aria-selected={on} style={{ minHeight: S.touch, justifyContent: 'center' }}>
-      {({ pressed }) => (
-        <View
-          style={{
-            paddingVertical: 7,
-            paddingHorizontal: 13,
-            borderRadius: 999,
-            borderWidth: S.hairline,
-            borderColor: on ? C.accent : C.border,
-            backgroundColor: on ? C.accent : C.card,
-            opacity: pressed ? 0.8 : 1,
-          }}>
-          <Text style={{ color: on ? C.onAccent : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{label}</Text>
-        </View>
-      )}
-    </Pressable>
-  );
-}
-
 export function StatusChip({ label, color = C.accent }: { label: string; color?: string }) {
   return (
     <View style={[st.pill, { backgroundColor: C.cardAlt, borderColor: C.border, flexDirection: 'row', alignItems: 'center', gap: 6 }]}>

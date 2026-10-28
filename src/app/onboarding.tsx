@@ -3,23 +3,28 @@ import React, { useState } from 'react';
 import { AccessibilityInfo, Platform, Text, View } from 'react-native';
 import { formatDayMonthYear } from '../core/date';
 import { healthyWeightRange } from '../core/nutrition';
-import { setupBlocks, setupNumber, setupProblems, setupTarget, type SetupField } from '../core/setup';
+import { ACTIVITIES, PACES, setupBlocks, setupNumber, setupProblems, setupTarget, type SetupField } from '../core/setup';
 import type { Activity, Lang, Profile, Sex } from '../core/types';
 import { fill, LANG_NAMES, latinDigits, makeT, numberText } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Bar, Btn, Card, Choice, Field, H1, H2, Micro, Row, Screen, Small } from '../ui/components';
+import { useAnnounce } from '../ui/announce';
+import { Bar, Btn, Card, Field, H1, H2, Micro, Pill, Row, Screen, Small } from '../ui/components';
 import { C, F, lh } from '../ui/theme';
 
 const STEPS = 4;
+/** Each step's title, said to a screen reader as Next or Back opens it. */
+const STEP_TITLES = ['setup_lang_title', 'setup_about_title', 'setup_weight_title', 'setup_done_title'];
 
 /**
  * Setup in four short steps with a line showing how far along it is: the
  * language; about you; weight and goal with the healthy range for the height;
  * and the daily target in plain words. Boxes start empty with an example in
- * grey; activity starts at "mostly sitting" and the pace at half a kilo a
+ * grey, and male or female is the person's own choice, nothing chosen for
+ * them; activity starts at "mostly sitting" and the pace at half a kilo a
  * week. Next checks the answers asked so far (core/setup.ts) and says what to
- * fix, so a button that does not move on always says why. Setup ends at the
- * permissions screen and then Today; the tour waits in Me → Guide.
+ * fix, so a button that does not move on always says why; a screen reader
+ * hears the title of the step it opens. Setup ends at the permissions screen
+ * and then Today; the tour waits in Me → Guide.
  */
 export default function Onboarding() {
   const app = useApp();
@@ -30,7 +35,7 @@ export default function Onboarding() {
   const [tried, setTried] = useState(false);
 
   const [name, setName] = useState('');
-  const [sex, setSex] = useState<Sex>('male');
+  const [sex, setSex] = useState<Sex | null>(null);
   const [birthYear, setBirthYear] = useState('');
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
@@ -38,7 +43,8 @@ export default function Onboarding() {
   const [activity, setActivity] = useState<Activity>('sedentary');
   const [rate, setRate] = useState(0.5);
 
-  const problems = setupProblems({ birthYear, height: heightCm, weight: weightKg, goal: goalWeightKg });
+  const problems = setupProblems({ sex, birthYear, height: heightCm, weight: weightKg, goal: goalWeightKg });
+  const { announce, region } = useAnnounce();
   // The last step has no boxes of its own, so any problem left shows there at once, beside the Start it holds back.
   const shown = tried || step === STEPS - 1 ? setupBlocks(problems, step) : [];
   const height = setupNumber(heightCm);
@@ -46,7 +52,8 @@ export default function Onboarding() {
   const range = height >= 120 && height <= 230 ? healthyWeightRange(height) : null;
   const draft: Profile = {
     name: name.trim(),
-    sex,
+    // Only read once there are no problems, and then male or female is chosen.
+    sex: sex ?? 'female',
     birthYear: Number(birthYear.trim()),
     heightCm: height,
     weightKg: weight,
@@ -61,6 +68,7 @@ export default function Onboarding() {
   };
   const target = problems.length === 0 ? setupTarget(draft, app.today) : null;
   const problemText: Record<SetupField, string> = {
+    sex: t('setup_bad_sex'),
     year: t('setup_bad_year'),
     height: t('setup_bad_height'),
     weight: t('setup_bad_weight'),
@@ -79,12 +87,18 @@ export default function Onboarding() {
       return;
     }
     setTried(false);
-    setStep((s) => Math.min(STEPS - 1, s + 1));
+    open(Math.min(STEPS - 1, step + 1));
   }
 
   function back() {
     setTried(false);
-    setStep((s) => Math.max(0, s - 1));
+    open(Math.max(0, step - 1));
+  }
+
+  // The step opened, its title said to a screen reader: the button pressed stays where it was, so nothing else would say it.
+  function open(to: number) {
+    setStep(to);
+    if (to !== step) announce(t(STEP_TITLES[to]));
   }
 
   function finish() {
@@ -96,6 +110,7 @@ export default function Onboarding() {
 
   return (
     <Screen>
+      {region}
       <View style={{ paddingTop: 36, gap: 8 }}>
         <H1>{t('app_name')}</H1>
         <Micro>{fill(t('setup_step'), { n: step + 1 })}</Micro>
@@ -107,7 +122,7 @@ export default function Onboarding() {
           <H2>{t('setup_lang_title')}</H2>
           <Row style={{ gap: 8, flexWrap: 'wrap' }}>
             {(Object.keys(LANG_NAMES) as Lang[]).map((l) => (
-              <Choice key={l} label={LANG_NAMES[l]} on={lang === l} onPress={() => setLang(l)} />
+              <Pill key={l} label={LANG_NAMES[l]} active={lang === l} onPress={() => setLang(l)} />
             ))}
           </Row>
           <Small color={C.textDim}>{t('tagline')}</Small>
@@ -121,8 +136,8 @@ export default function Onboarding() {
           <View style={{ gap: 7 }}>
             <Micro>{t('sex_q')}</Micro>
             <Row style={{ gap: 8, flexWrap: 'wrap' }}>
-              <Choice label={t('male')} on={sex === 'male'} onPress={() => setSex('male')} />
-              <Choice label={t('female')} on={sex === 'female'} onPress={() => setSex('female')} />
+              <Pill label={t('male')} active={sex === 'male'} onPress={() => setSex('male')} />
+              <Pill label={t('female')} active={sex === 'female'} onPress={() => setSex('female')} />
             </Row>
           </View>
           <Row style={{ gap: 12, alignItems: 'flex-end' }}>
@@ -143,16 +158,16 @@ export default function Onboarding() {
           <View style={{ gap: 7 }}>
             <Micro>{t('activity_q')}</Micro>
             <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-              {(['sedentary', 'light', 'moderate', 'active'] as Activity[]).map((a) => (
-                <Choice key={a} label={t(a)} on={activity === a} onPress={() => setActivity(a)} />
+              {ACTIVITIES.map((a) => (
+                <Pill key={a} label={t(a)} active={activity === a} onPress={() => setActivity(a)} />
               ))}
             </Row>
           </View>
           <View style={{ gap: 7 }}>
             <Micro>{t('rate_q')}</Micro>
             <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-              {[0.25, 0.5, 0.75, 1].map((r) => (
-                <Choice key={r} label={`${r} ${t('unit_kg')}`} on={rate === r} onPress={() => setRate(r)} />
+              {PACES.map((r) => (
+                <Pill key={r} label={`${r} ${t('unit_kg')}`} active={rate === r} onPress={() => setRate(r)} />
               ))}
             </Row>
           </View>
