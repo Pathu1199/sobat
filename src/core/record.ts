@@ -21,6 +21,8 @@ export type DayRecord = {
   fromPlan: boolean;
   /** Under `NOTHING_EATEN_KCAL` eaten that day: on a full day, its meals were all skipped (a drink at most), never a day to praise. */
   nothingEaten: boolean;
+  /** An empty day whose menu planned nothing: no meal was missed, so the record does not call it meals missing. Only ever true. */
+  nothingPlanned?: true;
 };
 
 type RecordBase = { today: ISODate; routine: Routine; meals: Meal[]; skips: SlotSkip[]; offDays: number[] };
@@ -38,7 +40,7 @@ export function dayRecord(input: RecordBase & { date: ISODate; menu: DayMenu | n
     ? menuSlots(input.menu).map((s) => ({ id: s.id, type: s.type, minutes: s.minutes, planned: s.meal.lines.length > 0 }))
     : pattern(input.routine).map((p) => ({ id: p.id, type: p.type, minutes: p.minutes, planned: true }));
   const required = all.filter((s) => s.planned);
-  if (required.length === 0) return at(dayMeals.length > 0 ? 'full' : 'empty');
+  if (required.length === 0) return dayMeals.length > 0 ? at('full') : { ...at('empty'), nothingPlanned: true };
   const skipped = new Set(skippedOn(input.skips, input.date));
   const eaten = new Set<string>();
   for (const m of dayMeals) {

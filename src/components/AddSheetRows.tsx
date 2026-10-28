@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { amountText, formatQty, gramsDraftAfter, gramsText, lineGrams, parseGrams, type BasketLine } from '../core/basket';
-import { defaultPortion, foodName, measureName } from '../core/foods';
+import { defaultPortion, foodName, inMl, measureName } from '../core/foods';
 import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem, Lang } from '../core/types';
 import { fill, makeT } from '../i18n';
@@ -108,7 +108,8 @@ export function FoodRow({
               if (g !== null) onGrams(g);
             }}
             onLeave={() => setDraft(gramsDraftAfter('leave'))}
-            label={fill(t('add_grams_of'), { food: name })}
+            unit={inMl(food, line.unit) ? t('tile_unit_ml') : 'g'}
+            label={fill(t(inMl(food, line.unit) ? 'add_ml_of' : 'add_grams_of'), { food: name })}
           />
         </Row>
       ) : null}
@@ -119,9 +120,11 @@ export function FoodRow({
 /**
  * The grams of one line, typed; the count follows, and the grams stay exactly
  * as typed. Only a plain amount (parseGrams) changes the line, so "12abc"
- * changes nothing. A tap selects what is there, so typing replaces it.
+ * changes nothing. A tap selects what is there, so typing replaces it. A
+ * drink by the cup or glass says ml (`inMl`): the database counts its ml as
+ * its grams.
  */
-function GramsBox({ text, onType, onLeave, label }: { text: string; onType: (v: string) => void; onLeave: () => void; label: string }) {
+function GramsBox({ text, onType, onLeave, unit, label }: { text: string; onType: (v: string) => void; onLeave: () => void; unit: string; label: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
       <TextInput
@@ -133,7 +136,7 @@ function GramsBox({ text, onType, onLeave, label }: { text: string; onType: (v: 
         accessibilityLabel={label}
         style={{ width: 76, minHeight: S.touch, paddingHorizontal: 10, borderRadius: 12, borderWidth: S.hairline, borderColor: C.border, backgroundColor: C.cardAlt, color: C.text, fontSize: F.body, textAlign: 'right' }}
       />
-      <Text style={{ color: C.textFaint, fontSize: F.small, lineHeight: lh(F.small) }}>g</Text>
+      <Text style={{ color: C.textFaint, fontSize: F.small, lineHeight: lh(F.small) }}>{unit}</Text>
     </View>
   );
 }

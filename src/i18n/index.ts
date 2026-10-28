@@ -1037,7 +1037,7 @@ const en: Dict = {
   add_save_as_title: 'Save as my meal?', add_save_as_body: 'Next time it is one tap.', add_meal_name: 'Name', add_meal_name_hint: 'e.g. My usual thali',
   add_not_now: 'Not now', add_saved_meal: 'Saved to your meals',
   menu_ate_planned: 'Ate as planned', menu_change: 'Change',
-  strip_full: 'All meals logged', strip_missing: 'Meals missing', strip_today: 'Today, still going', strip_planned: 'Planned', strip_off: 'Free day', strip_none: 'Before you started',
+  strip_full: 'All meals logged', strip_missing: 'Meals missing', strip_today: 'Today, still going', strip_planned: 'Planned', strip_none: 'Before you started',
   strip_from_plan: 'filled in from the plan', strip_prev_week: 'Previous week', strip_next_week: 'Next week',
   menu_title: 'Menu', menu_planned_of: 'Planned {kcal} of {goal}', menu_day_off: 'A free day: nothing is judged.',
   menu_missing: '{n} meals missing', menu_missing_one: '1 meal missing', menu_record: '{n} of {of} meals',
@@ -1116,6 +1116,7 @@ const en: Dict = {
   review_screen: 'Screen time {time}, longest sitting {long}.', review_streak: '{n} full days in a row.',
   brk_settings: 'Break settings',
   tile_hold_water: 'Change the bottle size or add another amount', tile_hold_walk: 'Change the walk goal or add other minutes',
+  add_ml_of: 'Millilitres of {food}', qty_ml: 'Millilitres',
 };
 
 const mr: Dict = {
@@ -2157,7 +2158,7 @@ const mr: Dict = {
   add_save_as_title: 'माझं जेवण म्हणून जतन करायचं?', add_save_as_body: 'पुढच्या वेळी एका टॅपमध्ये नोंद होईल.', add_meal_name: 'नाव', add_meal_name_hint: 'उदा. माझं नेहमीचं ताट',
   add_not_now: 'आत्ता नको', add_saved_meal: 'तुमच्या जेवणांत जतन केलं',
   menu_ate_planned: 'ठरवल्याप्रमाणे खाल्लं', menu_change: 'बदला',
-  strip_full: 'सर्व जेवणं नोंदली', strip_missing: 'काही जेवणं राहिली', strip_today: 'आज, सुरू आहे', strip_planned: 'ठरवलेलं', strip_off: 'मोकळा दिवस', strip_none: 'सुरुवातीआधी',
+  strip_full: 'सर्व जेवणं नोंदली', strip_missing: 'काही जेवणं राहिली', strip_today: 'आज, सुरू आहे', strip_planned: 'ठरवलेलं', strip_none: 'सुरुवातीआधी',
   strip_from_plan: 'नियोजनावरून भरलेलं', strip_prev_week: 'मागचा आठवडा', strip_next_week: 'पुढचा आठवडा',
   menu_title: 'मेन्यू', menu_planned_of: '{goal} पैकी {kcal} ठरवलं', menu_day_off: 'मोकळा दिवस: काहीही मोजलं जात नाही.',
   menu_missing: '{n} जेवणं राहिली', menu_missing_one: '1 जेवण राहिलं', menu_record: '{of} जेवणांपैकी {n}',
@@ -2236,6 +2237,7 @@ const mr: Dict = {
   review_screen: 'स्क्रीन वेळ {time}, सर्वात जास्त सलग बसणे {long}.', review_streak: 'सलग {n} पूर्ण दिवस.',
   brk_settings: 'ब्रेकची सेटिंग',
   tile_hold_water: 'बाटलीचा आकार बदला किंवा दुसरं प्रमाण घाला', tile_hold_walk: 'चालण्याचं लक्ष्य बदला किंवा इतर मिनिटं घाला',
+  add_ml_of: '{food} किती मिली', qty_ml: 'मिली',
 };
 
 const hi: Dict = {
@@ -3275,7 +3277,7 @@ const hi: Dict = {
   add_save_as_title: 'मेरे खाने के रूप में सहेजें?', add_save_as_body: 'अगली बार एक टैप में दर्ज होगा.', add_meal_name: 'नाम', add_meal_name_hint: 'जैसे मेरी रोज़ की थाली',
   add_not_now: 'अभी नहीं', add_saved_meal: 'आपके खानों में सहेजा',
   menu_ate_planned: 'प्लान के मुताबिक़ खाया', menu_change: 'बदलें',
-  strip_full: 'सारे खाने दर्ज', strip_missing: 'कुछ खाने बाकी', strip_today: 'आज, जारी है', strip_planned: 'तय', strip_off: 'छुट्टी का दिन', strip_none: 'शुरुआत से पहले',
+  strip_full: 'सारे खाने दर्ज', strip_missing: 'कुछ खाने बाकी', strip_today: 'आज, जारी है', strip_planned: 'तय', strip_none: 'शुरुआत से पहले',
   strip_from_plan: 'प्लान से भरा', strip_prev_week: 'पिछला हफ़्ता', strip_next_week: 'अगला हफ़्ता',
   menu_title: 'मेन्यू', menu_planned_of: '{goal} में से {kcal} तय', menu_day_off: 'छुट्टी का दिन: कुछ नहीं आँका जाता.',
   menu_missing: '{n} खाने बाकी', menu_missing_one: '1 खाना बाकी', menu_record: '{of} खानों में से {n}',
@@ -3354,6 +3356,7 @@ const hi: Dict = {
   review_screen: 'स्क्रीन समय {time}, सबसे लंबा लगातार बैठना {long}.', review_streak: 'लगातार {n} पूरे दिन.',
   brk_settings: 'ब्रेक की सेटिंग',
   tile_hold_water: 'बोतल का आकार बदलें या दूसरी मात्रा जोड़ें', tile_hold_walk: 'चलने का लक्ष्य बदलें या दूसरे मिनट जोड़ें',
+  add_ml_of: '{food} कितने मिली', qty_ml: 'मिली',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

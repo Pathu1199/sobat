@@ -1,6 +1,7 @@
-import { addDays } from './date';
+import { t } from '../i18n';
+import { addDays, formatDayLabel } from './date';
 import type { DayRecord } from './record';
-import type { ISODate, Meal } from './types';
+import type { ISODate, Lang, Meal } from './types';
 
 /**
  * The week strip on Today: Monday to Sunday of the week being looked at,
@@ -8,10 +9,11 @@ import type { ISODate, Meal } from './types';
  * with meals missing amber, a planned day (and today, until it is full) an
  * outline; a full day of meals all skipped with nothing eaten is a grey dot of
  * its own, a complete record but never praised as full; a day still holding
- * meals filled in from the plan is drawn lighter; an off day and a day before
- * the person started have no dot. Pure.
+ * meals filled in from the plan is drawn lighter; an off day, a past day that
+ * planned nothing and ate nothing, and a day before the person started have
+ * no dot. Pure.
  */
-export type StripMark = 'full' | 'skipped' | 'missing' | 'today' | 'planned' | 'off' | 'none';
+export type StripMark = 'full' | 'skipped' | 'missing' | 'today' | 'planned' | 'off' | 'unplanned' | 'none';
 export type StripDay = {
   date: ISODate;
   /** Date.getDay(): 0 is Sunday, for the weekday's short name. */
@@ -56,7 +58,24 @@ function markFor(r: DayRecord, date: ISODate, today: ISODate, since: ISODate): S
   if (r.state === 'off') return 'off';
   if (date > today) return 'planned';
   if (r.state === 'full') return r.nothingEaten ? 'skipped' : 'full';
-  return date === today ? 'today' : 'missing';
+  if (date === today) return 'today';
+  return r.nothingPlanned ? 'unplanned' : 'missing';
+}
+
+/** The words for each mark: a free day in the words used for one everywhere, a day with nothing planned as the menu says it. */
+function markWords(mark: StripMark): string {
+  return mark === 'off' ? 'free_day' : mark === 'unplanned' ? 'menu_nothing_planned' : `strip_${mark}`;
+}
+
+/**
+ * What a screen reader hears for a day on the strip and on the calendar: the
+ * date, "today" for today (its mark says so already while it is still going),
+ * what the dot means, and whether meals were filled in from the plan.
+ */
+export function stripDayLabel(d: { date: ISODate; mark: StripMark; light: boolean; isToday: boolean }, lang: Lang): string {
+  const today = d.isToday && d.mark !== 'today' ? `, ${t(lang, 'today_short')}` : '';
+  const plan = d.light ? `, ${t(lang, 'strip_from_plan')}` : '';
+  return `${formatDayLabel(d.date, lang)}${today}, ${t(lang, markWords(d.mark))}${plan}`;
 }
 
 /** Where the record starts: the day setup finished, else the first meal ever logged, else today. Days before it have nothing to miss. */

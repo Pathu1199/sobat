@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contrastRatio, luminance } from '../contrast';
-import { STRIP_DOT, stripDot } from '../stripGeometry';
+import { STRIP_CHOSEN, STRIP_DOT, stripDot } from '../stripGeometry';
 import { PALETTES, type ThemeMode } from '../theme';
 
 const MODES: ThemeMode[] = ['light', 'dark'];
@@ -75,7 +75,15 @@ describe('palette', () => {
       expect(stripDot('skipped', true)).toEqual({ kind: 'dot', color: STRIP_DOT.skipped });
       expect(STRIP_DOT.skipped).not.toBe(STRIP_DOT.full);
       expect(stripDot('off', true)).toEqual({ kind: 'none' });
+      expect(stripDot('unplanned', false)).toEqual({ kind: 'none' });
       expect(stripDot('none', false)).toEqual({ kind: 'none' });
+    });
+
+    it(`${mode}: the chosen day's outline is the full dot's colour, 3:1 on the card, the page and its own tint`, () => {
+      expect(STRIP_CHOSEN).toBe(STRIP_DOT.full);
+      for (const bg of ['bg', 'card', 'cardAlt', 'accentDim'] as const) {
+        expect(contrastRatio(P[STRIP_CHOSEN], P[bg]), `chosen outline on ${bg}`).toBeGreaterThanOrEqual(3);
+      }
     });
 
     it(`${mode}: the week strip's chosen day, drawn on accentDim, sets its words in text, textDim or accentText, never textFaint`, () => {

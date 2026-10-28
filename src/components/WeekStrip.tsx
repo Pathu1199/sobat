@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import { PanResponder, Pressable, Text, View } from 'react-native';
-import { formatDayLabel, formatDayMonth } from '../core/date';
+import { formatDayMonth } from '../core/date';
 import type { Lang } from '../core/types';
-import { swipeStep, type StripDay } from '../core/weekStrip';
+import { stripDayLabel, swipeStep, type StripDay } from '../core/weekStrip';
 import { makeT } from '../i18n';
-import { STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_SIZE, STRIP_RING, stripDot } from '../ui/stripGeometry';
+import { STRIP_CHOSEN, STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_SIZE, STRIP_RING, stripDot } from '../ui/stripGeometry';
 import { C, F, lh, S } from '../ui/theme';
 import { IconButton } from './TopBarActions';
 
@@ -16,8 +16,8 @@ import { IconButton } from './TopBarActions';
  * (320 points) the days grow no wider than that seventh, so the row never
  * runs over, and each stays a finger and more tall (ui/stripGeometry.ts). A
  * day's words stay on one line at every text size: the weekday's short name,
- * the date, and the dot; what the dot means is in the day's name for a
- * screen reader.
+ * the date, and the dot; what the dot means, and "today" for today, are in
+ * the day's name for a screen reader (core/weekStrip.ts `stripDayLabel`).
  */
 export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; lang: Lang; onSelect: (date: string) => void; onWeek: (by: -1 | 1) => void }) {
   const t = makeT(lang);
@@ -49,7 +49,7 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
             onPress={() => onSelect(d.date)}
             accessibilityRole="button"
             aria-selected={d.selected}
-            accessibilityLabel={`${formatDayLabel(d.date, lang)}, ${t(`strip_${d.mark}`)}${d.light ? `, ${t('strip_from_plan')}` : ''}`}
+            accessibilityLabel={stripDayLabel(d, lang)}
             style={({ pressed }) => ({
               flex: 1,
               minWidth: 0,
@@ -59,7 +59,7 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
               gap: 3,
               borderRadius: S.radiusSm,
               borderWidth: 1,
-              borderColor: d.selected ? C.accent : 'transparent',
+              borderColor: d.selected ? C[STRIP_CHOSEN] : 'transparent',
               backgroundColor: d.selected ? C.accentDim : 'transparent',
               opacity: pressed ? 0.7 : 1,
             })}>
@@ -79,8 +79,8 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
 }
 
 /**
- * Teal for full, amber for missing, a ring for planned and today, grey for a day of meals all skipped; nothing for an off day or
- * a day before the start. A day still holding meals filled in from the plan is a ring with a dot in its middle, in the same
+ * Teal for full, amber for missing, a ring for planned and today, grey for a day of meals all skipped; nothing for an off day, a
+ * past day that planned nothing and ate nothing, or a day before the start. A day still holding meals filled in from the plan is a ring with a dot in its middle, in the same
  * colour: told apart by its shape, so it keeps 3:1 where the strip is drawn (ui/stripGeometry.ts `stripDot`). Progress's calendar
  * draws the same dot.
  */

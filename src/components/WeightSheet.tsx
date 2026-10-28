@@ -10,6 +10,7 @@ import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Divider, Field, Micro, Pill, Row, Small } from '../ui/components';
+import { withUndoAt } from '../ui/listUndo';
 import { Sheet } from '../ui/Sheet';
 import { C, F, lh } from '../ui/theme';
 import { UndoLine, useUndoable } from './tiles/UndoLine';
@@ -54,6 +55,10 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
     const n = parseFloat(v);
     if (Number.isFinite(n) && n >= 30 && n <= 300) app.setProfile({ goalWeightKg: n });
   }
+
+  // The newest eight weigh-ins, with the Undo line where the removed one stood: after every reading newer than it.
+  const gone = removed.held;
+  const rows = withUndoAt(sorted.slice(0, 8), gone ? sorted.filter((w) => w.date > gone.date).length : null);
 
   const tone = verdict === 'working' ? C.green : verdict === 'early' ? C.textDim : verdict === 'slow' ? C.amber : C.red;
 
@@ -109,40 +114,47 @@ export function WeightSheet({ open, onClose }: { open: boolean; onClose: () => v
       </Row>
       <Small color={C.textFaint}>{fill(t('plan_daily'), { kcal: targets.kcal, p: targets.proteinG })}</Small>
 
-      {/* History. The Undo for a removed weigh-in is a line here, where the tap was: the app-wide toast would sit behind this sheet. */}
-      {sorted.length > 0 || removed.held ? (
+      {/* History. The Undo for a removed weigh-in is a line in the removed row's place, where the tap was: the app-wide toast would sit behind this sheet. */}
+      {rows.length > 0 ? (
         <>
           <Divider />
           <Micro>{t('weight_history')}</Micro>
-          {removed.held ? (
-            <UndoLine
-              text={t('weight_removed')}
-              undoLabel={t('undo')}
-              onUndo={() => {
-                if (removed.held) app.addWeight(removed.held);
-                fb.haptic('light');
-                removed.clear();
-              }}
-            />
-          ) : null}
-          {sorted.slice(0, 8).map((w) => (
-            <Row key={w.date} style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
-              <Small>{formatDayLabel(w.date, lang)}</Small>
-              <Row style={{ gap: 14 }}>
-                <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{`${w.kg} ${t('unit_kg')}`}</Text>
-                <Pressable
-                  onPress={() => {
-                    app.removeWeight(w.date);
-                    removed.show(w);
+          {rows.map((r) => {
+            if (r.kind === 'undo') {
+              const held = removed.held;
+              return held ? (
+                <UndoLine
+                  key={`undo:${held.date}`}
+                  text={t('weight_removed')}
+                  undoLabel={t('undo')}
+                  onUndo={() => {
+                    app.addWeight(held);
+                    fb.haptic('light');
+                    removed.clear();
                   }}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('delete')}
-                  style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.redSoft : 'transparent' })}>
-                  <Ionicons name="trash-outline" size={18} color={C.textFaint} />
-                </Pressable>
+                />
+              ) : null;
+            }
+            const w = r.item;
+            return (
+              <Row key={w.date} style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
+                <Small>{formatDayLabel(w.date, lang)}</Small>
+                <Row style={{ gap: 14 }}>
+                  <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{`${w.kg} ${t('unit_kg')}`}</Text>
+                  <Pressable
+                    onPress={() => {
+                      app.removeWeight(w.date);
+                      removed.show(w);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('delete')}
+                    style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.redSoft : 'transparent' })}>
+                    <Ionicons name="trash-outline" size={18} color={C.textFaint} />
+                  </Pressable>
+                </Row>
               </Row>
-            </Row>
-          ))}
+            );
+          })}
         </>
       ) : null}
     </Sheet>

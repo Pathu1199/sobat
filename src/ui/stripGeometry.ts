@@ -39,6 +39,9 @@ type Token = keyof (typeof PALETTES)['light'];
  */
 export const STRIP_DOT = { full: 'accentText', missing: 'amber', outline: 'textFaint', skipped: 'textFaint' } as const satisfies Record<string, Token>;
 
+/** The outline round the chosen day (and today on the calendar): the full dot's colour, so it keeps 3:1 like the dots. */
+export const STRIP_CHOSEN = STRIP_DOT.full;
+
 /** The dot's size, the width of its ring, and the dot in the middle of a ring. */
 export const STRIP_DOT_SIZE = 8;
 export const STRIP_RING = 1.5;
@@ -52,10 +55,11 @@ export type StripDot = { kind: 'none' } | { kind: 'dot' | 'ring' | 'ringDot'; co
  * today, and a grey dot for a day of meals all skipped. A day still holding
  * meals filled in from the plan is told apart by its shape, a ring in its
  * colour with a small dot in the middle, never by fading it. Nothing on a free
- * day or before the person started.
+ * day, a past day that planned nothing and ate nothing, or before the person
+ * started.
  */
 export function stripDot(mark: StripMark, fromPlan: boolean): StripDot {
-  if (mark === 'off' || mark === 'none') return { kind: 'none' };
+  if (mark === 'off' || mark === 'unplanned' || mark === 'none') return { kind: 'none' };
   if (mark === 'skipped') return { kind: 'dot', color: STRIP_DOT.skipped };
   const color = mark === 'full' ? STRIP_DOT.full : mark === 'missing' ? STRIP_DOT.missing : STRIP_DOT.outline;
   if (fromPlan && mark !== 'planned') return { kind: 'ringDot', color };

@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
 import React, { createContext, useContext, useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import {
   addRows,
   addsIntoMeal,
   alreadySaved,
   menuSave,
   offersPlanned,
+  offersYesterday,
   plannedSummary,
   repeatItems,
   sheetMode,
@@ -36,10 +36,8 @@ import { useFeedback } from '../services/feedback';
 import { useMinute } from '../services/useClock';
 import { useApp } from '../store/AppProvider';
 import { Btn, Empty, Field, Micro } from '../ui/components';
-import { sheetBottomPad } from '../ui/sheetPad';
+import { SheetFrame } from '../ui/Sheet';
 import { C, F, lh, S } from '../ui/theme';
-import { useBreakpoint } from '../ui/useBreakpoint';
-import { useKeyboardUp } from '../ui/useKeyboardUp';
 import { FoodRow, OneTapRow, PlannedCard, SaveAsOffer, ToolsRow } from './AddSheetRows';
 import { CustomFoodForm } from './CustomFoodForm';
 import { FoodDetailSheet } from './FoodDetailSheet';
@@ -122,9 +120,6 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   const app = useApp();
   const fb = useFeedback();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const keyboardUp = useKeyboardUp();
-  const wide = useBreakpoint() !== 'mobile';
   const minute = useMinute();
   const { state, today, targets } = app;
   const lang = state.profile.lang;
@@ -180,7 +175,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   const planned = !!slot && offersPlanned({ mode, date, today, lines: slot.lines, foods, slotMeals });
   const yesterdayItems = slot ? repeatItems(yesterdayIn(state.meals, date, slot), foods) : [];
   const saved = state.savedMeals;
-  const rows = addRows({ mode, query: deferred, results: results.map((f) => f.id), basket, planned, yesterday: yesterdayItems.length > 0, saved: saved.map((s) => s.id), recents });
+  const rows = addRows({ mode, query: deferred, results: results.map((f) => f.id), basket, planned, yesterday: offersYesterday({ mode, basket, items: yesterdayItems, foods }), saved: saved.map((s) => s.id), recents });
   const linesKcal = (lines: PlanLine[]) => lines.reduce((a, l) => a + (lineInfo(l, foods)?.kcal ?? 0), 0);
   // The same as yesterday and a saved meal add into the meal while foods are being chosen (and always while changing a menu).
   const into = addsIntoMeal(mode, basket);
@@ -392,97 +387,73 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   }
 
   return (
-    <Modal visible transparent animationType={wide ? 'fade' : 'slide'} onRequestClose={onClose}>
-      {/* Moves up above the keyboard on a phone, so the bar with Save and a grams box near it stay in sight; a browser moves its own page. */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'web' ? undefined : 'padding'}
-        style={{ flex: 1, backgroundColor: C.scrim, justifyContent: wide ? 'center' : 'flex-end', alignItems: 'center' }}>
-        {/* The dimmed page behind closes the sheet on a tap; screen readers close it with their escape gesture or Back. */}
-        <Pressable onPress={onClose} accessible={false} style={StyleSheet.absoluteFill} />
-        <View
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-          style={{
-            width: '100%',
-            maxWidth: wide ? 560 : undefined,
-            height: wide ? '86%' : '92%',
-            backgroundColor: C.card,
-            borderWidth: S.hairline,
-            borderColor: C.borderStrong,
-            borderTopLeftRadius: S.radius + 4,
-            borderTopRightRadius: S.radius + 4,
-            borderBottomLeftRadius: wide ? S.radius + 4 : 0,
-            borderBottomRightRadius: wide ? S.radius + 4 : 0,
-            paddingBottom: sheetBottomPad({ wide, keyboardUp, inset: insets.bottom }),
-            overflow: 'hidden',
-          }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: S.padLg, paddingRight: 8, paddingTop: 8 }}>
-            <Text accessibilityRole="header" style={{ flex: 1, color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' }}>
-              {mode === 'plan' ? t('add_plan_title') : t('add_food')}
-            </Text>
-            <IconButton name="close" label={t('close')} onPress={onClose} />
-          </View>
-          {offer ? (
-            <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }}>
-              <SaveAsOffer
-                lang={lang}
-                logged={offer.logged}
-                onSave={(name) => {
-                  app.addSavedMeal(name, offer.lines);
-                  fb.haptic('success');
-                  fb.notify(t('add_saved_meal'));
-                  onClose();
-                }}
-                onSkip={onClose}
-              />
+    // The shared sheet frame, kept one height so the list fills it; the food sheet opens over it.
+    <SheetFrame open onClose={onClose} maxWidth={560} tall>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: S.padLg, paddingRight: 8, paddingTop: 8 }}>
+        <Text accessibilityRole="header" style={{ flex: 1, color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' }}>
+          {mode === 'plan' ? t('add_plan_title') : t('add_food')}
+        </Text>
+        <IconButton name="close" label={t('close')} onPress={onClose} />
+      </View>
+      {offer ? (
+        <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }}>
+          <SaveAsOffer
+            lang={lang}
+            logged={offer.logged}
+            onSave={(name) => {
+              app.addSavedMeal(name, offer.lines);
+              fb.haptic('success');
+              fb.notify(t('add_saved_meal'));
+              onClose();
+            }}
+            onSkip={onClose}
+          />
+        </ScrollView>
+      ) : (
+        <>
+          <View style={{ gap: 4, paddingBottom: 8 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: S.padLg }}>
+              {menu.meals.map((m) => (
+                <SlotChip key={m.id} label={`${slotName(m)} ${m.time}`} active={slot?.id === m.id} onPress={() => pickSlot(m.id)} />
+              ))}
             </ScrollView>
-          ) : (
-            <>
-              <View style={{ gap: 4, paddingBottom: 8 }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: S.padLg }}>
-                  {menu.meals.map((m) => (
-                    <SlotChip key={m.id} label={`${slotName(m)} ${m.time}`} active={slot?.id === m.id} onPress={() => pickSlot(m.id)} />
-                  ))}
-                </ScrollView>
-                {lineText ? <Text style={{ color: lineColor, fontSize: F.small, lineHeight: lh(F.small), paddingHorizontal: S.padLg }}>{lineText}</Text> : null}
-                <View style={{ flexDirection: 'row', paddingHorizontal: S.padLg, paddingTop: 4 }}>
-                  <Field value={query} onChangeText={setQuery} placeholder={t('search_food')} accessibilityLabel={t('search_food')} />
-                </View>
-              </View>
-              <FlatList
-                data={rows}
-                keyExtractor={(r) => r.key}
-                renderItem={renderRow}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-                style={{ flex: 1 }}
-                contentContainerStyle={{ paddingHorizontal: S.padLg, paddingBottom: S.padLg }}
-                ListFooterComponent={
-                  customOpen ? (
-                    <CustomFoodForm
-                      initialName={query}
-                      onSaved={(f) => {
-                        setCustomOpen(false);
-                        addFood(f);
-                        setQuery('');
-                      }}
-                      onCancel={() => setCustomOpen(false)}
-                    />
-                  ) : null
-                }
-              />
-              {basket.length > 0 || mode === 'plan' ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: S.padLg, paddingVertical: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
-                  <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
-                    {fill(t(totals.items === 1 ? 'add_bar_one' : 'add_bar'), { n: totals.items, kcal: totals.kcal })}
-                  </Text>
-                  <Btn label={mode === 'plan' ? t('add_save_menu') : t('save')} onPress={save} disabled={!slot} style={{ minWidth: 120 }} />
-                </View>
-              ) : null}
-            </>
-          )}
-        </View>
-      </KeyboardAvoidingView>
+            {lineText ? <Text style={{ color: lineColor, fontSize: F.small, lineHeight: lh(F.small), paddingHorizontal: S.padLg }}>{lineText}</Text> : null}
+            <View style={{ flexDirection: 'row', paddingHorizontal: S.padLg, paddingTop: 4 }}>
+              <Field value={query} onChangeText={setQuery} placeholder={t('search_food')} accessibilityLabel={t('search_food')} />
+            </View>
+          </View>
+          <FlatList
+            data={rows}
+            keyExtractor={(r) => r.key}
+            renderItem={renderRow}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingHorizontal: S.padLg, paddingBottom: S.padLg }}
+            ListFooterComponent={
+              customOpen ? (
+                <CustomFoodForm
+                  initialName={query}
+                  onSaved={(f) => {
+                    setCustomOpen(false);
+                    addFood(f);
+                    setQuery('');
+                  }}
+                  onCancel={() => setCustomOpen(false)}
+                />
+              ) : null
+            }
+          />
+          {basket.length > 0 || mode === 'plan' ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: S.padLg, paddingVertical: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
+              <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
+                {fill(t(totals.items === 1 ? 'add_bar_one' : 'add_bar'), { n: totals.items, kcal: totals.kcal })}
+              </Text>
+              <Btn label={mode === 'plan' ? t('add_save_menu') : t('save')} onPress={save} disabled={!slot} style={{ minWidth: 120 }} />
+            </View>
+          ) : null}
+        </>
+      )}
       <FoodDetailSheet
         food={detail}
         initial={editing ? { unit: editing.unit, gramsPerUnit: editing.gramsPerUnit, count: editing.count } : null}
@@ -495,6 +466,6 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
         }}
         onClose={() => setDetail(null)}
       />
-    </Modal>
+    </SheetFrame>
   );
 }

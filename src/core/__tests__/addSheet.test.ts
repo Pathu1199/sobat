@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, plannedSummary, removeUndoSteps, repeatItems, sheetMode, slotAllowance, slotBefore, slotLine, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
+import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, offersYesterday, plannedSummary, removeUndoSteps, repeatItems, sheetMode, slotAllowance, slotBefore, slotLine, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
 import { addLine, basketFromLines, lineOf, setCount, slotPreview, type BasketLine } from '../basket';
 import { addSkip } from '../menu';
 import { kcalForGrams } from '../nutrition';
@@ -236,6 +236,22 @@ describe('repeatItems: the same as yesterday, logged again', () => {
     expect(out.map((i) => i.foodId ?? i.name_en)).toEqual(['poha', 'Home dal', 'my-poha']);
     expect(out[1]).toBe(home);
     expect(out[2]).toMatchObject({ grams: 100, kcal: kcalForGrams(own, 100).kcal, estimated: true });
+  });
+});
+
+describe('offersYesterday: the same as yesterday is offered', () => {
+  const item = (foodId: string | undefined, grams: number): MealItem => ({ foodId, name_en: foodId ?? 'Read from a photo', name_mr: '', grams, kcal: 200, protein: 1, carbs: 1, fat: 1, estimated: true });
+  const photo = [item(undefined, 250)];
+
+  it('to log in one tap whenever yesterday holds something, a meal read from a photo too', () => {
+    expect(offersYesterday({ mode: 'log', basket: [], items: photo, foods })).toBe(true);
+    expect(offersYesterday({ mode: 'log', basket: [], items: [], foods })).toBe(false);
+  });
+
+  it('while foods are being chosen, only when one of its foods can go into the meal: a photo-read food has no measure to add', () => {
+    expect(offersYesterday({ mode: 'log', basket: [line('poha')], items: photo, foods })).toBe(false);
+    expect(offersYesterday({ mode: 'log', basket: [line('poha')], items: [...photo, item('chapati', 40)], foods })).toBe(true);
+    expect(offersYesterday({ mode: 'plan', basket: [], items: photo, foods })).toBe(false);
   });
 });
 

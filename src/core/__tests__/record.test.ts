@@ -28,6 +28,19 @@ const TODAY = '2026-10-27';
 const base = { today: TODAY, routine, skips: [], offDays: [] as number[], floor: KCAL_FLOOR.female };
 const rec = (date: string, meals: Meal[], extra: Partial<Parameters<typeof dayRecord>[0]> = {}) => dayRecord({ ...base, date, menu: menu(date), meals, ...extra });
 
+describe('a day with nothing planned', () => {
+  const empty = (date: string): DayMenu => ({ ...menu(date), meals: menu(date).meals.map((m) => ({ ...m, lines: [] })) });
+
+  it('says so when nothing was eaten either, so the record never calls it meals missing', () => {
+    expect(rec('2026-10-25', [], { menu: empty('2026-10-25') })).toEqual({ state: 'empty', fromPlan: false, nothingEaten: true, nothingPlanned: true });
+  });
+
+  it('is full once anything is eaten, and a day with something planned never says nothing was planned', () => {
+    expect(rec('2026-10-25', [meal('2026-10-25', 'lunch')], { menu: empty('2026-10-25') }).state).toBe('full');
+    expect(rec('2026-10-25', []).nothingPlanned).toBeUndefined();
+  });
+});
+
 describe('dayRecord', () => {
   it('is full when every planned meal was eaten or skipped; a slot with nothing planned does not count', () => {
     const d = '2026-10-26';

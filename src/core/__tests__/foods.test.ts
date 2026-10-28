@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { findFoods, foodIcon, foodsForDiet, isCountable, itemName, MEASURES, measureName, measuresFor, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
+import { findFoods, foodIcon, foodsForDiet, inMl, isCountable, itemName, MEASURES, measureName, measuresFor, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
 import type { FoodItem, Meal, MealItem } from '../types';
 import { isSourceOf, nutrientSourcesEaten } from '../nutrients';
 import { RECIPES } from '../../data/recipes';
@@ -232,5 +232,22 @@ describe('measureName', () => {
     expect(measureName(poha, 'spoon_big', 'en')).toBe('1 big spoon ≈ 15 g');
     expect(measureName(poha, 'spoon_big', 'mr')).toBe('1 मोठा चमचा ≈ 15 ग्रॅ');
     expect(measureName(poha, 'spoon_big', 'hi')).toBe('1 बड़ा चम्मच ≈ 15 ग्राम');
+  });
+});
+
+describe('inMl: a measure given in ml', () => {
+  const ALL = foodsJson as unknown as FoodItem[];
+  const food = (id: string) => ALL.find((f) => f.id === id)!;
+
+  it("is a drink's own cup or glass, so its amount box says ml, not g", () => {
+    expect(inMl(food('chai-without-sugar'), 'cup')).toBe(true);
+    expect(inMl(food('nimbu-pani'), 'glass')).toBe(true);
+  });
+
+  it('follows the measure chosen: lassi by the glass is ml, by the katori g; a food or a household measure in grams is g', () => {
+    expect(inMl(food('lassi'), 'glass')).toBe(true);
+    expect(inMl(food('lassi'), 'katori')).toBe(false);
+    expect(inMl(food('poha'), 'katori')).toBe(false);
+    expect(inMl(food('chai-without-sugar'), 'spoon_big')).toBe(false);
   });
 });

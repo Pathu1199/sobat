@@ -1,14 +1,14 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { formatDayLabel, formatMonthYear } from '../core/date';
+import { formatMonthYear } from '../core/date';
 import { monthMarks, monthSteps, shiftMonth } from '../core/progress';
-import { stripSince } from '../core/weekStrip';
+import { stripDayLabel, stripSince } from '../core/weekStrip';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useRecordOn } from '../store/useRecordOn';
 import { Card } from '../ui/components';
-import { STRIP_MARGIN } from '../ui/stripGeometry';
+import { STRIP_CHOSEN, STRIP_MARGIN } from '../ui/stripGeometry';
 import { C, F, lh, S } from '../ui/theme';
 import { IconButton } from './TopBarActions';
 import { StripDot } from './WeekStrip';
@@ -64,7 +64,7 @@ export function RecordCalendar() {
                   key={d.date}
                   onPress={() => router.navigate({ pathname: '/', params: { date: d.date } })}
                   accessibilityRole="button"
-                  accessibilityLabel={`${formatDayLabel(d.date, lang)}, ${t(`strip_${d.mark}`)}${d.light ? `, ${t('strip_from_plan')}` : ''}`}
+                  accessibilityLabel={stripDayLabel({ ...d, isToday: d.date === today }, lang)}
                   accessibilityHint={t('progress_day_hint')}
                   style={({ pressed }) => ({
                     flex: 1,
@@ -75,7 +75,7 @@ export function RecordCalendar() {
                     gap: 3,
                     borderRadius: S.radiusSm,
                     borderWidth: 1,
-                    borderColor: d.date === today ? C.accent : 'transparent',
+                    borderColor: d.date === today ? C[STRIP_CHOSEN] : 'transparent',
                     opacity: pressed ? 0.6 : 1,
                   })}>
                   <Text numberOfLines={1} style={{ color: d.date === today ? C.accentText : C.text, fontSize: F.small, lineHeight: lh(F.small, true), fontWeight: '500', fontVariant: ['tabular-nums'] }}>

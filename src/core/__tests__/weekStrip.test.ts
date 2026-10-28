@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { DayRecord } from '../record';
 import { t } from '../../i18n';
-import { markOf, stripSince, swipeStep, weekStrip } from '../weekStrip';
+import { formatDayLabel } from '../date';
+import { markOf, stripDayLabel, stripSince, swipeStep, weekStrip } from '../weekStrip';
 
 const r = (state: DayRecord['state'], fromPlan = false, nothingEaten = false): DayRecord => ({ state, fromPlan, nothingEaten });
 const MON = '2026-10-26';
@@ -81,5 +82,48 @@ describe('a day with every meal skipped and nothing eaten', () => {
     }
     expect(t('mr', 'strip_skipped')).not.toBe(t('en', 'strip_skipped'));
     expect(t('hi', 'strip_skipped')).not.toBe(t('en', 'strip_skipped'));
+  });
+});
+
+describe('weekStrip: more days', () => {
+  it('today once full is a full day, still today; a past free day is free; today filled in from the plan is a lighter outline', () => {
+    const days = weekStrip({ monday: MON, today: TODAY, viewed: TODAY, since: '2026-10-01', records: [r('off'), r('full'), r('full'), r('planned'), r('planned'), r('off'), r('planned')] });
+    expect(days[2]).toMatchObject({ mark: 'full', isToday: true });
+    expect(days[0].mark).toBe('off');
+    const light = weekStrip({ monday: MON, today: TODAY, viewed: TODAY, since: '2026-10-01', records: [r('full'), r('full'), r('partial', true), r('planned'), r('planned'), r('planned'), r('planned')] });
+    expect(light[2]).toMatchObject({ mark: 'today', light: true });
+  });
+
+  it('runs over the end of the year, Monday to Sunday', () => {
+    const days = weekStrip({ monday: '2026-12-28', today: '2026-12-30', viewed: '2027-01-02', since: '2026-10-01', records: Array.from({ length: 7 }, () => r('planned')) });
+    expect(days.map((d) => d.date)).toEqual(['2026-12-28', '2026-12-29', '2026-12-30', '2026-12-31', '2027-01-01', '2027-01-02', '2027-01-03']);
+    expect(days.map((d) => d.day)).toEqual([28, 29, 30, 31, 1, 2, 3]);
+    expect(days.map((d) => d.weekday)).toEqual([1, 2, 3, 4, 5, 6, 0]);
+    expect(days.filter((d) => d.selected).map((d) => d.date)).toEqual(['2027-01-02']);
+    expect(days.map((d) => d.mark)).toEqual(['missing', 'missing', 'today', 'planned', 'planned', 'planned', 'planned']);
+  });
+
+  it('a past day with nothing planned and nothing eaten has no dot and is never meals missing', () => {
+    const unplanned: DayRecord = { state: 'empty', fromPlan: false, nothingEaten: true, nothingPlanned: true };
+    expect(markOf(unplanned, '2026-10-20', TODAY, '2026-10-01')).toEqual({ mark: 'unplanned', light: false });
+    expect(markOf(unplanned, TODAY, TODAY, '2026-10-01').mark).toBe('today');
+    expect(markOf(r('empty'), '2026-10-20', TODAY, '2026-10-01').mark).toBe('missing');
+  });
+});
+
+describe('stripDayLabel: what a screen reader hears for a day', () => {
+  const day = { date: TODAY, mark: 'full' as const, light: false, isToday: true };
+
+  it('names today as today, whatever its mark, and never twice', () => {
+    expect(stripDayLabel(day, 'en')).toBe(`${formatDayLabel(TODAY, 'en')}, ${t('en', 'today_short')}, ${t('en', 'strip_full')}`);
+    expect(stripDayLabel({ ...day, mark: 'today' }, 'en')).toBe(`${formatDayLabel(TODAY, 'en')}, ${t('en', 'strip_today')}`);
+    expect(stripDayLabel({ ...day, isToday: false, light: true }, 'mr')).toBe(`${formatDayLabel(TODAY, 'mr')}, ${t('mr', 'strip_full')}, ${t('mr', 'strip_from_plan')}`);
+  });
+
+  it('says a free day in the words used for a free day everywhere, and a day with nothing planned as nothing planned', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      expect(stripDayLabel({ ...day, isToday: false, mark: 'off' }, lang)).toBe(`${formatDayLabel(TODAY, lang)}, ${t(lang, 'free_day')}`);
+      expect(stripDayLabel({ ...day, isToday: false, mark: 'unplanned' }, lang)).toBe(`${formatDayLabel(TODAY, lang)}, ${t(lang, 'menu_nothing_planned')}`);
+    }
   });
 });

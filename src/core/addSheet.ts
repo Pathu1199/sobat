@@ -1,4 +1,4 @@
-import { amountText, basketFromLines, linesFromBasket, type BasketLine } from './basket';
+import { amountText, basketFromItems, basketFromLines, linesFromBasket, type BasketLine } from './basket';
 import { addDays } from './date';
 import { foodName, measureName, toMealItem } from './foods';
 import { skippedOn, type MealsAndSkips } from './menu';
@@ -217,6 +217,17 @@ export function filledIn(meals: Meal[], date: ISODate, slotId: string): Meal[] {
  */
 export function addsIntoMeal(mode: 'log' | 'plan', basket: readonly BasketLine[]): boolean {
   return mode === 'plan' || basket.length > 0;
+}
+
+/**
+ * Whether the sheet offers the same as yesterday: whenever yesterday's slot
+ * holds something, to log in one tap; but while it would add into the meal
+ * being built (`addsIntoMeal`), only when one of its foods can go in, as a
+ * food read from a photo has no measure to add and the tap would do nothing.
+ */
+export function offersYesterday(input: { mode: 'log' | 'plan'; basket: readonly BasketLine[]; items: MealItem[]; foods: FoodItem[] }): boolean {
+  if (input.items.length === 0) return false;
+  return !addsIntoMeal(input.mode, input.basket) || basketFromItems([], input.items, input.foods).length > 0;
 }
 
 /** The slot as it was before a one-tap log, for its Undo: the meals filled in from the plan the log replaces, and whether the slot was marked skipped. */

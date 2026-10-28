@@ -97,43 +97,32 @@ export function localDate(iso: string): ISODate {
 // still writes is turned into one (latinDigits), so a date never sits in other digits beside the numbers next to it.
 const LOCALE: Record<Lang, string> = { en: 'en-IN', mr: 'mr-IN-u-nu-latn', hi: 'hi-IN-u-nu-latn' };
 
+/** A date in the chosen language's words and Latin digits, or `fallback` when Intl is missing or cannot read it: every date label goes through here. */
+function formatDate(date: ISODate, lang: Lang, options: Intl.DateTimeFormatOptions, fallback: string): string {
+  try {
+    const s = new Date(date + 'T12:00:00').toLocaleDateString(LOCALE[lang] ?? 'en-IN', options);
+    return s && s !== 'Invalid Date' ? latinDigits(s) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 /** "Sat 26 Sep" in the chosen language. Falls back to the ISO date if Intl is missing. */
 export function formatDayLabel(date: ISODate, lang: Lang): string {
-  try {
-    const d = new Date(date + 'T12:00:00');
-    const s = d.toLocaleDateString(LOCALE[lang] ?? 'en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
-    return s && s !== 'Invalid Date' ? latinDigits(s) : date;
-  } catch {
-    return date;
-  }
+  return formatDate(date, lang, { weekday: 'short', day: 'numeric', month: 'short' }, date);
 }
 
 /** "26 Oct" in the chosen language. Falls back to the ISO date if Intl is missing. */
 export function formatDayMonth(date: ISODate, lang: Lang): string {
-  try {
-    const s = new Date(date + 'T12:00:00').toLocaleDateString(LOCALE[lang] ?? 'en-IN', { day: 'numeric', month: 'short' });
-    return s && s !== 'Invalid Date' ? latinDigits(s) : date;
-  } catch {
-    return date;
-  }
+  return formatDate(date, lang, { day: 'numeric', month: 'short' }, date);
 }
 
 /** "14 Mar 2027" in the chosen language: a date far enough off to need its year. */
 export function formatDayMonthYear(date: ISODate, lang: Lang): string {
-  try {
-    const s = new Date(date + 'T12:00:00').toLocaleDateString(LOCALE[lang] ?? 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    return s && s !== 'Invalid Date' ? latinDigits(s) : date;
-  } catch {
-    return date;
-  }
+  return formatDate(date, lang, { day: 'numeric', month: 'short', year: 'numeric' }, date);
 }
 
 /** "October 2026" in the chosen language, for any date in the month. */
 export function formatMonthYear(date: ISODate, lang: Lang): string {
-  try {
-    const s = new Date(date + 'T12:00:00').toLocaleDateString(LOCALE[lang] ?? 'en-IN', { month: 'long', year: 'numeric' });
-    return s && s !== 'Invalid Date' ? latinDigits(s) : date.slice(0, 7);
-  } catch {
-    return date.slice(0, 7);
-  }
+  return formatDate(date, lang, { month: 'long', year: 'numeric' }, date.slice(0, 7));
 }

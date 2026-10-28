@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { countFromGrams, formatQty, sheetStep } from '../core/basket';
-import { defaultPortion, foodName, measureName, measuresFor, styleOf } from '../core/foods';
+import { defaultPortion, foodName, inMl, measureName, measuresFor, styleOf } from '../core/foods';
 import { kcalForGrams } from '../core/nutrition';
 import type { FoodItem, Lang } from '../core/types';
 import { FOOD_IMAGES } from '../data/foodImages';
@@ -130,7 +130,7 @@ export function FoodDetailSheet({
               plusLabel={fill(t('qty_more'), { food: name })}
             />
             <View style={{ width: 120 }}>
-              <Field label={t('qty_grams')} value={gramsDraft ?? String(grams)} onChangeText={setGramsDraft} keyboardType="numeric" />
+              <Field label={t(inMl(f, m.unit) ? 'qty_ml' : 'qty_grams')} value={gramsDraft ?? String(grams)} onChangeText={setGramsDraft} keyboardType="numeric" />
             </View>
           </Row>
         </View>
