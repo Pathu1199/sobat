@@ -2,10 +2,12 @@ import React from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useEased, useEntrance } from './animated';
+import { chosenProps } from './chosen';
 import { C, F, lh, lift, MICRO, onThemeChange, S } from './theme';
 
 // A pressable says whether it is selected or checked with aria-selected / aria-checked, not accessibilityState:
 // React Native reads either, but react-native-web only reads the aria props, so the web would announce no state.
+// A chosen button (a chip) says so through chosenProps: selected on a phone, pressed on the web.
 
 /** A chip's button is a finger wide and tall on every platform, sized by the box itself (the web adds no reach around a control); the chip stays 35 tall in the middle of it. */
 const PILL_REACH: ViewStyle = { minHeight: S.touch, minWidth: S.touch, justifyContent: 'center' };
@@ -164,8 +166,9 @@ export function Btn({
  * A chip, the one chip of the app. With onPress it is a button a finger wide
  * and tall on every platform, the web and the phone alike: the 44 point box
  * itself is the button (nothing reaches past it), the chip drawn in its middle;
- * `active` is announced as selected. `style` places the box (a chip alone in a
- * column sits at its start with `alignSelf`).
+ * `active` is announced as selected on a phone and as pressed on the web.
+ * `style` places the box (a chip alone in a column sits at its start with
+ * `alignSelf`).
  */
 export function Pill({
   label,
@@ -197,7 +200,7 @@ export function Pill({
   );
   // Only a chip given `active` claims a state; an action chip ("History ›") is not "not selected".
   return onPress ? (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} aria-selected={active} style={[PILL_REACH, style]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} {...chosenProps(active)} style={[PILL_REACH, style]}>
       {({ pressed }) => body(pressed)}
     </Pressable>
   ) : (

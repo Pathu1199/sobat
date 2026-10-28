@@ -2,13 +2,18 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { Animated, Platform, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAnnounce, useScreenReaderOn } from '../ui/announce';
 import { C, F, M, S } from '../ui/theme';
+import { toastMs, toastSpeech } from '../ui/toastWords';
 import { useBreakpoint } from '../ui/useBreakpoint';
 
 export type ToastAction = { label: string; onPress: () => void };
 
 type Feedback = {
-  /** A one-line confirmation that fades after two seconds; with an action (Undo), it stays five and can be tapped. */
+  /**
+   * A one-line confirmation that fades after two seconds; with an action (Undo), it stays five and can be tapped, ten
+   * while a screen reader is on. A screen reader hears the words and the action's name as the toast appears.
+   */
   notify: (text: string, action?: ToastAction) => void;
   /** A tap on the phone. Silent on the web. */
   haptic: (kind: 'light' | 'success') => void;
@@ -38,11 +43,15 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/refs
   const opacity = useRef(new Animated.Value(0)).current;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const readerOn = useScreenReaderOn();
+  // The phone says the toast at once; the web reads it from this region, on the page from the start.
+  const { announce, region } = useAnnounce();
 
   const notify = useCallback(
     (t: string, a?: ToastAction) => {
       setText(t);
       setAction(a ?? null);
+      announce(toastSpeech(t, a?.label));
       if (timer.current) clearTimeout(timer.current);
       Animated.timing(opacity, { toValue: 1, duration: M.fast, useNativeDriver: true }).start();
       timer.current = setTimeout(() => {
@@ -53,9 +62,9 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
             setAction(null);
           }
         });
-      }, a ? 5000 : 2000);
+      }, toastMs(!!a, readerOn));
     },
-    [opacity],
+    [opacity, announce, readerOn],
   );
 
   const haptic = useCallback((kind: 'light' | 'success') => {
@@ -71,6 +80,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
+      {region}
       {text ? (
         <ToastView
           text={text}

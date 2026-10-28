@@ -7,9 +7,10 @@ import { foodName, searchFoods } from '../core/foods';
 import { allowance, pattern } from '../core/pattern';
 import { newSlot, ruleForFood, slotLabel, toggleBhaji, updateSlot, type RoutineSlot } from '../core/routine';
 import type { FoodItem, Lang } from '../core/types';
-import { makeT } from '../i18n';
+import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Divider, Field, ListRow, Micro, Pill, Row, Screen, SectionHeader, Small, Toggle } from '../ui/components';
+import { IconButton } from '../ui/IconButton';
 import { C, F } from '../ui/theme';
 
 /** Monday first, the way the week is planned; values are `Date.getDay()` indices. */
@@ -161,12 +162,7 @@ export default function RoutineScreen() {
                     <Micro color={C.green}>{`${r.swapIds.map((id) => nameOf(id, foods, lang)).join(' / ')} ${t('routine_instead')}`}</Micro>
                   ) : null}
                 </View>
-                <Pressable
-                  onPress={() => app.setRoutine({ avoid: routine.avoid.filter((x) => x.id !== r.id) })}
-                  hitSlop={10}
-                  accessibilityLabel={t('delete')}>
-                  <Ionicons name="close" size={16} color={C.textFaint} />
-                </Pressable>
+                <IconButton name="close" label={fill(t('meal_line_remove'), { name: slotLabel(r, lang) })} onPress={() => app.setRoutine({ avoid: routine.avoid.filter((x) => x.id !== r.id) })} />
               </Row>
             </View>
           ))}

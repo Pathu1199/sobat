@@ -1,13 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { defaultPortion, foodName, portionLabel, searchFoods } from '../core/foods';
+import { Text, View } from 'react-native';
+import { defaultPortion, foodName, portionLabel, searchFoods, unitName } from '../core/foods';
 import { allowance, pattern, slotShare } from '../core/pattern';
 import { addLine, removeLine, renameSlot, setLineQty, slotLabel, slotTime, updateSlot, type RoutineSlot } from '../core/routine';
 import type { FoodItem, Lang, MealType } from '../core/types';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Btn, Divider, Field, ListRow, Micro, Pill, Row, Small, Toggle } from '../ui/components';
+import { IconButton } from '../ui/IconButton';
+import { QtyStepper } from '../ui/QtyStepper';
 import { C, F } from '../ui/theme';
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner'];
@@ -64,14 +66,15 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
 
       <View style={{ gap: 6 }}>
         <Micro>{t('pattern_share')}</Micro>
-        <Row style={{ gap: 10 }}>
-          <Pressable onPress={() => setShare(share - 5)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${t('pattern_share')} −`} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="remove" size={16} color={C.text} />
-          </Pressable>
-          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500', minWidth: 32, textAlign: 'center' }}>{String(share)}</Text>
-          <Pressable onPress={() => setShare(share + 5)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${t('pattern_share')} +`} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="add" size={16} color={C.text} />
-          </Pressable>
+        <Row style={{ gap: 10, flexWrap: 'wrap' }}>
+          <QtyStepper
+            value={String(share)}
+            onMinus={() => setShare(share - 5)}
+            onPlus={() => setShare(share + 5)}
+            minusDisabled={share <= 0}
+            minusLabel={t('pattern_share_less')}
+            plusLabel={t('pattern_share_more')}
+          />
           <Small color={C.textDim}>{fill(t('pattern_share_kcal'), { kcal: kcalToday })}</Small>
         </Row>
         <Micro color={C.textFaint}>{t('pattern_share_hint')}</Micro>
@@ -100,9 +103,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
                     <Text style={{ color: C.text, fontSize: F.body }}>{food ? foodName(food, lang) : line.foodId}</Text>
                     {portion ? <Micro>{portionLabel(portion, lang)}</Micro> : null}
                   </View>
-                  <Pressable onPress={() => onChange(removeLine(slot, oi, line.foodId))} hitSlop={8} accessibilityLabel={t('delete')}>
-                    <Ionicons name="close" size={16} color={C.textFaint} />
-                  </Pressable>
+                  <IconButton name="close" label={fill(t('meal_line_remove'), { name: food ? foodName(food, lang) : line.foodId })} onPress={() => onChange(removeLine(slot, oi, line.foodId))} />
                 </Row>
                 <Row style={{ gap: 6, flexWrap: 'wrap' }}>
                   {QTYS.map((q) => (
@@ -112,7 +113,7 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
                     ? food.portions.map((p) => (
                         <Pill
                           key={p.unit}
-                          label={p.unit}
+                          label={unitName(p.unit, lang)}
                           active={line.unit === p.unit}
                           onPress={() => onChange({ ...slot, options: slot.options.map((o, i) => (i === oi ? o.map((l) => (l.foodId === line.foodId ? { ...l, unit: p.unit } : l)) : o)) })}
                         />
@@ -130,9 +131,17 @@ export function SlotEditor({ slot, onChange, onRemove }: { slot: RoutineSlot; on
               ))}
             </View>
           ) : (
-            <Pressable onPress={() => { setAddingTo(oi); setQuery(''); }} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, paddingVertical: 4 })}>
-              <Micro color={C.accentText}>{`+ ${t('routine_add_food')}`}</Micro>
-            </Pressable>
+            <Btn
+              small
+              tone="ghost"
+              icon={<Ionicons name="add" size={16} color={C.text} />}
+              label={t('routine_add_food')}
+              onPress={() => {
+                setAddingTo(oi);
+                setQuery('');
+              }}
+              style={{ alignSelf: 'flex-start' }}
+            />
           )}
         </View>
       ))}

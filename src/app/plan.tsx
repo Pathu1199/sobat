@@ -10,7 +10,7 @@ import { IconButton } from '../components/TopBarActions';
 import { amountText, formatQty } from '../core/basket';
 import { addDays, formatDayLabel, formatDayMonth, isIsoDate, mondayOf } from '../core/date';
 import { dayView } from '../core/dayView';
-import { foodName } from '../core/foods';
+import { foodName, unitName } from '../core/foods';
 import { weekPlanView, type DayMenu as Menu } from '../core/menu';
 import { KCAL_FLOOR } from '../core/nutrition';
 import { balanceAvoided, defaultPlanWeek, planRowTone, planWeekRows, weekAverage, withReviewedWeek, type PlanRow, type PlanRowTone } from '../core/planWeek';
@@ -86,7 +86,6 @@ function PlanWeek() {
   };
   const statusWord = (r: PlanRow) => t(`planweek_${r.status}`);
   const TONE: Record<PlanRowTone, string> = { red: C.red, amber: C.amber, accent: C.accentText, dim: C.textDim };
-  const unitName = (u: string) => (t(`unit_${u}`) === `unit_${u}` ? u : t(`unit_${u}`));
 
   function moveWeek(by: -1 | 1) {
     setMonday((m) => addDays(m, 7 * by));
@@ -260,7 +259,7 @@ function PlanWeek() {
       <Sheet open={!!swapInfo} title={swapInfo ? fill(t('plan_swap_title'), { food: foodName(swapInfo.food, lang) }) : ''} onClose={() => setSwap(null)}>
         {swapInfo && swap && swapLine && day ? (
           <View style={{ gap: 6 }}>
-            <Small color={C.textDim}>{fill(t('plan_swap_now'), { qty: formatQty(swapLine.qty), unit: `${unitName(swapInfo.unit)} · ${swapInfo.grams} g`, kcal: swapInfo.kcal })}</Small>
+            <Small color={C.textDim}>{fill(t('plan_swap_now'), { qty: formatQty(swapLine.qty), unit: `${unitName(swapInfo.unit, lang)} · ${swapInfo.grams} g`, kcal: swapInfo.kcal })}</Small>
             {swapsFor(swapLine, app.foods, avoided).map((s) => {
               const f = foods.find((x) => x.id === s.line.foodId);
               const info = lineInfo(s.line, foods, lang);
@@ -280,7 +279,7 @@ function PlanWeek() {
                     <Text numberOfLines={1} style={strong}>
                       {foodName(f, lang)}
                     </Text>
-                    <Text numberOfLines={1} style={small}>{`${formatQty(s.line.qty)} ${unitName(info.unit)} · ${info.grams} g`}</Text>
+                    <Text numberOfLines={1} style={small}>{`${formatQty(s.line.qty)} ${unitName(info.unit, lang)} · ${info.grams} g`}</Text>
                   </View>
                   <Text style={[small, { color: C.text, fontWeight: '500' }]}>{s.kcal}</Text>
                   <Text style={[small, { color: s.diff > 0 ? C.amber : s.diff < 0 ? C.green : C.textDim, width: 44, textAlign: 'right' }]}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, Platform, Text, View, type ViewStyle } from 'react-native';
 
 // On the page for a screen reader, off it for the eye.
@@ -26,10 +26,11 @@ export function sayOnPhone(text: string): void {
 export function useAnnounce(): { announce: (text: string) => void; region: React.ReactElement | null } {
   const [said, setSaid] = useState({ text: '', n: 0 });
 
-  function announce(text: string) {
+  // The same function every render, so a callback built on it stays the same too.
+  const announce = useCallback((text: string) => {
     if (Platform.OS === 'web') setSaid((s) => ({ text, n: s.n + 1 }));
     else sayOnPhone(text);
-  }
+  }, []);
 
   // A new line each time, so the same words said twice are read twice.
   const region =
@@ -39,4 +40,27 @@ export function useAnnounce(): { announce: (text: string) => void; region: React
       </View>
     ) : null;
   return { announce, region };
+}
+
+/**
+ * Whether a screen reader is on, kept up to date as it is switched on or off.
+ * False until the phone has answered. The web cannot tell, and react-native-web
+ * answers true, so there the app always leaves the time a screen reader needs.
+ */
+export function useScreenReaderOn(): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    let live = true;
+    AccessibilityInfo.isScreenReaderEnabled()
+      .then((v) => {
+        if (live) setOn(v);
+      })
+      .catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('screenReaderChanged', (v: boolean) => setOn(v));
+    return () => {
+      live = false;
+      sub?.remove();
+    };
+  }, []);
+  return on;
 }

@@ -1100,6 +1100,11 @@ const en: Dict = {
   add_ml_of: 'Millilitres of {food}', qty_ml: 'Millilitres',
   setup_bad_sex: 'Choose male or female: the daily target is worked out from it.',
   coach_water_hint: 'Adds a {ml} ml bottle of water to today.',
+  pattern_share_less: 'Smaller share of the day',
+  pattern_share_more: 'Bigger share of the day',
+  chat_send: 'Send',
+  helpline_call: 'Call {name}, {number}',
+  chat_new_label: 'Start a new chat',
 };
 
 const mr: Dict = {
@@ -2204,6 +2209,11 @@ const mr: Dict = {
   add_ml_of: '{food} किती मिली', qty_ml: 'मिली',
   setup_bad_sex: 'पुरुष की स्त्री ते निवडा: रोजचं लक्ष्य त्यावरून ठरतं.',
   coach_water_hint: 'आजच्या नोंदीत {ml} मिली पाण्याची एक बाटली जोडते.',
+  pattern_share_less: 'दिवसाचा वाटा कमी',
+  pattern_share_more: 'दिवसाचा वाटा जास्त',
+  chat_send: 'पाठवा',
+  helpline_call: '{name} ला फोन करा, {number}',
+  chat_new_label: 'नवीन गप्पा सुरू करा',
 };
 
 const hi: Dict = {
@@ -3306,6 +3316,11 @@ const hi: Dict = {
   add_ml_of: '{food} कितने मिली', qty_ml: 'मिली',
   setup_bad_sex: 'पुरुष या महिला चुनें: रोज़ का लक्ष्य इसी से तय होता है.',
   coach_water_hint: 'आज में {ml} मिली पानी की एक बोतल जोड़ता है.',
+  pattern_share_less: 'दिन का हिस्सा कम',
+  pattern_share_more: 'दिन का हिस्सा ज़्यादा',
+  chat_send: 'भेजें',
+  helpline_call: '{name} को फ़ोन करें, {number}',
+  chat_new_label: 'नई बातचीत शुरू करें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

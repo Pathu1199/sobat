@@ -23,6 +23,13 @@ export function measureName(food: FoodItem, unit: string, lang: Lang): string {
   return own ? portionLabel(own, lang) : t(lang, `measure_${unit}`);
 }
 
+/** A portion's unit on its own, as a chip shows it ("वाटी" for katori in Marathi); a unit with no word of its own stays as it is. */
+export function unitName(unit: string, lang: Lang): string {
+  const key = `unit_${unit}`;
+  const word = t(lang, key);
+  return word === key ? unit : word;
+}
+
 /** A measure the food's own portion gives in ml ("1 cup (150 ml)"), so its amount box says ml, not g: the database counts a drink's ml as its grams. */
 export function inMl(food: FoodItem, unit: string): boolean {
   const own = food.portions.find((p) => p.unit === unit);

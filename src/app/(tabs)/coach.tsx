@@ -22,7 +22,7 @@ import { pattern, settledSlotIds, slotStates } from '../../core/pattern';
 import { journey, journeyFacts } from '../../core/review';
 import { avoidedFoodIds, bhajiFor, routineFacts } from '../../core/routine';
 import type { ChatOption } from '../../core/types';
-import { makeT } from '../../i18n';
+import { fill, makeT } from '../../i18n';
 import { useAI } from '../../services/useAI';
 import { useAuth } from '../../services/useAuth';
 import { useApp } from '../../store/AppProvider';
@@ -31,6 +31,9 @@ import { BiText, Btn, Card, Divider, Micro, Pill, Row, Small } from '../../ui/co
 import { C, F, lh, S } from '../../ui/theme';
 import { TopBar } from '../../ui/TopBar';
 import { useBreakpoint } from '../../ui/useBreakpoint';
+
+/** A text link a finger tall: the words stay small, the box around them is the 44 point control. */
+const LINK = { minHeight: S.touch, justifyContent: 'center' } as const;
 
 export default function CoachScreen() {
   const app = useApp();
@@ -66,7 +69,7 @@ export default function CoachScreen() {
         <Stat label={t('water')} value={`${app.waterToday} / ${app.state.settings.waterGoalMl} ml`} />
         <Stat label={t('sleep_title')} value={lastSleep ? `${formatMinutes(lastSleep.minutes)} · ${lastSleep.score}` : '--'} />
         <Divider />
-        <Pressable onPress={() => router.push('/memory')}>
+        <Pressable onPress={() => router.push('/memory')} accessibilityRole="link" style={LINK}>
           <Small color={C.accentText}>{`${app.state.memory.length} ${t('mem_fact')} ›`}</Small>
         </Pressable>
       </Card>
@@ -74,7 +77,7 @@ export default function CoachScreen() {
         <Card>
           <Micro>{t('offered')}</Micro>
           {lastOptions.map((o) => (
-            <Pressable key={o.foodId} onPress={() => logOption(o)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+            <Pressable key={o.foodId} onPress={() => logOption(o)} accessibilityRole="button" style={({ pressed }) => ({ minHeight: S.touch, justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
               <Row style={{ justifyContent: 'space-between', paddingVertical: 4 }}>
                 <BiText en={o.name_en} alt={lang === 'en' ? undefined : itemName(o, app.foods, lang)} size={F.small} />
                 <Small>{`${o.kcal} kcal`}</Small>
@@ -321,11 +324,11 @@ export default function CoachScreen() {
             contentContainerStyle={{ padding: S.pad, gap: 14, maxWidth: 780, width: '100%', alignSelf: 'center' }}
             keyboardShouldPersistTaps="handled">
             <Row style={{ justifyContent: 'space-between' }}>
-              <Pressable onPress={() => router.push('/memory')}>
+              <Pressable onPress={() => router.push('/memory')} accessibilityRole="link" style={LINK}>
                 <Micro color={C.textDim}>{`${app.state.memory.length} ${t('mem_fact')}`}</Micro>
               </Pressable>
               {app.state.chat.length > 0 ? (
-                <Pressable onPress={app.clearChat}>
+                <Pressable onPress={app.clearChat} accessibilityRole="button" accessibilityLabel={t('chat_new_label')} style={[LINK, { alignItems: 'flex-end' }]}>
                   <Micro color={C.accentText}>{`+ ${t('new_chat')}`}</Micro>
                 </Pressable>
               ) : null}
@@ -340,7 +343,12 @@ export default function CoachScreen() {
                 <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('helpline_title')}</Text>
                 <Small>{t('helpline_body')}</Small>
                 {HELPLINES.map((h) => (
-                  <Pressable key={h.number} onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}>
+                  <Pressable
+                    key={h.number}
+                    onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}
+                    accessibilityRole="link"
+                    accessibilityLabel={fill(t('helpline_call'), { name: h.name, number: h.number })}
+                    style={{ minHeight: S.touch, justifyContent: 'center' }}>
                     <Row style={{ justifyContent: 'space-between', paddingVertical: 7 }}>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{h.name}</Text>
@@ -362,7 +370,7 @@ export default function CoachScreen() {
                   <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', flex: 1 }}>{t('local_ai_down')}</Text>
                 </Row>
                 <Small color={C.textDim}>{t('coach_ai_off_hint')}</Small>
-                <Pressable onPress={() => router.push('/settings')}>
+                <Pressable onPress={() => router.push('/settings')} accessibilityRole="link" accessibilityLabel={t('local_ai')} style={LINK}>
                   <Micro color={C.accentText}>{`${t('local_ai')} ›`}</Micro>
                 </Pressable>
               </Card>
@@ -389,7 +397,7 @@ export default function CoachScreen() {
                   <View style={{ maxWidth: '92%', backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, borderRadius: 16, borderBottomLeftRadius: 5, padding: 14, gap: 10 }}>
                     <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body) }}>{m.text}</Text>
                     <Row style={{ gap: 14 }}>
-                      <Pressable onPress={() => app.rememberText(m.text, 'preference', 'user')}>
+                      <Pressable onPress={() => app.rememberText(m.text, 'preference', 'user')} accessibilityRole="button" style={LINK}>
                         <Micro color={C.textFaint}>{t('remember_this')}</Micro>
                       </Pressable>
                     </Row>
@@ -402,6 +410,7 @@ export default function CoachScreen() {
                         <Pressable
                           key={o.foodId}
                           onPress={() => logOption(o)}
+                          accessibilityRole="button"
                           style={({ pressed }) => ({
                             backgroundColor: C.card,
                             borderWidth: S.hairline,
@@ -443,10 +452,13 @@ export default function CoachScreen() {
               <Pressable
                 onPress={() => send(input)}
                 disabled={busy || !input.trim()}
+                accessibilityRole="button"
+                accessibilityLabel={t('chat_send')}
+                accessibilityState={{ disabled: busy || !input.trim() }}
                 style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 21,
+                  width: S.touch,
+                  height: S.touch,
+                  borderRadius: S.touch / 2,
                   backgroundColor: busy || !input.trim() ? C.cardAlt : C.accent,
                   alignItems: 'center',
                   justifyContent: 'center',

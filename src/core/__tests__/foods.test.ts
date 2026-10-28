@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { findFoods, foodIcon, foodsForDiet, inMl, isCountable, itemName, MEASURES, measureName, measuresFor, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf } from '../foods';
+import { findFoods, foodIcon, foodsForDiet, inMl, isCountable, itemName, MEASURES, measureName, measuresFor, recentFoodIds, resolveByName, scaleMealItem, searchFoods, styleOf, unitName } from '../foods';
 import type { FoodItem, Meal, MealItem } from '../types';
 import { isSourceOf, nutrientSourcesEaten } from '../nutrients';
 import { RECIPES } from '../../data/recipes';
@@ -249,5 +249,22 @@ describe('inMl: a measure given in ml', () => {
     expect(inMl(food('lassi'), 'katori')).toBe(false);
     expect(inMl(food('poha'), 'katori')).toBe(false);
     expect(inMl(food('chai-without-sugar'), 'spoon_big')).toBe(false);
+  });
+});
+
+describe('unitName: a portion\'s unit on its own, as a chip shows it', () => {
+  it('is the word in the chosen language', () => {
+    expect(unitName('katori', 'en')).toBe('katori');
+    expect(unitName('katori', 'mr')).toBe('वाटी');
+    expect(unitName('piece', 'hi')).toBe('पीस');
+  });
+
+  it('names every unit the food list uses, in Marathi and Hindi', () => {
+    const units = new Set((foodsJson as unknown as FoodItem[]).flatMap((f) => f.portions.map((p) => p.unit)));
+    for (const u of units) for (const lang of ['mr', 'hi'] as const) expect(unitName(u, lang), `${lang} ${u}`).not.toMatch(/[A-Za-z]/);
+  });
+
+  it('keeps a unit it has no word for as it is, rather than showing a key', () => {
+    expect(unitName('serving', 'mr')).toBe('serving');
   });
 });

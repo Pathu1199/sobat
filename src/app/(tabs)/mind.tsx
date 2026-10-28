@@ -9,9 +9,10 @@ import { BreatheTile } from '../../components/tiles/BreatheTile';
 import { TileRow } from '../../components/tiles/TileRow';
 import { Reframe } from '../../components/Reframe';
 import { TopBarActions } from '../../components/TopBarActions';
-import { makeT } from '../../i18n';
+import { fill, makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { Face } from '../../ui/Face';
+import { chosenProps } from '../../ui/chosen';
 import { Btn, Card, Divider, Field, ListRow, Micro, P, Row, SectionHeader, Small } from '../../ui/components';
 import { PressScale } from '../../ui/PressScale';
 import { C, F, S } from '../../ui/theme';
@@ -47,7 +48,12 @@ export default function MindScreen({ embedded }: { embedded?: boolean } = {}) {
       <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('helpline_title')}</Text>
       <P>{t('helpline_body')}</P>
       {HELPLINES.map((h) => (
-        <Pressable key={h.number} onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}>
+        <Pressable
+          key={h.number}
+          onPress={() => Linking.openURL(`tel:${h.number.replace(/-/g, '')}`)}
+          accessibilityRole="link"
+          accessibilityLabel={fill(t('helpline_call'), { name: h.name, number: h.number })}
+          style={{ minHeight: S.touch, justifyContent: 'center' }}>
           <Row style={{ justifyContent: 'space-between', paddingVertical: 6 }}>
             <View style={{ flex: 1 }}>
               <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500' }}>{h.name}</Text>
@@ -66,7 +72,7 @@ export default function MindScreen({ embedded }: { embedded?: boolean } = {}) {
       <Micro>{t('mood_q')}</Micro>
       <Row style={{ justifyContent: 'space-between' }}>
         {[1, 2, 3, 4, 5].map((n, i) => (
-          <Pressable key={n} onPress={() => setScore(i + 1)} accessibilityLabel={`${t('mood_q')} ${n}`}>
+          <Pressable key={n} onPress={() => setScore(i + 1)} accessibilityRole="button" accessibilityLabel={`${t('mood_q')} ${n}`} {...chosenProps(score === i + 1)}>
             <View
               style={{
                 width: 50,

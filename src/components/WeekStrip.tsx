@@ -4,6 +4,7 @@ import { formatDayMonth } from '../core/date';
 import type { Lang } from '../core/types';
 import { stripDayLabel, swipeStep, type StripDay } from '../core/weekStrip';
 import { makeT } from '../i18n';
+import { chosenProps } from '../ui/chosen';
 import { STRIP_CHOSEN, STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_SIZE, STRIP_RING, stripDot } from '../ui/stripGeometry';
 import { C, F, lh, S } from '../ui/theme';
 import { IconButton } from './TopBarActions';
@@ -48,7 +49,7 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
             key={d.date}
             onPress={() => onSelect(d.date)}
             accessibilityRole="button"
-            aria-selected={d.selected}
+            {...chosenProps(d.selected)}
             accessibilityLabel={stripDayLabel(d, lang)}
             style={({ pressed }) => ({
               flex: 1,
