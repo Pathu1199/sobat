@@ -73,8 +73,31 @@ export function fitOn(profile: Profile, routine: Routine, date: ISODate): MenuFi
   return fit;
 }
 
-// The fitted day of each weekday, worked out once per fit, pattern and food list: the streak alone reads sixty dates.
-const fitted = new WeakMap<MenuFit, { routine: Routine; foods: FoodItem[]; days: Map<number, PlanDay> }>();
+// The avoid list of each pattern as a set, worked out once per pattern.
+const avoidedSets = new WeakMap<Routine, Set<string>>();
+
+/**
+ * The foods the person avoids, as the pattern lists them: the same set while
+ * the pattern stays the same, so the minute tick and the screens never build
+ * it again. Shared by every caller, so it is never changed.
+ */
+function avoidedOf(routine: Routine): Set<string> {
+  let set = avoidedSets.get(routine);
+  if (!set) {
+    set = avoidedFoodIds(routine);
+    avoidedSets.set(routine, set);
+  }
+  return set;
+}
+
+/** The foods the app never plans or fills in for the person: the fit's avoid list, else the pattern's, as the suggestion reads it. */
+function avoidedIn(routine: Routine, fit?: MenuFit): Set<string> {
+  return fit ? fit.avoided : avoidedOf(routine);
+}
+
+// The suggested day of each weekday, worked out once per fit (or per pattern with no fit), pattern and food list: the streak
+// alone reads sixty dates. A fit and a pattern are different objects, so one map holds both.
+const suggested = new WeakMap<MenuFit | Routine, { routine: Routine; foods: FoodItem[]; days: Map<number, PlanDay> }>();
 
 /**
  * What the app suggests for a weekday nobody wrote: the pattern's own lines
@@ -82,19 +105,20 @@ const fitted = new WeakMap<MenuFit, { routine: Routine; foods: FoodItem[]; days:
  * under the safe minimum, or as near as the foods allowed get. Never a food
  * the person avoids (the fit's, else the routine's avoid list): a staple they
  * avoid is left out and a rotating dish gives way to the next allowed one.
- * The fitted day is shared by every caller, so it never leaves this file
- * uncopied.
+ * The day is worked out once and shared by every caller, fitted or not, so it
+ * never leaves this file uncopied.
  */
 function suggestedDay(routine: Routine, weekday: number, foods: FoodItem[], fit?: MenuFit): PlanDay {
-  if (!fit) return planDayFor(routine, weekday, foods, avoidedFoodIds(routine));
-  let memo = fitted.get(fit);
+  const key = fit ?? routine;
+  let memo = suggested.get(key);
   if (!memo || memo.routine !== routine || memo.foods !== foods) {
     memo = { routine, foods, days: new Map() };
-    fitted.set(fit, memo);
+    suggested.set(key, memo);
   }
   let day = memo.days.get(weekday);
   if (!day) {
-    day = balanceDay(planDayFor(routine, weekday, foods, fit.avoided), foods, fit.target, fit.avoided, fit.floor).day;
+    const own = planDayFor(routine, weekday, foods, avoidedIn(routine, fit));
+    day = fit ? balanceDay(own, foods, fit.target, fit.avoided, fit.floor).day : own;
     memo.days.set(weekday, day);
   }
   return day;
@@ -123,15 +147,23 @@ function carriedFrom(date: ISODate, menus: DayMenu[]): DayMenu | null {
   return menus.filter((m) => !m.frozen && m.date < date && weekdayOf(m.date) === wd).sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
 }
 
+/** A copy of a day's meals without a line of any food in `avoided`. A meal left with no line stays, with nothing planned. */
+function withoutAvoided(meals: PlanMeal[], avoided: ReadonlySet<string>): PlanMeal[] {
+  return meals.map((m) => ({ ...m, lines: m.lines.filter((l) => !avoided.has(l.foodId)).map((l) => ({ ...l })) }));
+}
+
 /**
  * The menu a date starts as when nothing is stored for it: the same weekday a
  * week earlier; else the newest earlier menu of that weekday; else the app's
  * suggestion for that weekday, fitted to the person's day when a fit is
- * given. A day carried forward is copied as it was, never fitted.
+ * given. A day carried forward is copied as it was, never fitted, except that
+ * a food the person avoids now (the fit's, else the pattern's avoid list) is
+ * left out of it: avoiding a food stops it coming back week after week. A
+ * menu written for a date is shown as it is (`viewMenu`), never through here.
  */
 export function startingMenu(date: ISODate, menus: DayMenu[], routine: Routine, foods: FoodItem[], fit?: MenuFit): DayMenu {
   const source = carriedFrom(date, menus);
-  return { date, meals: source ? copyMeals(source.meals) : suggestionFor(date, routine, foods, fit).meals, editedAt: NOT_EDITED };
+  return { date, meals: source ? withoutAvoided(source.meals, avoidedIn(routine, fit)) : suggestionFor(date, routine, foods, fit).meals, editedAt: NOT_EDITED };
 }
 
 /** The seven menus of the week starting on `monday`, Monday first: a stored one as it is, a missing one as it starts. Never overwrites a stored date. */
@@ -412,7 +444,10 @@ function openSlots(menu: DayMenu, meals: Meal[], skips: SlotSkip[]): PlanMeal[] 
  * The planned meals the app logs by itself: a slot of the date's menu with
  * nothing eaten in it and no skip gets its planned meal 90 minutes after the
  * slot's time, marked 'auto' until the person confirms it. Only today, and
- * yesterday when the app was open yesterday; never an off day. Returns the
+ * yesterday when the app was open yesterday; never an off day. Never a food
+ * the person avoids, whatever the menu says: its line is left out of the
+ * meal, and a slot left with no line gets no meal (and no skip). "Ate as
+ * planned", the person's own tap, logs the menu as it shows. Returns the
  * meals to add.
  */
 export function autoFill(input: {
@@ -425,6 +460,8 @@ export function autoFill(input: {
   openedDates: ISODate[];
   offDays: number[];
   foods: FoodItem[];
+  /** The foods the person avoids (`dueAutoFills` gives the fit's, else the pattern's avoid list). */
+  avoided: ReadonlySet<string>;
 }): Meal[] {
   const { date, now, menu } = input;
   if (!menu || menu.date !== date) return [];
@@ -435,7 +472,8 @@ export function autoFill(input: {
   const out: Meal[] = [];
   for (const slot of openSlots(menu, input.meals, input.skips)) {
     if (!autoFillPassed(date, slot, now)) continue;
-    const meal = mealFromLines({ id: autoMealId(date, slot.id), date, slot, lines: slot.lines, foods: input.foods, source: 'auto', now });
+    const lines = slot.lines.filter((l) => !input.avoided.has(l.foodId));
+    const meal = mealFromLines({ id: autoMealId(date, slot.id), date, slot, lines, foods: input.foods, source: 'auto', now });
     if (meal) out.push(meal);
   }
   return out;
@@ -668,26 +706,29 @@ export function withOpened(dates: ISODate[], today: ISODate): ISODate[] {
 }
 
 /**
- * The last date the app leaves as it was: the later of the day setup was
- * finished (the meals before it were never planned, and no meal prompt comes
- * that day either) and the day the store moved to this version (the days
- * before it were lived with nothing filled in, so an update never fills in a
- * day already lived). Nothing on or before it is filled in from the plan or
- * kept as lived. A date after today is not heeded: it came from a device
- * whose clock ran ahead, and must not hold the app off on every device.
+ * Where the person's record starts: the later of the day setup was finished
+ * (the meals before it were never planned, and no meal prompt comes that day
+ * either) and the day the store moved to this version (the days before it
+ * were lived with no menu and nothing filled in, so none of them is missing
+ * meals and an update never fills in a day already lived). Undefined with
+ * neither. A date after today is not heeded: it came from a device whose
+ * clock ran ahead, and must not hold the record off on every device. The
+ * week strip and the calendar start on it (`stripSince`); the app fills in
+ * nothing on or before it and keeps no day before it as lived.
  */
-function leftAsItWas(profile: Pick<Profile, 'onboardedOn' | 'autoFillFrom'>, today: ISODate): ISODate | undefined {
-  const dates = [profile.onboardedOn, profile.autoFillFrom].filter((d): d is ISODate => typeof d === 'string' && d <= today);
+export function recordStart(profile: Pick<Profile, 'onboardedOn' | 'autoFillFrom'>, today: ISODate): ISODate | undefined {
+  const dates = [profile.onboardedOn, profile.autoFillFrom].filter((d): d is ISODate => typeof d === 'string' && d.length > 0 && d <= today);
   return dates.sort().pop();
 }
 
 /**
  * The meals the app fills in right now, across yesterday and today, for a
  * person who has finished setup; a device holding nobody's data stays empty.
- * Nothing is filled on or before the date `leftAsItWas` gives. The app
+ * Nothing is filled on or before the date `recordStart` gives. The app
  * counts as open on a date it recorded opening on, or one with usage buckets.
  * A meal already in the list (same id) is not returned again. A date nobody
- * wrote fills in the app's suggestion, fitted when a fit is given.
+ * wrote fills in the app's suggestion, fitted when a fit is given. Never a
+ * food the person avoids (the fit's, else the pattern's avoid list).
  */
 export function dueAutoFills(input: {
   state: Pick<AppState, 'profile' | 'menus' | 'routine' | 'meals' | 'slotSkips' | 'usage' | 'openedDates' | 'settings'>;
@@ -700,11 +741,12 @@ export function dueAutoFills(input: {
   const today = toISODate(now);
   const openedDates = Array.from(new Set([...state.openedDates, ...state.usage.map((u) => u.date)]));
   const out: Meal[] = [];
-  const since = leftAsItWas(state.profile, today);
+  const since = recordStart(state.profile, today);
+  const avoided = avoidedIn(state.routine, fit);
   for (const date of [addDays(today, -1), today]) {
     if (since && date <= since) continue;
     const menu = viewMenu(date, state.menus, state.routine, today, foods, fit);
-    out.push(...autoFill({ date, now, menu, meals: state.meals, skips: state.slotSkips, openedDates, offDays: state.settings.offDays ?? [], foods }));
+    out.push(...autoFill({ date, now, menu, meals: state.meals, skips: state.slotSkips, openedDates, offDays: state.settings.offDays ?? [], foods, avoided }));
   }
   return out.filter((m) => !state.meals.some((x) => x.id === m.id));
 }
@@ -719,11 +761,11 @@ export const LIVED_DAYS = 14;
  * so a weigh-in or a settings change would turn a day eaten in full partial;
  * kept, a lived day is judged on the menu the person saw. Stamped NOT_EDITED,
  * so a real edit from another device still wins. Only dates after the one
- * `leftAsItWas` gives, the days lived with this build. A stored menu is never
+ * `recordStart` gives, the days lived with this build. A stored menu is never
  * touched. The same list when nothing is missing.
  */
 function withLivedDays(state: Pick<AppState, 'profile' | 'menus' | 'routine' | 'meals' | 'slotSkips'>, today: ISODate, foods: FoodItem[], fit?: MenuFit): DayMenu[] {
-  const since = leftAsItWas(state.profile, today);
+  const since = recordStart(state.profile, today);
   const lived = new Set([addDays(today, -1)]);
   const from = addDays(today, -LIVED_DAYS);
   for (const r of [...state.meals, ...state.slotSkips]) if (r.date >= from && r.date < today) lived.add(r.date);

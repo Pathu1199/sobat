@@ -40,6 +40,19 @@ describe('stripSince', () => {
     expect(stripSince({ onboardedOn: '2026-10-25', autoFillFrom: '2026-10-20' }, [], TODAY)).toBe('2026-10-25');
     expect(stripSince({ onboardedOn: '2026-10-10', autoFillFrom: '2026-10-20' }, [{ date: '2026-03-01' }], TODAY)).toBe('2026-10-20');
   });
+
+  it('pays no heed to a start after today, as from a device whose clock ran ahead: the strip and the calendar start as if it were not set', () => {
+    const meals = [{ date: '2026-10-20' }];
+    const ahead = stripSince({ autoFillFrom: '2026-10-29' }, meals, TODAY);
+    expect(ahead).toBe(stripSince({}, meals, TODAY));
+    expect(ahead).toBe('2026-10-20');
+    expect(stripSince({ onboardedOn: '2026-10-25', autoFillFrom: '2026-10-29' }, meals, TODAY)).toBe('2026-10-25');
+    expect(stripSince({ onboardedOn: '2026-10-30' }, [], TODAY)).toBe(TODAY);
+    const records = [r('partial'), r('partial'), r('partial'), r('planned'), r('planned'), r('planned'), r('planned')];
+    const strip = (since: string) => weekStrip({ monday: MON, today: TODAY, viewed: TODAY, records, since }).map((d) => d.mark);
+    expect(strip(ahead)).toEqual(['missing', 'missing', 'today', 'planned', 'planned', 'planned', 'planned']);
+    expect(markOf(r('partial'), '2026-10-22', TODAY, ahead)).toEqual({ mark: 'missing', light: false });
+  });
 });
 
 describe('swipeStep', () => {

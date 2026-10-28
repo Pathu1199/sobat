@@ -25,6 +25,7 @@ import {
   NOT_EDITED,
   plannedKcalBySlot,
   planMeal,
+  recordStart,
   removeSkip,
   setMenuDay,
   setMenuLine,
@@ -57,6 +58,7 @@ import { steppedLine, stepFoodLine } from '../basket';
 import { dailyTargets, KCAL_FLOOR, kcalForGrams } from '../nutrition';
 import { dayRecord } from '../record';
 import { forCloud, isPristine } from '../sync';
+import { stripSince } from '../weekStrip';
 import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, ruleForFood, type PlanLine, type Routine, type RoutineSlot } from '../routine';
 import type { FoodItem, Meal, MealSource, Profile, SlotSkip } from '../types';
 import { buildWeekPlan, dayTotals, lineInfo, planDayFor, type PlanMeal } from '../weekPlan';
@@ -389,7 +391,8 @@ describe('meals from the plan', () => {
 describe('autoFill', () => {
   const today = '2026-10-27';
   const at = (hhmm: string, date = today) => new Date(`${date}T${hhmm}:00`);
-  const base = { date: today, menu: menu(today, 2), meals: [] as Meal[], skips: [] as SlotSkip[], openedDates: [] as string[], offDays: [] as number[], foods };
+  // Nothing avoided.
+  const base = { date: today, menu: menu(today, 2), meals: [] as Meal[], skips: [] as SlotSkip[], openedDates: [] as string[], offDays: [] as number[], foods, avoided: new Set<string>() };
 
   it('fills a slot 90 minutes after its time, and not a minute before', () => {
     expect(autoFill({ ...base, now: at('14:29') })).toEqual([]);
@@ -1184,7 +1187,7 @@ describe('taking a meal away', () => {
     const out = withMealRemoved(state, autoMealId(d, 'lunch'), late);
     expect(out.meals).toEqual([]);
     expect(out.slotSkips.map((s) => s.id)).toEqual(['2026-10-27:lunch']);
-    expect(autoFill({ date: d, now: late, menu: menu(d, 2), meals: out.meals, skips: out.slotSkips, openedDates: [], offDays: [], foods })).toEqual([]);
+    expect(autoFill({ date: d, now: late, menu: menu(d, 2), meals: out.meals, skips: out.slotSkips, openedDates: [], offDays: [], foods, avoided: new Set() })).toEqual([]);
   });
 
   it('a hand-typed meal taken away before its slot is filled in leaves the skips as they are; an id that is not there changes nothing', () => {
@@ -1197,7 +1200,7 @@ describe('taking a meal away', () => {
     const state = { routine, menus: [] as DayMenu[], meals: [logged('m1', 'lunch', 'manual')], slotSkips: [] as SlotSkip[] };
     const undone = withMealRemoved(state, 'm1', late);
     expect(undone.slotSkips.map((s) => s.id)).toEqual(['2026-10-27:lunch']);
-    expect(autoFill({ date: d, now: late, menu: menu(d, 2), meals: undone.meals, skips: undone.slotSkips, openedDates: [], offDays: [], foods })).toEqual([]);
+    expect(autoFill({ date: d, now: late, menu: menu(d, 2), meals: undone.meals, skips: undone.slotSkips, openedDates: [], offDays: [], foods, avoided: new Set() })).toEqual([]);
     expect(withMealAdded({ ...undone, routine, menus: [] }, logged('m2', 'lunch', 'manual'), 1600, late).slotSkips).toEqual([]);
   });
 
@@ -1314,5 +1317,127 @@ describe('the fit and the food list the store and its minute tick read', () => {
     expect(list.map((f) => f.id)).toEqual([...foods.map((f) => f.id), 'custom-1']);
     expect(allFoods([...own])).not.toBe(list);
     expect(allFoods([...own])).toEqual(list);
+  });
+});
+
+describe('a food the person now avoids', () => {
+  // 28 October 2026 is a Wednesday, 21 October the one a week before.
+  const WED = '2026-10-28';
+  const LAST_WED = '2026-10-21';
+  const late = new Date(`${WED}T23:00:00`);
+  const peanutsFood = foods.find((f) => f.id === 'peanuts-roasted')!;
+  const peanuts: PlanLine = { foodId: 'peanuts-roasted', unit: 'handful', qty: 1 };
+  /** Breakfast is peanuts alone, lunch two chapati and peanuts, dinner nothing planned. */
+  const withPeanuts = (date: string): DayMenu => ({
+    date,
+    editedAt: '2026-10-20T09:00:00.000Z',
+    meals: [
+      { id: 'morning', type: 'breakfast', time: '08:30', lines: [peanuts] },
+      { id: 'lunch', type: 'lunch', time: '13:00', lines: [chapati(2), peanuts] },
+      { id: 'dinner', type: 'dinner', time: '20:00', lines: [] },
+    ],
+  });
+  const avoids: Routine = { ...routine, avoid: [...routine.avoid, ruleForFood(peanutsFood)] };
+  const stateWith = (menus: DayMenu[], r: Routine) => ({
+    profile: { ...EMPTY_STATE.profile, onboarded: true },
+    menus,
+    routine: r,
+    meals: [] as Meal[],
+    slotSkips: [] as SlotSkip[],
+    usage: [] as typeof EMPTY_STATE.usage,
+    openedDates: [] as string[],
+    settings: { ...EMPTY_STATE.settings, offDays: [] },
+  });
+  const linesOf = (m: DayMenu) => m.meals.map((x) => [x.id, x.lines.map((l) => l.foodId)]);
+  const foodIds = (meals: Meal[]) => meals.flatMap((m) => m.items.map((i) => i.foodId));
+
+  it('is left out of a day carried forward from an earlier week, fitted or not, and the app fills none of it in', () => {
+    const menus = [withPeanuts(LAST_WED)];
+    // Before the person avoided peanuts, this Wednesday repeats last week's, peanuts and all.
+    expect(linesOf(viewMenu(WED, menus, routine, WED, foods))).toEqual([['morning', ['peanuts-roasted']], ['lunch', ['chapati', 'peanuts-roasted']], ['dinner', []]]);
+    const fitted = fitFor({ ...EMPTY_STATE.profile, onboarded: true }, avoids);
+    for (const fit of [undefined, fitted]) {
+      const shown = viewMenu(WED, menus, avoids, WED, foods, fit);
+      expect(linesOf(shown)).toEqual([['morning', []], ['lunch', ['chapati']], ['dinner', []]]);
+      expect(linesOf(viewWeek('2026-10-26', menus, avoids, WED, foods, fit)[2])).toEqual(linesOf(shown));
+      const filled = dueAutoFills({ state: stateWith(menus, avoids), now: late, foods, fit });
+      expect(filled.map((m) => [m.slotId, foodIds([m])])).toEqual([['lunch', ['chapati']]]);
+    }
+    // The earlier week is kept as it was written.
+    expect(menuFor(LAST_WED, menus)).toEqual(withPeanuts(LAST_WED));
+  });
+
+  it('is shown on a menu written for that date, as it was written, but the app fills none of it in; "Ate as planned" logs what the menu shows', () => {
+    const menus = [withPeanuts(WED)];
+    expect(linesOf(viewMenu(WED, menus, avoids, WED, foods))).toEqual([['morning', ['peanuts-roasted']], ['lunch', ['chapati', 'peanuts-roasted']], ['dinner', []]]);
+    const filled = dueAutoFills({ state: stateWith(menus, avoids), now: late, foods });
+    expect(filled.map((m) => [m.slotId, foodIds([m])])).toEqual([['lunch', ['chapati']]]);
+    // Calories from the database at the grams of what is left: the two chapati alone.
+    const two = lineInfo(chapati(2), foods)!;
+    expect(filled[0].kcal).toBe(kcalForGrams(two.food, two.grams).kcal);
+    // The person's own tap is unchanged.
+    const ate = planMeal({ id: 'x', menu: menuFor(WED, menus)!, slotId: 'lunch', foods, source: 'plan', now: late })!;
+    expect(foodIds([ate])).toEqual(['chapati', 'peanuts-roasted']);
+  });
+
+  it('gives a slot whose only line it is no meal filled in: no empty meal and no skip', () => {
+    const run = withAutoFill({ ...EMPTY_STATE, ...stateWith([withPeanuts(WED)], avoids) }, late, foods, 1800);
+    expect(run.meals.map((m) => [m.date, m.slotId])).toEqual([[WED, 'lunch']]);
+    expect(run.slotSkips).toEqual([]);
+    const one = { date: WED, now: late, menu: withPeanuts(WED), meals: [] as Meal[], skips: [] as SlotSkip[], openedDates: [] as string[], offDays: [] as number[], foods };
+    expect(autoFill({ ...one, avoided: new Set(['peanuts-roasted']) }).map((m) => [m.slotId, foodIds([m])])).toEqual([['lunch', ['chapati']]]);
+    expect(autoFill({ ...one, avoided: new Set() }).map((m) => [m.slotId, foodIds([m])])).toEqual([['morning', ['peanuts-roasted']], ['lunch', ['chapati', 'peanuts-roasted']]]);
+  });
+});
+
+describe('where the record starts', () => {
+  const T = '2026-10-27';
+
+  it('is the later of the day setup finished and the day the store moved, each heeded only up to today', () => {
+    expect(recordStart({}, T)).toBeUndefined();
+    expect(recordStart({ onboardedOn: '' }, T)).toBeUndefined();
+    expect(recordStart({ onboardedOn: '2026-10-20' }, T)).toBe('2026-10-20');
+    expect(recordStart({ onboardedOn: '2026-10-20', autoFillFrom: '2026-10-24' }, T)).toBe('2026-10-24');
+    expect(recordStart({ onboardedOn: '2026-10-24', autoFillFrom: '2026-10-20' }, T)).toBe('2026-10-24');
+    expect(recordStart({ autoFillFrom: T }, T)).toBe(T);
+    // A date after today came from a device whose clock ran ahead.
+    expect(recordStart({ autoFillFrom: '2026-10-28' }, T)).toBeUndefined();
+    expect(recordStart({ onboardedOn: '2026-10-20', autoFillFrom: '2026-10-28' }, T)).toBe('2026-10-20');
+  });
+
+  it('"Fill this day from plan" fills a day before a start after today, as if that start were not set', () => {
+    const d = '2026-10-25';
+    const meals: Meal[] = [{ id: 'old', at: '2026-10-20T08:00:00.000Z', date: '2026-10-20', type: 'breakfast', items: [], kcal: 300, protein: 8, source: 'manual' }];
+    const fill = (startDate: string) => fillFromPlan({ now: NOW, menu: menu(d, 2), meals, skips: [], foods, offDay: false, startDate });
+    const ahead = fill(stripSince({ autoFillFrom: '2026-10-28' }, meals, T));
+    expect(ahead.map((m) => m.id)).toEqual(['plan-2026-10-25-lunch']);
+    expect(ahead).toEqual(fill(stripSince({}, meals, T)));
+  });
+});
+
+describe('the app\'s suggestion with no fit', () => {
+  it('is worked out once per pattern, weekday and food list, not on every read', () => {
+    let reads = 0;
+    const counted: Routine = { ...NEUTRAL_ROUTINE };
+    Object.defineProperty(counted, 'slots', {
+      enumerable: true,
+      get: () => {
+        reads++;
+        return NEUTRAL_ROUTINE.slots;
+      },
+    });
+    const day = { date: '2026-10-28', meals: suggestionFor('2026-10-28', NEUTRAL_ROUTINE, foods).meals };
+    expect(isSuggested(day, counted, foods)).toBe(true);
+    const once = reads;
+    expect(once).toBeGreaterThan(0);
+    for (let i = 0; i < 5; i++) expect(isSuggested(day, counted, foods)).toBe(true);
+    expect(suggestionFor('2026-10-28', counted, foods).meals).toEqual(day.meals);
+    expect(reads).toBe(once);
+    // Another weekday, or another food list, is worked out on its own.
+    isSuggested({ ...day, date: '2026-10-29' }, counted, foods);
+    const twice = reads;
+    expect(twice).toBeGreaterThan(once);
+    expect(isSuggested(day, counted, [...foods])).toBe(true);
+    expect(reads).toBeGreaterThan(twice);
   });
 });

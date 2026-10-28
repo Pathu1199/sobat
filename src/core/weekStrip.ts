@@ -1,5 +1,6 @@
 import { t } from '../i18n';
 import { addDays, formatDayLabel } from './date';
+import { recordStart } from './menu';
 import type { DayRecord } from './record';
 import type { ISODate, Lang, Meal, Profile } from './types';
 
@@ -81,12 +82,12 @@ export function stripDayLabel(d: { date: ISODate; mark: StripMark; light: boolea
 }
 
 /**
- * Where the record starts: the later of the day setup finished and the day the store moved to this version (`autoFillFrom`:
- * the days lived before it had no menu, so none of them is missing meals); with neither, the first meal ever logged, else
- * today. Days before it have nothing to miss.
+ * Where the record starts: the date `recordStart` gives, the start the app's own filling in keeps to (the later of the day
+ * setup finished and the day the store moved to this version, never a date after today); with neither, the first meal ever
+ * logged, else today. Days before it have nothing to miss.
  */
 export function stripSince(profile: Pick<Profile, 'onboardedOn' | 'autoFillFrom'>, meals: Pick<Meal, 'date'>[], today: ISODate): ISODate {
-  const started = [profile.onboardedOn, profile.autoFillFrom].filter((d): d is ISODate => typeof d === 'string' && d.length > 0).sort().pop();
+  const started = recordStart(profile, today);
   if (started) return started;
   let first = today;
   for (const m of meals) if (m.date < first) first = m.date;
