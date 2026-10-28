@@ -21,8 +21,10 @@ const LEVEL_ICON: Record<string, string> = { camp1: '⛺', camp2: '🏕️', cam
  * A win that lands from the add sheet waits until the sheet has closed, its
  * "Save as my meal?" too, so the two never sit on each other. A toast with
  * Undo, and the tiles' "Added … · Undo" line (or a sheet's "Deleted … · Undo"),
- * stay uncovered until they have gone, so their Undo can still be reached; the
- * wait is never long, as each goes on its own after a few seconds.
+ * stay uncovered until they have gone, so their Undo can still be reached. The
+ * wait is never long: a toast holds it while it shows, and an Undo line for
+ * its five seconds at most (`UNDO_MS`), counted even while its page is out of
+ * sight, unless Undo or the page closing ends it sooner.
  */
 export function Celebration() {
   const app = useApp();

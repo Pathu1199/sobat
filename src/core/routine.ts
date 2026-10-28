@@ -1,6 +1,6 @@
 import { addDays } from './date';
 import { MEAL_WINDOWS } from './nutrition';
-import { defaultPortion, foodName, toMealItem } from './foods';
+import { foodName } from './foods';
 import { tokenize } from './memory';
 import type { FoodItem, ISODate, Lang, Meal, MealItem, MealType } from './types';
 
@@ -256,47 +256,6 @@ export function slotLabel(slot: Pick<RoutineSlot, 'label_en' | 'label_mr' | 'lab
   return slot.label_en;
 }
 
-/** Plan lines as meal lines with real numbers. Foods that no longer exist are dropped. */
-export function planItems(lines: PlanLine[], foods: FoodItem[]): MealItem[] {
-  const out: MealItem[] = [];
-  for (const l of lines) {
-    const food = foods.find((f) => f.id === l.foodId);
-    if (!food) continue;
-    const portion = food.portions.find((p) => p.unit === l.unit) ?? defaultPortion(food);
-    out.push(toMealItem(food, (portion?.grams ?? 100) * l.qty));
-  }
-  return out;
-}
-
-/** What a slot logs: the chosen option, plus the day's bhaji where it belongs. */
-export function slotLines(routine: Routine, slot: RoutineSlot, optionIdx: number, bhajiId: string | null): PlanLine[] {
-  const option = slot.options[optionIdx] ?? slot.options[0] ?? [];
-  if (!slot.withBhaji || !bhajiId) return option;
-  return [{ foodId: bhajiId, unit: routine.bhajiUnit, qty: 1 }, ...option];
-}
-
-/** Every food that would count as having eaten this slot today. */
-function slotFoodIds(slot: RoutineSlot, bhaji: string[]): Set<string> {
-  const ids = new Set(slot.options.flat().map((l) => l.foodId));
-  if (slot.withBhaji) bhaji.forEach((b) => ids.add(b));
-  return ids;
-}
-
-/**
- * A slot is done once a meal of its type holds one of its foods. Matched on
- * the meal type too, so a chapati at dinner does not tick off lunch.
- */
-export function slotLogged(slot: RoutineSlot, bhaji: string[], meals: Meal[]): boolean {
-  const ids = slotFoodIds(slot, bhaji);
-  return meals.some((m) => m.type === slot.type && m.items.some((it) => !!it.foodId && ids.has(it.foodId)));
-}
-
-/** The day as planned, default options only. A rough figure for the card, not a target. */
-export function planKcal(routine: Routine, foods: FoodItem[], date: ISODate): number {
-  const bhaji = bhajiFor(routine, date)[0] ?? null;
-  return routine.slots.reduce((sum, s) => sum + planItems(slotLines(routine, s, 0, bhaji), foods).reduce((a, i) => a + i.kcal, 0), 0);
-}
-
 export type AvoidHit = { rule: AvoidRule; name: string; foodId?: string };
 
 function ruleMatches(rule: AvoidRule, item: Pick<MealItem, 'foodId' | 'name_en' | 'name_mr'>): boolean {
@@ -346,8 +305,12 @@ export function pruneSpend(logs: SpendLog[], today: ISODate, keepDays = 120): Sp
   return logs.filter((l) => addDays(l.date, Math.max(1, l.spreadDays)) > cutoff);
 }
 
-/** The routine in plain sentences, for the coach's context. */
-export function routineFacts(routine: Routine, foods: FoodItem[], date: ISODate, todayMeals: Meal[], spentToday: number): string[] {
+/**
+ * The routine in plain sentences, for the coach's context. Nothing of the food
+ * budget: no screen logs a spend any more, so "spent about ₹0 today" would
+ * mislead the coach. A budget set earlier stays stored as it was.
+ */
+export function routineFacts(routine: Routine, foods: FoodItem[], date: ISODate, todayMeals: Meal[]): string[] {
   const name = (id: string) => foods.find((f) => f.id === id)?.name_en ?? id;
   const facts: string[] = [];
   const bhaji = bhajiFor(routine, date);
@@ -373,7 +336,6 @@ export function routineFacts(routine: Routine, foods: FoodItem[], date: ISODate,
         '.',
     );
   }
-  if (routine.budgetMax > 0) facts.push(`Daily food budget ₹${routine.budgetMin} to ₹${routine.budgetMax}; spent about ₹${spentToday} today.`);
   const hits = avoidHits(todayMeals.flatMap((m) => m.items), routine.avoid);
   if (hits.length > 0) facts.push(`Eaten today despite the avoid list: ${hits.map((h) => h.name).join(', ')}. Be kind about it.`);
   return facts;

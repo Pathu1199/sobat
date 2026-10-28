@@ -9,13 +9,9 @@ import {
   hasBhajiWeek,
   lineLabel,
   NEUTRAL_ROUTINE,
-  planItems,
-  planKcal,
   pruneSpend,
   routineFacts,
   ruleForFood,
-  slotLines,
-  slotLogged,
   spentOn,
   toggleBhaji,
   weekdayOf,
@@ -72,12 +68,6 @@ describe('the default routine', () => {
     expect(bhajiFor(DEFAULT_ROUTINE, '2026-10-06')).toEqual(['palak-bhaji', 'methi-bhaji']);
     expect(bhajiFor(DEFAULT_ROUTINE, '2026-10-11')).toEqual([]);
   });
-
-  it('plans a day well under a weight-loss target', () => {
-    const kcal = planKcal(DEFAULT_ROUTINE, FOODS, MON);
-    expect(kcal).toBeGreaterThan(500);
-    expect(kcal).toBeLessThan(1500);
-  });
 });
 
 describe('slots on the clock', () => {
@@ -113,31 +103,6 @@ describe('toggleBhaji', () => {
     expect(week[0]).toEqual(['methi-bhaji']);
     // Other days are untouched.
     expect(week[1]).toEqual(DEFAULT_ROUTINE.week[1]);
-  });
-});
-
-describe('slots', () => {
-  const lunch = DEFAULT_ROUTINE.slots.find((s) => s.id === 'lunch')!;
-  const tea = DEFAULT_ROUTINE.slots.find((s) => s.id === 'tea')!;
-
-  it('puts the day’s bhaji in front of the chosen option', () => {
-    const lines = slotLines(DEFAULT_ROUTINE, lunch, 1, 'dudhi-bhaji');
-    expect(lines.map((l) => l.foodId)).toEqual(['dudhi-bhaji', 'moong-dal']);
-    expect(slotLines(DEFAULT_ROUTINE, tea, 0, 'dudhi-bhaji').map((l) => l.foodId)).toEqual(['black-tea']);
-  });
-
-  it('turns lines into real numbers from the database', () => {
-    const items = planItems([{ foodId: 'chapati', unit: 'piece', qty: 2 }], FOODS);
-    expect(items[0].grams).toBe(80);
-    expect(items[0].kcal).toBe(Math.round((297 * 80) / 100));
-    expect(planItems([{ foodId: 'gone', unit: 'x', qty: 1 }], FOODS)).toEqual([]);
-  });
-
-  it('counts a slot as done only from a meal of its own type', () => {
-    expect(slotLogged(lunch, ['dudhi-bhaji'], [meal('lunch', ['chapati'])])).toBe(true);
-    expect(slotLogged(lunch, ['dudhi-bhaji'], [meal('lunch', ['dudhi-bhaji'])])).toBe(true);
-    expect(slotLogged(lunch, ['dudhi-bhaji'], [meal('dinner', ['chapati'])])).toBe(false);
-    expect(slotLogged(tea, [], [meal('snack', ['chai-with-sugar'])])).toBe(false);
   });
 });
 
@@ -234,21 +199,21 @@ describe('lineLabel', () => {
 });
 
 describe('routineFacts', () => {
-  it('tells the coach the bhaji, the avoid list and the money', () => {
-    const facts = routineFacts({ ...DEFAULT_ROUTINE, enabled: true }, FOODS, MON, [meal('snack', ['cashews'], ['Cashews'])], 120).join('\n');
+  it('tells the coach the bhaji and the avoid list, and nothing of a food budget while spends cannot be logged', () => {
+    const facts = routineFacts({ ...DEFAULT_ROUTINE, enabled: true }, FOODS, MON, [meal('snack', ['cashews'], ['Cashews'])]).join('\n');
     expect(facts).toContain('Dudhi Bhaji');
     expect(facts).toContain('Cashews');
-    expect(facts).toContain('₹170');
-    expect(facts).toContain('₹120');
     expect(facts).toContain('Eaten today despite the avoid list: Cashews');
-    expect(facts).toContain('Daily food budget ₹170 to ₹200; spent about ₹120 today.');
     expect(facts).toContain('with the day’s bhaji');
+    // A budget is still stored (₹170 to ₹200 here), but nothing can be spent against it, so the coach is not told "spent about ₹0".
+    expect(facts.toLowerCase()).not.toContain('budget');
+    expect(facts).not.toContain('₹');
     // Where the person lives is theirs to say, not the app's.
     expect(facts).not.toContain('PG');
   });
 
   it('tells the coach nothing about a budget, a bhaji or a PG that the person never set', () => {
-    const facts = routineFacts(NEUTRAL_ROUTINE, FOODS, MON, [], 0).join('\n');
+    const facts = routineFacts(NEUTRAL_ROUTINE, FOODS, MON, []).join('\n');
     expect(facts).not.toContain('PG');
     expect(facts.toLowerCase()).not.toContain('budget');
     expect(facts.toLowerCase()).not.toContain('bhaji');
@@ -259,20 +224,18 @@ describe('routineFacts', () => {
     expect(facts).toContain('Routine Dinner: nothing fixed.');
   });
 
-  it('mentions the bhaji only when some day has one, and the budget only when there is one', () => {
+  it('mentions the bhaji only when some day has one', () => {
     const noWeek = { ...DEFAULT_ROUTINE, enabled: true, avoid: [], week: [[], [], [], [], [], [], []] };
-    const facts = routineFacts(noWeek, FOODS, MON, [], 50).join('\n');
+    const facts = routineFacts(noWeek, FOODS, MON, []).join('\n');
     expect(facts.toLowerCase()).not.toContain('bhaji');
     expect(facts).toContain('Routine Lunch: 2 piece Chapati');
-    expect(facts).toContain('budget ₹170 to ₹200');
     // A bhaji picked for today counts, even with nothing on the weekly plan.
-    const picked = routineFacts({ ...noWeek, overrides: { [MON]: ['palak-bhaji'] } }, FOODS, MON, [], 0).join('\n');
+    const picked = routineFacts({ ...noWeek, overrides: { [MON]: ['palak-bhaji'] } }, FOODS, MON, []).join('\n');
     expect(picked).toContain('the bhaji is Palak Bhaji');
     expect(picked).toContain('with the day’s bhaji');
     // Another day's bhaji on the week is enough to talk about today's lack of one.
-    const sunday = routineFacts({ ...DEFAULT_ROUTINE, enabled: true }, FOODS, '2026-10-11', [], 0).join('\n');
+    const sunday = routineFacts({ ...DEFAULT_ROUTINE, enabled: true }, FOODS, '2026-10-11', []).join('\n');
     expect(sunday).toContain('has no fixed bhaji');
-    expect(routineFacts({ ...DEFAULT_ROUTINE, enabled: true, budgetMin: 0, budgetMax: 0 }, FOODS, MON, [], 50).join('\n').toLowerCase()).not.toContain('budget');
   });
 });
 
@@ -300,9 +263,9 @@ describe('the neutral routine', () => {
   });
 
   it('tells the coach the pattern whatever switch an older build stored: the pattern is always on', () => {
-    const off = routineFacts({ ...DEFAULT_ROUTINE, enabled: false }, FOODS, MON, [], 0);
+    const off = routineFacts({ ...DEFAULT_ROUTINE, enabled: false }, FOODS, MON, []);
     expect(off.length).toBeGreaterThan(0);
-    expect(off).toEqual(routineFacts({ ...DEFAULT_ROUTINE, enabled: true }, FOODS, MON, [], 0));
+    expect(off).toEqual(routineFacts({ ...DEFAULT_ROUTINE, enabled: true }, FOODS, MON, []));
   });
 
   it('has no bhaji week until some day of the week has a bhaji', () => {

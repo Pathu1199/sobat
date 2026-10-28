@@ -20,7 +20,11 @@ function nameOf(id: string, foods: FoodItem[], lang: Lang): string {
   return f ? foodName(f, lang) : id;
 }
 
-/** Edit the routine: the walk, weekly bhaji, the meals, the avoid list and the budget. */
+/**
+ * Edit the routine: the walk, weekly bhaji, the meals and the avoid list. No
+ * food budget: no screen logs a spend any more, so a budget would have
+ * nothing to count against. One set earlier stays stored as it was.
+ */
 export default function RoutineScreen() {
   const app = useApp();
   const { foods } = app;
@@ -32,8 +36,6 @@ export default function RoutineScreen() {
   const [openDay, setOpenDay] = useState<number | null>(null);
   const [openSlot, setOpenSlot] = useState<string | null>(null);
   const [query, setQuery] = useState('');
-  const [minText, setMinText] = useState(String(routine.budgetMin));
-  const [maxText, setMaxText] = useState(String(routine.budgetMax));
 
   // Light vegetable dishes first: these are what the week is built from.
   const bhajiChoices = useMemo(
@@ -46,15 +48,6 @@ export default function RoutineScreen() {
 
   const avoidedIds = new Set(routine.avoid.flatMap((r) => r.foodIds));
   const results = query.trim() ? searchFoods(foods, query, 8).filter((f) => !avoidedIds.has(f.id)) : [];
-
-  function commitBudget(minS: string, maxS: string) {
-    const min = parseInt(minS, 10);
-    const max = parseInt(maxS, 10);
-    // Only a sensible pair is saved; half-typed numbers just wait. 0 to 0 is no budget at all.
-    if (Number.isFinite(min) && Number.isFinite(max) && min >= 0 && max >= min && max < 100000) {
-      app.setRoutine({ budgetMin: min, budgetMax: max });
-    }
-  }
 
   return (
     <Screen>
@@ -179,33 +172,6 @@ export default function RoutineScreen() {
               trailing={<Ionicons name="add" size={17} color={C.amber} />}
             />
           ))}
-        </Card>
-      </View>
-
-      <View style={{ gap: 10 }}>
-        <SectionHeader title={t('routine_budget_range')} />
-        <Card>
-          <Row style={{ gap: 12 }}>
-            <Field
-              label={t('time_from')}
-              value={minText}
-              keyboardType="numeric"
-              onChangeText={(v) => {
-                setMinText(v);
-                commitBudget(v, maxText);
-              }}
-            />
-            <Field
-              label={t('time_to')}
-              value={maxText}
-              keyboardType="numeric"
-              onChangeText={(v) => {
-                setMaxText(v);
-                commitBudget(minText, v);
-              }}
-            />
-          </Row>
-          <Small color={C.textFaint}>{t('routine_spend_hint')}</Small>
         </Card>
       </View>
     </Screen>

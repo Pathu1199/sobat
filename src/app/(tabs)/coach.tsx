@@ -241,7 +241,6 @@ export default function CoachScreen() {
           app.foods,
           app.today,
           app.state.meals.filter((m) => m.date === app.today),
-          app.spentToday,
         ),
       );
       const intake = intakeFact(lowIntake({ meals: app.state.meals, today: app.today, target: app.targets.kcal, floor: KCAL_FLOOR[app.state.profile.sex], offDays: app.state.settings.offDays ?? [], recordOn }));
