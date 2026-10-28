@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adviceToSay, coachAdvice, type Advice, type CoachInput } from '../coach';
+import { adviceToSay, coachAdvice, MEAL_TIME_ADVICE, type Advice, type CoachInput } from '../coach';
 import { expectedWaterByHour } from '../nudge';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, type Routine } from '../routine';
 import type { Budget } from '../nutrition';
@@ -206,7 +206,7 @@ describe('adviceToSay', () => {
   const urgent: Advice = { key: 'coach_water', kind: 'water', urgency: 'now', action: 'water', params: { bottles: 2 } };
   const soon: Advice = { key: 'coach_meal_plate', kind: 'food', urgency: 'soon', action: 'log', params: {} };
   const said = new Set<string>();
-  const here = { known: true, active: true, nudgesEnabled: true, mealPrompt: true, hour: 13, quietStartHour: 22, quietEndHour: 7 };
+  const here = { known: true, active: true, nudgesEnabled: true, hour: 13, quietStartHour: 22, quietEndHour: 7 };
 
   it('says the first urgent advice to the person who is here', () => {
     expect(adviceToSay({ ...here, advice: [soon, urgent], said })).toBe(urgent);
@@ -225,13 +225,26 @@ describe('adviceToSay', () => {
     expect(adviceToSay({ ...here, hour: 23, advice: [urgent], said })).toBeNull();
   });
 
-  it('says no meal-time advice while the meal-time prompt is off, and the rest as before', () => {
+  it('says no call to eat at a meal\'s time, the meal-time prompt off or on: off, the person turned those calls off; on, the prompt already asked; the rest as before', () => {
     const due: Advice = { key: 'coach_meal_due', kind: 'food', urgency: 'now', action: 'log', params: { meal: 'lunch', kcal: 500 } };
     const plate: Advice = { ...due, key: 'coach_meal_plate', action: 'plan' };
     const late: Advice = { key: 'coach_late_dinner', kind: 'food', urgency: 'now', action: 'log', params: { slot: 'dinner', kcal: 400 } };
-    expect(adviceToSay({ ...here, mealPrompt: false, advice: [due, plate, late], said })).toBeNull();
-    expect(adviceToSay({ ...here, mealPrompt: false, advice: [late, urgent], said })).toBe(urgent);
-    expect(adviceToSay({ ...here, mealPrompt: true, advice: [late, urgent], said })).toBe(late);
+    expect(adviceToSay({ ...here, advice: [due, plate, late], said })).toBeNull();
+    expect(adviceToSay({ ...here, advice: [late, urgent], said })).toBe(urgent);
+    expect(adviceToSay({ ...here, advice: [due, plate, urgent], said })).toBe(urgent);
+  });
+
+  it('one ping per meal: the meal-time prompt asks, the coach sends nothing more, and the line on Today still names the meal that is on', () => {
+    // Lunch at 13:00, nothing in it at 14:30: its grace has passed.
+    const advice = coachAdvice({ ...base, ...clock(14, 30), plannedKcal: { lunch: 640 } });
+    // The line on Today shows the first advice, the call to eat.
+    expect(advice[0]).toMatchObject({ key: 'coach_meal_due', urgency: 'now', action: 'log' });
+    const said = adviceToSay({ ...here, advice, said: new Set() });
+    expect(MEAL_TIME_ADVICE).not.toContain(said?.key);
+    // A late dinner too.
+    const late = coachAdvice({ ...base, ...clock(21, 30), settledSlotIds: ['breakfast', 'lunch', 'snack'], budget: budget(1000), nextPlate: null, plannedKcal: { dinner: 520 } });
+    expect(late.map((x) => x.key)).toContain('coach_late_dinner');
+    expect(MEAL_TIME_ADVICE).not.toContain(adviceToSay({ ...here, hour: 21, advice: late, said: new Set() })?.key);
   });
 
   it('never says the same thing twice, and never advice with nothing to do', () => {

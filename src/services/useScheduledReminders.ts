@@ -9,6 +9,7 @@ import {
   lastLogDate,
   MORNING_HOUR,
   officeReminders,
+  opList,
   pendingFit,
   PLANNED_PREFIX,
   plannedReminders,
@@ -63,8 +64,10 @@ async function apply(op: ReminderOp): Promise<void> {
  * planned ones, the office day and the daily ones in one run, every cancel
  * before any add, so the pending count never passes the phone's cap on the
  * way. Each step is tried on its own, so one the OS refuses never stops the
- * rest (the meal-time prompts above all); a list with a refused step is tried
- * again whole on the next run.
+ * rest (the meal-time prompts above all); a list with a refused step, an add
+ * or a cancel (`opList` says whose), is tried again whole on the next run. The
+ * planned list is matched against what the phone holds on every run, so a
+ * planned cancel refused is tried again anyway.
  */
 function reconcile(): void {
   chain = chain
@@ -77,18 +80,16 @@ function reconcile(): void {
       if (!daily && !office && !planned) return;
       if (daily || office) await setupAndroidChannel();
       const ops = reminderOps({ have: await scheduledIds(), planned, daily, office, nowMs: Date.now() });
-      let dailyOk = true;
-      let officeOk = true;
+      const refused = new Set<ReturnType<typeof opList>>();
       for (const op of ops) {
         try {
           await apply(op);
         } catch {
-          if (op.kind === 'daily') dailyOk = false;
-          if (op.kind === 'weekly') officeOk = false;
+          refused.add(opList(op));
         }
       }
-      if (daily && dailyOk) dailyHeld = dailyJson;
-      if (office && officeOk) officeHeld = officeJson;
+      if (daily && !refused.has('daily')) dailyHeld = dailyJson;
+      if (office && !refused.has('office')) officeHeld = officeJson;
     })
     .catch(() => {
       // Permission refused or the OS declined. The app still works, and the next run tries the lists again.

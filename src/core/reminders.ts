@@ -550,6 +550,23 @@ export function reminderOps(input: {
   return [...[...cancels].map((id): ReminderOp => ({ kind: 'cancel', id })), ...adds];
 }
 
+/**
+ * The list a step to the phone belongs to: an add by its kind, a cancel by its
+ * id (the office day's ids, old and new; the planned ones; else the daily ones
+ * and the long breaks, the only other ids `reminderOps` cancels). A refused
+ * step marks its own list to be tried again whole on the next run, a refused
+ * cancel too, so a reminder the phone still holds is cancelled in the end.
+ * Pure.
+ */
+export function opList(op: ReminderOp): 'planned' | 'office' | 'daily' {
+  if (op.kind === 'at') return 'planned';
+  if (op.kind === 'weekly') return 'office';
+  if (op.kind === 'daily') return 'daily';
+  if (op.id.startsWith(OFFICE_PREFIX)) return 'office';
+  if (op.id.startsWith(PLANNED_PREFIX)) return 'planned';
+  return 'daily';
+}
+
 /** The daily reminders this device should hold. Anything registered and not in here is to be cancelled. */
 export function dailyReminders(input: DailyInput): DailyReminder[] {
   if (!input.active) return [];

@@ -159,15 +159,21 @@ export function coachAdvice(input: CoachInput): Advice[] {
   return out.sort((a, c) => ORDER[a.urgency] - ORDER[c.urgency]);
 }
 
-/** The advice that calls a meal at its time: said out loud only while the meal-time prompt is on, as that switch speaks for it. */
+/**
+ * The advice that calls a meal at its time. The coach never says it out loud,
+ * whichever way the meal-time prompt is switched: while it is on, the prompt
+ * itself asks at the slot's time, so the person hears once per meal; while it
+ * is off, the person switched those calls off. The line on Today still shows
+ * it.
+ */
 export const MEAL_TIME_ADVICE: readonly string[] = ['coach_meal_due', 'coach_meal_plate', 'coach_late_dinner'];
 
 /**
  * The one piece of advice the coach says out loud now, or null. Only to the
  * person using Sobat here: never on a device that is signed out or reset, or
  * whose store and session are not known yet, never with nudges off or in quiet
- * hours, never a call to eat at a meal's time while the meal-time prompt is
- * off, and never anything already said today (`said`) or with nothing to do.
+ * hours, never a call to eat at a meal's time (`MEAL_TIME_ADVICE`), and never
+ * anything already said today (`said`) or with nothing to do.
  */
 export function adviceToSay(p: {
   advice: Advice[];
@@ -175,13 +181,11 @@ export function adviceToSay(p: {
   known: boolean;
   active: boolean;
   nudgesEnabled: boolean;
-  /** `settings.reminders.mealPrompt`. */
-  mealPrompt: boolean;
   hour: number;
   quietStartHour: number;
   quietEndHour: number;
 }): Advice | null {
   if (!p.known || !p.active || !p.nudgesEnabled) return null;
   if (inQuietHours(p.hour, p.quietStartHour, p.quietEndHour)) return null;
-  return p.advice.find((a) => a.urgency === 'now' && a.action !== 'none' && !p.said.has(a.key) && (p.mealPrompt || !MEAL_TIME_ADVICE.includes(a.key))) ?? null;
+  return p.advice.find((a) => a.urgency === 'now' && a.action !== 'none' && !p.said.has(a.key) && !MEAL_TIME_ADVICE.includes(a.key)) ?? null;
 }

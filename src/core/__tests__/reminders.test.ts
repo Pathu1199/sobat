@@ -13,6 +13,7 @@ import {
   missedDays,
   OFFICE_PREFIX,
   officeReminders,
+  opList,
   PENDING_LIMIT,
   pendingFit,
   plannedReminders,
@@ -851,6 +852,40 @@ describe('reminderOps: the office day joins the one run', () => {
     expect(pendingFit(20, 30)).toEqual({ planned: 20, office: 30, daily: 14 });
     expect(pendingFit(20, 50)).toEqual({ planned: 20, office: 44, daily: 0 });
     expect(pendingFit(70, 6)).toEqual({ planned: 64, office: 0, daily: 0 });
+  });
+});
+
+describe('opList: the list a step to the phone belongs to, so a refused step has its own list tried again', () => {
+  const NOW = new Date('2026-10-12T12:00:00').getTime();
+  const at = { osId: 'sobat-r-slot', reminder: { id: 'slot', date: '2026-10-13', time: '13:00', title: '', body: '', data: { kind: 'slot' } } };
+  const daily = { id: 'sobat-water', hour: 15, minute: 0, title: '', body: '', data: { kind: 'water' as const } };
+  const weekly = { id: 'sobat-sched-start@2', weekday: 2, hour: 9, minute: 0, title: '', body: '' };
+
+  it('reads a cancel by its id: the office day\'s ids old and new, the daily ones and the long breaks, the planned ones', () => {
+    const cancel = (id: string) => opList({ kind: 'cancel', id });
+    expect(cancel('sobat-sched-start@2')).toBe('office');
+    // The daily one an older build registered for a block.
+    expect(cancel('sobat-sched-start')).toBe('office');
+    for (const id of Object.values(DAILY_IDS)) expect(cancel(id)).toBe('daily');
+    expect(cancel(LONG_BREAK_ID)).toBe('daily');
+    expect(cancel(`${LONG_BREAK_ID}-3`)).toBe('daily');
+    expect(cancel('sobat-r-slot@abc')).toBe('planned');
+  });
+
+  it('reads an add by its kind', () => {
+    expect(opList({ kind: 'at', id: at.osId, reminder: at.reminder })).toBe('planned');
+    expect(opList({ kind: 'weekly', reminder: weekly })).toBe('office');
+    expect(opList({ kind: 'daily', reminder: daily })).toBe('daily');
+  });
+
+  it('puts every step of a run under the list that asked for it', () => {
+    const have = ['sobat-r-old', 'sobat-sched-lunch@3', 'sobat-sched-start', 'sobat-water', `${LONG_BREAK_ID}-3`];
+    const lists = (input: Partial<Parameters<typeof reminderOps>[0]>) => [...new Set(reminderOps({ have, planned: null, daily: null, office: null, nowMs: NOW, ...input }).map(opList))];
+    expect(lists({ planned: [at] })).toEqual(['planned']);
+    expect(lists({ office: [weekly] })).toEqual(['office']);
+    expect(lists({ daily: [daily] })).toEqual(['daily']);
+    expect(lists({ office: [] })).toEqual(['office']);
+    expect(lists({ daily: [] })).toEqual(['daily']);
   });
 });
 

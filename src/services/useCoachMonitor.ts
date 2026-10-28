@@ -15,7 +15,9 @@ import { useMinute } from './useWorkSchedule';
  * any advice that is urgent now is said once, as a toast and a notification.
  * Never in quiet hours, never twice for the same thing on the same day, and
  * never in the first minute after opening, when the screen already shows it.
- * A call to eat at a meal's time only while the meal-time prompt is on.
+ * Never a call to eat at a meal's time (`MEAL_TIME_ADVICE`): with the
+ * meal-time prompt on, the prompt already asked, so one meal is one ping; the
+ * line on Today still shows it.
  * Silent on a device that is signed out or reset: signing in counts as opening.
  * With the nudges off it does nothing at all, not even read the day, and
  * switching them on counts as opening too.
@@ -24,7 +26,7 @@ export function useCoachMonitor() {
   const app = useApp();
   const fb = useFeedback();
   const minute = useMinute();
-  const { quietStartHour, quietEndHour, nudgesEnabled, reminders } = app.state.settings;
+  const { quietStartHour, quietEndHour, nudgesEnabled } = app.state.settings;
   const { known, active } = useReminderGate();
   const on = known && active && nudgesEnabled;
   const advice = useCoach(minute, on);
@@ -42,7 +44,7 @@ export function useCoachMonitor() {
       return;
     }
     if (said.current.date !== app.today) said.current = { date: app.today, keys: new Set() };
-    const a = adviceToSay({ advice, said: said.current.keys, known, active, nudgesEnabled, mealPrompt: reminders.mealPrompt, hour: app.hour, quietStartHour, quietEndHour });
+    const a = adviceToSay({ advice, said: said.current.keys, known, active, nudgesEnabled, hour: app.hour, quietStartHour, quietEndHour });
     if (!a) return;
     said.current.keys.add(a.key);
     const kind: StoryKind = a.kind === 'water' ? 'water' : a.kind === 'stop' ? 'stop' : a.kind === 'move' ? 'walk' : a.kind === 'sleep' ? 'sleep' : a.kind === 'weigh' ? 'weigh' : a.kind === 'log' ? 'log' : 'meal';
