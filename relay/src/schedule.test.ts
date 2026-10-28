@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dueAt, dueBetween, localTime, type PushSchedule } from './schedule';
+import { afterRun, dueAt, dueBetween, localTime, type PushSchedule } from './schedule';
 
 const S: PushSchedule = {
   v: 1,
@@ -65,5 +65,21 @@ describe('dueBetween', () => {
     const stalled = dueBetween(S, at('09:00'), at('10:00'));
     expect(stalled.length).toBeLessThanOrEqual(3);
     expect(stalled.every((r) => Number(r.key.split('-').pop()) >= 590)).toBe(true);
+  });
+});
+
+describe('afterRun', () => {
+  it('writes the entry only when something was sent, and drops a gone address', () => {
+    expect(afterRun(0, false)).toBe('leave');
+    expect(afterRun(2, false)).toBe('save');
+    expect(afterRun(1, true)).toBe('delete');
+    expect(afterRun(0, true)).toBe('delete');
+  });
+
+  it('leaves nothing behind when a run is skipped: the next run still finds what fell due since', () => {
+    // A run at 13:40 found nothing and wrote nothing, so lastRunMs is still 13:35; the 13:45 run looks back to it.
+    const at = (hhmm: string) => Date.parse(`2026-10-28T${hhmm}:00+05:30`);
+    expect(dueBetween(S, at('13:40'), at('13:44'))).toEqual([]);
+    expect(dueBetween(S, at('13:35'), at('13:45')).map((r) => r.title)).toContain('Lunch?');
   });
 });

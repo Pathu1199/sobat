@@ -1,7 +1,7 @@
 import { buildPushPayload, type PushSubscription, type VapidKeys } from '@block65/webcrypto-web-push';
 import { makeVerifier, type Verify } from './auth';
 import { handleData, type DataEnv } from './data';
-import { dueBetween, type PushSchedule } from './schedule';
+import { afterRun, dueBetween, type PushSchedule } from './schedule';
 
 /**
  * Sobat's relay: one Worker, two jobs.
@@ -179,8 +179,9 @@ export default {
               const res = await send(env, rec.sub, r.title, r.body, r.url, r.key);
               if (res === 'gone') gone = true;
             }
-            if (gone) await env.SUBS.delete(name);
-            else await env.SUBS.put(name, JSON.stringify({ ...rec, lastRunMs: now }), { expirationTtl: 60 * 86400 });
+            const next = afterRun(due.length, gone);
+            if (next === 'delete') await env.SUBS.delete(name);
+            else if (next === 'save') await env.SUBS.put(name, JSON.stringify({ ...rec, lastRunMs: now }), { expirationTtl: 60 * 86400 });
           })(),
         );
       }

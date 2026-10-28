@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { handleData, type DataEnv, type UserMeta } from './data';
+import { handleData, LAST_SEEN_STEP_MS, type DataEnv, type UserMeta } from './data';
 
 /** Enough of KV for the routes: get/put/delete/list with a prefix. */
 function fakeKV(): KVNamespace & { store: Map<string, string> } {
@@ -292,5 +292,46 @@ describe('the admin', () => {
     await handleData(req('PUT', '/data', 'tok-admin', { state: state(1), baseModifiedTime: null }), env, '/data');
     expect((await handleData(req('PATCH', '/admin/users/ADM', 'tok-admin', { disabled: true }), env, '/admin/users/ADM'))!.status).toBe(400);
     expect((await handleData(req('DELETE', '/admin/users/ADM', 'tok-admin'), env, '/admin/users/ADM'))!.status).toBe(400);
+  });
+});
+
+describe('the directory is written sparingly', () => {
+  /** Counts the writes of one person's directory entry; KV allows few writes a day on the free plan. */
+  function countEntryWrites(env: ReturnType<typeof makeEnv>, uid: string) {
+    let writes = 0;
+    const put = env.kv.put.bind(env.kv);
+    env.kv.put = (async (key: string, value: string) => {
+      if (key === `user:${uid}`) writes++;
+      return put(key, value);
+    }) as typeof env.kv.put;
+    return () => writes;
+  }
+
+  it('writes the entry once for reads in a row, again when the file changes', async () => {
+    const env = makeEnv();
+    const writes = countEntryWrites(env, 'A');
+    await handleData(req('GET', '/data', 'tok-a'), env, '/data');
+    await handleData(req('GET', '/data', 'tok-a'), env, '/data');
+    await handleData(req('GET', '/data', 'tok-a'), env, '/data');
+    expect(writes()).toBe(1);
+    await handleData(req('PUT', '/data', 'tok-a', { state: state(2), baseModifiedTime: null }), env, '/data');
+    expect(writes()).toBe(2);
+    await handleData(req('GET', '/data', 'tok-a'), env, '/data');
+    expect(writes()).toBe(2);
+  });
+
+  it('moves "last seen" on once it is more than six hours old', async () => {
+    let t = 1_700_000_000_000;
+    const env = makeEnv(fakeDrive(), { now: () => t });
+    const writes = countEntryWrites(env, 'A');
+    await handleData(req('GET', '/data', 'tok-a'), env, '/data');
+    t += LAST_SEEN_STEP_MS - 1000;
+    await handleData(req('GET', '/data', 'tok-a'), env, '/data');
+    expect(writes()).toBe(1);
+    t += 2000;
+    await handleData(req('GET', '/data', 'tok-a'), env, '/data');
+    expect(writes()).toBe(2);
+    const entry = JSON.parse(env.kv.store.get('user:A')!) as UserMeta;
+    expect(entry.lastSeen).toBe(new Date(t).toISOString());
   });
 });

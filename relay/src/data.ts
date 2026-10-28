@@ -47,6 +47,13 @@ export type DataEnv = {
 const TOKEN_KEY = '_drive_token';
 const FOLDER_KEY = '_drive_folder';
 const USER_PREFIX = 'user:';
+/**
+ * How old "last seen" may get before a plain read writes the entry again.
+ * KV allows few writes a day on the free plan, and every sync reads the file,
+ * so the directory is written when something in it changes, and otherwise at
+ * most every six hours.
+ */
+export const LAST_SEEN_STEP_MS = 6 * 60 * 60 * 1000;
 
 function json(body: unknown, status = 200, headers: HeadersInit = {}): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } });
@@ -82,10 +89,20 @@ async function writeMeta(env: DataEnv, meta: UserMeta): Promise<void> {
   await env.users.put(USER_PREFIX + meta.uid, JSON.stringify(meta));
 }
 
-/** Touch the directory entry for this person: who they are, when they were last here, how big the file is. */
+/** The fields of an entry that say something besides "last seen". */
+function sameEntry(a: UserMeta, b: UserMeta): boolean {
+  return a.email === b.email && a.name === b.name && a.platform === b.platform && a.bytes === b.bytes && a.modifiedTime === b.modifiedTime && a.disabled === b.disabled;
+}
+
+/**
+ * Touch the directory entry for this person: who they are, when they were
+ * last here, how big the file is. Written only when one of those changed, or
+ * when "last seen" is more than LAST_SEEN_STEP_MS old.
+ */
 async function touch(env: DataEnv, id: Identity, extra: Partial<UserMeta>, file: DriveFile | null): Promise<UserMeta> {
   const prev = await readMeta(env, id.uid);
-  const nowIso = new Date(env.now()).toISOString();
+  const now = env.now();
+  const nowIso = new Date(now).toISOString();
   const meta: UserMeta = {
     uid: id.uid,
     email: id.email,
@@ -97,6 +114,7 @@ async function touch(env: DataEnv, id: Identity, extra: Partial<UserMeta>, file:
     bytes: file?.size !== undefined ? Number(file.size) : prev?.bytes,
     modifiedTime: file?.modifiedTime ?? prev?.modifiedTime,
   };
+  if (prev && sameEntry(prev, meta) && now - Date.parse(prev.lastSeen) < LAST_SEEN_STEP_MS) return prev;
   await writeMeta(env, meta);
   return meta;
 }
