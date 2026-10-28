@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { AddSheetProvider } from '../components/AddSheet';
 import { DayMenu } from '../components/DayMenu';
 import { FoodThumb } from '../components/FoodDetailSheet';
 import { GrocerySheet } from '../components/GrocerySheet';
+import { toTabs } from '../components/toTabs';
 import { IconButton } from '../ui/IconButton';
 import { amountText, formatQty } from '../core/basket';
 import { addDays, formatDayLabel, formatDayMonth, isIsoDate, mondayOf } from '../core/date';
@@ -24,11 +25,16 @@ import { Btn, Card, Divider, Micro, Row, Screen, Small, Toggle } from '../ui/com
 import { Sheet } from '../ui/Sheet';
 import { C, F, lh, S } from '../ui/theme';
 
-/** `/plan` is a page of its own, outside the tabs, so it brings the add sheet that the day's menu opens; inside the tabs this one is simply the nearer. */
-export default function PlanScreen() {
+/**
+ * `/plan` is a page of its own, outside the tabs, so it brings the add sheet
+ * that the day's menu opens; inside the tabs this one is simply the nearer.
+ * The Food tab and the Plan tab render it with `inTab`, so its links to the
+ * tabs know where they start from (`toTabs`).
+ */
+export default function PlanScreen({ inTab = false }: { inTab?: boolean }) {
   return (
     <AddSheetProvider>
-      <PlanWeek />
+      <PlanWeek inTab={inTab} />
     </AddSheetProvider>
   );
 }
@@ -44,10 +50,9 @@ export default function PlanScreen() {
  * a date before today. "Looks good, save week" only marks the week as looked
  * over: the menus are stored as they are edited.
  */
-function PlanWeek() {
+function PlanWeek({ inTab }: { inTab: boolean }) {
   const app = useApp();
   const fb = useFeedback();
-  const router = useRouter();
   const { state, targets, today } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
@@ -209,7 +214,7 @@ function PlanWeek() {
               </View>
             ))}
             <Text style={small}>{t('planweek_past_note')}</Text>
-            <Btn small tone="soft" label={t('planweek_open_today')} onPress={() => router.navigate({ pathname: '/', params: { date: day.date } })} />
+            <Btn small tone="soft" label={t('planweek_open_today')} onPress={() => toTabs({ pathname: '/', params: { date: day.date } }, inTab)} />
           </Card>
         ) : (
           <View style={{ gap: S.gap }}>
@@ -248,7 +253,7 @@ function PlanWeek() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={C.textFaint} />
         </Pressable>
-        <Pressable onPress={() => router.navigate('/food?s=routine')} accessibilityRole="button" accessibilityLabel={t('plan_follows_pattern')} style={{ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start' }}>
+        <Pressable onPress={() => toTabs('/food?s=routine', inTab)} accessibilityRole="button" accessibilityLabel={t('plan_follows_pattern')} style={{ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start' }}>
           <Micro color={C.accentText}>{`${t('plan_follows_pattern')} ›`}</Micro>
         </Pressable>
       </View>

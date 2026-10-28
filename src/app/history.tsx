@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { toTabs } from '../components/toTabs';
 import { addDays, formatDayLabel, lastNDates } from '../core/date';
 import { historyHref } from '../core/logLink';
 import { sumTotals } from '../core/nutrition';
@@ -17,10 +17,11 @@ type Span = 14 | 30 | 90;
  * Every day's calories, newest first: what was eaten against the target,
  * with protein, water and the meal count. A day with meals opens on Today,
  * where it is read and put right; an empty day opens the add sheet for it.
+ * The Food tab renders it with `inTab`; on its own page (from Progress) the
+ * link goes back down to the tabs under it (`toTabs`).
  */
-export default function History() {
+export default function History({ inTab = false }: { inTab?: boolean }) {
   const app = useApp();
-  const router = useRouter();
   const { state, today, targets } = app;
   const lang = state.profile.lang;
   const t = makeT(lang);
@@ -61,7 +62,7 @@ export default function History() {
         return (
           <Pressable
             key={d.date}
-            onPress={() => router.navigate(historyHref(d.date, today, d.meals))}
+            onPress={() => toTabs(historyHref(d.date, today, d.meals), inTab)}
             accessibilityRole="button"
             accessibilityHint={d.meals > 0 ? t('progress_day_hint') : undefined}
             style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}>

@@ -13,7 +13,7 @@ export default function PlanTab() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <TopBar title={t('hdr_plan')} />
-      <PlanScreen />
+      <PlanScreen inTab />
     </View>
   );
 }
