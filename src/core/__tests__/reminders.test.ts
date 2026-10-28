@@ -8,7 +8,6 @@ import {
   DAILY_IDS,
   LONG_BREAK_ID,
   dailyReminders,
-  daysAway,
   lastLogDate,
   missedDays,
   OFFICE_PREFIX,
@@ -556,17 +555,12 @@ describe('days away', () => {
     expect(daysBetween('2026-10-01', '2026-10-04')).toBe(3);
     expect(lastLogDate([meal('2026-10-03'), meal('2026-10-01')], '2026-10-12')).toBe('2026-10-03');
     expect(lastLogDate([meal('2026-10-20')], '2026-10-12')).toBeNull();
-    expect(daysAway([meal('2026-10-09')], '2026-10-12')).toBe(3);
-    expect(daysAway([meal('2026-10-12')], '2026-10-12')).toBe(0);
-    expect(daysAway([], '2026-10-12')).toBe(0);
   });
 
   it('leaves off days out of the count, so an off Sunday is not a day away on Monday', () => {
     expect(missedDays('2026-10-10', '2026-10-12', [0])).toBe(1);
     expect(missedDays('2026-10-10', '2026-10-12', [])).toBe(2);
     expect(missedDays('2026-10-12', '2026-10-12', [])).toBe(0);
-    expect(daysAway([meal('2026-10-10')], '2026-10-12', [0])).toBe(1);
-    expect(daysAway([meal('2026-10-10')], '2026-10-12', [])).toBe(2);
   });
 });
 

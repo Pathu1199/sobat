@@ -4,8 +4,7 @@ import { groceryDates, groceryHalfLabel, groceryList, groceryThisWeek, groceryWe
 import { mondayOf } from '../date';
 import { makeT } from '../../i18n';
 import { DEFAULT_ROUTINE } from '../routine';
-import { dayTiming, fmtDuration } from '../timing';
-import type { FoodItem, Meal } from '../types';
+import type { FoodItem } from '../types';
 import { buildWeekPlan } from '../weekPlan';
 
 const foods = foodsJson as FoodItem[];
@@ -73,22 +72,6 @@ describe('groceryList', () => {
     expect(half('2026-10-19', '2026-10-28')).toBe('');
     expect(groceryHalfLabel(groceryDates('2026-11-02', '2026-10-31', 'half'), '2026-10-31', makeT('mr'))).toBe('सोम ते गुरु');
     expect(groceryHalfLabel(groceryDates('2026-10-26', '2026-10-28', 'half'), '2026-10-28', makeT('hi'))).toBe('अगले 4 दिन');
-  });
-});
-
-describe('dayTiming', () => {
-  const m = (at: string): Meal => ({ id: at, at: `2026-10-10T${at}:00`, date: '2026-10-10', type: 'lunch', items: [], kcal: 300, protein: 10 });
-  it('reads the window, the longest gap and a late dinner', () => {
-    const t = dayTiming([m('08:30'), m('13:00'), m('16:00'), m('21:30')], '2026-10-10');
-    expect(t.first).toBe('08:30');
-    expect(t.last).toBe('21:30');
-    expect(t.windowMinutes).toBe(13 * 60);
-    expect(t.longestGapMinutes).toBe(330);
-    expect(t.lateDinner).toBe(true);
-    expect(t.verdict).toBe('both');
-    expect(dayTiming([m('08:30'), m('13:00'), m('20:00')], '2026-10-10').verdict).toBe('good');
-    expect(dayTiming([], '2026-10-10').verdict).toBe('none');
-    expect(fmtDuration(330)).toBe('5 h 30 m');
   });
 });
 

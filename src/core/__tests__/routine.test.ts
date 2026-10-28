@@ -19,7 +19,6 @@ import {
   spentOn,
   toggleBhaji,
   weekdayOf,
-  setBhajiOverride,
   slotStatus,
   slotTime,
   slotsDueBetween,
@@ -78,16 +77,6 @@ describe('the default routine', () => {
     const kcal = planKcal(DEFAULT_ROUTINE, FOODS, MON);
     expect(kcal).toBeGreaterThan(500);
     expect(kcal).toBeLessThan(1500);
-  });
-});
-
-describe('setBhajiOverride', () => {
-  it('puts a day\'s own pick ahead of the week and forgets old picks', () => {
-    const r = { ...DEFAULT_ROUTINE, overrides: { '2026-09-01': ['mixed-veg'] } };
-    const next = { ...r, ...setBhajiOverride(r, '2026-10-07', ['shepu-bhaji'], MON) };
-    expect(bhajiFor(next, '2026-10-07')).toEqual(['shepu-bhaji']);
-    expect(bhajiFor(next, '2026-10-06')).toEqual(['palak-bhaji', 'methi-bhaji']);
-    expect(next.overrides?.['2026-09-01']).toBeUndefined();
   });
 });
 

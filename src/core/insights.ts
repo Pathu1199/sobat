@@ -16,8 +16,6 @@ export type DayScore = {
   total: number;
 };
 
-export type LeverKey = 'eating' | 'movement' | 'water' | 'sleep' | 'mood';
-
 /** Movement is only judged once the evening window opens, unless it already happened. */
 const MOVEMENT_JUDGED_FROM_HOUR = 18;
 
@@ -88,21 +86,6 @@ export function scoreDay(input: {
   const known = [eating, movement, water, sleep, mood].filter((n): n is number => n !== null);
   const total = known.length > 0 ? clamp100(known.reduce((a, b) => a + b, 0) / known.length) : 0;
   return { date: input.date, eating, movement, water, sleep, mood, total };
-}
-
-/** The one known metric doing the most damage, or null when nothing is below 60. */
-export function biggestLever(score: DayScore): LeverKey | null {
-  const keys: LeverKey[] = ['eating', 'movement', 'water', 'sleep', 'mood'];
-  let worst: LeverKey | null = null;
-  let worstValue = 60;
-  for (const k of keys) {
-    const v = score[k];
-    if (v !== null && v < worstValue) {
-      worst = k;
-      worstValue = v;
-    }
-  }
-  return worst;
 }
 
 /** Consecutive days ending today that pass the test. */

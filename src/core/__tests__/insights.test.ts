@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { biggestLever, breakStreak, findPatterns, scoreDay, streak, weightTrend } from '../insights';
+import { breakStreak, findPatterns, scoreDay, streak, weightTrend } from '../insights';
 import { lastNDates } from '../date';
 import { DAY_ENDS_AT_HOUR, expectedWaterByHour } from '../nudge';
 import { pattern } from '../pattern';
@@ -308,34 +308,6 @@ describe('findPatterns', () => {
 
   it('finds nothing in an empty log', () => {
     expect(findPatterns({ meals: [], sleep: [], moods: [], workouts: [], kcalTarget: 1800 })).toHaveLength(0);
-  });
-});
-
-describe('biggestLever', () => {
-  it('names the lowest known metric when it is dragging', () => {
-    const s = scoreDay({ date: '2026-09-25', kcal: 1800, kcalTarget: 1800, waterMl: 600, waterGoalMl: 3000, workedOut: true, workoutMinutes: 40, sleepScore: 80, moodScore: 4 });
-    expect(biggestLever(s)).toBe('water');
-  });
-
-  it('ignores metrics that are not known yet', () => {
-    const s = scoreDay({ date: '2026-09-25', kcal: 450, kcalTarget: 1800, waterMl: 700, waterGoalMl: 3000, workedOut: false, workoutMinutes: 0, minutes: 11 * 60, expectedWaterMl: 857 });
-    // Movement is null at 11am; nothing else is below 60.
-    expect(biggestLever(s)).toBeNull();
-  });
-
-  it('returns null when everything is fine', () => {
-    const s = scoreDay({ date: '2026-09-25', kcal: 1800, kcalTarget: 1800, waterMl: 3000, waterGoalMl: 3000, workedOut: true, workoutMinutes: 40, sleepScore: 90, moodScore: 5 });
-    expect(biggestLever(s)).toBeNull();
-  });
-
-  it('picks the true minimum when several metrics are low, and the earlier key on a tie', () => {
-    const base = { date: '2026-09-25', kcalTarget: 1800, waterGoalMl: 3000, workedOut: true, workoutMinutes: 40 };
-    const two = scoreDay({ ...base, kcal: 1800, waterMl: 900, sleepScore: 20, moodScore: 4 });
-    expect(two.water).toBe(30);
-    expect(biggestLever(two)).toBe('sleep');
-    const tie = scoreDay({ ...base, kcal: 1800, waterMl: 600, sleepScore: 20, moodScore: 4 });
-    expect(tie.water).toBe(20);
-    expect(biggestLever(tie)).toBe('water');
   });
 });
 

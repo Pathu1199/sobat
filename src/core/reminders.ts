@@ -616,8 +616,3 @@ export function lastLogDate(meals: Pick<Meal, 'date'>[], today: ISODate): ISODat
   return best;
 }
 
-/** Days since the last log, off days left out: 0 when today has one, and 0 when nothing was ever logged. */
-export function daysAway(meals: Pick<Meal, 'date'>[], today: ISODate, offDays: number[] = []): number {
-  const last = lastLogDate(meals, today);
-  return last ? missedDays(last, today, offDays) : 0;
-}

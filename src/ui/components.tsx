@@ -417,18 +417,6 @@ export function Ring({
   );
 }
 
-/** A small ring with a percentage inside and a caption beneath. */
-export function RingStat({ label, value, color }: { label: string; value: number | null; color: string }) {
-  return (
-    <View style={{ alignItems: 'center', gap: 8, minWidth: 52 }}>
-      <Ring value={value ?? 0} max={100} size={44} stroke={3} color={color} track={C.cardAlt}>
-        <Text style={{ color: value === null ? C.textFaint : C.text, fontSize: F.small, fontWeight: '500' }}>{value === null ? '·' : `${value}%`}</Text>
-      </Ring>
-      <Text style={[MICRO, { color: C.textFaint }]}>{label}</Text>
-    </View>
-  );
-}
-
 /**
  * Three or four figures side by side, each a label over its value. The
  * labels line up at the top of their columns, so one that runs to two lines

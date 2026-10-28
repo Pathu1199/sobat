@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { asksAboutFasting, guardAdvice, isCrisisText, HELPLINES } from '../guardrails';
-import { dailyTipPrompt, dayReviewPrompt, decisionPrompt, weeklyReportPrompt } from '../../ai/prompts';
-import { decide } from '../decide';
+import { dayReviewPrompt, weeklyReportPrompt } from '../../ai/prompts';
 
 describe('isCrisisText', () => {
   it('catches English phrasing', () => {
@@ -280,13 +279,7 @@ describe('asksAboutFasting', () => {
     expect(asksAboutFasting("I'm starving, what can I eat?")).toBe(false);
   });
 
-  it('never fires on the app’s own prompts, even when they say "do not fast"', () => {
-    const budget = { target: 1800, consumed: 2400, remaining: -600, earned: 0, perMeal: 0, mealsLeft: 1, proteinTarget: 100, proteinConsumed: 60, proteinLeft: 40, pct: 133 };
-    const d = decide({ budget, hour: 20, waterMl: 1000, waterGoalMl: 3000, movedToday: false, lateMealDays: 0 });
-    for (const actions of [['Eat normally tomorrow, do not fast'], ['उद्या नेहमीसारखे खा, उपाशी राहू नका'], ['कल सामान्य खाएँ, भूखे न रहें']]) {
-      expect(asksAboutFasting(decisionPrompt(d, 'en', actions))).toBe(false);
-    }
-    expect(asksAboutFasting(dailyTipPrompt('en', ['Ate under the floor two days running, do not fast']))).toBe(false);
+  it('never fires on the app’s own prompts, even when they speak of a skipped meal or a fast', () => {
     expect(asksAboutFasting(dayReviewPrompt('en', ['Skipped breakfast']))).toBe(false);
     expect(asksAboutFasting(weeklyReportPrompt('en', ['Fasted on Ekadashi']))).toBe(false);
   });

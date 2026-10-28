@@ -239,13 +239,6 @@ export function bhajiFor(routine: Routine, date: ISODate): string[] {
   return routine.overrides?.[date] ?? routine.week[weekdayOf(date)] ?? [];
 }
 
-/** Choose the bhaji for one day. Picks older than yesterday are dropped, since the day has passed. */
-export function setBhajiOverride(routine: Routine, date: ISODate, ids: string[], today: ISODate): Pick<Routine, 'overrides'> {
-  const cutoff = addDays(today, -1);
-  const kept = Object.fromEntries(Object.entries(routine.overrides ?? {}).filter(([d]) => d >= cutoff));
-  return { overrides: { ...kept, [date]: ids } };
-}
-
 /** Add a bhaji to a day, or take it off if it is already there. Keeps at most two. */
 export function toggleBhaji(week: string[][], day: number, foodId: string): string[][] {
   return week.map((list, i) => {

@@ -1,7 +1,5 @@
 import type { Budget } from '../core/nutrition';
-import type { Decision } from '../core/decide';
-import type { Plan } from '../core/plan';
-import type { ISODate, Lang } from '../core/types';
+import type { Lang } from '../core/types';
 
 const LANG_NAME: Record<Lang, string> = { en: 'simple English', mr: 'simple Marathi (Devanagari)', hi: 'simple Hindi (Devanagari)' };
 
@@ -45,23 +43,6 @@ export function factsFrom(input: {
   if (input.sleepMinutes) f.push(`Last night's sleep: ${Math.floor(input.sleepMinutes / 60)}h ${input.sleepMinutes % 60}m.`);
   if (input.moodScore) f.push(`Mood today: ${input.moodScore} out of 5.`);
   return f;
-}
-
-/** The weight journey in one fact, Lost counted from the chapter start once there is a chapter (`chapterSince`), as Progress counts it. */
-export function journeyFact(plan: Pick<Plan, 'lostKg' | 'toGoKg' | 'stage'>, chapter: ISODate | undefined): string {
-  return `Weight journey: lost ${plan.lostKg} kg since ${chapter ? 'the chapter start' : 'the first weigh-in'}, ${plan.toGoKg} kg to go, stage "${plan.stage}".`;
-}
-
-/** The rules already decided what to do. The model only puts it into words. */
-export function decisionPrompt(d: Decision, lang: Lang, actionText: string[]): string {
-  return [
-    `Situation decided by the app: ${d.situation} (severity ${d.severity}).`,
-    `Numbers: ${d.facts.map((f) => `${f.label} ${f.value}`).join(', ')}.`,
-    `The actions the app chose, keep all of them and do not add new ones: ${actionText.join('; ')}.`,
-    d.nextMealMin > 0 ? `Next meal should be between ${d.nextMealMin} and ${d.nextMealMax} kcal.` : 'No more meals today.',
-    '',
-    'Write 2 or 3 short sentences to the person about this. Warm, specific, no lecture. Do not repeat the numbers as a list.',
-  ].join('\n');
 }
 
 export const FOOD_PHOTO_SCHEMA = {
@@ -142,20 +123,6 @@ export function memoryExtractionPrompt(userText: string, assistantText: string):
     'If there is nothing durable, return an empty list. Do not invent anything.',
   ].join('\n');
 }
-
-export function dailyTipPrompt(lang: Lang, focus: string[]): string {
-  return [
-    'Give this person one small, specific thing to try today.',
-    focus.length > 0 ? `What stands out in their data right now: ${focus.join('; ')}.` : '',
-    '',
-    'Rules: two sentences at most. Something they can do today with what they already have.',
-    'No generic advice like "eat healthy" or "exercise more". No numbers you were not given.',
-    'Do not repeat the calorie target back at them.',
-  ]
-    .filter(Boolean)
-    .join('\n');
-}
-
 
 export function dayReviewPrompt(lang: Lang, lines: string[]): string {
   return [

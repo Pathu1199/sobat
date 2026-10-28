@@ -57,7 +57,7 @@ describe('one digit style', () => {
   });
 
   it('writes the app\'s own Marathi words with the same digits: badges, camps, the water toast, the household measures', () => {
-    for (const key of ['badge_streak_7', 'badge_meals_100', 'level_camp1', 'toast_water_added', 'measure_bowl', 'act_walk_20', 'oc_walk_do', 'challenge_steps_4']) {
+    for (const key of ['badge_streak_7', 'badge_meals_100', 'level_camp1', 'toast_water_added', 'measure_bowl', 'oc_walk_do', 'challenge_steps_4']) {
       expect(t('mr', key), key).not.toMatch(DEVANAGARI);
     }
     expect(t('mr', 'badge_streak_7')).toMatch(/7/);
