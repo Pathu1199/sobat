@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { View } from 'react-native';
+import { AbhyasCard } from '../../components/AbhyasCard';
 import { CaloriesLeft } from '../../components/CaloriesLeft';
 import { Celebration } from '../../components/Celebration';
 import { CoachLine } from '../../components/CoachLine';
@@ -43,10 +44,10 @@ import { Page } from '../../ui/TopBar';
  * for today); the strip and the number sit on the page, not in a card. Today,
  * while reminders cannot reach this device, one line under them says how to
  * get them. Under the number come the cards the user keeps on, in their
- * order: by default the menu, one coach line and the Water and Walk tiles. A
- * past day is filled in, a future day is planned, in the same place; nothing
- * here logs into a date after today. In the evening the day's review follows,
- * while its reminder is on.
+ * order: by default the menu, one coach line, the Water and Walk tiles and
+ * the user's own list (Abhyas). A past day is filled in, a future day is
+ * planned, in the same place; nothing here logs into a date after today. In
+ * the evening the day's review follows, while its reminder is on.
  */
 export default function TodayScreen() {
   const app = useApp();
@@ -83,7 +84,7 @@ export default function TodayScreen() {
   const records = weekRecord({ monday, today, routine: state.routine, meals: state.meals, skips: state.slotSkips, offDays, menuOn: app.menuOn });
   const days = weekStrip({ monday, today, viewed, records, since });
 
-  // The evening review, while its reminder is on: the reminder at 21:30 opens Today, where it is, within the page's five blocks.
+  // The evening review, while its reminder is on: the reminder at 21:30 opens Today, where it is, within the page's six blocks.
   const review = dayReviewShown({ on: state.settings.reminders.dayReview, mode, hour: app.hour, hasData: app.budget.consumed > 0 || state.sleep.some((s) => s.date === today) });
 
   const queued = pendingCount(state.photoQueue);
@@ -119,6 +120,8 @@ export default function TodayScreen() {
         if (b.kind === 'coach') return mode === 'today' ? <CoachLine key="coach" /> : null;
         // Keyed by the date, so "Added … · Undo" and the sheet of one day never stay on screen for another.
         if (b.kind === 'waterWalk') return mode === 'future' ? null : <WaterWalkTiles key={`waterWalk-${viewed}`} date={viewed} />;
+        // Every day: a past day ticks, a day still to come shows what is planned. Keyed by the date for the same reason as the tiles.
+        if (b.kind === 'abhyas') return <AbhyasCard key={`abhyas-${viewed}`} date={viewed} />;
         if (b.kind === 'steps') return <StepsCard key="steps" date={viewed} />;
         if (b.kind === 'mantra') return mode === 'today' ? <MantraCard key="mantra" /> : null;
         return (

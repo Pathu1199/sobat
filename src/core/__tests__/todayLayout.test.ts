@@ -5,8 +5,16 @@ const on = (id: string) => ({ id, on: true });
 const off = (id: string) => ({ id, on: false });
 
 describe('todayBlocks', () => {
-  it('shows the menu, the coach line and Water and Walk by default', () => {
-    expect(todayBlocks(undefined)).toEqual([{ kind: 'menu' }, { kind: 'coach' }, { kind: 'waterWalk' }]);
+  it('shows the menu, the coach line, Water and Walk and the Abhyas list by default', () => {
+    expect(todayBlocks(undefined)).toEqual([{ kind: 'menu' }, { kind: 'coach' }, { kind: 'waterWalk' }, { kind: 'abhyas' }]);
+  });
+
+  it('shows the Abhyas list on every day, in its place, and nothing for it while its card is off', () => {
+    const cards = [on('abhyas'), on('menu'), on('weight')];
+    for (const mode of ['today', 'past', 'future'] as const) {
+      expect(todayBlocks(cards, mode)).toEqual([{ kind: 'abhyas' }, { kind: 'menu' }, { kind: 'pair', tiles: ['weight'] }]);
+    }
+    expect(todayBlocks([on('menu'), off('abhyas')])).toEqual([{ kind: 'menu' }]);
   });
 
   it("pairs the single tiles two to a row in order, and keeps the person's order around them", () => {
@@ -150,21 +158,24 @@ describe('dayReviewShown', () => {
   });
 });
 
-describe('withReview: the evening review within the five blocks', () => {
+describe('withReview: the evening review within the five blocks under the top', () => {
   const menu = { kind: 'menu' as const };
   const coach = { kind: 'coach' as const };
   const waterWalk = { kind: 'waterWalk' as const };
+  const abhyas = { kind: 'abhyas' as const };
+  const steps = { kind: 'steps' as const };
+  const pair = { kind: 'pair' as const, tiles: ['weight' as const] };
 
-  it('comes after the cards while there is room: with the cards Today starts with, it is the fifth block', () => {
-    expect(withReview([menu, coach, waterWalk], true)).toEqual([menu, coach, waterWalk, { kind: 'review' }]);
-    expect(withReview([menu, coach, waterWalk], false)).toEqual([menu, coach, waterWalk]);
+  it('comes after the cards while there is room: with the cards Today starts with, it is the fifth block under the top', () => {
+    expect(withReview([menu, coach, waterWalk, abhyas], true)).toEqual([menu, coach, waterWalk, abhyas, { kind: 'review' }]);
+    expect(withReview([menu, coach, waterWalk, abhyas], false)).toEqual([menu, coach, waterWalk, abhyas]);
+    expect(withReview([menu, steps, coach, waterWalk], true)).toEqual([menu, steps, coach, waterWalk, { kind: 'review' }]);
   });
 
-  it('takes the place of the last card the person added, never a sixth block, and never in place of the menu, the coach or Water and Walk', () => {
-    const steps = { kind: 'steps' as const };
-    const pair = { kind: 'pair' as const, tiles: ['weight' as const] };
-    expect(withReview([menu, steps, coach, waterWalk], true)).toEqual([menu, { kind: 'review' }, coach, waterWalk]);
+  it('takes the place of the last card the person added, never a sixth block, and never in place of the menu, the coach, Water and Walk or the Abhyas list', () => {
+    expect(withReview([menu, steps, coach, waterWalk, abhyas], true)).toEqual([menu, { kind: 'review' }, coach, waterWalk, abhyas]);
     expect(withReview([menu, pair, coach, steps, waterWalk], true)).toEqual([menu, pair, coach, { kind: 'review' }, waterWalk]);
+    expect(withReview([abhyas, menu, pair, coach, waterWalk, steps], true)).toEqual([abhyas, menu, pair, coach, waterWalk, { kind: 'review' }]);
   });
 });
 

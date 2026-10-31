@@ -278,6 +278,16 @@ export function archive(items: AbhyasItem[], id: string, now: Date): AbhyasItem[
   return items.map((i) => (i.id === id ? { ...i, archivedAt: now.toISOString() } : i));
 }
 
+/** A removed item put back (Undo after a removal): the same item without its removal, so it is on today and on again. The same list when there is no such removed item. */
+export function unarchive(items: AbhyasItem[], id: string): AbhyasItem[] {
+  if (!items.some((i) => i.id === id && i.archivedAt)) return items;
+  return items.map((i) => {
+    if (i.id !== id) return i;
+    const { archivedAt: _, ...kept } = i;
+    return kept;
+  });
+}
+
 /**
  * An item one place up (-1) or down (1) among the items of its kind still
  * on the list: it trades places with its neighbour there, and every item is
@@ -350,4 +360,10 @@ export function withArchived<S extends AbhyasState>(s: S, id: string, now: Date)
   const abhyasItems = archive(s.abhyasItems, id, now);
   if (abhyasItems === s.abhyasItems) return s;
   return { ...(s.abhyasRunning?.itemId === id ? withStopped(s, now) : s), abhyasItems };
+}
+
+/** A removed item put back (`unarchive`), its minutes as they were kept; a timer the removal stopped stays stopped. */
+export function withRestored<S extends AbhyasState>(s: S, id: string): S {
+  const abhyasItems = unarchive(s.abhyasItems, id);
+  return abhyasItems === s.abhyasItems ? s : { ...s, abhyasItems };
 }

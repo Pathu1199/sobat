@@ -7,7 +7,7 @@ import type { Lang, TodayCardId } from './types';
 /**
  * Today's blocks under the week strip and calories left, from the cards the
  * person has on, in their order: the menu, the coach line, the Water and Walk
- * pair, and the optional cards. The single tiles (weight, sleep, the climb)
+ * pair, the Abhyas list, and the optional cards. The single tiles (weight, sleep, the climb)
  * pair up two to a row in the order they come; a lone one keeps half a row.
  * On a day still to come the Sleep tile is left out (there is no night to
  * check in yet), so the tiles left pair up without it. The day's line shows
@@ -16,7 +16,7 @@ import type { Lang, TodayCardId } from './types';
  * anything that is not a list gets the default. Pure.
  */
 export type PairTile = 'weight' | 'sleep' | 'climb';
-export type TodayBlock = { kind: 'menu' } | { kind: 'coach' } | { kind: 'waterWalk' } | { kind: 'steps' } | { kind: 'mantra' } | { kind: 'pair'; tiles: PairTile[] } | { kind: 'review' };
+export type TodayBlock = { kind: 'menu' } | { kind: 'coach' } | { kind: 'waterWalk' } | { kind: 'abhyas' } | { kind: 'steps' } | { kind: 'mantra' } | { kind: 'pair'; tiles: PairTile[] } | { kind: 'review' };
 
 const SINGLE_TILES: string[] = ['weight', 'sleep', 'climb'];
 
@@ -28,32 +28,34 @@ export function todayBlocks(cards: unknown, mode: DayMode = 'today', mantraOn = 
     pending = [];
   };
   for (const { id } of normalizeTodayCards(cards).filter((c) => c.on && !(mode === 'future' && c.id === 'sleep') && (mantraOn || c.id !== 'mantra'))) {
-    // The Abhyas card keeps its place and its switch, and shows once its card is built (src/components/AbhyasCard.tsx).
-    if (id === 'abhyas') continue;
     if (SINGLE_TILES.includes(id)) {
       pending.push(id as PairTile);
       if (pending.length === 2) flush();
       continue;
     }
     flush();
-    out.push({ kind: id as Exclude<TodayCardId, PairTile | 'abhyas'> });
+    out.push({ kind: id as Exclude<TodayCardId, PairTile> });
   }
   flush();
   return out;
 }
 
-/** Blocks under the top card (the week strip and calories left): five on the page in all. */
-export const BLOCKS_UNDER_TOP = 4;
+/** Blocks under the top card (the week strip and calories left): six on the page in all. */
+export const BLOCKS_UNDER_TOP = 5;
 
-/** The cards Today starts with; every other block is one the person switched on. */
-const CORE_BLOCKS: TodayBlock['kind'][] = ['menu', 'coach', 'waterWalk'];
+/**
+ * The cards Today starts with; every other block is one the person switched
+ * on. The Abhyas list is one of them, so the evening review, which comes just
+ * when the last jobs of the day get ticked, never takes its place.
+ */
+const CORE_BLOCKS: TodayBlock['kind'][] = ['menu', 'coach', 'waterWalk', 'abhyas'];
 
 /**
  * Today's blocks with the evening review (`dayReviewShown`). While there is
  * room it comes last, so with the cards Today starts with it is the fifth
- * block; on a page already full it takes the place of the last card the
- * person switched on, never a sixth block, and never the menu, the coach line
- * or Water and Walk. Pure.
+ * block under the top; on a page already full it takes the place of the last
+ * card the person switched on, never a sixth block, and never the menu, the
+ * coach line, Water and Walk or the Abhyas list. Pure.
  */
 export function withReview(blocks: TodayBlock[], review: boolean): TodayBlock[] {
   if (!review) return blocks;

@@ -16,9 +16,11 @@ import {
   stop,
   streak,
   tickId,
+  unarchive,
   updateItem,
   withArchived,
   withoutTick,
+  withRestored,
   withSession,
   withStaleClosed,
   withStarted,
@@ -295,6 +297,18 @@ describe('the list', () => {
     expect(archive(list, 'nope', now)).toBe(list);
   });
 
+  it('puts a removed item back as it was before the removal; the same list when there is nothing removed to put back', () => {
+    const list = [item('a', { order: 4, targetMin: 30, times: ['07:00'] }), item('b')];
+    const back = unarchive(archive(list, 'a', now), 'a');
+    expect(back[0]).toEqual(list[0]);
+    expect(back[0]).not.toHaveProperty('archivedAt');
+    expect(back[1]).toBe(list[1]);
+    expect(unarchive(list, 'a')).toBe(list);
+    expect(unarchive(list, 'nope')).toBe(list);
+    // Back on the list today, where the removal had taken it off.
+    expect(ids(itemsOn(back, TODAY))).toEqual(['b', 'a']);
+  });
+
   it('moves an item one place among the items of its kind, and renumbers them so items with the same number still move', () => {
     const a = item('a', { order: 0 });
     const once = item('o', { kind: 'once', days: [], date: TODAY, order: 1 });
@@ -405,5 +419,15 @@ describe("the store's actions", () => {
     const other = withArchived(s, 'yoga', NOW);
     expect(other.abhyasRunning).toBe(s.abhyasRunning);
     expect(other.abhyasSessions).toBe(s.abhyasSessions);
+  });
+
+  it("Undo after a removal puts the item back with the minutes its timer kept; the timer stays stopped", () => {
+    const s = withStarted(state(), 'study', at(TODAY, '17:40'));
+    const back = withRestored(withArchived(s, 'study', NOW), 'study');
+    expect(back.abhyasItems).toEqual(s.abhyasItems);
+    expect(back.abhyasRunning).toBeNull();
+    expect(back.abhyasSessions.map((x) => x.minutes)).toEqual([20]);
+    expect(withRestored(back, 'study')).toBe(back);
+    expect(withRestored(back, 'nope')).toBe(back);
   });
 });

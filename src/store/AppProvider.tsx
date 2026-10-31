@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import exercisesJson from '../data/exercises.json';
-import { addItem, draftProblem, reorder, updateItem, withArchived, withoutTick, withStaleClosed, withStarted, withStopped, withTick, type AbhyasData, type AbhyasDraft } from '../core/abhyas';
+import { addItem, draftProblem, reorder, updateItem, withArchived, withoutTick, withRestored, withStaleClosed, withStarted, withStopped, withTick, type AbhyasData, type AbhyasDraft } from '../core/abhyas';
 import { mondayOf, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
 import { newId } from '../core/id';
@@ -179,6 +179,8 @@ type Ctx = {
   setAbhyasItem: (id: string, draft: AbhyasDraft) => void;
   /** An item removed from today on; the days before keep it. Its timer, if it runs, stops and keeps its minutes. */
   archiveAbhyasItem: (id: string) => void;
+  /** A removed item put back, for Undo; a timer the removal stopped stays stopped, with its minutes. */
+  restoreAbhyasItem: (id: string) => void;
   /** An item one place up (-1) or down (1) among the items of its kind. */
   reorderAbhyas: (id: string, by: -1 | 1) => void;
   /** Done on a date, by hand: today or a day before, never a day still to come. */
@@ -650,6 +652,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return abhyasItems === s.abhyasItems ? s : { ...s, abhyasItems };
         }),
       archiveAbhyasItem: (id) => update((s) => withArchived(s, id, new Date())),
+      restoreAbhyasItem: (id) => update((s) => withRestored(s, id)),
       reorderAbhyas: (id, by) =>
         update((s) => {
           const abhyasItems = reorder(s.abhyasItems, id, by);
