@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -6,6 +7,7 @@ import { monthMarks, monthSteps, shiftMonth } from '../core/progress';
 import { stripDayLabel, stripSince } from '../core/weekStrip';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
+import { usePerfectOn } from '../store/usePerfectOn';
 import { useRecordOn } from '../store/useRecordOn';
 import { Card } from '../ui/components';
 import { STRIP_CHOSEN, STRIP_MARGIN } from '../ui/stripGeometry';
@@ -21,7 +23,9 @@ const DAY_HEIGHT = 48;
 /**
  * The record as a month: under each day the same dot as on Today's week
  * strip (core/progress.ts `monthMarks`), lighter while meals the app filled
- * in are not confirmed, nothing before the person started. The arrows step a
+ * in are not confirmed, nothing before the person started. A perfect day
+ * (core/perfect.ts) is gold: its date in the reward ink on the reward fill,
+ * and a star in place of the dot. The arrows step a
  * month, from the month the person started up to this one; tapping a day
  * opens it on Today. The rows reach over the card's padding
  * (ui/stripGeometry.ts `STRIP_MARGIN`), so a day is a finger wide on a 360
@@ -32,6 +36,7 @@ export function RecordCalendar() {
   const router = useRouter();
   const { state, today } = app;
   const recordOn = useRecordOn();
+  const perfectOn = usePerfectOn();
   const lang = state.profile.lang;
   const t = makeT(lang);
   const [month, setMonth] = useState(today.slice(0, 7));
@@ -59,13 +64,16 @@ export function RecordCalendar() {
         </View>
         {weeks.map((week, i) => (
           <View key={`${month}-${i}`} style={{ flexDirection: 'row' }}>
-            {week.map((d, j) =>
-              d ? (
+            {week.map((d, j) => {
+              if (!d) return <View key={`blank-${j}`} style={{ flex: 1 }} />;
+              const gold = perfectOn(d.date);
+              const label = stripDayLabel({ ...d, isToday: d.date === today }, lang);
+              return (
                 <Pressable
                   key={d.date}
                   onPress={() => router.navigate({ pathname: '/', params: { date: d.date } })}
                   accessibilityRole="button"
-                  accessibilityLabel={stripDayLabel({ ...d, isToday: d.date === today }, lang)}
+                  accessibilityLabel={gold ? `${label}, ${t('perfect_day')}` : label}
                   accessibilityHint={t('progress_day_hint')}
                   style={({ pressed }) => ({
                     flex: 1,
@@ -77,17 +85,16 @@ export function RecordCalendar() {
                     borderRadius: S.radiusSm,
                     borderWidth: 1,
                     borderColor: d.date === today ? C[STRIP_CHOSEN] : 'transparent',
+                    backgroundColor: gold ? C.goldSoft : 'transparent',
                     opacity: pressed ? 0.6 : 1,
                   })}>
-                  <Text numberOfLines={1} style={{ color: d.date === today ? C.accentText : C.text, fontSize: F.small, lineHeight: lh(F.small, true), fontWeight: '500', fontVariant: ['tabular-nums'] }}>
+                  <Text numberOfLines={1} style={{ color: gold ? C.goldInk : d.date === today ? C.accentText : C.text, fontSize: F.small, lineHeight: lh(F.small, true), fontWeight: '500', fontVariant: ['tabular-nums'] }}>
                     {Number(d.date.slice(8))}
                   </Text>
-                  <StripDot mark={d.mark} light={d.light} />
+                  {gold ? <Ionicons name="star" size={10} color={C.goldInk} /> : <StripDot mark={d.mark} light={d.light} />}
                 </Pressable>
-              ) : (
-                <View key={`blank-${j}`} style={{ flex: 1 }} />
-              ),
-            )}
+              );
+            })}
           </View>
         ))}
       </View>

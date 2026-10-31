@@ -3,18 +3,17 @@ import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { toTabs } from '../components/toTabs';
 import { useGame } from '../components/useGame';
-import { BADGE_ICON } from '../core/game';
 import { WeightSheet } from '../components/WeightSheet';
 import { formatDayLabel } from '../core/date';
 import { lostWords } from '../core/tileText';
 import { fill, makeT, numberText } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
-import { Bar, Card, Divider, Micro, Pill, Row, Screen, SectionHeader, Small } from '../ui/components';
+import { Card, Divider, Micro, Row, Screen, SectionHeader, Small } from '../ui/components';
 import { Mountain } from '../ui/Mountain';
 import { C, F, S } from '../ui/theme';
 
-/** The whole climb: the mountain, the camps, every weigh-in, the level, the week's challenge and every badge. Progress opens it from its climb row; the Weight and Streak tiles are on Progress. */
+/** The whole climb: the mountain, the camps and every weigh-in. Progress opens it from its climb row; the Weight and Streak tiles and the medals are on Progress. */
 export default function Journey() {
   const app = useApp();
   const fb = useFeedback();
@@ -24,16 +23,12 @@ export default function Journey() {
   const g = useGame();
   const [weighOpen, setWeighOpen] = useState(false);
   const weights = [...state.weights].sort((a, b) => b.date.localeCompare(a.date));
-  const earned = g.badges.filter((b) => b.earned);
   const lost = lostWords(g.plan.lostKg);
 
   return (
     <Screen>
       <Card rail={C.cyan}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Micro color={C.textDim}>{t('journey_title')}</Micro>
-          <Pill label={`⛰ ${t(`level_${g.level.key}`)}`} color={C.cardAlt} textColor={C.cyan} />
-        </Row>
+        <Micro color={C.textDim}>{t('journey_title')}</Micro>
         <Mountain tall progress={g.progress} startLabel={`${g.plan.startKg} ${t('unit_kg')}`} nowLabel={`${g.plan.currentKg} ${t('unit_kg')}`} goalLabel={`${g.plan.goalKg} ${t('unit_kg')}`} camps={g.camps} trail={g.trail} />
         <Row style={{ gap: 18 }}>
           <Stat label={t(lost.key)} value={lost.kg} unit={t('unit_kg')} color={g.plan.lostKg > 0 ? C.cyan : undefined} />
@@ -51,44 +46,6 @@ export default function Journey() {
           <Small color={C.accentText}>{t('journey_add_weight')}</Small>
         </Pressable>
       </Card>
-
-      <SectionHeader title={t('level_title')} icon={<Ionicons name="flag-outline" size={13} color={C.textFaint} />} />
-      <Card>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t(`level_${g.level.key}`)}</Text>
-          <Micro>{fill(t('points_n'), { n: g.level.next ? `${g.points} / ${g.level.next}` : g.points })}</Micro>
-        </Row>
-        <Bar value={g.level.progress * 100} max={100} color={C.amber} />
-        <Micro color={C.textFaint}>{t('xp_how')}</Micro>
-      </Card>
-
-      <SectionHeader title={t('challenge_week')} icon={<Ionicons name="trophy-outline" size={13} color={C.textFaint} />} />
-      <Card rail={g.challenge.done ? C.green : undefined}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Text style={{ color: C.text, fontSize: F.body, fontWeight: '500', flex: 1 }}>{fill(t(`challenge_${g.challenge.key}`), { n: g.challenge.target })}</Text>
-          <Micro color={g.challenge.done ? C.green : C.textDim}>{g.challenge.done ? t('challenge_done') : `${g.challenge.n}/${g.challenge.target}`}</Micro>
-        </Row>
-        <Bar value={g.challenge.n} max={g.challenge.target} color={g.challenge.done ? C.green : C.accent} />
-        <Micro color={C.textFaint}>{fill(t('challenge_days_left'), { n: g.challenge.daysLeft })}</Micro>
-      </Card>
-
-      <SectionHeader title={t('badges')} meta={`${earned.length}/${g.badges.length}`} icon={<Ionicons name="medal-outline" size={13} color={C.textFaint} />} />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {g.badges.map((b) => (
-          <View key={b.key} style={{ flexBasis: '47%', flexGrow: 1 }}>
-            <Card>
-              <Row style={{ gap: 10, alignItems: 'flex-start' }}>
-                <Text style={{ fontSize: 22, opacity: b.earned ? 1 : 0.35 }}>{BADGE_ICON[b.key] ?? '🏅'}</Text>
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={{ color: b.earned ? C.text : C.textDim, fontSize: F.small, fontWeight: '500' }}>{t(`badge_${b.key}`)}</Text>
-                  {b.earned ? <Micro color={C.green}>{t('badge_earned')}</Micro> : <Bar value={b.n} max={b.target} color={C.textFaint} height={3} />}
-                  {!b.earned ? <Micro color={C.textFaint}>{`${b.n}/${b.target}`}</Micro> : null}
-                </View>
-              </Row>
-            </Card>
-          </View>
-        ))}
-      </View>
 
       <SectionHeader title={t('weigh_history')} meta={`${weights.length}`} icon={<Ionicons name="scale-outline" size={13} color={C.textFaint} />} />
       <Card>

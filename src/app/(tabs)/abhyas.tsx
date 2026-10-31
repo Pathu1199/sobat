@@ -3,8 +3,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, Pressable, Text, View } from 'react-native';
 import { AbhyasItemRow } from '../../components/AbhyasItemRow';
 import { AbhyasItemSheet } from '../../components/AbhyasItemSheet';
+import { ShieldNote } from '../../components/ShieldNote';
 import { UndoLine, useUndoable } from '../../components/tiles/UndoLine';
-import { itemsOn, reorder, streak, type DayStatus } from '../../core/abhyas';
+import { itemsOn, reorder, streakRun, type DayStatus } from '../../core/abhyas';
 import { abhyasCard, abhyasRow, comingUp, movedPlace, recentDays, repeating, weekdayRuns } from '../../core/abhyasView';
 import { formatDayLabel } from '../../core/date';
 import type { AbhyasItem } from '../../core/types';
@@ -243,14 +244,14 @@ function TodayRow({ item, onEdit }: { item: AbhyasItem; onEdit: () => void }) {
   return <AbhyasItemRow row={abhyasRow(app.abhyas, item, app.today, app.today, now)} date={app.today} onEdit={onEdit} />;
 }
 
-/** The last 14 days under the streak, "3 of 4 done · 85 min" each; nothing before the first item. */
+/** The last 14 days under the streak and its shield's gold note, "3 of 4 done · 85 min" each; nothing before the first item. */
 function LastDays() {
   const app = useApp();
   const now = useNow();
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const days = recentDays(app.abhyas, app.today, now);
-  const run = streak(app.abhyas, app.today, now);
+  const { days: run, covered } = streakRun(app.abhyas, app.today, now, true);
   if (days.length === 0) return null;
 
   const dayText = (d: DayStatus) => {
@@ -263,10 +264,13 @@ function LastDays() {
       <SectionHeader title={t('abh_last_14')} />
       <Card>
         {run > 0 ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ionicons name="flame-outline" size={18} color={C.accentText} />
-            <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{run === 1 ? t('abh_in_row_one') : fill(t('abh_in_row'), { n: run })}</Text>
-          </View>
+          <>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name="flame" size={18} color={C.goldInk} />
+              <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{run === 1 ? t('abh_in_row_one') : fill(t('abh_in_row'), { n: run })}</Text>
+            </View>
+            <ShieldNote covered={covered} />
+          </>
         ) : null}
         <View>
           {days.map((d) => {

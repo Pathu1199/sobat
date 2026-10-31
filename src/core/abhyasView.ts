@@ -1,4 +1,4 @@
-import { ABHYAS_ICONS, dayStatus, draftProblem, firstDate, isDone, itemsOn, MAX_TARGET_MIN, minutesOn, streak, type AbhyasData, type AbhyasDraft, type DayStatus } from './abhyas';
+import { ABHYAS_ICONS, dayStatus, draftProblem, firstDate, isDone, itemsOn, MAX_TARGET_MIN, minutesOn, streakRun, type AbhyasData, type AbhyasDraft, type DayStatus } from './abhyas';
 import { addDays, localDate, mondayOf } from './date';
 import type { AbhyasItem, ISODate } from './types';
 
@@ -169,9 +169,10 @@ export function recentDays(data: AbhyasData, today: ISODate, now: Date, n = 14):
 }
 
 /**
- * Progress's Abhyas row: this week so far, Monday to today, as items done of
- * items on those days ("18 of 21 this week"), and the streak. A day still to
- * come this week counts nothing yet. Null while nothing is on the list.
+ * Progress's routine row: this week so far, Monday to today, as items done of
+ * items on those days ("18 of 21 this week"), and the streak, with its shield.
+ * A day still to come this week counts nothing yet. Null while nothing is on
+ * the list.
  */
 export function abhyasProgress(data: AbhyasData, today: ISODate, now: Date): { done: number; total: number; streak: number } | null {
   if (!data.items.some((i) => !i.archivedAt)) return null;
@@ -182,7 +183,7 @@ export function abhyasProgress(data: AbhyasData, today: ISODate, now: Date): { d
     done += s.done;
     total += s.total;
   }
-  return { done, total, streak: streak(data, today, now) };
+  return { done, total, streak: streakRun(data, today, now, true).days };
 }
 
 /**

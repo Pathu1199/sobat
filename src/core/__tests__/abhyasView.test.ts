@@ -255,7 +255,8 @@ describe('the Abhyas tab', () => {
     it('a new week starts on Monday, and a day still to come this week counts nothing yet', () => {
       // Monday 2 November: yoga and that day's one-off so far; the bike on Tuesday not yet.
       const dentist = item('dentist', { kind: 'once', days: [], date: '2026-11-02' });
-      expect(abhyasProgress(data({ items: [yoga, dentist, bike], ticks: [tick('yoga', TODAY)] }), '2026-11-02', at('2026-11-02', '09:00'))).toEqual({ done: 0, total: 2, streak: 0 });
+      // Yoga was done Thursday to Saturday, not on Sunday: the shield of that week covers Sunday, so the streak is still 3.
+      expect(abhyasProgress(data({ items: [yoga, dentist, bike], ticks: ['2026-10-29', YESTERDAY, TODAY].map((d) => tick('yoga', d)) }), '2026-11-02', at('2026-11-02', '09:00'))).toEqual({ done: 0, total: 2, streak: 3 });
     });
 
     it('the running timer counts once it reaches the target', () => {

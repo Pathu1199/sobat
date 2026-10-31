@@ -1,6 +1,10 @@
 import { useMemo } from 'react';
-import { challengeProgress, dailyChallenge, type ChallengeData } from '../core/challenge';
+import { streakRun } from '../core/abhyas';
+import { challengeProgress, challengesDone, dailyChallenge, type ChallengeData } from '../core/challenge';
+import { earnedMedals, namesOfJobs, type MedalInput } from '../core/medals';
+import { perfectWeeks } from '../core/perfect';
 import { useApp } from '../store/AppProvider';
+import { useGame } from './useGame';
 
 /** What the challenges read, from the store: a new object only when one of its parts changes. */
 export function useChallengeData(): ChallengeData {
@@ -32,4 +36,39 @@ export function useTodayChallenge() {
     const challenge = dailyChallenge(data, today);
     return challenge ? { challenge, progress: challengeProgress(data, challenge) } : null;
   }, [data, today]);
+}
+
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/**
+ * Everything the medals read, from the store, and the medals earned: both
+ * streaks over the whole journey with the shield (the routine's on finished
+ * timers, so a medal is earned when a timer stops), the kilos from the very
+ * first start to the weight Progress shows, the perfect weeks, and the
+ * challenges done. Shared by the trophy shelf and the celebration.
+ */
+export function useMedals() {
+  const app = useApp();
+  const { state, today, lifetimeStreakDays, lifetimeBestStreakDays } = app;
+  const { abhyasItems: items, abhyasTicks: ticks, abhyasSessions: sessions, profile, celebrated } = state;
+  const g = useGame();
+  const data = useChallengeData();
+  const done = useMemo(() => challengesDone(data, today), [data, today]);
+  const routine = useMemo(() => streakRun({ items, ticks, sessions, running: null }, today, new Date(0), true), [items, ticks, sessions, today]);
+  const weeks = useMemo(() => perfectWeeks({ items, ticks, sessions }, today).map((w) => ({ ...w, name: items.find((i) => i.id === w.itemId)?.name ?? '' })), [items, ticks, sessions, today]);
+  return useMemo(() => {
+    const firstStart = profile.firstStartWeightKg ?? g.plan.startKg;
+    const input: MedalInput = {
+      meals: { now: lifetimeStreakDays, best: lifetimeBestStreakDays },
+      routine: items.length > 0 ? { now: routine.days, best: routine.best } : null,
+      lostKg: round1(firstStart - g.plan.currentKg),
+      totalKg: round1(firstStart - profile.goalWeightKg),
+      weeks,
+      challengesDone: done,
+      celebrated,
+      // Names for kept perfect-week medals, removed jobs included (98383c1).
+      jobNames: namesOfJobs(items),
+    };
+    return { input, medals: earnedMedals(input) };
+  }, [profile.firstStartWeightKg, profile.goalWeightKg, g.plan.startKg, g.plan.currentKg, lifetimeStreakDays, lifetimeBestStreakDays, items, routine, weeks, done, celebrated]);
 }

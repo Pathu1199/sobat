@@ -5,9 +5,11 @@ import { Pressable, Text, View } from 'react-native';
 import { useGame } from '../../components/useGame';
 import { NutrientCard } from '../../components/NutrientCard';
 import { RecordCalendar } from '../../components/RecordCalendar';
+import { ShieldNote } from '../../components/ShieldNote';
 import { StreakTile } from '../../components/tiles/StreakTile';
 import { TileRow } from '../../components/tiles/TileRow';
 import { TopBarActions } from '../../components/TopBarActions';
+import { TrophyShelf } from '../../components/TrophyShelf';
 import { WeightTrendCard } from '../../components/WeightTrendCard';
 import { abhyasProgress } from '../../core/abhyasView';
 import { mondayOf, weekDates } from '../../core/date';
@@ -47,12 +49,14 @@ export default function ProgressTab() {
 }
 
 /**
- * Five blocks: the one weight card (the smoothed weight, its change, the line
- * and the goal; a tap opens the weight entry); the Streak tile; Lost, To go
- * and this week's full days; the record calendar; and one card with the last
- * seven days' average against the goal, the Abhyas row while the user has a
- * list, today's nutrition a tap away, the climb as one row (the mountain and
- * every badge on the climb page) and History and Charts as links.
+ * The trophy room: the one weight card (the smoothed weight, its change, the
+ * line and the goal; a tap opens the weight entry); the Streak tile with the
+ * shield's gold note under it; Lost, To go and this week's full days; the
+ * trophy shelf, every medal earned and the next of each; the record calendar,
+ * a gold star on each perfect day; and one card with the last seven days'
+ * average against the goal, the routine row while the user has a list,
+ * today's nutrition a tap away, the climb as one row (the mountain on the
+ * climb page) and History and Charts as links.
  */
 function Progress() {
   const app = useApp();
@@ -69,10 +73,6 @@ function Progress() {
   const intake = useMemo(() => recentIntake({ today, since, meals: state.meals, recordOn }), [today, since, state.meals, recordOn]);
   const kg = t('unit_kg');
   const lost = lostWords(g.plan.lostKg);
-  const earned = g.badges.filter((b) => b.earned).length;
-  const level = t(`level_${g.level.key}`);
-  const points = fill(t('points_n'), { n: g.points });
-  const badges = fill(t('progress_badges'), { n: earned, of: g.badges.length });
   const avgOff = intake !== null && Math.abs(intake.avg - targets.kcal) > targets.kcal * 0.05;
   const strong = { color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' } as const;
 
@@ -85,6 +85,7 @@ function Progress() {
         <StreakTile />
         <View style={{ flex: 1 }} />
       </TileRow>
+      {app.streakDays > 0 ? <ShieldNote covered={app.streakCovered} /> : null}
 
       <Card>
         <StatQuad
@@ -95,6 +96,8 @@ function Progress() {
           ]}
         />
       </Card>
+
+      <TrophyShelf />
 
       <RecordCalendar />
 
@@ -115,16 +118,12 @@ function Progress() {
         <Pressable
           onPress={() => router.push('/journey')}
           accessibilityRole="button"
-          accessibilityLabel={fill(t('progress_climb_a11y'), { climb: t('journey_title'), level, points, badges })}
+          accessibilityLabel={t('journey_title')}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, opacity: pressed ? 0.7 : 1 })}>
           <Ionicons name="flag-outline" size={20} color={C.cyan} />
           <View style={{ flex: 1, gap: 6 }}>
-            <Row style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
-              <Text style={strong}>{t('journey_title')}</Text>
-              <Micro color={C.textDim}>{`${level} · ${points}`}</Micro>
-            </Row>
+            <Text style={strong}>{t('journey_title')}</Text>
             <Bar value={g.progress * 100} max={100} color={C.cyan} />
-            <Micro color={C.textDim}>{badges}</Micro>
           </View>
           <Ionicons name="chevron-forward" size={16} color={C.textFaint} />
         </Pressable>

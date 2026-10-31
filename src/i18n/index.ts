@@ -1036,6 +1036,9 @@ const en: Dict = {
   quick_food: 'Food',
   quick_water_a11y: 'Add {ml} ml of water',
   quick_walk_a11y: 'Add a {min}-minute walk',
+  shield_ready: "Shield ready: one rest day this week won't break your streak.",
+  shield_used: 'Shield used this week.',
+  perfect_day: 'Perfect day',
 };
 
 const mr: Dict = {
@@ -2074,6 +2077,9 @@ const mr: Dict = {
   quick_food: 'जेवण',
   quick_water_a11y: '{ml} ml पाणी जोडा',
   quick_walk_a11y: '{min} मिनिटांचं चालणं जोडा',
+  shield_ready: 'ढाल तयार: या आठवड्यात एक दिवस विश्रांती घेतली तरी मालिका तुटणार नाही.',
+  shield_used: 'या आठवड्याची ढाल वापरली.',
+  perfect_day: 'सोनेरी दिवस',
 };
 
 const hi: Dict = {
@@ -3111,6 +3117,9 @@ const hi: Dict = {
   quick_food: 'खाना',
   quick_water_a11y: '{ml} ml पानी जोड़ें',
   quick_walk_a11y: '{min} मिनट टहलना जोड़ें',
+  shield_ready: 'ढाल तैयार: इस हफ़्ते एक दिन आराम से भी सिलसिला नहीं टूटेगा.',
+  shield_used: 'इस हफ़्ते की ढाल लग चुकी.',
+  perfect_day: 'सुनहरा दिन',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
