@@ -53,6 +53,7 @@ export default function TabsLayout() {
             <Tabs.Screen name="body" options={{ title: t('tab_body') }} />
             <Tabs.Screen name="sleep-tab" options={{ title: t('sleep_title') }} />
             <Tabs.Screen name="plan-tab" options={{ title: t('tab_plan') }} />
+            <Tabs.Screen name="abhyas" options={{ title: t('abhyas') }} />
             {/* Old addresses keep working, so links and notifications still land; they are never on the bar. */}
             <Tabs.Screen name="food" options={{ href: null }} />
             <Tabs.Screen name="log" options={{ href: null }} />

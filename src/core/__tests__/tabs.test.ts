@@ -11,6 +11,10 @@ describe('normalizeTabs', () => {
     expect(normalizeTabs(['today', 'coach', 'me', 'coach', 42, null])).toEqual(['coach']);
   });
 
+  it('keeps Abhyas, offered as a tab', () => {
+    expect(normalizeTabs(['abhyas', 'progress'])).toEqual(['abhyas', 'progress']);
+  });
+
   it('keeps at most two', () => {
     expect(normalizeTabs(['progress', 'coach', 'body', 'sleep'])).toEqual(['progress', 'coach']);
   });

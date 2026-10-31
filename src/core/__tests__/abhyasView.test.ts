@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { start, type AbhyasData } from '../abhyas';
-import { abhyasCard, draftOf, formDraft, newDraft, parseTime, targetText, TARGET_CHOICES, WEEK_ORDER, type SheetForm } from '../abhyasView';
+import { abhyasCard, abhyasProgress, comingUp, draftOf, formDraft, movedPlace, newDraft, parseTime, recentDays, repeating, targetText, TARGET_CHOICES, WEEK_ORDER, weekdayRuns, type SheetForm } from '../abhyasView';
 import type { AbhyasItem, AbhyasSession, AbhyasTick } from '../types';
 
 // Saturday 31 October 2026; the clock is Asia/Kolkata (vitest.config.mts).
@@ -146,6 +146,108 @@ describe('the item sheet', () => {
       expect(formDraft(form({ target: 0 })).problem).toBe('target');
       expect(formDraft(form({ times: ['25:00'] })).problem).toBe('time');
       expect(formDraft(form({ name: '', times: ['later'] })).problem).toBe('name');
+    });
+  });
+});
+
+describe('the Abhyas tab', () => {
+  const yoga = item('yoga', { order: 2 });
+  const study = item('study', { order: 0, days: [1, 3, 5], targetMin: 30 });
+  const gone = item('gone', { order: 1, archivedAt: at('2026-10-20', '10:00').toISOString() });
+  const bike = item('bike', { order: 3, kind: 'once', days: [], date: '2026-11-03' });
+  const call = item('call', { order: 4, kind: 'once', days: [], date: TOMORROW });
+  const tax = item('tax', { order: 1, kind: 'once', days: [], date: '2026-11-03' });
+
+  it('Repeating: the repeating items still on the list, in the user\'s order, one-offs and removed ones left out', () => {
+    expect(repeating([yoga, bike, gone, study]).map((i) => i.id)).toEqual(['study', 'yoga']);
+    expect(repeating([])).toEqual([]);
+  });
+
+  it('Coming up: one-offs for a day after today, soonest first and in the user\'s order within a day; today, past and removed ones left out', () => {
+    const today = item('today', { kind: 'once', days: [], date: TODAY });
+    const past = item('past', { kind: 'once', days: [], date: YESTERDAY });
+    const dropped = item('dropped', { kind: 'once', days: [], date: TOMORROW, archivedAt: NOW.toISOString() });
+    expect(comingUp([bike, yoga, today, past, call, dropped, tax], TODAY).map((i) => i.id)).toEqual(['call', 'tax', 'bike']);
+  });
+
+  it('weekdays as runs, Monday to Sunday: every day, a run of three or more as a range, the rest one by one', () => {
+    expect(weekdayRuns(ALL_WEEK)).toBe('every');
+    expect(weekdayRuns([5, 1, 2, 3, 4])).toEqual([[1, 5]]);
+    expect(weekdayRuns([1, 3, 5])).toEqual([[1, 1], [3, 3], [5, 5]]);
+    expect(weekdayRuns([1, 2, 6, 0])).toEqual([[1, 1], [2, 2], [6, 6], [0, 0]]);
+    expect(weekdayRuns([4, 5, 6, 0])).toEqual([[4, 0]]);
+    expect(weekdayRuns([])).toEqual([]);
+  });
+
+  describe('recentDays: the days before today, newest first', () => {
+    it('one per day, 14 at most, each with its items done, items on it and minutes', () => {
+      const days = recentDays(data({ items: [yoga, study], ticks: [tick('yoga', YESTERDAY)], sessions: [session('study', YESTERDAY, 40), session('study', '2026-10-28', 10)] }), TODAY, NOW);
+      expect(days).toHaveLength(14);
+      expect(days[0]).toEqual({ date: YESTERDAY, total: 2, done: 2, minutes: 40 });
+      expect(days[1]).toEqual({ date: '2026-10-29', total: 1, done: 0, minutes: 0 });
+      expect(days[2]).toEqual({ date: '2026-10-28', total: 2, done: 0, minutes: 10 });
+      expect(days[13].date).toBe('2026-10-17');
+      expect(days.map((d) => d.date)).not.toContain(TODAY);
+    });
+
+    it('never before the first item, and none with no items or only one added today', () => {
+      const fresh = item('fresh', { createdAt: at('2026-10-28', '08:00').toISOString() });
+      expect(recentDays(data({ items: [fresh] }), TODAY, NOW).map((d) => d.date)).toEqual([YESTERDAY, '2026-10-29', '2026-10-28']);
+      expect(recentDays(data({ items: [item('new', { createdAt: NOW.toISOString() })] }), TODAY, NOW)).toEqual([]);
+      expect(recentDays(data(), TODAY, NOW)).toEqual([]);
+    });
+
+    it('a day with nothing on it between two that have something stays, as nothing planned', () => {
+      const days = recentDays(data({ items: [study] }), TODAY, NOW, 3);
+      expect(days).toEqual([
+        { date: YESTERDAY, total: 1, done: 0, minutes: 0 },
+        { date: '2026-10-29', total: 0, done: 0, minutes: 0 },
+        { date: '2026-10-28', total: 1, done: 0, minutes: 0 },
+      ]);
+    });
+  });
+
+  describe("abhyasProgress: Progress's row", () => {
+    it('this week so far, Monday to today, and the streak', () => {
+      // Mon 26 to Sat 31: yoga on all six, study on Mon, Wed and Fri; yoga ticked Thu to Sat, study done Fri.
+      const ticks = ['2026-10-29', YESTERDAY, TODAY].map((d) => tick('yoga', d));
+      const p = abhyasProgress(data({ items: [yoga, study], ticks, sessions: [session('study', YESTERDAY, 30)] }), TODAY, NOW);
+      expect(p).toEqual({ done: 4, total: 9, streak: 3 });
+    });
+
+    it('a new week starts on Monday, and a day still to come this week counts nothing yet', () => {
+      // Monday 2 November: yoga and that day's one-off so far; the bike on Tuesday not yet.
+      const dentist = item('dentist', { kind: 'once', days: [], date: '2026-11-02' });
+      expect(abhyasProgress(data({ items: [yoga, dentist, bike], ticks: [tick('yoga', TODAY)] }), '2026-11-02', at('2026-11-02', '09:00'))).toEqual({ done: 0, total: 2, streak: 0 });
+    });
+
+    it('the running timer counts once it reaches the target', () => {
+      const short = item('short', { targetMin: 10 });
+      const running = start('short', at(TODAY, '17:40'));
+      expect(abhyasProgress(data({ items: [short], running }), TODAY, NOW)?.done).toBe(1);
+    });
+
+    it('none while nothing is on the list, even with history left by removed items', () => {
+      expect(abhyasProgress(data(), TODAY, NOW)).toBeNull();
+      expect(abhyasProgress(data({ items: [gone], ticks: [tick('gone', '2026-10-19')] }), TODAY, NOW)).toBeNull();
+    });
+  });
+
+  describe('movedPlace: a repeating item after a move', () => {
+    const a = item('a', { order: 0 });
+    const b = item('b', { order: 1 });
+    const c = item('c', { order: 2 });
+
+    it('its place among the repeating items and the button that keeps the focus', () => {
+      expect(movedPlace([a, b, c], 'b', 1)).toEqual({ n: 2, m: 3, focus: 'down' });
+      expect(movedPlace([a, b, c], 'c', 1)).toEqual({ n: 3, m: 3, focus: 'up' });
+      expect(movedPlace([a, b, c], 'a', -1)).toEqual({ n: 1, m: 3, focus: 'down' });
+      expect(movedPlace([a, b, c], 'b', -1)).toEqual({ n: 2, m: 3, focus: 'up' });
+    });
+
+    it('none for an item that is not a repeating one on the list', () => {
+      expect(movedPlace([a, bike], 'bike', 1)).toBeNull();
+      expect(movedPlace([a, gone], 'gone', -1)).toBeNull();
     });
   });
 });

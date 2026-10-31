@@ -13,6 +13,7 @@ export const TITLES: Record<string, string> = {
   '/sleep': 'hdr_sleep',
   '/plan-tab': 'hdr_plan',
   '/plan': 'hdr_plan',
+  '/abhyas': 'abhyas',
   '/log': 'add_food',
   '/settings': 'hdr_settings',
   '/customize': 'hdr_customize',

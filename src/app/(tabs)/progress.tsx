@@ -9,11 +9,13 @@ import { StreakTile } from '../../components/tiles/StreakTile';
 import { TileRow } from '../../components/tiles/TileRow';
 import { TopBarActions } from '../../components/TopBarActions';
 import { WeightTrendCard } from '../../components/WeightTrendCard';
+import { abhyasProgress } from '../../core/abhyasView';
 import { mondayOf, weekDates } from '../../core/date';
 import { fullDays, oldProgressLink, recentIntake } from '../../core/progress';
 import { lostWords, oneDecimal } from '../../core/tileText';
 import { stripSince } from '../../core/weekStrip';
 import { fill, makeT, numberText } from '../../i18n';
+import { useNow } from '../../services/useClock';
 import { useApp } from '../../store/AppProvider';
 import { useRecordOn } from '../../store/useRecordOn';
 import { Bar, Btn, Card, Divider, Micro, Row, Small, StatQuad } from '../../ui/components';
@@ -48,9 +50,9 @@ export default function ProgressTab() {
  * Five blocks: the one weight card (the smoothed weight, its change, the line
  * and the goal; a tap opens the weight entry); the Streak tile; Lost, To go
  * and this week's full days; the record calendar; and one card with the last
- * seven days' average against the goal, today's nutrition a tap away, the
- * climb as one row (the mountain and every badge on the climb page) and
- * History and Charts as links.
+ * seven days' average against the goal, the Abhyas row while the user has a
+ * list, today's nutrition a tap away, the climb as one row (the mountain and
+ * every badge on the climb page) and History and Charts as links.
  */
 function Progress() {
   const app = useApp();
@@ -100,6 +102,7 @@ function Progress() {
         <Small color={avgOff ? C.amber : C.textDim}>
           {intake ? fill(t('progress_avg'), { avg: numberText(intake.avg), goal: numberText(targets.kcal) }) : t('progress_avg_none')}
         </Small>
+        <AbhyasWeek />
         <Pressable
           onPress={() => setNutrition(true)}
           accessibilityRole="button"
@@ -136,5 +139,34 @@ function Progress() {
         <NutrientCard bare onNavigate={() => setNutrition(false)} />
       </Sheet>
     </Page>
+  );
+}
+
+/**
+ * "Abhyas" over "18 of 21 this week · 5-day streak", a tap to the Abhyas
+ * page; nothing while the list is empty. On its own, so the minute clock a
+ * running timer needs re-renders this row and not the whole page.
+ */
+function AbhyasWeek() {
+  const app = useApp();
+  const router = useRouter();
+  const now = useNow();
+  const t = makeT(app.state.profile.lang);
+  const p = abhyasProgress(app.abhyas, app.today, now);
+  if (!p) return null;
+  const facts = [p.total > 0 ? fill(t('abh_week'), { n: p.done, m: p.total }) : null, p.streak > 0 ? fill(t('abh_streak_n'), { n: p.streak }) : null].filter((x): x is string => x !== null);
+  return (
+    <Pressable
+      onPress={() => router.push('/abhyas')}
+      accessibilityRole="button"
+      accessibilityLabel={[t('abhyas'), ...facts].join(', ')}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: S.touch, opacity: pressed ? 0.7 : 1 })}>
+      <Ionicons name="book-outline" size={20} color={C.accentText} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{t('abhyas')}</Text>
+        {facts.length > 0 ? <Micro color={C.textDim}>{facts.join(' · ')}</Micro> : null}
+      </View>
+      <Ionicons name="chevron-forward" size={16} color={C.textFaint} />
+    </Pressable>
   );
 }

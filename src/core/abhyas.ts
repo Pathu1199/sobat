@@ -165,7 +165,7 @@ function byDate<T extends { date: ISODate }>(list: T[]): Map<ISODate, T[]> {
 }
 
 /** The first date any item can be on: the earliest one-off date or day an item was added. Null with no items. */
-function firstDate(items: AbhyasItem[]): ISODate | null {
+export function firstDate(items: AbhyasItem[]): ISODate | null {
   let first: ISODate | null = null;
   for (const i of items) {
     const d = i.kind === 'once' ? i.date : localDate(i.createdAt);

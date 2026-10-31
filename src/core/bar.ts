@@ -24,7 +24,7 @@ const EXTRA: Record<TabId, BarItem> = {
   body: { key: 'body', route: 'body', icon: 'body-outline', labelKey: 'tab_body' },
   sleep: { key: 'sleep', route: 'sleep-tab', icon: 'moon-outline', labelKey: 'sleep_title' },
   plan: { key: 'plan', route: 'plan-tab', icon: 'calendar-outline', labelKey: 'tab_plan' },
-  abhyas: { key: 'abhyas', route: 'abhyas', icon: 'book-outline', labelKey: 'tab_abhyas' },
+  abhyas: { key: 'abhyas', route: 'abhyas', icon: 'book-outline', labelKey: 'abhyas' },
 };
 
 /** Today, the extras, Me, with ➕ inserted in the middle: Today · ➕ · Progress · Me by default. */
@@ -59,6 +59,8 @@ export function meRows(tabs: unknown): MeRow[] {
     { key: 'coach', icon: 'chatbubble-ellipses-outline', labelKey: 'me_coach', href: '/coach' },
     { key: 'body', icon: 'body-outline', labelKey: 'tab_body', subKey: 'me_body_sub', href: '/body' },
     { key: 'plan', icon: 'calendar-outline', labelKey: 'me_plan', href: '/food?s=plan' },
+    // Always here, on the bar or not: the user's own list is one tap from Me.
+    { key: 'abhyas', icon: 'book-outline', labelKey: 'abhyas', href: '/abhyas' },
     { key: 'saved', icon: 'bookmark-outline', labelKey: 'me_saved', sheet: 'savedMeals' },
     { key: 'grocery', icon: 'basket-outline', labelKey: 'grocery_title', sheet: 'grocery' },
     { key: 'recipes', icon: 'restaurant-outline', labelKey: 'recipes', href: '/food?s=recipes' },

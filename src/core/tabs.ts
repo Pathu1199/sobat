@@ -5,8 +5,7 @@ import type { TabId, TodayCardId } from './types';
  * ➕ and Me, and the cards on Today in their order. Pure, so a value that
  * arrives from sync or an old file is cleaned the same way everywhere.
  */
-// Abhyas joins the tabs offered with its screen, src/app/(tabs)/abhyas.tsx: every tab offered has one.
-export const TAB_IDS: TabId[] = ['progress', 'coach', 'body', 'sleep', 'plan'];
+export const TAB_IDS: TabId[] = ['progress', 'coach', 'body', 'sleep', 'plan', 'abhyas'];
 export const MAX_EXTRA_TABS = 2;
 export const DEFAULT_TABS: TabId[] = ['progress'];
 

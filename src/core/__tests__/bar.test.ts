@@ -28,6 +28,12 @@ describe('barItems', () => {
     expect(barItems(['sleep', 'plan']).map((i) => i.route)).toEqual(['index', 'sleep-tab', null, 'plan-tab', 'me']);
   });
 
+  it('offers Abhyas as a tab with the book icon and its name', () => {
+    expect(barItems(['progress', 'abhyas']).map((i) => i.key)).toEqual(['today', 'progress', 'add', 'abhyas', 'me']);
+    expect(extraItem('abhyas')).toEqual({ key: 'abhyas', route: 'abhyas', icon: 'book-outline', labelKey: 'abhyas' });
+    expect(makeT('mr')(extraItem('abhyas').labelKey)).toBe('अभ्यास');
+  });
+
   it('a bad value from sync can never hide Today, ➕ or Me, nor show more than two extras', () => {
     expect(barItems('progress').map((i) => i.key)).toEqual(['today', 'add', 'progress', 'me']);
     expect(barItems(['me', 'today', 'body', 'coach', 'sleep']).map((i) => i.key)).toEqual(['today', 'body', 'add', 'coach', 'me']);
@@ -83,8 +89,16 @@ describe('viewedDate: the day ➕ adds to', () => {
 
 describe('meRows', () => {
   it('lists the pages in a plain order, with Progress while it is not a tab', () => {
-    expect(meRows([]).map((r) => r.key)).toEqual(['coach', 'progress', 'body', 'plan', 'saved', 'grocery', 'recipes', 'customize', 'chapter', 'settings', 'guide']);
-    expect(meRows(['progress']).map((r) => r.key)).toEqual(['coach', 'body', 'plan', 'saved', 'grocery', 'recipes', 'customize', 'chapter', 'settings', 'guide']);
+    expect(meRows([]).map((r) => r.key)).toEqual(['coach', 'progress', 'body', 'plan', 'abhyas', 'saved', 'grocery', 'recipes', 'customize', 'chapter', 'settings', 'guide']);
+    expect(meRows(['progress']).map((r) => r.key)).toEqual(['coach', 'body', 'plan', 'abhyas', 'saved', 'grocery', 'recipes', 'customize', 'chapter', 'settings', 'guide']);
+  });
+
+  it('has an Abhyas row above Saved meals to the Abhyas page, whether or not Abhyas is on the bar', () => {
+    for (const tabs of [[], ['abhyas'], ['progress', 'abhyas']]) {
+      const rows = meRows(tabs);
+      expect(rows.find((r) => r.key === 'abhyas')).toEqual({ key: 'abhyas', icon: 'book-outline', labelKey: 'abhyas', href: '/abhyas' });
+      expect(rows.findIndex((r) => r.key === 'abhyas')).toBe(rows.findIndex((r) => r.key === 'saved') - 1);
+    }
   });
 
   it('has a Customize row before Settings, to the tabs and the cards on Today', () => {

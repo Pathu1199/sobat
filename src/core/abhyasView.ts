@@ -1,5 +1,5 @@
-import { ABHYAS_ICONS, draftProblem, isDone, itemsOn, MAX_TARGET_MIN, minutesOn, type AbhyasData, type AbhyasDraft } from './abhyas';
-import { localDate } from './date';
+import { ABHYAS_ICONS, dayStatus, draftProblem, firstDate, isDone, itemsOn, MAX_TARGET_MIN, minutesOn, streak, type AbhyasData, type AbhyasDraft, type DayStatus } from './abhyas';
+import { addDays, localDate, mondayOf } from './date';
 import type { AbhyasItem, ISODate } from './types';
 
 /**
@@ -7,7 +7,8 @@ import type { AbhyasItem, ISODate } from './types';
  * for the card on Today and the Abhyas tab. Today every row ticks and a
  * timed item's timer starts and stops; a day before ticks too, but no timer
  * starts on a day that is over; a day still to come shows what is planned,
- * with nothing to tick yet. Words are the component's. Pure.
+ * with nothing to tick yet. The tab's other sections and Progress's row are
+ * at the end. Words are the component's. Pure.
  */
 
 /** One row: the item, whether it is done, the tick box, "12 of 30 min" for a timed item, and the timer button at the right. */
@@ -113,4 +114,84 @@ export function formDraft(form: SheetForm): { draft: SheetDraft; problem: Return
   const { target, ...rest } = form;
   const draft: SheetDraft = { ...rest, ...(target !== undefined ? { targetMin: target } : {}), times };
   return { draft, problem: draftProblem(draft) ?? (times.length < typed.length ? 'time' : null) };
+}
+
+/** The Abhyas tab's Repeating section: the repeating items still on the list, in the user's order, the order its up and down buttons move (`reorder`). */
+export function repeating(items: AbhyasItem[]): AbhyasItem[] {
+  return items.filter((i) => i.kind === 'repeat' && !i.archivedAt).sort((a, b) => a.order - b.order);
+}
+
+/** The tab's Coming up: one-offs still on the list for a day after today, soonest first, in the user's order within a day. */
+export function comingUp(items: AbhyasItem[], today: ISODate): AbhyasItem[] {
+  return items
+    .filter((i): i is AbhyasItem & { date: ISODate } => i.kind === 'once' && !i.archivedAt && typeof i.date === 'string' && i.date > today)
+    .sort((a, b) => (a.date === b.date ? a.order - b.order : a.date < b.date ? -1 : 1));
+}
+
+/**
+ * An item's weekdays as the tab writes them, Monday to Sunday: 'every' for
+ * all seven, a run of three days or more as one range ([1, 5] is Mon–Fri),
+ * and any other day on its own ([3, 3]).
+ */
+export function weekdayRuns(days: number[]): 'every' | [number, number][] {
+  const on = WEEK_ORDER.filter((d) => days.includes(d));
+  if (on.length === WEEK_ORDER.length) return 'every';
+  const out: [number, number][] = [];
+  let run: number[] = [];
+  const close = () => {
+    if (run.length >= 3) out.push([run[0], run[run.length - 1]]);
+    else for (const d of run) out.push([d, d]);
+    run = [];
+  };
+  for (const d of WEEK_ORDER) {
+    if (on.includes(d)) run.push(d);
+    else close();
+  }
+  close();
+  return out;
+}
+
+/**
+ * The tab's Last 14 days: one entry per day before today, newest first, with
+ * its items done of items on it and its minutes ("3 of 4 · 85 min"). Never
+ * before the first item, so a list started this week shows this week only; a
+ * day in between with nothing on it stays, as nothing planned.
+ */
+export function recentDays(data: AbhyasData, today: ISODate, now: Date, n = 14): (DayStatus & { date: ISODate })[] {
+  const first = firstDate(data.items);
+  const out: (DayStatus & { date: ISODate })[] = [];
+  if (!first) return out;
+  for (let date = addDays(today, -1); date >= first && out.length < n; date = addDays(date, -1)) out.push({ date, ...dayStatus(data, date, now) });
+  return out;
+}
+
+/**
+ * Progress's Abhyas row: this week so far, Monday to today, as items done of
+ * items on those days ("18 of 21 this week"), and the streak. A day still to
+ * come this week counts nothing yet. Null while nothing is on the list.
+ */
+export function abhyasProgress(data: AbhyasData, today: ISODate, now: Date): { done: number; total: number; streak: number } | null {
+  if (!data.items.some((i) => !i.archivedAt)) return null;
+  let done = 0;
+  let total = 0;
+  for (let date = mondayOf(today); date <= today; date = addDays(date, 1)) {
+    const s = dayStatus(data, date, now);
+    done += s.done;
+    total += s.total;
+  }
+  return { done, total, streak: streak(data, today, now) };
+}
+
+/**
+ * After a repeating item moved (the list as it is now): its place among the
+ * repeating items ("place 2 of 3"), and which of its buttons keeps the focus,
+ * the one pressed or the other one once the item reached the end where the
+ * pressed one no longer works. Null for an item that is not one of them.
+ */
+export function movedPlace(items: AbhyasItem[], id: string, by: -1 | 1): { n: number; m: number; focus: 'up' | 'down' } | null {
+  const list = repeating(items);
+  const i = list.findIndex((x) => x.id === id);
+  if (i < 0) return null;
+  const last = list.length - 1;
+  return { n: i + 1, m: list.length, focus: by < 0 ? (i > 0 ? 'up' : 'down') : i < last ? 'down' : 'up' };
 }
