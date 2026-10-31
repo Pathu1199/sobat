@@ -10,6 +10,7 @@ import { IntakeCard } from '../../components/IntakeCard';
 import { MantraCard } from '../../components/MantraCard';
 import { MealSheet } from '../../components/MealSheet';
 import { StepsCard } from '../../components/StepsCard';
+import { StreakPill } from '../../components/StreakPill';
 import { SleepTile } from '../../components/tiles/SleepTile';
 import { StreakTile } from '../../components/tiles/StreakTile';
 import { TileRow } from '../../components/tiles/TileRow';
@@ -17,32 +18,33 @@ import { WaterWalkTiles } from '../../components/tiles/WaterWalk';
 import { WeightTile } from '../../components/tiles/WeightTile';
 import { IconButton } from '../../ui/IconButton';
 import { WeekStrip } from '../../components/WeekStrip';
-import { addDays, formatDayLabel, isIsoDate, mondayOf } from '../../core/date';
+import { addDays, formatDayLong, isIsoDate, mondayOf } from '../../core/date';
 import { dayMode, dayView } from '../../core/dayView';
 import { skippedOn } from '../../core/menu';
 import { currentSlot, slotStates } from '../../core/pattern';
 import { pendingCount } from '../../core/queue';
 import { weekRecord } from '../../core/record';
-import { dayReviewShown, todayBlocks, withReview, type PairTile } from '../../core/todayLayout';
+import { dayReviewShown, todayBlocks, todayGreeting, withReview, type PairTile } from '../../core/todayLayout';
 import type { Meal } from '../../core/types';
 import { isOffDay } from '../../core/week';
 import { stripSince, weekStrip } from '../../core/weekStrip';
 import { fill, makeT } from '../../i18n';
 import { useMinute } from '../../services/useWorkSchedule';
 import { useApp } from '../../store/AppProvider';
-import { Card, Small } from '../../ui/components';
-import { Logo } from '../../ui/Logo';
-import { STRIP_MARGIN } from '../../ui/stripGeometry';
+import { Row, Small } from '../../ui/components';
 import { C } from '../../ui/theme';
 import { Page } from '../../ui/TopBar';
 
 /**
- * Today: the calories left and the day's menu to tick off. The week strip
- * on top picks the day (?date=, none for today); under the number come the
- * cards the person keeps on, in their order: by default the menu, one coach
- * line and the Water and Walk tiles. A past day is filled in, a future day is
- * planned, in the same place; nothing here logs into a date after today. In
- * the evening the day's review follows, while its reminder is on.
+ * Today: the calories left and the day's menu to tick off. The header is the
+ * day looked at, small, over a greeting with the user's first name, and the
+ * streak at the right. The week strip under it picks the day (?date=, none
+ * for today); the strip and the number sit on the page, not in a card. Under
+ * the number come the cards the user keeps on, in their order: by default the
+ * menu, one coach line and the Water and Walk tiles. A past day is filled in,
+ * a future day is planned, in the same place; nothing here logs into a date
+ * after today. In the evening the day's review follows, while its reminder is
+ * on.
  */
 export default function TodayScreen() {
   const app = useApp();
@@ -83,20 +85,26 @@ export default function TodayScreen() {
   const review = dayReviewShown({ on: state.settings.reminders.dayReview, mode, hour: app.hour, hasData: app.budget.consumed > 0 || state.sleep.some((s) => s.date === today) });
 
   const queued = pendingCount(state.photoQueue);
-  const title = mode === 'today' ? t('tab_today') : viewed === addDays(today, -1) ? t('yesterday') : formatDayLabel(viewed, lang);
+  const greeting = todayGreeting(app.hour, state.profile.name, lang);
   const pairTile = (id: PairTile) =>
     id === 'weight' ? <WeightTile key={id} /> : id === 'sleep' ? <SleepTile key={id} date={viewed} /> : <StreakTile key={id} onPress={() => router.push('/progress')} hint={t('tile_hint_streak')} />;
 
   return (
-    <Page title={title} left={<Logo size={26} />} right={mode === 'today' ? undefined : <IconButton name="today-outline" label={t('today_back')} onPress={() => go(today)} />}>
+    <Page
+      title={greeting}
+      over={formatDayLong(viewed, lang)}
+      right={
+        <Row style={{ gap: 4 }}>
+          {mode === 'today' ? null : <IconButton name="today-outline" label={t('today_back')} onPress={() => go(today)} />}
+          <StreakPill />
+        </Row>
+      }>
       {queued > 0 ? <Small color={C.cyan}>{fill(t(queued === 1 ? 'photos_queued' : 'photos_queued_plural'), { n: queued })}</Small> : null}
-      <Card>
-        {/* The strip reaches over the card's padding, so each day is a finger wide on a 360 point phone (ui/stripGeometry.ts). */}
-        <View style={{ marginHorizontal: STRIP_MARGIN }}>
-          <WeekStrip days={days} lang={lang} onSelect={go} onWeek={onWeek} />
-        </View>
+      {/* The strip and the number, close together, on the page: each day is a finger wide on a 360 point phone (ui/stripGeometry.ts). */}
+      <View style={{ gap: 12 }}>
+        <WeekStrip days={days} lang={lang} onSelect={go} onWeek={onWeek} />
         <CaloriesLeft mode={mode} view={view} suggested={suggested} />
-      </Card>
+      </View>
       {/* Days in a row under the safe minimum are said plainly, today only; nothing shows otherwise. */}
       {mode === 'today' ? <IntakeCard /> : null}
       {/* A day still to come has no night to check in yet, so todayBlocks leaves its Sleep tile out; the day's line shows only while it is switched on. */}
@@ -116,7 +124,6 @@ export default function TodayScreen() {
           </TileRow>
         );
       })}
-      <Small color={C.textFaint}>{t('medical_note')}</Small>
       <MealSheet meal={openMeal} onClose={() => setOpenMeal(null)} />
       {mode === 'today' ? <Celebration /> : null}
     </Page>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { caloriesLeft, dayReviewShown, todayBlocks, withReview } from '../todayLayout';
+import { caloriesLeft, dayReviewShown, firstName, greetingKey, todayBlocks, todayGreeting, withReview } from '../todayLayout';
 
 const on = (id: string) => ({ id, on: true });
 const off = (id: string) => ({ id, on: false });
@@ -55,6 +55,8 @@ describe('caloriesLeft', () => {
       line: { key: 'today_planned_goal', kcal: 1650, goal: 1800 },
       earned: 50,
       protein: { g: 40, target: 112 },
+      // The bar: eaten out of the goal and what the walk earned back.
+      bar: { used: 1200, of: 1850 },
     });
     // Eaten past the budget today is said, in red.
     expect(caloriesLeft({ mode: 'today', targets, view, budget: { ...budget, remaining: -120 }, suggested: false, ...base })).toMatchObject({ kcal: 120, over: true, alarm: true, label: 'kcal_over' });
@@ -69,6 +71,7 @@ describe('caloriesLeft', () => {
       line: { key: 'today_eaten_of', kcal: 1200, goal: 1800 },
       earned: 0,
       protein: { g: 38, target: 112 },
+      bar: { used: 1200, of: 1800 },
     });
     // A past day reads what was eaten even when its menu was the app's suggestion.
     expect(caloriesLeft({ mode: 'past', targets, view: { ...view, eatenKcal: 2000 }, budget, suggested: true, ...base })).toMatchObject({ kcal: 200, over: true, alarm: true, line: { key: 'today_eaten_of' } });
@@ -83,6 +86,8 @@ describe('caloriesLeft', () => {
       line: { key: 'today_planned_goal', kcal: 1650, goal: 1800 },
       earned: 0,
       protein: { g: 70, target: 112 },
+      // A day still to come fills its bar with what is planned.
+      bar: { used: 1650, of: 1800 },
     });
     expect(caloriesLeft({ mode: 'future', targets, view: { ...view, plannedKcal: 1900 }, budget, suggested: false, ...base })).toMatchObject({ kcal: 100, over: true, alarm: true, label: 'kcal_over' });
   });
@@ -114,6 +119,11 @@ describe('caloriesLeft', () => {
     expect(caloriesLeft({ mode: 'today', targets, view: free, budget: { ...budget, remaining: -300 }, suggested: false, offDay: true, dayEarned: 0 })).toMatchObject({ over: true, alarm: false, label: 'kcal_over' });
     expect(caloriesLeft({ mode: 'past', targets, view: { ...free, eatenKcal: 2400 }, budget, suggested: false, offDay: true, dayEarned: 0 })).toMatchObject({ kcal: 600, over: true, alarm: false });
     expect(caloriesLeft({ mode: 'future', targets, view: { ...free, plannedKcal: 2400 }, budget, suggested: false, offDay: true, dayEarned: 0 })).toMatchObject({ over: true, alarm: false });
+  });
+
+  it("fills the bar past its end when the day goes over, and counts a past day's walks in its length", () => {
+    expect(caloriesLeft({ mode: 'today', targets, view, budget: { ...budget, remaining: -120 }, suggested: false, ...base }).bar).toEqual({ used: 1970, of: 1850 });
+    expect(caloriesLeft({ mode: 'past', targets, view, budget, suggested: false, offDay: false, dayEarned: 60 }).bar).toEqual({ used: 1200, of: 1860 });
   });
 
   it('a day before the person started shows what was eaten, with no "left" and no alarm', () => {
@@ -155,5 +165,36 @@ describe('withReview: the evening review within the five blocks', () => {
     const pair = { kind: 'pair' as const, tiles: ['weight' as const] };
     expect(withReview([menu, steps, coach, waterWalk], true)).toEqual([menu, { kind: 'review' }, coach, waterWalk]);
     expect(withReview([menu, pair, coach, steps, waterWalk], true)).toEqual([menu, pair, coach, { kind: 'review' }, waterWalk]);
+  });
+});
+
+describe("Today's greeting", () => {
+  it('greets by the hour: morning from 4:00, afternoon from noon, evening from 17:00 and through the night', () => {
+    expect([4, 11, 12, 16, 17, 23, 0, 3].map(greetingKey)).toEqual([
+      'greet_morning',
+      'greet_morning',
+      'greet_afternoon',
+      'greet_afternoon',
+      'greet_evening',
+      'greet_evening',
+      'greet_evening',
+      'greet_evening',
+    ]);
+  });
+
+  it('takes the first word of the name, and nothing from a name left empty', () => {
+    expect(firstName('Varad Shinde')).toBe('Varad');
+    expect(firstName('  वरद  शिंदे ')).toBe('वरद');
+    expect(firstName('')).toBeNull();
+    expect(firstName('   ')).toBeNull();
+    expect(firstName(undefined)).toBeNull();
+  });
+
+  it("says it in the user's language, with the first name, or the greeting alone with no name", () => {
+    expect(todayGreeting(8, 'Varad Shinde', 'en')).toBe('Good morning, Varad');
+    expect(todayGreeting(8, 'वरद शिंदे', 'mr')).toBe('शुभ सकाळ, वरद');
+    expect(todayGreeting(14, 'Varad', 'hi')).toBe('शुभ दोपहर, Varad');
+    expect(todayGreeting(20, '', 'en')).toBe('Good evening');
+    expect(todayGreeting(20, undefined, 'mr')).toBe('शुभ संध्याकाळ');
   });
 });

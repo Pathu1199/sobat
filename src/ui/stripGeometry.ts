@@ -3,16 +3,22 @@ import { PALETTES, S } from './theme';
 
 /**
  * The week strip's sizes and dots. Each day takes a seventh of the row, so
- * the seven always fit. On Today the strip reaches over its card's padding to
- * `STRIP_EDGE` from the card's edge, so a day is a finger wide (44 points and
- * more) on a 360 or 375 point phone. On a 320 point phone a day is about 40
- * points wide, narrower than a finger, so its touch box is kept a finger and
- * more tall as well (`STRIP_DAY_HEIGHT`), with room for the weekday, the date
- * and the dot at the largest text size. Pure.
+ * the seven always fit. On Today the strip sits on the page, not in a card,
+ * so a day is a finger wide (44 points and more) on a 360 or 375 point phone.
+ * On a 320 point phone a day is about 41 points wide, narrower than a finger,
+ * so its touch box is kept a finger and more tall as well
+ * (`STRIP_DAY_HEIGHT`), with room for the weekday and the date in their pill
+ * and the dot under it at the largest text size. Pure.
  */
-export const STRIP_DAY_HEIGHT = 60;
+export const STRIP_DAY_HEIGHT = 64;
 
-/** How far in from the card's edge the strip sits on Today: it takes the rest of the card's padding, so the chosen day's tint never runs into the card's edge. */
+/** Above and below the weekday and the date, inside the pill that marks today (and the outline of the chosen day). */
+export const STRIP_PILL_PAD = 2;
+
+/** Between a day's pill and its dot. */
+export const STRIP_DOT_GAP = 4;
+
+/** How far in from the card's edge the calendar on Progress sits: it takes the rest of the card's padding, so the outline round today never runs into the card's edge. */
 export const STRIP_EDGE = 4;
 
 /** A day's share of the strip's row. */
@@ -20,27 +26,28 @@ export function stripDayWidth(rowWidth: number): number {
   return rowWidth / 7;
 }
 
-/** The strip's own margin on Today: negative, so it reaches over the card's padding to STRIP_EDGE from the card's edge. */
+/** The calendar's own margin on Progress: negative, so its rows reach over the card's padding to STRIP_EDGE from the card's edge. */
 export const STRIP_MARGIN = STRIP_EDGE - S.cardPad;
 
-/** The strip's row on Today for a screen this wide: inside the card (less the screen's padding and the card's padding on each side; a card has no outline), less the strip's margin. */
+/** The strip's row on Today for a screen this wide: the page less the screen's padding on each side. */
 export function stripRowWidth(screenWidth: number): number {
-  const cardInside = screenWidth - 2 * (S.pad + S.cardPad);
-  return cardInside - 2 * STRIP_MARGIN;
+  return screenWidth - 2 * S.pad;
 }
 
 type Token = keyof (typeof PALETTES)['light'];
 
 /**
- * The colour of each dot, a token that stands out at 3:1 on the card, the
- * page and the chosen day's tint in light and dark (the contrast test checks
- * it): the deeper teal of words for a full day, amber for meals missing, and
+ * The colour of each dot, a token that stands out at 3:1 on the page and the
+ * card in light and dark (the contrast test checks it): the deeper teal of words for a full day, amber for meals missing, and
  * the quiet word colour for an outline and for a day of meals all skipped.
  */
 export const STRIP_DOT = { full: 'accentText', missing: 'amber', outline: 'textFaint', skipped: 'textFaint' } as const satisfies Record<string, Token>;
 
 /** The outline round the chosen day (and today on the calendar): the full dot's colour, so it keeps 3:1 like the dots. */
 export const STRIP_CHOSEN = STRIP_DOT.full;
+
+/** Today on the strip: a soft teal pill, its weekday and date in the teal of words (4.5:1 on it; the contrast test checks it). Its dot sits under the pill, on the page. */
+export const STRIP_TODAY = { fill: 'accentSoft', words: 'accentText' } as const satisfies Record<string, Token>;
 
 /** The dot's size, the width of its ring, and the dot in the middle of a ring. */
 export const STRIP_DOT_SIZE = 8;

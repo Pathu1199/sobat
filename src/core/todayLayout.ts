@@ -1,7 +1,8 @@
+import { t } from '../i18n';
 import type { DayMode, DayView } from './dayView';
 import type { Budget, Targets } from './nutrition';
 import { normalizeTodayCards } from './tabs';
-import type { TodayCardId } from './types';
+import type { Lang, TodayCardId } from './types';
 
 /**
  * Today's blocks under the week strip and calories left, from the cards the
@@ -73,6 +74,8 @@ export type CaloriesLeftWords = {
   /** Calories a walk or other activity earned back that day: today's live figure, a past day's own; 0 on a day still to come. */
   earned: number;
   protein: { g: number; target: number };
+  /** The bar under the number: what is eaten (planned, on a day still to come) out of the goal and what was earned back. */
+  bar: { used: number; of: number };
 };
 
 /**
@@ -102,7 +105,8 @@ export function caloriesLeft(input: {
   const { mode, targets, view, budget } = input;
   const goal = targets.kcal;
   const earned = mode === 'today' ? Math.max(0, budget.earned) : mode === 'past' ? Math.max(0, input.dayEarned) : 0;
-  const left = Math.round(mode === 'today' ? budget.remaining : mode === 'past' ? goal + earned - view.eatenKcal : goal - view.plannedKcal);
+  const room = goal + earned;
+  const left = Math.round(mode === 'today' ? budget.remaining : mode === 'past' ? room - view.eatenKcal : goal - view.plannedKcal);
   const over = left < 0;
   const suggested = input.suggested && mode !== 'past';
   // A day still to come is never in the record yet (`judged`), so there the free day and the suggestion decide.
@@ -119,7 +123,27 @@ export function caloriesLeft(input: {
         : { key: suggested ? 'today_suggested_goal' : 'today_planned_goal', kcal: view.plannedKcal, goal },
     earned,
     protein: { g: mode === 'today' ? budget.proteinConsumed : mode === 'past' ? view.eatenProtein : view.plannedProtein, target: targets.proteinG },
+    bar: { used: room - left, of: room },
   };
+}
+
+/** Which greeting an hour of the day takes: morning from 4:00 to noon, afternoon to 17:00, evening after that and through the night. */
+export function greetingKey(hour: number): 'greet_morning' | 'greet_afternoon' | 'greet_evening' {
+  if (hour >= 4 && hour < 12) return 'greet_morning';
+  if (hour >= 12 && hour < 17) return 'greet_afternoon';
+  return 'greet_evening';
+}
+
+/** The first word of the name the user gave, or null when they gave none. */
+export function firstName(name: string | undefined): string | null {
+  return name?.trim().split(/\s+/)[0] || null;
+}
+
+/** Today's header: "Good morning, Varad" in the user's language, or the greeting alone when there is no name. Pure. */
+export function todayGreeting(hour: number, name: string | undefined, lang: Lang): string {
+  const greet = t(lang, greetingKey(hour));
+  const first = firstName(name);
+  return first ? `${greet}, ${first}` : greet;
 }
 
 /**

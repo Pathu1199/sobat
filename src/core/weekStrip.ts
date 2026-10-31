@@ -99,3 +99,27 @@ export function swipeStep(dx: number, dy: number): -1 | 0 | 1 {
   if (Math.abs(dx) < 48 || Math.abs(dx) < 2 * Math.abs(dy)) return 0;
   return dx < 0 ? 1 : -1;
 }
+
+/** How far a sideways scroll goes before it moves a week, and how long it rests before the next one can. */
+export const WHEEL_STEP = 80;
+export const WHEEL_REST_MS = 300;
+
+/** A sideways scroll so far: its distance, whether it has moved a week yet, and when it last moved. */
+export type WheelRun = { sum: number; fired: boolean; at: number };
+export const WHEEL_IDLE: WheelRun = { sum: 0, fired: false, at: -Infinity };
+
+/**
+ * A two-finger swipe on a trackpad (on the web it comes as wheel events, not
+ * a drag), added up: once it has gone WHEEL_STEP points sideways it moves one
+ * week, left for the next and right for the one before, as a swipe does; the
+ * rest of that swipe, and the glide after it, move nothing more until the
+ * scroll has rested WHEEL_REST_MS. A scroll more up-and-down than sideways is
+ * the page's, never a week. Pure.
+ */
+export function wheelStep(run: WheelRun, dx: number, dy: number, now: number): { run: WheelRun; step: -1 | 0 | 1 } {
+  const live = now - run.at <= WHEEL_REST_MS ? run : WHEEL_IDLE;
+  if (Math.abs(dx) <= Math.abs(dy)) return { run: { ...live, at: now }, step: 0 };
+  const sum = live.sum + dx;
+  if (live.fired || Math.abs(sum) < WHEEL_STEP) return { run: { sum, fired: live.fired, at: now }, step: 0 };
+  return { run: { sum: 0, fired: true, at: now }, step: sum > 0 ? 1 : -1 };
+}

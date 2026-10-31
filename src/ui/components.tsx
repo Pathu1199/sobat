@@ -315,11 +315,12 @@ export function Toggle({ title, desc, on, onToggle }: { title: string; desc: str
   );
 }
 
-export function Bar({ value, max, color = C.accent, height = 4, marker }: { value: number; max: number; color?: string; height?: number; marker?: number }) {
+/** A bar of how far `value` is along `max`. `track` colours the empty part: the default cardAlt is for a bar in a card; on the page it needs a deeper one. */
+export function Bar({ value, max, color = C.accent, height = 4, marker, track }: { value: number; max: number; color?: string; height?: number; marker?: number; track?: string }) {
   const target = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
   const pct = useEased(target);
   return (
-    <View style={[st.barTrack, { height, borderRadius: height }]}>
+    <View style={[st.barTrack, { height, borderRadius: height }, track ? { backgroundColor: track } : null]}>
       <View style={{ width: `${pct * 100}%`, backgroundColor: color, height, borderRadius: height }} />
       {marker !== undefined && marker > 0 && marker < 1 ? (
         <View
@@ -555,7 +556,7 @@ export function Empty({ text }: { text: string }) {
 function buildStyles() {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: C.bg },
-    screenContent: { padding: S.pad, gap: S.gap, maxWidth: 780, width: '100%', alignSelf: 'center' },
+    screenContent: { padding: S.pad, gap: S.cardGap, maxWidth: 780, width: '100%', alignSelf: 'center' },
     card: { backgroundColor: C.card, borderRadius: S.radius, padding: S.cardPad, gap: 12 },
     title: { color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' },
     p: { color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '400' },

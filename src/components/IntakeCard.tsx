@@ -1,16 +1,19 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { lowIntake } from '../core/intake';
+import { Pressable, Text } from 'react-native';
+import { intakeNote, lowIntake } from '../core/intake';
 import { KCAL_FLOOR } from '../core/nutrition';
-import { fill, makeT, numberText } from '../i18n';
+import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useRecordOn } from '../store/useRecordOn';
-import { Card, Micro, Row, Small } from '../ui/components';
-import { C, F, S } from '../ui/theme';
+import { AMBER_NOTE, C, F, lh, S } from '../ui/theme';
 
-/** Three logged days under the line: say so once, plainly, and point at the plan. Nothing otherwise. */
+/**
+ * Three logged days under the line: one amber note says so, once, plainly
+ * (core/intake.ts `intakeNote`), and the whole note opens the plan. Nothing
+ * otherwise. Amber, never red: eating too little is a thing to fix, not an
+ * alarm.
+ */
 export function IntakeCard() {
   const app = useApp();
   const router = useRouter();
@@ -22,24 +25,29 @@ export function IntakeCard() {
     () => lowIntake({ meals: state.meals, today, target: targets.kcal, floor: KCAL_FLOOR[state.profile.sex], offDays: state.settings.offDays ?? [], recordOn }),
     [state.meals, today, targets.kcal, state.profile.sex, state.settings.offDays, recordOn],
   );
-  if (!intake) return null;
+  const text = intakeNote(intake, state.profile.lang);
+  if (!text) return null;
+  const words = { color: C[AMBER_NOTE.words], fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' } as const;
   return (
-    <Card rail={C.red}>
-      <Row style={{ gap: 10, alignItems: 'flex-start' }}>
-        <Ionicons name="warning-outline" size={20} color={C.red} style={{ marginTop: 2 }} />
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{t('intake_title')}</Text>
-          <Small color={C.textDim}>{fill(t('intake_body'), { avg: numberText(intake.avg), days: intake.days, limit: numberText(intake.limit), target: numberText(targets.kcal) })}</Small>
-        </View>
-      </Row>
-      {/* A finger tall on every platform: the web adds no reach around a control, so the box itself is the size. */}
-      <Pressable
-        onPress={() => router.push('/food?s=plan')}
-        accessibilityRole="button"
-        accessibilityLabel={t('intake_open_plan')}
-        style={({ pressed }) => ({ minHeight: S.touch, justifyContent: 'center', alignSelf: 'flex-start', opacity: pressed ? 0.7 : 1 })}>
-        <Micro color={C.accentText}>{`${t('intake_open_plan')} ›`}</Micro>
-      </Pressable>
-    </Card>
+    // A finger tall on every platform: the web adds no reach around a control, so the box itself is the size.
+    <Pressable
+      onPress={() => router.push('/food?s=plan')}
+      accessibilityRole="button"
+      accessibilityLabel={text}
+      accessibilityHint={t('intake_open_plan')}
+      style={({ pressed }) => ({
+        minHeight: S.touch,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: S.radiusSm,
+        backgroundColor: C[AMBER_NOTE.fill],
+        opacity: pressed ? 0.8 : 1,
+      })}>
+      <Text style={words}>△</Text>
+      <Text style={[words, { flex: 1 }]}>{text}</Text>
+    </Pressable>
   );
 }

@@ -444,6 +444,8 @@ export default function SettingsScreen() {
             </View>
           </Row>
           <Small color={C.textDim}>{t('about_body')}</Small>
+          {/* The safety line lives here (and on the welcome page and the Guide), no longer at the foot of Today. */}
+          <Small color={C.textDim}>{t('medical_note')}</Small>
           <Row style={{ gap: 8 }}>
             <Btn small tone="soft" label={t('open_guide')} onPress={() => router.push('/guide')} style={{ flex: 1 }} />
             <Btn small tone="soft" label={t('show_tour')} onPress={() => router.push('/tour?from=settings')} style={{ flex: 1 }} />

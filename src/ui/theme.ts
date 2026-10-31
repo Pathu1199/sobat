@@ -143,6 +143,8 @@ export function cardShadow(mode: ThemeMode, web: boolean): ViewStyle {
 
 export const S = {
   gap: 12,
+  /** Between the cards and blocks of a page. */
+  cardGap: 16,
   pad: 16,
   padLg: 20,
   /** Inside a card. */
@@ -220,6 +222,9 @@ export const MICRO = {
   lineHeight: lh(F.small),
   fontWeight: '500' as const,
 };
+
+/** A one-line warning note on a page (Today's low-intake note): dark amber words on soft amber, never red, 4.5:1 in both themes (the contrast test holds it). */
+export const AMBER_NOTE = { fill: 'amberSoft', words: 'amber' } as const satisfies Record<string, keyof typeof DARK>;
 
 export function severityColor(s: 'good' | 'watch' | 'act') {
   return s === 'good' ? C.accent : s === 'watch' ? C.amber : C.red;

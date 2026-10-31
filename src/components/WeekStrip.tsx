@@ -1,24 +1,27 @@
-import React, { useMemo } from 'react';
-import { PanResponder, Pressable, Text, View } from 'react-native';
-import { formatDayMonth } from '../core/date';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { PanResponder, Platform, Pressable, Text, View } from 'react-native';
 import type { Lang } from '../core/types';
-import { stripDayLabel, swipeStep, type StripDay } from '../core/weekStrip';
+import { stripDayLabel, swipeStep, WHEEL_IDLE, wheelStep, type StripDay, type WheelRun } from '../core/weekStrip';
 import { makeT } from '../i18n';
 import { chosenProps } from '../ui/chosen';
-import { STRIP_CHOSEN, STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_SIZE, STRIP_RING, stripDot } from '../ui/stripGeometry';
+import { STRIP_CHOSEN, STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_GAP, STRIP_DOT_SIZE, STRIP_PILL_PAD, STRIP_RING, STRIP_TODAY, stripDot } from '../ui/stripGeometry';
 import { C, F, lh, S } from '../ui/theme';
-import { IconButton } from '../ui/IconButton';
 
 /**
- * Monday to Sunday of the week being looked at, a dot under each day from
- * the record. Tapping a day shows it; the arrows above, or a sideways swipe,
- * move a week. The arrows sit in their own row, so each day keeps a full
- * seventh of the width; on a phone too narrow for seven fingers side by side
- * (320 points) the days grow no wider than that seventh, so the row never
+ * Monday to Sunday of the week being looked at, on the page, a dot under each
+ * day from the record. Tapping a day shows it; a sideways swipe moves a week:
+ * a finger, a mouse drag, or a trackpad's two-finger swipe on the web. Today
+ * is a soft teal pill, and a chosen day other than today has an outline (the
+ * strip always holds the chosen day, so with no outline the pill is the
+ * chosen one). For a screen reader or a keyboard, Previous week and Next week
+ * wait out of sight at either end until they have the focus. Each day keeps a
+ * full seventh of the width; on a phone too narrow for seven fingers side by
+ * side (320 points) the days grow no wider than that seventh, so the row never
  * runs over, and each stays a finger and more tall (ui/stripGeometry.ts). A
  * day's words stay on one line at every text size: the weekday's short name,
- * the date, and the dot; what the dot means, and "today" for today, are in
- * the day's name for a screen reader (core/weekStrip.ts `stripDayLabel`).
+ * the date, and the dot; what the dot means, and "today" for today, are in the
+ * day's name for a screen reader (core/weekStrip.ts `stripDayLabel`).
  */
 export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; lang: Lang; onSelect: (date: string) => void; onWeek: (by: -1 | 1) => void }) {
   const t = makeT(lang);
@@ -33,18 +36,36 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
       }),
     [onWeek],
   );
-  if (days.length === 0) return null;
+  // On the web a trackpad's two-finger swipe comes as wheel events, not a drag. The run outlives a week's move, so the glide
+  // after a swipe never moves a second week.
+  const strip = useRef<View>(null);
+  const run = useRef<WheelRun>(WHEEL_IDLE);
+  const shown = days.length > 0;
+  useEffect(() => {
+    const node = Platform.OS === 'web' ? (strip.current as unknown as HTMLElement | null) : null;
+    if (!node) return;
+    const onWheel = (e: WheelEvent) => {
+      // A wheel that counts in lines (Firefox) is about 16 points a line.
+      const unit = e.deltaMode === 1 ? 16 : 1;
+      const dx = e.deltaX * unit;
+      const dy = e.deltaY * unit;
+      if (Math.abs(dx) <= Math.abs(dy)) return;
+      // Sideways is the strip's, not the browser's: no page scrolled sideways, no swipe back a page.
+      e.preventDefault();
+      const next = wheelStep(run.current, dx, dy, e.timeStamp);
+      run.current = next.run;
+      if (next.step !== 0) onWeek(next.step);
+    };
+    node.addEventListener('wheel', onWheel, { passive: false });
+    return () => node.removeEventListener('wheel', onWheel);
+  }, [onWeek, shown]);
+  if (!shown) return null;
   return (
-    <View style={{ gap: 4 }} {...pan.panHandlers}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <IconButton name="chevron-back" label={t('strip_prev_week')} onPress={() => onWeek(-1)} />
-        <Text numberOfLines={1} style={{ flex: 1, textAlign: 'center', color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
-          {`${formatDayMonth(days[0].date, lang)} – ${formatDayMonth(days[days.length - 1].date, lang)}`}
-        </Text>
-        <IconButton name="chevron-forward" label={t('strip_next_week')} onPress={() => onWeek(1)} />
-      </View>
-      <View style={{ flexDirection: 'row' }}>
-        {days.map((d) => (
+    <View ref={strip} style={{ flexDirection: 'row' }} {...pan.panHandlers}>
+      <WeekJump by={-1} label={t('strip_prev_week')} onWeek={onWeek} />
+      {days.map((d) => {
+        const words = d.isToday ? C[STRIP_TODAY.words] : null;
+        return (
           <Pressable
             key={d.date}
             onPress={() => onSelect(d.date)}
@@ -57,25 +78,61 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
               minHeight: STRIP_DAY_HEIGHT,
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 3,
-              borderRadius: S.radiusSm,
-              borderWidth: 1,
-              borderColor: d.selected ? C[STRIP_CHOSEN] : 'transparent',
-              backgroundColor: d.selected ? C.accentDim : 'transparent',
+              gap: STRIP_DOT_GAP,
               opacity: pressed ? 0.7 : 1,
             })}>
-            {/* textFaint is too faint on the chosen day's tint, so the chosen day's weekday is textDim. */}
-            <Text numberOfLines={1} style={{ color: d.isToday ? C.accentText : d.selected ? C.textDim : C.textFaint, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
-              {t(`wd_${d.weekday}`)}
-            </Text>
-            <Text numberOfLines={1} style={{ color: d.selected || d.isToday ? C.accentText : C.text, fontSize: F.body, lineHeight: lh(F.body, true), fontWeight: '500', fontVariant: ['tabular-nums'] }}>
-              {d.day}
-            </Text>
+            <View
+              style={{
+                alignSelf: 'stretch',
+                marginHorizontal: 3,
+                alignItems: 'center',
+                paddingVertical: STRIP_PILL_PAD,
+                borderRadius: 999,
+                borderWidth: S.hairline,
+                borderColor: d.selected && !d.isToday ? C[STRIP_CHOSEN] : 'transparent',
+                backgroundColor: d.isToday ? C[STRIP_TODAY.fill] : 'transparent',
+              }}>
+              {/* Not selectable, so a mouse drag across the strip moves a week instead of selecting its words. */}
+              <Text selectable={false} numberOfLines={1} style={{ color: words ?? C.textFaint, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '400' }}>
+                {t(`wd_${d.weekday}`)}
+              </Text>
+              <Text selectable={false} numberOfLines={1} style={{ color: words ?? C.text, fontSize: F.body, lineHeight: lh(F.body, true), fontWeight: '500', fontVariant: ['tabular-nums'] }}>
+                {d.day}
+              </Text>
+            </View>
             <StripDot mark={d.mark} light={d.light} />
           </Pressable>
-        ))}
-      </View>
+        );
+      })}
+      <WeekJump by={1} label={t('strip_next_week')} onWeek={onWeek} />
     </View>
+  );
+}
+
+/**
+ * Previous week or Next week where a swipe is not to hand, for a screen reader
+ * and a keyboard: a point in size, out of sight, until it has the focus, when
+ * it shows as a round button over the strip's end. A screen reader finds it
+ * before Monday and after Sunday either way.
+ */
+function WeekJump({ by, label, onWeek }: { by: -1 | 1; label: string; onWeek: (by: -1 | 1) => void }) {
+  const [focused, setFocused] = useState(false);
+  const side = by < 0 ? { left: 0 } : { right: 0 };
+  return (
+    <Pressable
+      onPress={() => onWeek(by)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={[
+        { position: 'absolute', zIndex: 1, ...side },
+        focused
+          ? { top: (STRIP_DAY_HEIGHT - S.touch) / 2, width: S.touch, height: S.touch, borderRadius: S.touch / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: C.card, ...S.shadow }
+          : { top: 0, width: 1, height: 1, overflow: 'hidden' },
+      ]}>
+      {focused ? <Ionicons name={by < 0 ? 'chevron-back' : 'chevron-forward'} size={22} color={C.textDim} /> : null}
+    </Pressable>
   );
 }
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DayRecord } from '../record';
 import { t } from '../../i18n';
 import { formatDayLabel } from '../date';
-import { markOf, stripDayLabel, stripSince, swipeStep, weekStrip } from '../weekStrip';
+import { markOf, stripDayLabel, stripSince, swipeStep, WHEEL_IDLE, WHEEL_REST_MS, wheelStep, weekStrip, type WheelRun } from '../weekStrip';
 
 const r = (state: DayRecord['state'], fromPlan = false, nothingEaten = false): DayRecord => ({ state, fromPlan, nothingEaten });
 const MON = '2026-10-26';
@@ -160,5 +160,38 @@ describe('stripDayLabel: what a screen reader hears for a day', () => {
       expect(stripDayLabel({ ...day, isToday: false, mark: 'off' }, lang)).toBe(`${formatDayLabel(TODAY, lang)}, ${t(lang, 'free_day')}`);
       expect(stripDayLabel({ ...day, isToday: false, mark: 'unplanned' }, lang)).toBe(`${formatDayLabel(TODAY, lang)}, ${t(lang, 'menu_nothing_planned')}`);
     }
+  });
+});
+
+describe('wheelStep: a two-finger swipe on a trackpad', () => {
+  /** The wheel events of one swipe, 16 ms apart, from `start`: what each moved, and the run after the last. */
+  const swipe = (deltas: [number, number][], from: WheelRun = WHEEL_IDLE, start = 1000) => {
+    let run = from;
+    const steps = deltas.map(([dx, dy], i) => {
+      const next = wheelStep(run, dx, dy, start + 16 * i);
+      run = next.run;
+      return next.step;
+    });
+    return { steps, run };
+  };
+
+  it('moves one week once it has gone far enough sideways: fingers to the left the next week, to the right the week before', () => {
+    expect(swipe([[30, 2], [30, 1], [30, 0]]).steps).toEqual([0, 0, 1]);
+    expect(swipe([[-30, 2], [-30, 1], [-30, 0]]).steps).toEqual([0, 0, -1]);
+  });
+
+  it('moves only one week for the whole swipe and its glide, and the next swipe after a rest moves the next', () => {
+    const first = swipe([[50, 0], [50, 0], [40, 0], [20, 0], [10, 0], [5, 0], [60, 0], [60, 0]]);
+    expect(first.steps.filter((s) => s !== 0)).toEqual([1]);
+    const later = 1000 + 16 * 8 + WHEEL_REST_MS + 1;
+    expect(swipe([[50, 0], [50, 0]], first.run, later).steps).toEqual([0, 1]);
+  });
+
+  it('never moves a week for a scroll more up-and-down than sideways, or one too short', () => {
+    expect(swipe([[40, 60], [40, 60], [40, 60], [40, 60]]).steps).toEqual([0, 0, 0, 0]);
+    expect(swipe([[30, 0], [30, 0]]).steps).toEqual([0, 0]);
+    // A short nudge, a rest, and another short nudge do not add up.
+    const nudge = swipe([[50, 0]]);
+    expect(swipe([[50, 0]], nudge.run, 1000 + WHEEL_REST_MS + 1).steps).toEqual([0]);
   });
 });

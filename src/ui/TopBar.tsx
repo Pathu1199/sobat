@@ -5,16 +5,18 @@ import { Screen } from './components';
 import { C, F, lh, S } from './theme';
 import { useBreakpoint } from './useBreakpoint';
 
-/** One compact bar per tab. Replaces the stock navigation header. */
+/** One compact bar per tab. Replaces the stock navigation header. `over` is a small quiet line above the title (Today's date over its greeting). */
 export function TopBar({
   title,
   alt,
+  over,
   subtitle,
   right,
   left,
 }: {
   title: string;
   alt?: string;
+  over?: string;
   subtitle?: string;
   right?: React.ReactNode;
   left?: React.ReactNode;
@@ -38,6 +40,11 @@ export function TopBar({
         }}>
         {left}
         <View style={{ flex: 1, gap: 2 }}>
+          {over ? (
+            <Text numberOfLines={1} style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '400' }}>
+              {over}
+            </Text>
+          ) : null}
           <Text numberOfLines={1} accessibilityRole="header" style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' }}>
             {alt || title}
           </Text>
@@ -57,6 +64,7 @@ export function TopBar({
 export function Page({
   title,
   alt,
+  over,
   subtitle,
   right,
   left,
@@ -66,6 +74,7 @@ export function Page({
 }: {
   title: string;
   alt?: string;
+  over?: string;
   subtitle?: string;
   right?: React.ReactNode;
   left?: React.ReactNode;
@@ -76,7 +85,7 @@ export function Page({
 }) {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      {header ? <TopBar title={title} alt={alt} subtitle={subtitle} right={right} left={left} /> : null}
+      {header ? <TopBar title={title} alt={alt} over={over} subtitle={subtitle} right={right} left={left} /> : null}
       <Screen wide={wide}>{children}</Screen>
     </View>
   );

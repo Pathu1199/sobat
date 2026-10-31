@@ -122,6 +122,11 @@ export function formatDayLabel(date: ISODate, lang: Lang): string {
   return formatDate(date, lang, { weekday: 'short', day: 'numeric', month: 'short' }, date);
 }
 
+/** "Saturday, 31 October" in the chosen language, weekday and month in full: the day over Today's greeting. Falls back to the ISO date if Intl is missing. */
+export function formatDayLong(date: ISODate, lang: Lang): string {
+  return formatDate(date, lang, { weekday: 'long', day: 'numeric', month: 'long' }, date);
+}
+
 /** "26 Oct" in the chosen language. Falls back to the ISO date if Intl is missing. */
 export function formatDayMonth(date: ISODate, lang: Lang): string {
   return formatDate(date, lang, { day: 'numeric', month: 'short' }, date);

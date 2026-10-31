@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { intakeFact, lowIntake } from '../intake';
+import { intakeFact, intakeNote, lowIntake } from '../intake';
 import { addSkip } from '../menu';
 import { dayRecord } from '../record';
 import { NEUTRAL_ROUTINE } from '../routine';
@@ -64,5 +64,18 @@ describe('lowIntake', () => {
   it('writes one plain sentence for the model, or nothing', () => {
     expect(intakeFact({ avg: 1200, limit: 1500, days: 3 })).toBe('Their last 3 logged days averaged 1200 kcal, under the 1500 kcal line; cravings are expected. Encourage eating the plan in full, never less.');
     expect(intakeFact(null)).toBeNull();
+  });
+});
+
+describe('intakeNote', () => {
+  it("says the average and the way out in one line, in each language, the number written as the app writes numbers", () => {
+    const intake = { avg: 1395, limit: 1500, days: 3 };
+    expect(intakeNote(intake, 'en')).toBe("Last 3 days averaged 1,395 kcal, below the line. Eat today's plan in full.");
+    expect(intakeNote(intake, 'mr')).toBe('गेल्या 3 दिवसांत सरासरी 1,395 kcal, रेषेखाली. आजचं नियोजन पूर्ण खा.');
+    expect(intakeNote(intake, 'hi')).toBe('पिछले 3 दिनों में औसत 1,395 kcal, रेखा से नीचे. आज का प्लान पूरा खाएँ.');
+  });
+
+  it('says nothing when intake is not low', () => {
+    expect(intakeNote(null, 'en')).toBeNull();
   });
 });

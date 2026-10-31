@@ -22,10 +22,11 @@ import { useAddSheet } from './AddSheet';
 
 /**
  * The day's menu, one row per slot (core/dayView.ts decides each row's state
- * and what it offers). Today: eaten slots ticked on one line, the slot whose
- * turn it is open with Ate as planned and Change, later slots one line. A
- * past day says how many meals are missing with "2 of 3 meals", and fills
- * each open slot as planned, with something else, or as skipped, with − / +
+ * and what it offers), titled "Today's meals" on today and "Menu" on any
+ * other day. Today: eaten slots ticked on one line, the slot whose turn it is
+ * open on a soft teal block with Ate as planned and Change, later slots one
+ * line. A past day says how many meals are missing with "2 of 3 meals", and
+ * fills each open slot as planned, with something else, or as skipped, with − / +
  * on each planned food; those change a draft of what was eaten, which Ate
  * this logs, never that day's menu (its record of what was planned). An
  * empty day fills from the plan in one tap, with Undo. A future day is the
@@ -117,13 +118,15 @@ export function DayMenu({
     fb.notify(t('menu_day_filled'), { label: t('undo'), onPress: () => runUndo(app, steps) });
   }
 
-  const head = (row: MenuRow, right?: string) => (
+  // On the current meal's soft teal block the quiet words are in the text colour: the dim and faint greys fall under 4.5:1 there in the dark.
+  const onTint = { color: C.text, fontSize: F.small, lineHeight: lh(F.small) } as const;
+  const head = (row: MenuRow, right?: string, tint = false) => (
     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
       <Text style={[strong, { flex: 1 }]}>
         {title(row)}
-        <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '400' }}>{`  ${row.time}`}</Text>
+        <Text style={{ color: tint ? C.text : C.textFaint, fontSize: F.small, fontWeight: '400' }}>{`  ${row.time}`}</Text>
       </Text>
-      {right ? <Text style={[small, { fontWeight: '500' }]}>{right}</Text> : null}
+      {right ? <Text style={[tint ? onTint : small, { fontWeight: '500' }]}>{right}</Text> : null}
     </View>
   );
 
@@ -169,12 +172,12 @@ export function DayMenu({
           <Btn
             key={o}
             small
-            tone="soft"
+            // On the current meal's block, beside the one filled button, Change is a quiet outline on a white chip.
+            tone={row.state === 'current' ? 'ghost' : 'soft'}
             label={t('menu_change')}
             accessibilityLabel={fill(t('menu_change_a11y'), { slot })}
             onPress={() => addSheet.open({ date, slotId: row.slotId, lines: plannedLines(row), mode: row.state === 'plan' ? 'plan' : 'log' })}
-            // On the current row's tint a soft button has no edge of its own: the teal of words draws one (4.5:1 on that tint).
-            style={row.state === 'current' ? { flexGrow: 1, borderColor: C.accentText } : { flexGrow: 1 }}
+            style={row.state === 'current' ? { flexGrow: 1, backgroundColor: C.card } : { flexGrow: 1 }}
           />
         );
       if (o === 'add')
@@ -272,17 +275,17 @@ export function DayMenu({
     }
     if (row.state === 'current') {
       return (
-        <View style={{ gap: 8, padding: 12, marginVertical: 4, borderRadius: S.radiusSm, borderWidth: 1, borderColor: C.accent, backgroundColor: C.accentDim }}>
-          {head(row, row.lines.length > 0 ? `${numberText(row.plannedKcal)} kcal` : undefined)}
+        <View style={{ gap: 8, padding: 12, marginVertical: 4, borderRadius: S.radiusSm, backgroundColor: C.accentSoft }}>
+          {head(row, row.lines.length > 0 ? `${numberText(row.plannedKcal)} kcal` : undefined, true)}
           {row.lines.length > 0 ? (
             row.lines.map((l) => (
               <View key={l.idx}>
                 <Text style={strong}>{l.name}</Text>
-                <Text style={small}>{withKcal(amountText(l.qty, l.measure), l.kcal)}</Text>
+                <Text style={onTint}>{withKcal(amountText(l.qty, l.measure), l.kcal)}</Text>
               </View>
             ))
           ) : (
-            <Text style={small}>{t('menu_nothing_planned')}</Text>
+            <Text style={onTint}>{t('menu_nothing_planned')}</Text>
           )}
           {offers(row)}
         </View>
@@ -312,7 +315,7 @@ export function DayMenu({
 
   return (
     <Card>
-      <SectionHeader title={t('menu_title')} meta={view.mode === 'future' ? fill(t('menu_planned_of'), { kcal: numberText(view.plannedKcal), goal: numberText(targets.kcal) }) : undefined} />
+      <SectionHeader title={t(view.mode === 'today' ? 'menu_title_today' : 'menu_title')} meta={view.mode === 'future' ? fill(t('menu_planned_of'), { kcal: numberText(view.plannedKcal), goal: numberText(targets.kcal) }) : undefined} />
       {isOffDay(state.settings.offDays, date) ? <Text style={small}>{t('menu_day_off')}</Text> : null}
       {view.missing > 0 ? (
         <Text style={{ color: C.amber, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{fill(t(view.missing === 1 ? 'menu_missing_one' : 'menu_missing'), { n: view.missing })}</Text>

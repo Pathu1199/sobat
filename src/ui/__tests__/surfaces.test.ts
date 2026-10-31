@@ -72,4 +72,9 @@ describe('corners', () => {
     expect(S.cardPad).toBe(16);
     expect(S.cardPad).toBe(S.pad);
   });
+
+  it('16 between the cards of a page; two tiles side by side keep their 12', () => {
+    expect(S.cardGap).toBe(16);
+    expect(S.gap).toBe(12);
+  });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { makeT } from '../../i18n';
-import { daysBetween, formatDayLabel, formatDayMonth, formatDayMonthYear, formatHalfHours, formatMinutes, formatMoment, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
+import { daysBetween, formatDayLabel, formatDayLong, formatDayMonth, formatDayMonthYear, formatHalfHours, formatMinutes, formatMoment, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
 describe('local time from ISO strings', () => {
@@ -34,6 +34,13 @@ describe('local time from ISO strings', () => {
       expect(label.length).toBeGreaterThan(3);
       expect(label).not.toBe('2026-09-26');
     }
+  });
+
+  it("writes Today's day in full, weekday and month, in the chosen language with Latin digits", () => {
+    expect(formatDayLong('2026-10-31', 'en')).toBe('Saturday, 31 October');
+    expect(formatDayLong('2026-10-31', 'mr')).toBe('शनिवार, 31 ऑक्टोबर');
+    expect(formatDayLong('2026-10-31', 'hi')).toBe('शनिवार, 31 अक्टूबर');
+    expect(formatDayLong('not-a-date', 'en')).toBe('not-a-date');
   });
 
   it('falls back to English for an unknown language and to the ISO date for bad input', () => {

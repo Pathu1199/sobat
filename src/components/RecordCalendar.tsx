@@ -23,9 +23,9 @@ const DAY_HEIGHT = 48;
  * strip (core/progress.ts `monthMarks`), lighter while meals the app filled
  * in are not confirmed, nothing before the person started. The arrows step a
  * month, from the month the person started up to this one; tapping a day
- * opens it on Today. The rows reach over the card's padding as the strip
- * does (ui/stripGeometry.ts), so a day is a finger wide on a 360 and a 375
- * point phone.
+ * opens it on Today. The rows reach over the card's padding
+ * (ui/stripGeometry.ts `STRIP_MARGIN`), so a day is a finger wide on a 360
+ * and a 375 point phone.
  */
 export function RecordCalendar() {
   const app = useApp();

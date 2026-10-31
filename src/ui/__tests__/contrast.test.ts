@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { contrastRatio, luminance } from '../contrast';
-import { STRIP_CHOSEN, STRIP_DOT, stripDot } from '../stripGeometry';
-import { PALETTES, type ThemeMode } from '../theme';
+import { STRIP_CHOSEN, STRIP_DOT, STRIP_TODAY, stripDot } from '../stripGeometry';
+import { AMBER_NOTE, PALETTES, type ThemeMode } from '../theme';
 
 const MODES: ThemeMode[] = ['light', 'dark'];
 /** What words sit on. */
@@ -54,9 +54,19 @@ describe('palette', () => {
       expect(contrastRatio(P.amber, P.amberSoft), 'amber on amberSoft').toBeGreaterThanOrEqual(4.5);
     });
 
-    it(`${mode}: the week strip's dots stand out at 3:1 on the card, the page and the chosen day's tint`, () => {
+    it(`${mode}: the amber note on Today reads at 4.5:1, its words and its △ in dark amber on soft amber`, () => {
+      expect(contrastRatio(P[AMBER_NOTE.words], P[AMBER_NOTE.fill])).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it(`${mode}: the current meal's block on accentSoft sets its words, the small ones too, in text or accentText`, () => {
+      for (const fg of ['text', 'accentText'] as const) {
+        expect(contrastRatio(P[fg], P.accentSoft), `${fg} on accentSoft`).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+
+    it(`${mode}: the week strip's dots stand out at 3:1 on the page and the card (a dot sits under today's pill, never on it)`, () => {
       for (const [kind, token] of Object.entries(STRIP_DOT)) {
-        for (const bg of ['bg', 'card', 'cardAlt', 'accentDim'] as const) {
+        for (const bg of ['bg', 'card', 'cardAlt'] as const) {
           expect(contrastRatio(P[token], P[bg]), `${kind} dot (${token}) on ${bg}`).toBeGreaterThanOrEqual(3);
         }
       }
@@ -70,7 +80,7 @@ describe('palette', () => {
         expect(fromPlan.kind, mark).not.toBe(plain.kind);
         if (plain.kind === 'none' || fromPlan.kind === 'none') throw new Error(mark);
         expect(fromPlan.color, mark).toBe(plain.color);
-        for (const bg of ['bg', 'card', 'cardAlt', 'accentDim'] as const) {
+        for (const bg of ['bg', 'card', 'cardAlt'] as const) {
           expect(contrastRatio(P[fromPlan.color], P[bg]), `${mark} from the plan on ${bg}`).toBeGreaterThanOrEqual(3);
         }
       }
@@ -84,17 +94,15 @@ describe('palette', () => {
       expect(stripDot('none', false)).toEqual({ kind: 'none' });
     });
 
-    it(`${mode}: the chosen day's outline is the full dot's colour, 3:1 on the card, the page and its own tint`, () => {
+    it(`${mode}: the chosen day's outline is the full dot's colour, 3:1 on the page and the card`, () => {
       expect(STRIP_CHOSEN).toBe(STRIP_DOT.full);
-      for (const bg of ['bg', 'card', 'cardAlt', 'accentDim'] as const) {
+      for (const bg of ['bg', 'card', 'cardAlt'] as const) {
         expect(contrastRatio(P[STRIP_CHOSEN], P[bg]), `chosen outline on ${bg}`).toBeGreaterThanOrEqual(3);
       }
     });
 
-    it(`${mode}: the week strip's chosen day, drawn on accentDim, sets its words in text, textDim or accentText, never textFaint`, () => {
-      for (const fg of ['text', 'textDim', 'accentText'] as const) {
-        expect(contrastRatio(P[fg], P.accentDim), `${fg} on accentDim`).toBeGreaterThanOrEqual(4.5);
-      }
+    it(`${mode}: today's pill on the week strip sets its weekday and date in accentText on accentSoft, at 4.5:1`, () => {
+      expect(contrastRatio(P[STRIP_TODAY.words], P[STRIP_TODAY.fill])).toBeGreaterThanOrEqual(4.5);
     });
   }
 

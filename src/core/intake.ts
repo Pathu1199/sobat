@@ -1,6 +1,7 @@
+import { fill, numberText, t } from '../i18n';
 import { lastNDates } from './date';
 import type { DayRecord } from './record';
-import type { ISODate, Meal } from './types';
+import type { ISODate, Lang, Meal } from './types';
 import { isOffDay } from './week';
 
 /**
@@ -45,4 +46,10 @@ export function lowIntake(input: {
 export function intakeFact(intake: Intake): string | null {
   if (!intake) return null;
   return `Their last ${intake.days} logged days averaged ${intake.avg} kcal, under the ${intake.limit} kcal line; cravings are expected. Encourage eating the plan in full, never less.`;
+}
+
+/** The note on Today, in the user's language: "Last 3 days averaged 1,395 kcal, below the line. Eat today's plan in full." Null when there is nothing to say. */
+export function intakeNote(intake: Intake, lang: Lang): string | null {
+  if (!intake) return null;
+  return fill(t(lang, 'intake_note'), { days: intake.days, avg: numberText(intake.avg) });
 }
