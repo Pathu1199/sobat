@@ -205,7 +205,7 @@ describe('migrateState', () => {
     expect((s.settings as unknown as Record<string, unknown>).glassMl).toBeUndefined();
     expect(migrateState({ ...v1, settings: { ...v1.settings, glassMl: 750 } }).settings.bottleMl).toBe(750);
     expect(s.settings.walkGoalMin).toBe(30);
-    expect(s.settings.tabs).toEqual(['progress']);
+    expect(s.settings.tabs).toEqual(['abhyas', 'progress']);
     expect(s.settings.features).toEqual({ breaks: false, mantra: false, autoPlates: false });
     expect(s.settings.reminders).toEqual({ mealPrompt: true, abhyas: true, checklist: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false });
     // "Day so far" comes at its default time on a store from before it existed.
@@ -1060,6 +1060,25 @@ describe("version 8: the user's own list (Abhyas)", () => {
     expect(cards(migrateState({ ...v7, settings: { ...v7.settings, todayCards: appended } }, NOW)).slice(0, 5)).toEqual(['menu', 'coach', 'waterWalk', 'abhyas', 'weight off']);
     // A store with no cards at all gets the default list, Abhyas on in its place.
     expect(migrateState({ ...v7, settings: { ...v7.settings, todayCards: undefined } }, NOW).settings.todayCards).toEqual(DEFAULT_TODAY_CARDS);
+  });
+
+  it('a store from before version 8 with no settings at all starts with Abhyas reminders and "Day so far" on, as a new user does', () => {
+    const s = migrateState({ version: 7, profile: v7.profile }, NOW);
+    expect([s.settings.reminders.abhyas, s.settings.reminders.checklist]).toEqual([true, true]);
+  });
+
+  it('balances the tab bar: a store with one extra tab gets Abhyas beside it, so ➕ has two tabs each side', () => {
+    const tabs = (t: unknown, version = 7) => migrateState({ ...v7, version, settings: { ...v7.settings, tabs: t } }, NOW).settings.tabs;
+    expect(tabs(['progress'])).toEqual(['abhyas', 'progress']);
+    expect(tabs(['coach'])).toEqual(['abhyas', 'coach']);
+    // Two extras or none are already balanced, and a bar that already has Abhyas is the user's own: all kept.
+    expect(tabs(['coach', 'body'])).toEqual(['coach', 'body']);
+    expect(tabs([])).toEqual([]);
+    expect(tabs(['abhyas'])).toEqual(['abhyas']);
+    // A store missing the setting takes the default, which is already balanced.
+    expect(tabs(undefined)).toEqual(['abhyas', 'progress']);
+    // At version 8 the bar is as the user set it.
+    expect(tabs(['progress'], 8)).toEqual(['progress']);
   });
 
   it('a store at version 8 keeps the card and the switch as the user set them: off, or moved', () => {

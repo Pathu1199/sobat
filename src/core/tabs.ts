@@ -7,7 +7,8 @@ import type { TabId, TodayCardId } from './types';
  */
 export const TAB_IDS: TabId[] = ['progress', 'coach', 'body', 'sleep', 'plan', 'abhyas'];
 export const MAX_EXTRA_TABS = 2;
-export const DEFAULT_TABS: TabId[] = ['progress'];
+/** Two tabs each side of ➕, so the bar is balanced: Today · Abhyas · ➕ · Progress · Me. */
+export const DEFAULT_TABS: TabId[] = ['abhyas', 'progress'];
 
 export const TODAY_CARD_IDS: TodayCardId[] = ['menu', 'coach', 'waterWalk', 'abhyas', 'weight', 'sleep', 'steps', 'climb', 'mantra'];
 

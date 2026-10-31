@@ -165,9 +165,17 @@ tick, so the card's "12 of 30 min" moves without a session being written.
 ### Migration: version 8, `src/store/migrate.ts`
 
 - Adds the four collections, empty, and `abhyasRunning: null`.
-- `settings.reminders.abhyas = true`.
+- `settings.reminders.abhyas` and `settings.reminders.checklist` start on
+  only when some reminder switch was stored on (the meal-time prompt
+  included); a user who had switched every reminder off stays fully off.
+  A new user starts with both on.
 - `todayCards` gains `{ id: 'abhyas', on: true }` after `waterWalk`;
   `normalizeTodayCards` and `normalizeTabs` accept the new ids.
+- **The tab bar is balanced** (added 2026-10-31 at the user's request): the
+  default extras are `['abhyas', 'progress']`, so a new user sees Today ·
+  Abhyas · ➕ · Progress · Me. A store with exactly one extra tab gets
+  Abhyas in front of it; two extras, none, or a bar that already has Abhyas
+  are kept.
 - Nothing logged is touched. `STATE_VERSION` becomes 8.
 
 ### Sync: `src/core/sync.ts`

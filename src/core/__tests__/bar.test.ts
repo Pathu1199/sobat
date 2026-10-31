@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { makeT } from '../../i18n';
 import { addSlot, barItems, extraItem, goalLine, hrefOf, meRows, routeAt, viewedDate } from '../bar';
 import { firstName } from '../todayLayout';
-import { TAB_IDS } from '../tabs';
+import { TAB_IDS, DEFAULT_TABS } from '../tabs';
 
 /** The screens expo-router can open: the files under src/app and under src/app/(tabs), by name without the extension. */
 function screens(dir: string): string[] {
@@ -34,8 +34,13 @@ describe('barItems', () => {
     expect(makeT('mr')(extraItem('abhyas').labelKey)).toBe('अभ्यास');
   });
 
+  it('the bar a new user starts with is balanced, two tabs each side of ➕: Today · Abhyas · ➕ · Progress · Me', () => {
+    expect(barItems(DEFAULT_TABS).map((i) => i.key)).toEqual(['today', 'abhyas', 'add', 'progress', 'me']);
+    expect(addSlot(barItems(DEFAULT_TABS))).toEqual({ index: 2, count: 5 });
+  });
+
   it('a bad value from sync can never hide Today, ➕ or Me, nor show more than two extras', () => {
-    expect(barItems('progress').map((i) => i.key)).toEqual(['today', 'add', 'progress', 'me']);
+    expect(barItems('progress').map((i) => i.key)).toEqual(['today', 'abhyas', 'add', 'progress', 'me']);
     expect(barItems(['me', 'today', 'body', 'coach', 'sleep']).map((i) => i.key)).toEqual(['today', 'body', 'add', 'coach', 'me']);
   });
 

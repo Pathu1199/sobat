@@ -20,8 +20,8 @@ describe('normalizeTabs', () => {
   });
 
   it('gives the default to anything that is not a list', () => {
-    expect(normalizeTabs(undefined)).toEqual(['progress']);
-    expect(normalizeTabs('progress')).toEqual(['progress']);
+    expect(normalizeTabs(undefined)).toEqual(['abhyas', 'progress']);
+    expect(normalizeTabs('progress')).toEqual(['abhyas', 'progress']);
   });
 });
 

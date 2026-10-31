@@ -19,7 +19,8 @@ describe('extra tabs', () => {
 
   it('cleans a damaged list from sync first, so the fixed tabs are never hidden', () => {
     expect(toggleTab(['progress', 'nope', 'progress'], 'coach')).toEqual({ tabs: ['progress', 'coach'], full: false });
-    expect(toggleTab('x', 'coach')).toEqual({ tabs: ['progress', 'coach'], full: false });
+    // Anything not a list is the default bar, already full (Abhyas and Progress), so a third cannot come in.
+    expect(toggleTab('x', 'coach')).toEqual({ tabs: ['abhyas', 'progress'], full: true });
     // A tab already on the bar cannot come in twice.
     expect(replaceTab(['progress', 'coach'], 'progress', 'coach')).toEqual(['coach']);
   });
@@ -106,7 +107,7 @@ describe("Today's cards", () => {
 
   it('resets to the default tabs and cards, as copies', () => {
     const d = defaultCustomize();
-    expect(d).toEqual({ tabs: ['progress'], todayCards: DEFAULT_TODAY_CARDS });
+    expect(d).toEqual({ tabs: ['abhyas', 'progress'], todayCards: DEFAULT_TODAY_CARDS });
     d.todayCards[0].on = false;
     expect(DEFAULT_TODAY_CARDS[0].on).toBe(true);
   });

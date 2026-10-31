@@ -288,6 +288,14 @@ function anyReminderStoredOn(reminders: AppState['settings']['reminders'], rawSe
   return Object.entries(reminders).some(([key, on]) => on && (key === 'mealPrompt' || stored[key] === true));
 }
 
+/**
+ * Version 8: a bar with one extra tab has Today and that tab on one side of ➕ and only Me on the other, so Abhyas joins it in
+ * front, two tabs each side. Two extras or none are already balanced, and a bar that already has Abhyas is the user's own: kept.
+ */
+function withAbhyasTab(tabs: AppState['settings']['tabs']): AppState['settings']['tabs'] {
+  return tabs.length === 1 && tabs[0] !== 'abhyas' ? ['abhyas', tabs[0]] : tabs;
+}
+
 /** Version 8: the Abhyas card on Today, switched on, right after the water and walk tiles (always in a cleaned list). */
 function withAbhyasCard(cards: AppState['settings']['todayCards']): AppState['settings']['todayCards'] {
   const rest = cards.filter((c) => c.id !== 'abhyas');
@@ -341,13 +349,14 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
   // Version 7: the old reminders are off unless switched on again, each with its own switch; the hourly in-app nudges too.
   // After upgradeAppSettings, which read the stored switch to set the meal-time prompt: that choice is already made.
   if (fromVersion < 7) settings.nudgesEnabled = false;
-  // Version 8: the user's own list (Abhyas) arrives with its card on Today, and its reminders and "Day so far" on unless every
-  // reminder was off. A store at version 8 or later keeps all three as the user set them, the card off or moved included.
+  // Version 8: the user's own list (Abhyas) arrives with its card on Today, its tab beside a lone extra tab, and its reminders
+  // and "Day so far" on unless every reminder was off. A store at version 8 or later keeps all three as the user set them, the card off or moved included.
   if (fromVersion < 8) {
     const on = anyReminderStoredOn(settings.reminders, raw.settings);
     settings.reminders.abhyas = on;
     settings.reminders.checklist = on;
     settings.todayCards = withAbhyasCard(settings.todayCards);
+    settings.tabs = withAbhyasTab(settings.tabs);
   }
   const profile = { ...EMPTY_STATE.profile, ...(raw.profile as object) } as AppState['profile'];
   if (profile.startWeightKg === undefined) {
