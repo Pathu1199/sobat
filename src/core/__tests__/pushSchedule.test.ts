@@ -278,6 +278,18 @@ describe('buildPushSchedule: Abhyas and the day so far (version 2)', () => {
     expect(buildPushSchedule({ ...state, meals: [meal('breakfast')] }, TODAY, en, 'Asia/Kolkata', null, 2).checklist!.body.split('\n')[0]).toMatch(/^✓ Breakfast/);
   });
 
+  it("opens the day so far with the routine's streak line, worked out here from finished ticks, while a job is left today", () => {
+    const daily = item('read', 'Reading', { days: [0, 1, 2, 3, 4, 5, 6], times: [], createdAt: '2026-10-10T08:00:00.000Z' });
+    const routineOnly: AppState = { ...state, abhyasItems: [daily], abhyasTicks: ['2026-10-10', '2026-10-11', '2026-10-12'].map((d) => tick('read', d)) };
+    const first = (s: AppState) => build(s).checklist!.body.split('\n')[0];
+    // Three days done, today's job still left: the routine's own streak, not the meal one passed in (0 here).
+    expect(first(routineOnly)).toBe('Your 3-day routine streak needs one more job today.');
+    // Two days is under three: no line, just the list.
+    expect(first({ ...routineOnly, abhyasTicks: routineOnly.abhyasTicks.slice(1) })).not.toMatch(/streak/);
+    // The job done today: nothing is left, so the line has gone with the whole list.
+    expect(build({ ...routineOnly, abhyasTicks: [...routineOnly.abhyasTicks, tick('read')], meals: [meal('breakfast'), meal('lunch'), meal('snack'), meal('dinner')], settings: { ...routineOnly.settings, waterGoalMl: 0, walkGoalMin: 0 } }).checklist).toBeNull();
+  });
+
   it('says what the day so far says on the phone, from the same menu', () => {
     const menu: DayMenu = {
       date: TODAY,

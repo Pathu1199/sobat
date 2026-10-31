@@ -151,13 +151,15 @@ function abhyasPart(state: AppState, today: ISODate, t: (k: string) => string): 
 function checklistPart(state: AppState, today: ISODate, t: (k: string) => string, menu: DayMenu | null, mealStreak: number): PushSchedule['checklist'] {
   const s = state.settings;
   if (!s.reminders.checklist || today === state.profile.onboardedOn || isOffDay(s.offDays, today)) return null;
+  // The routine as finished timers leave it, read for the list and for its streak.
+  const abhyas = { items: state.abhyasItems, ticks: state.abhyasTicks, sessions: state.abhyasSessions, running: null };
   const text = dayChecklist({
     date: today,
     routine: state.routine,
     menu,
     meals: state.meals,
     skips: state.slotSkips,
-    abhyas: { items: state.abhyasItems, ticks: state.abhyasTicks, sessions: state.abhyasSessions, running: null },
+    abhyas,
     now: new Date(`${today}T12:00:00`),
     water: state.water,
     activities: state.activities ?? [],
@@ -167,7 +169,7 @@ function checklistPart(state: AppState, today: ISODate, t: (k: string) => string
     waterWalk: s.todayCards.some((c) => c.id === 'waterWalk' && c.on),
     // As on the phone: a meal still open, or not open yet, at the last of the times is left out rather than shown as not done.
     times: checklistTimes(s.checklistTimes),
-    streaks: { meals: mealStreak, routine: streakRun({ items: state.abhyasItems, ticks: state.abhyasTicks, sessions: state.abhyasSessions, running: null }, today, NO_TIMER_CLOCK, true).days },
+    streaks: { meals: mealStreak, routine: streakRun(abhyas, today, NO_TIMER_CLOCK, true).days },
     lang: state.profile.lang,
     t,
   });
