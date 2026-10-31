@@ -76,16 +76,21 @@ describe('quickActions: ➕ logs anything', () => {
 
 describe('quickColumns: the quick row never cuts a label', () => {
   it('keeps every tile in one line while each label has room', () => {
-    expect(quickColumns(280, 13, 5)).toBe(5);
+    expect(quickColumns(300, 13, 5)).toBe(5);
     expect(quickColumns(280, 12, 5)).toBe(5);
-    expect(quickColumns(335, 16, 5)).toBe(5);
+    expect(quickColumns(350, 16, 5)).toBe(5);
     expect(quickColumns(280, 16, 4)).toBe(4);
   });
 
   it('breaks the row into lines of half, 3 + 2 or 2 + 2, when the larger text needs more room', () => {
     expect(quickColumns(280, 15, 5)).toBe(3);
     expect(quickColumns(280, 16, 5)).toBe(3);
+    expect(quickColumns(335, 16, 5)).toBe(3);
     expect(quickColumns(200, 16, 4)).toBe(2);
+  });
+
+  it('breaks a row 280 wide at normal text: "Routine" is 47.2 points there and the tile has 47, which cut it to "Routi…" in the web preview at 322 wide', () => {
+    expect(quickColumns(280, 13, 5)).toBe(3);
   });
 });
 

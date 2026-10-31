@@ -101,8 +101,12 @@ export function quickActions(mode: 'log' | 'plan', isToday: boolean): QuickActio
   ];
 }
 
-/** Room a tile's one-word label needs, in ems of its size: "Routine", the widest, is about 3.6 em. */
-export const QUICK_LABEL_EM = 3.6;
+/**
+ * Room a tile's one-word label needs, in ems of its size: "Routine", the widest label in all three languages (दिनचर्या
+ * is 3.1 em, दिनक्रम 3.0), is 3.63 em at 13 points in the web's system font, and a tile's width is rounded down to a
+ * whole point, which takes up to a point more: 3.75 em leaves "Routine" room at every text size.
+ */
+export const QUICK_LABEL_EM = 3.75;
 export const QUICK_GAP = 6;
 
 /** How many tiles fit in a line of the quick row: all of them while each label has room, otherwise the row breaks into lines of half (3 + 2, or 2 + 2). */
