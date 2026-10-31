@@ -92,6 +92,21 @@ describe('quickColumns: the quick row never cuts a label', () => {
   it('breaks a row 280 wide at normal text: "Routine" is 47.2 points there and the tile has 47, which cut it to "Routi…" in the web preview at 322 wide', () => {
     expect(quickColumns(280, 13, 5)).toBe(3);
   });
+
+  it('counts a tile in whole points, as the sheet lays it out: 51.5 is 51, whose 47 points of label room are short of the 47.2 "Routine" needs', () => {
+    // Five tiles and four gaps of 6 in a row of 281.5: 51.5 each, 51 when rounded down.
+    expect(quickColumns(281.5, 13, 5)).toBe(3);
+    // At 284 the tile is a whole 52, room 48: one line; a hair under it, 51.98, is 51 again.
+    expect(quickColumns(284, 13, 5)).toBe(5);
+    expect(quickColumns(283.9, 13, 5)).toBe(3);
+  });
+
+  it('keeps 375 wide at normal and larger text in one line, and at the largest text breaks it 3 + 2', () => {
+    // The row is 333 wide in the sheet at 375 (20 points of padding and the hairline each side).
+    expect(quickColumns(333, 13, 5)).toBe(5);
+    expect(quickColumns(333, 14.56, 5)).toBe(5);
+    expect(quickColumns(333, 16.25, 5)).toBe(3);
+  });
 });
 
 describe('sheetMode: what Save does', () => {

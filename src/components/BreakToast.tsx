@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { takesScreen } from '../core/breaks';
 import { fill, makeT } from '../i18n';
 import { useBreakMonitor } from '../services/useBreakMonitor';
 import { useApp } from '../store/AppProvider';
-import { C, F, lh, MICRO, S } from '../ui/theme';
+import { floatBottom } from '../ui/barGeometry';
+import { C, F, lh, MICRO, S, textScale } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
 
 /**
@@ -34,7 +35,8 @@ export function BreakToast() {
         position: 'absolute',
         right: wide ? 20 : 12,
         left: wide ? undefined : 12,
-        bottom: (wide ? 20 : 96) + insets.bottom,
+        // On a phone, above the bar and the top of ➕ (the same rule as the other toasts); a wide screen has no bar.
+        bottom: floatBottom(wide, textScale(), insets.bottom, Platform.OS === 'web', 20),
         maxWidth: 360,
         alignSelf: wide ? 'flex-end' : 'center',
         backgroundColor: C.cardHigh,

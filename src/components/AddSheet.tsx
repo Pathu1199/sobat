@@ -46,11 +46,12 @@ import { chosenProps } from '../ui/chosen';
 import { IconButton } from '../ui/IconButton';
 import { SheetFrame } from '../ui/Sheet';
 import { C, F, lh, S } from '../ui/theme';
-import { addedText } from '../ui/tileWords';
+import { addedText, type Added } from '../ui/tileWords';
 import { AbhyasCard } from './AbhyasCard';
 import { FoodRow, OneTapRow, PlannedCard, SaveAsOffer, ToolsRow } from './AddSheetRows';
 import { CustomFoodForm } from './CustomFoodForm';
 import { FoodDetailSheet } from './FoodDetailSheet';
+import { UndoLine, useUndoable } from './tiles/UndoLine';
 import { WALK_STEP_MIN } from './tiles/WalkTile';
 import { WeightSheet } from './WeightSheet';
 
@@ -63,8 +64,6 @@ export type AddRequest = { date: ISODate; slotId?: string; lines?: PlanLine[]; m
 
 type AddSheetApi = { open: (r: AddRequest) => void };
 const AddCtx = createContext<AddSheetApi | null>(null);
-// Whether the sheet is open, apart from the stable `open`, so only the few that wait on it re-render when it opens or closes.
-const AddOpenCtx = createContext(false);
 
 /** Opens the add sheet from anywhere under the tabs: the ➕, the sidebar, Today's menu, the old /log address. */
 export function useAddSheet(): AddSheetApi {
@@ -73,21 +72,14 @@ export function useAddSheet(): AddSheetApi {
   return c;
 }
 
-/** Whether the add sheet is open, "Save as my meal?" included: a celebration waits until it has closed. */
-export function useAddSheetOpen(): boolean {
-  return useContext(AddOpenCtx);
-}
-
 /** Holds the one add sheet. Each opening starts it fresh. */
 export function AddSheetProvider({ children }: { children: React.ReactNode }) {
   const [request, setRequest] = useState<(AddRequest & { n: number }) | null>(null);
   const api = useMemo<AddSheetApi>(() => ({ open: (r) => setRequest((p) => ({ ...r, n: (p?.n ?? 0) + 1 })) }), []);
   return (
     <AddCtx.Provider value={api}>
-      <AddOpenCtx.Provider value={request !== null}>
-        {children}
-        {request ? <AddSheet key={request.n} request={request} onClose={() => setRequest(null)} /> : null}
-      </AddOpenCtx.Provider>
+      {children}
+      {request ? <AddSheet key={request.n} request={request} onClose={() => setRequest(null)} /> : null}
     </AddCtx.Provider>
   );
 }
@@ -97,10 +89,11 @@ export function AddSheetProvider({ children }: { children: React.ReactNode }) {
  * Walk, Weight, Routine; core/addSheet.ts `quickActions`) over the food
  * search. Water adds a bottle and Walk ten minutes to the date in one tap,
  * with Undo on the toast, and the sheet closes (unless foods are being
- * chosen: then it stays open with the meal as it was); Weight opens the weight
- * entry; Routine shows the date's own list (the card on Today, to tick or
- * start). While the quick row shows, the sheet's title is "Add", whichever
- * panel is on.
+ * chosen: then it stays open with the meal as it was, and the Undo is a line
+ * in the sheet, which would cover the toast); Weight opens the weight entry,
+ * and closes the sheet with it unless foods are being chosen; Routine shows
+ * the date's own list (the card on Today, to tick or start). While the quick
+ * row shows, the sheet's title is "Add", whichever panel is on.
  * The food search is anything eaten that is not ticked off the menu, for the
  * date and slot being looked at. Search sits at the top so its matches stay above
  * the keyboard; under it any food with a − / + and a grams box, and a bar
@@ -137,6 +130,8 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   // What the sheet shows under its quick actions: the food search, or the date's routine list.
   const [panel, setPanel] = useState<'food' | 'routine'>('food');
   const [weightOpen, setWeightOpen] = useState(false);
+  // Water or a walk logged with foods in the basket: the sheet stays open and covers the app's toast, so its Undo line is here, inside the sheet.
+  const addedHere = useUndoable<{ added: Added; undo: () => void }>((a) => addedText(a.added, t), t('undo'));
   const quick = quickActions(mode, isToday);
   // The quick row's own width, once laid out: the tiles break into lines of half when a label would be cut at this text size.
   const [rowWidth, setRowWidth] = useState<number | null>(null);
@@ -305,7 +300,8 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
 
   /**
    * A quick action: a panel shows, or water or a walk is logged to the date with Undo on the toast, or the weight entry
-   * opens. Water and a walk close the sheet, unless foods are being chosen: then the sheet stays open with the meal as it was.
+   * opens. Water and a walk close the sheet, unless foods are being chosen: then the sheet stays open with the meal as it was,
+   * and the Undo is a line in the sheet (the toast would be behind it).
    */
   function onQuick(key: QuickKey) {
     if (key === 'food' || key === 'routine') {
@@ -317,15 +313,26 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
       return;
     }
     fb.haptic('light');
+    let added: Added;
+    let undo: () => void;
     if (key === 'water') {
       const ml = state.settings.bottleMl;
       const id = app.addWater(ml, date);
-      fb.notify(addedText({ kind: 'water', id, amount: ml, date }, t), { label: t('undo'), onPress: () => app.removeWater(id) });
+      added = { kind: 'water', id, amount: ml, date };
+      undo = () => app.removeWater(id);
     } else {
       const id = app.logWalk(date, WALK_STEP_MIN);
-      fb.notify(addedText({ kind: 'walk', id, amount: WALK_STEP_MIN, date }, t), { label: t('undo'), onPress: () => app.removeActivity(id) });
+      added = { kind: 'walk', id, amount: WALK_STEP_MIN, date };
+      undo = () => app.removeActivity(id);
     }
-    if (basket.length === 0) onClose();
+    if (basket.length === 0) {
+      // The sheet closes, so the toast is seen.
+      fb.notify(addedText(added, t), { label: t('undo'), onPress: undo });
+      onClose();
+    } else {
+      // The sheet stays open over the toast: the Undo is a line in the sheet, which the screen reader also hears.
+      addedHere.show({ added, undo });
+    }
   }
 
   function quickLabel(key: QuickKey, label: string): string {
@@ -486,6 +493,18 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
               </View>
             </View>
           ) : null}
+          {addedHere.held ? (
+            <View style={{ paddingHorizontal: S.padLg, paddingBottom: 6 }}>
+              <UndoLine
+                text={addedHere.text}
+                undoLabel={addedHere.undoLabel}
+                onUndo={() => {
+                  addedHere.held?.undo();
+                  addedHere.clear();
+                }}
+              />
+            </View>
+          ) : null}
           {panel === 'routine' ? (
             <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: S.padLg, paddingBottom: S.padLg }}>
               <AbhyasCard date={date} />
@@ -537,12 +556,12 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
           )}
         </>
       )}
-      {/* The weight entry, over the sheet; closing it closes both, as the weight was what the tap was for. */}
+      {/* The weight entry, over the sheet; closing it closes both, as the weight was what the tap was for, unless foods are being chosen: then the sheet stays with the basket as it was. */}
       <WeightSheet
         open={weightOpen}
         onClose={() => {
           setWeightOpen(false);
-          onClose();
+          if (basket.length === 0) onClose();
         }}
       />
       <FoodDetailSheet

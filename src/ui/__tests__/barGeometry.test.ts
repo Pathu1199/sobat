@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BAR_HEIGHT, barBottom, barHeight, clearOfBar, PLUS_CLEAR_GAP, PLUS_LIFT, PLUS_SIZE, TAB_ICON, TAB_LABEL, TAB_PILL, tabLabelSize } from '../barGeometry';
+import { BAR_HEIGHT, barBottom, barHeight, clearOfBar, floatBottom, PLUS_CLEAR_GAP, PLUS_LIFT, PLUS_SIZE, TAB_ICON, TAB_LABEL, TAB_PILL, tabLabelSize } from '../barGeometry';
 import { lh, S, TEXT_SCALES } from '../theme';
 
 describe('the tab bar', () => {
@@ -48,5 +48,21 @@ describe('the tab bar', () => {
     expect(clearOfBar(1, 34, false)).toBe(130);
     // The bar grows with the text size (64 at 1.25), and so does what must clear it.
     expect(clearOfBar(1.25, 34, false)).toBe(134);
+  });
+});
+
+describe('floatBottom', () => {
+  it('on a phone is the clearance above the bar and ➕, whatever gap a wide screen would take', () => {
+    expect(floatBottom(false, 1, 0, false, 24)).toBe(clearOfBar(1, 0, false));
+    expect(floatBottom(false, 1, 0, false, 20)).toBe(102);
+    expect(floatBottom(false, 1.25, 34, true, 20)).toBe(clearOfBar(1.25, 34, true));
+    // ➕'s top is at 60 + 6 + 28 = 94 from the screen bottom at the default text size; the old hard-coded 96 (the Break toast) left 2 points, and so does nothing now.
+    expect(floatBottom(false, 1, 0, false, 20)).toBeGreaterThanOrEqual(94 + PLUS_CLEAR_GAP);
+  });
+
+  it('on a wide screen, which has no bar, is the gap above the bottom safe area', () => {
+    expect(floatBottom(true, 1, 0, false, 24)).toBe(24);
+    expect(floatBottom(true, 1.25, 20, true, 24)).toBe(44);
+    expect(floatBottom(true, 1, 8, false, 20)).toBe(28);
   });
 });

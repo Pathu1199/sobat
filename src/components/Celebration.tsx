@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Modal, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { challengesDone, challengeText } from '../core/challenge';
@@ -9,10 +9,10 @@ import { medalFace, medalWords, nextWin, type Medal } from '../core/medals';
 import { fill, makeT } from '../i18n';
 import { useFeedback, useUndoShowing } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
+import { useAnySheetOpen } from '../ui/announce';
 import { Btn } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
 import { C, F, lh, S, TITLE_WEIGHT } from '../ui/theme';
-import { useAddSheetOpen } from './AddSheet';
 import { MedalArt } from './MedalArt';
 import { useLoop } from './tiles/motion';
 import { useChallengeData, useMedals, useTodayChallenge } from './useRewards';
@@ -25,10 +25,10 @@ import { useChallengeData, useMedals, useTodayChallenge } from './useRewards';
  * sheet. One at a time, each once (core/medals.ts `nextWin`); the first run
  * marks everything already earned as seen. With reduce motion on nothing
  * moves. Mounted on Today; says nothing when there is nothing new. A win
- * that lands from the add sheet waits until the sheet has closed, its "Save
- * as my meal?" too, and a toast with Undo, or an "… · Undo" line, stays
- * uncovered until it has gone (five seconds at most), so its Undo can still
- * be reached.
+ * that lands while any sheet is open (the add sheet, "Save as my meal?" too,
+ * the weight sheet) waits until it has closed, and a toast with Undo, or an
+ * "… · Undo" line, stays uncovered until it has gone (five seconds at most),
+ * so its Undo can still be reached.
  */
 export function Celebration() {
   const app = useApp();
@@ -36,7 +36,7 @@ export function Celebration() {
   const { markCelebrated } = app;
   const { medals } = useMedals();
   const today = useTodayChallenge();
-  const sheetOpen = useAddSheetOpen();
+  const sheetOpen = useAnySheetOpen();
   const undoShowing = useUndoShowing();
   const { seed, next } = nextWin({ medals, challengeDone: !!today?.progress.done, today: app.today, celebrated: app.state.celebrated, waiting: sheetOpen || undoShowing });
   const nextId = next?.id;
@@ -55,7 +55,8 @@ export function Celebration() {
 
   if (!next) return null;
   const done = () => markCelebrated([next.id]);
-  return next.kind === 'medal' ? <MedalWin medal={next.medal} onDone={done} /> : <ChallengeWin onDone={done} />;
+  // Keyed on the win, so a second medal right after the first opens fresh: its shine and its sparks start again, and no tap of the first is carried over.
+  return next.kind === 'medal' ? <MedalWin key={next.id} medal={next.medal} onDone={done} /> : <ChallengeWin key={next.id} onDone={done} />;
 }
 
 /** The full-screen celebration of a medal. */
@@ -69,25 +70,30 @@ function MedalWin({ medal, onDone }: { medal: Medal; onDone: () => void }) {
   const words = medalWords(medal, t);
   return (
     <Modal visible animationType="fade" onRequestClose={onDone}>
-      <View accessibilityViewIsModal style={{ flex: 1, backgroundColor: C.goldSoft, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24, paddingHorizontal: S.gutter, alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+      <View accessibilityViewIsModal onAccessibilityEscape={onDone} style={{ flex: 1, backgroundColor: C.goldSoft }}>
         {reduce ? null : <Sparks loop={shine} />}
-        <MedalArt size={150} face={medalFace(medal.track, medal.n)} shine={reduce ? undefined : shine} />
-        <Text style={{ color: C.goldInk, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{t('medal_new')}</Text>
-        <Text accessibilityRole="header" style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: TITLE_WEIGHT, textAlign: 'center' }}>
-          {words.title}
-        </Text>
-        <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: lh(F.body), textAlign: 'center', maxWidth: 320 }}>{words.line}</Text>
-        <View style={{ alignSelf: 'stretch', maxWidth: 320, width: '100%', marginHorizontal: 'auto', gap: 8, marginTop: 8 }}>
-          <Btn label={t('celebrate_keep_going')} onPress={onDone} />
-          <Btn
-            tone="ghost"
-            label={t('celebrate_see_medals')}
-            onPress={() => {
-              onDone();
-              router.push('/progress');
-            }}
-          />
-        </View>
+        {/* A scrolling page, so at a small screen and the largest text nothing runs off its ends; it fills the screen and centres its content when there is room. */}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24, paddingHorizontal: S.gutter, alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+          <MedalArt size={150} face={medalFace(medal.track, medal.n)} shine={reduce ? undefined : shine} />
+          <Text style={{ color: C.goldInk, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{t('medal_new')}</Text>
+          <Text accessibilityRole="header" style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: TITLE_WEIGHT, textAlign: 'center' }}>
+            {words.title}
+          </Text>
+          <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: lh(F.body), textAlign: 'center', maxWidth: 320 }}>{words.line}</Text>
+          <View style={{ alignSelf: 'stretch', maxWidth: 320, width: '100%', marginHorizontal: 'auto', gap: 8, marginTop: 8 }}>
+            <Btn label={t('celebrate_keep_going')} onPress={onDone} />
+            <Btn
+              tone="ghost"
+              label={t('celebrate_see_medals')}
+              onPress={() => {
+                onDone();
+                router.push('/progress');
+              }}
+            />
+          </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -116,7 +122,7 @@ function Spark({ left, top, phase, loop }: { left: `${number}%`; top: `${number}
     const p = (loop.get() + phase) % 1;
     return { opacity: 0.8 * (1 - p), transform: [{ translateY: -120 * p }] };
   });
-  return <Animated.View pointerEvents="none" style={[{ position: 'absolute', left, top, width: 6, height: 6, borderRadius: 3, backgroundColor: C.gold }, style]} />;
+  return <Animated.View style={[{ pointerEvents: 'none', position: 'absolute', left, top, width: 6, height: 6, borderRadius: 3, backgroundColor: C.gold }, style]} />;
 }
 
 /** The smaller celebration of today's challenge done: a sheet. */

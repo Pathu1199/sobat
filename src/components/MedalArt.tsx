@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { Platform, View } from 'react-native';
 import Animated, { useAnimatedProps, type SharedValue } from 'react-native-reanimated';
 import Svg, { Circle, ClipPath, Defs, G, Path, Rect, Text as SvgText } from 'react-native-svg';
@@ -17,7 +17,8 @@ const FACE_FONT = Platform.OS === 'web' ? 'system-ui, -apple-system, sans-serif'
  * celebration.
  */
 export function MedalArt({ size, face, faded, shine }: { size: number; face: string; faded?: boolean; shine?: SharedValue<number> }) {
-  const id = `face-${size}`;
+  // Its own clip id: several medals share a page (the shelf), and a clip path found by id is the first on the page with that id.
+  const id = `face-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   return (
     <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden style={{ opacity: faded ? 0.35 : 1 }}>
       <Svg width={size} height={size * 1.1} viewBox="0 0 100 110">

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Screen } from './components';
+import { OnBand, Screen } from './components';
 import { C, F, lh, S, TITLE_WEIGHT } from './theme';
 import { useBreakpoint } from './useBreakpoint';
 
@@ -12,6 +12,21 @@ export const TINT_BAND = 168;
 export function TintBand() {
   const insets = useSafeAreaInsets();
   return <View style={{ pointerEvents: 'none', position: 'absolute', top: 0, left: 0, right: 0, height: insets.top + TINT_BAND, backgroundColor: C.tint }} />;
+}
+
+/**
+ * The root of a tab that draws its own header and section switch and shows other pages beneath them (Food, Body, Plan, Sleep): the page colour,
+ * the tint band, and a word to every `Screen` inside that it is over the band, so the band runs its full depth instead of ending under the header.
+ */
+export function BandedTab({ children }: { children: React.ReactNode }) {
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <OnBand value>
+        <TintBand />
+        {children}
+      </OnBand>
+    </View>
+  );
 }
 
 /** One compact bar per tab, over the tab's tint band. Replaces the stock navigation header. `over` is a small quiet line above the title (Today's date over its greeting). */
@@ -96,7 +111,7 @@ export function Page({
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       {header ? <TintBand /> : null}
       {header ? <TopBar title={title} alt={alt} over={over} subtitle={subtitle} right={right} left={left} /> : null}
-      <Screen wide={wide} onBand={header}>
+      <Screen wide={wide} onBand={header ? true : undefined}>
         {children}
       </Screen>
     </View>

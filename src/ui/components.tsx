@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { numberText } from '../i18n';
@@ -14,11 +14,19 @@ import { C, F, lh, lift, MICRO, onThemeChange, S } from './theme';
 /** A chip's button is a finger wide and tall on every platform, sized by the box itself (the web adds no reach around a control); the chip stays 35 tall in the middle of it. */
 const PILL_REACH: ViewStyle = { minHeight: S.touch, minWidth: S.touch, justifyContent: 'center' };
 
-/** A scrolling page. `onBand`: it sits over a tab's tint band (`Page`), so it lets the band show through instead of painting the page colour. */
+/** True under a tab that draws the tint band behind its own header (`BandedTab`): a `Screen` there is over the band without being told. */
+const BandContext = createContext(false);
+export const OnBand = BandContext.Provider;
+
+/**
+ * A scrolling page. `onBand`: it sits over a tab's tint band (`Page`), so it lets the band show through instead of painting the page colour.
+ * Inside a `BandedTab` (Food, Body, Plan, Sleep) it is over the band whichever page the section shows, and the same page opened on its own stays opaque.
+ */
 export function Screen({ children, refreshing, wide, onBand }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean; onBand?: boolean }) {
+  const underBand = useContext(BandContext);
   return (
     <ScrollView
-      style={[st.screen, onBand ? { backgroundColor: 'transparent' } : null]}
+      style={[st.screen, (onBand ?? underBand) ? { backgroundColor: 'transparent' } : null]}
       contentContainerStyle={[st.screenContent, wide && { maxWidth: S.maxWide, paddingHorizontal: S.gutterWide, paddingTop: 4 }]}
       keyboardShouldPersistTaps="handled">
       {refreshing ? <ActivityIndicator color={C.accent} /> : null}

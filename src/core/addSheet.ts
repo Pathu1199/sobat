@@ -103,15 +103,19 @@ export function quickActions(mode: 'log' | 'plan', isToday: boolean): QuickActio
 
 /**
  * Room a tile's one-word label needs, in ems of its size: "Routine", the widest label in all three languages (दिनचर्या
- * is 3.1 em, दिनक्रम 3.0), is 3.63 em at 13 points in the web's system font, and a tile's width is rounded down to a
- * whole point, which takes up to a point more: 3.75 em leaves "Routine" room at every text size.
+ * is 3.1 em, दिनक्रम 3.0), is 3.63 em at 13 points in the web's system font (47.2 points), the widest of the fonts the app
+ * runs in. The tile's width is rounded down to a whole point, as the sheet does, inside `quickColumns`, so this holds the
+ * label's own width and nothing for the rounding.
  */
-export const QUICK_LABEL_EM = 3.75;
+export const QUICK_LABEL_EM = 3.63;
 export const QUICK_GAP = 6;
 
-/** How many tiles fit in a line of the quick row: all of them while each label has room, otherwise the row breaks into lines of half (3 + 2, or 2 + 2). */
+/**
+ * How many tiles fit in a line of the quick row: all of them while each label has room, otherwise the row breaks into lines of half (3 + 2,
+ * or 2 + 2). The room is the tile as the sheet lays it out, whole points (a tile 51.2 wide is 51), less its 2 points of padding each side.
+ */
 export function quickColumns(rowWidth: number, labelSize: number, count: number): number {
-  const room = (rowWidth - (count - 1) * QUICK_GAP) / count - 4;
+  const room = Math.floor((rowWidth - (count - 1) * QUICK_GAP) / count) - 4;
   return room >= QUICK_LABEL_EM * labelSize ? count : Math.ceil(count / 2);
 }
 

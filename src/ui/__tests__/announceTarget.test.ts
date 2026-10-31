@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLOSING_MAX_MS, PAGE_REGION, sheetClosed, sheetClosing, sheetOpened, speaker } from '../announceTarget';
+import { anySheetOpen, CLOSING_MAX_MS, PAGE_REGION, sheetClosed, sheetClosing, sheetOpened, speaker } from '../announceTarget';
 
 const NOW = 1_000_000;
 
@@ -51,5 +51,24 @@ describe('a sheet that is closing: its dialog stays on the page while it slides 
   it('is open again, and speaks, when it is opened again before it has gone', () => {
     const closing = sheetClosing(sheetOpened([], 'add'), 'add', NOW);
     expect(speaker(sheetOpened(closing, 'add'), NOW)).toBe('add');
+  });
+});
+
+describe('whether any sheet is open, so a celebration waits for it', () => {
+  it('is no while none is on the page, yes while one is open, and yes while a lower one is open under a closing one', () => {
+    expect(anySheetOpen([])).toBe(false);
+    expect(anySheetOpen(sheetOpened([], 'weight'))).toBe(true);
+    const both = sheetClosing(sheetOpened(sheetOpened([], 'add'), 'food'), 'food', NOW);
+    expect(anySheetOpen(both)).toBe(true);
+  });
+
+  it('is no for a sheet only sliding out, and no once it has gone, so the win comes as the sheet leaves', () => {
+    const closing = sheetClosing(sheetOpened([], 'add'), 'add', NOW);
+    expect(anySheetOpen(closing)).toBe(false);
+    expect(anySheetOpen(sheetClosed(closing, 'add'))).toBe(false);
+  });
+
+  it('is yes again when a sheet closing is opened again', () => {
+    expect(anySheetOpen(sheetOpened(sheetClosing(sheetOpened([], 'add'), 'add', NOW), 'add'))).toBe(true);
   });
 });

@@ -1,6 +1,6 @@
-import React, { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import { AccessibilityInfo, Platform, Text, View, type ViewStyle } from 'react-native';
-import { PAGE_REGION, sheetClosed, sheetClosing, sheetOpened, speaker, type OpenSheet } from './announceTarget';
+import { anySheetOpen, PAGE_REGION, sheetClosed, sheetClosing, sheetOpened, speaker, type OpenSheet } from './announceTarget';
 
 /** On the page for a screen reader, off it for the eye. */
 export const OFF_SCREEN: ViewStyle = { position: 'absolute', left: -10000, top: 0, width: 1, height: 1, overflow: 'hidden' };
@@ -23,8 +23,27 @@ const NOTHING_SAID: Said = { text: '', n: 0, to: PAGE_REGION };
 /** How long a line stays in a region with nothing on screen to match it, long enough to be read once; then the region is empty again. */
 export const ANNOUNCE_HOLD_MS = 5000;
 
-// The sheets on the page on the web, open or sliding out, newest last (announceTarget.ts). Kept outside React: a sheet opening or closing re-renders nothing.
+// The sheets on the page, open or (on the web) sliding out, newest last (announceTarget.ts). Kept outside React: a sheet opening or closing re-renders
+// nothing, except what asks whether any sheet is open (`useAnySheetOpen`).
 let openSheets: OpenSheet[] = [];
+const sheetListeners = new Set<() => void>();
+
+function setOpenSheets(next: OpenSheet[]): void {
+  openSheets = next;
+  sheetListeners.forEach((fn) => fn());
+}
+
+function subscribeSheets(fn: () => void): () => void {
+  sheetListeners.add(fn);
+  return () => {
+    sheetListeners.delete(fn);
+  };
+}
+
+/** Whether any sheet is open right now, on the phone and the web: a win that would cover it (the celebration) waits until it has closed. */
+export function useAnySheetOpen(): boolean {
+  return useSyncExternalStore(subscribeSheets, () => anySheetOpen(openSheets), () => false);
+}
 
 /** How often a line waiting for a closing sheet to leave the page looks again, in ms. */
 const SHEET_WAIT_STEP_MS = 50;
@@ -107,26 +126,28 @@ export function useAnnounce(throughSheets = false): { announce: (text: string, h
  * left the page. Counts the sheet as open while `open`, and as closing from
  * then until that `onDismiss` (or until it unmounts), since react-native-web
  * keeps the dialog on the page while it slides out. Null and undefined on the
- * phone, which says lines with `sayOnPhone` and never waits.
+ * phone, which says lines with `sayOnPhone` and never waits; there the sheet is
+ * counted only while `open`. Either way `useAnySheetOpen` reads the same list.
  */
 export function useSheetRegion(open: boolean): { region: React.ReactElement | null; onDismiss: (() => void) | undefined } {
   const id = useId();
   useEffect(() => {
-    if (Platform.OS !== 'web' || !open) return;
-    openSheets = sheetOpened(openSheets, id);
+    if (!open) return;
+    setOpenSheets(sheetOpened(openSheets, id));
     return () => {
-      openSheets = sheetClosing(openSheets, id, Date.now());
+      // The web keeps the dialog on the page while it slides out, and says so in the list until it is dismissed; the phone has nothing to wait for.
+      setOpenSheets(Platform.OS === 'web' ? sheetClosing(openSheets, id, Date.now()) : sheetClosed(openSheets, id));
     };
   }, [open, id]);
   // Unmounted, the dialog goes with it at once, and its Modal calls no onDismiss.
   useEffect(
     () => () => {
-      openSheets = sheetClosed(openSheets, id);
+      setOpenSheets(sheetClosed(openSheets, id));
     },
     [id],
   );
   const onDismiss = useCallback(() => {
-    openSheets = sheetClosed(openSheets, id);
+    setOpenSheets(sheetClosed(openSheets, id));
   }, [id]);
   return Platform.OS === 'web' ? { region: <SheetRegion id={id} />, onDismiss } : { region: null, onDismiss: undefined };
 }

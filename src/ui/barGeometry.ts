@@ -40,3 +40,11 @@ export function barBottom(insetBottom: number, web: boolean): number {
 export function clearOfBar(scale: number, insetBottom: number, web: boolean): number {
   return barHeight(scale) + barBottom(insetBottom, web) + PLUS_LIFT + PLUS_CLEAR_GAP;
 }
+
+/**
+ * Where a floating thing sits above the bottom of the screen, for the toasts and nudges: on a phone clear of the bar and the top of ➕;
+ * on a wide screen, which has no bar, `wideGap` above the bottom safe area. One rule for all of them, so none drifts behind the bar.
+ */
+export function floatBottom(wide: boolean, scale: number, insetBottom: number, web: boolean, wideGap: number): number {
+  return wide ? wideGap + insetBottom : clearOfBar(scale, insetBottom, web);
+}

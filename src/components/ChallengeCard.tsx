@@ -5,7 +5,8 @@ import { challengeText } from '../core/challenge';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Card } from '../ui/components';
-import { C, F, lh } from '../ui/theme';
+import { C, F, lh, S } from '../ui/theme';
+import { spokenLine } from '../ui/toastWords';
 import { useTodayChallenge } from './useRewards';
 
 /**
@@ -24,8 +25,8 @@ export function ChallengeCard() {
   const sub = progress.done ? t('chal_done') : progress.of > 1 ? fill(t('chal_progress'), { n: progress.n, m: progress.of }) : null;
   return (
     <Card still>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} accessible accessibilityLabel={[t('chal_title'), text, sub].filter(Boolean).join('. ')}>
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.goldSoft, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} accessible accessibilityRole="text" accessibilityLabel={spokenLine([t('chal_title'), text, sub])}>
+        <View style={{ width: 40, height: 40, borderRadius: S.radiusXs, backgroundColor: C.goldSoft, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name={progress.done ? 'checkmark' : 'flag-outline'} size={20} color={C.goldInk} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>

@@ -1,5 +1,4 @@
 import React from 'react';
-import { View } from 'react-native';
 import SleepScreen from '../sleep';
 import FitScreen from './fit';
 import { YogaPanel } from '../../components/YogaPanel';
@@ -10,8 +9,7 @@ import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { SectionTabs } from '../../ui/SectionTabs';
 import { useSectionParam } from '../../ui/useSectionParam';
-import { C } from '../../ui/theme';
-import { TintBand, TopBar } from '../../ui/TopBar';
+import { BandedTab, TopBar } from '../../ui/TopBar';
 
 type Section = 'move' | 'yoga' | 'sleep' | 'mind';
 const SECTIONS: Section[] = ['move', 'yoga', 'sleep', 'mind'];
@@ -23,8 +21,7 @@ export default function BodyTab() {
   const t = makeT(lang);
   const [section, setSection] = useSectionParam(SECTIONS);
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <TintBand />
+    <BandedTab>
       <TopBar title={t('tab_body')} alt={lang === 'en' ? undefined : t('tab_body')} right={<TopBarActions />} />
       <SectionTabs options={[{ key: 'move', label: t('fit_title') }, { key: 'yoga', label: t('yoga_tab') }, { key: 'sleep', label: t('sleep_title') }, { key: 'mind', label: t('mind_title') }]} value={section} onChange={setSection} />
       {section === 'move' ? <FitScreen embedded /> : null}
@@ -35,6 +32,6 @@ export default function BodyTab() {
       ) : null}
       {section === 'sleep' ? <SleepScreen embedded /> : null}
       {section === 'mind' ? <MindScreen embedded /> : null}
-    </View>
+    </BandedTab>
   );
 }

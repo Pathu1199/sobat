@@ -6,7 +6,8 @@
  * just closed is still on the page while it slides out (react-native-web's
  * Modal keeps its dialog until its `onDismiss`), so while the top-most one is
  * closing the line waits: neither the page under it nor a sheet under it
- * speaks yet. Sheets are known by an id each, newest last. Pure.
+ * speaks yet. Sheets are known by an id each, newest last. The same list says
+ * whether any sheet is open (`anySheetOpen`), on the phone too. Pure.
  */
 
 /** The page's own region, said from while no sheet is open. */
@@ -47,4 +48,9 @@ export function speaker(stack: readonly OpenSheet[], nowMs: number): string | nu
   if (on.length === 0) return PAGE_REGION;
   const top = on[on.length - 1];
   return top.closingSince === null ? top.id : null;
+}
+
+/** Whether any sheet is open (not one sliding out): the frame everything that must not cover a sheet, a celebration, waits on. */
+export function anySheetOpen(stack: readonly OpenSheet[]): boolean {
+  return stack.some((s) => s.closingSince === null);
 }

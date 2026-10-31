@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SaidProvider, useAnnounce, useScreenReaderOn } from '../ui/announce';
 import { undoLinesShown } from '../ui/listUndo';
-import { clearOfBar } from '../ui/barGeometry';
+import { floatBottom } from '../ui/barGeometry';
 import { C, F, M, S, textScale } from '../ui/theme';
 import { toastMs, toastSpeech } from '../ui/toastWords';
 import { useBreakpoint } from '../ui/useBreakpoint';
@@ -147,7 +147,7 @@ function ToastView({ text, opacity, action, onAction }: { text: string; opacity:
         {
           position: 'absolute',
           // On a phone, above the bar and the top of ➕; a wide screen has no bar.
-          bottom: wide ? 24 + insets.bottom : clearOfBar(textScale(), insets.bottom, Platform.OS === 'web'),
+          bottom: floatBottom(wide, textScale(), insets.bottom, Platform.OS === 'web', 24),
           right: wide ? 24 : undefined,
           alignSelf: wide ? 'flex-end' : 'center',
           left: wide ? undefined : 0,
