@@ -11,7 +11,7 @@ import { useApp } from '../../store/AppProvider';
 import { SectionTabs } from '../../ui/SectionTabs';
 import { useSectionParam } from '../../ui/useSectionParam';
 import { C } from '../../ui/theme';
-import { TopBar } from '../../ui/TopBar';
+import { TintBand, TopBar } from '../../ui/TopBar';
 
 type Section = 'move' | 'yoga' | 'sleep' | 'mind';
 const SECTIONS: Section[] = ['move', 'yoga', 'sleep', 'mind'];
@@ -24,6 +24,7 @@ export default function BodyTab() {
   const [section, setSection] = useSectionParam(SECTIONS);
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <TintBand />
       <TopBar title={t('tab_body')} alt={lang === 'en' ? undefined : t('tab_body')} right={<TopBarActions />} />
       <SectionTabs options={[{ key: 'move', label: t('fit_title') }, { key: 'yoga', label: t('yoga_tab') }, { key: 'sleep', label: t('sleep_title') }, { key: 'mind', label: t('mind_title') }]} value={section} onChange={setSection} />
       {section === 'move' ? <FitScreen embedded /> : null}

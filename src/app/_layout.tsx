@@ -7,6 +7,7 @@ import { Platform, useColorScheme, View } from 'react-native';
 import { BreakOverlay } from '../components/BreakOverlay';
 import { BreakToast } from '../components/BreakToast';
 import { HeaderBack } from '../components/HeaderBack';
+import { paletteOf } from '../core/palette';
 import { pageTitle } from '../core/screenTitle';
 import { makeT } from '../i18n';
 import { FeedbackProvider } from '../services/feedback';
@@ -26,7 +27,7 @@ import { useUsageTracker } from '../services/useUsageTracker';
 import { usePushSync } from '../services/usePushSync';
 import { useWorkSchedule } from '../services/useWorkSchedule';
 import { AppProvider, useApp } from '../store/AppProvider';
-import { applyTextScale, applyTheme, C, themeMode, type ThemeMode } from '../ui/theme';
+import { applyTextScale, applyTheme, C, paletteNow, themeMode, type ThemeMode } from '../ui/theme';
 
 /**
  * The tabs sit under every other page: a link or a reload that opens a page of
@@ -55,21 +56,22 @@ export default function RootLayout() {
   );
 }
 
-/** Picks dark or light from the setting and the phone, applies it before the tree renders, and remounts on change. */
+/** Picks dark or light from the setting and the phone, and the palette the user chose, applies them before the tree renders, and remounts on change. */
 function Themed({ children }: { children: React.ReactNode }) {
   const { state } = useApp();
   const system = useColorScheme();
   const mode: ThemeMode = state.settings.appearance === 'system' ? (system === 'light' ? 'light' : 'dark') : state.settings.appearance;
+  const palette = paletteOf(state.settings.palette);
   // Swap the palette before paint, then remount the tree so every component reads the new colours.
   const scale = state.settings.textScale || 1;
   const lang = state.profile.lang;
-  const [applied, setApplied] = useState<string>(`${themeMode()}-1`);
+  const [applied, setApplied] = useState<string>(`${themeMode()}-${paletteNow()}-1`);
   useLayoutEffect(() => {
-    applyTheme(mode);
+    applyTheme(mode, palette);
     applyTextScale(scale);
     // Deliberate: the remount must follow the palette swap, and nothing else re-renders this subtree.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setApplied(`${mode}-${scale}`);
+    setApplied(`${mode}-${palette}-${scale}`);
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       document.documentElement.style.background = C.bg;
       document.documentElement.style.colorScheme = mode;
@@ -80,7 +82,7 @@ function Themed({ children }: { children: React.ReactNode }) {
       // The root view behind the app, seen in screen transitions and behind the keyboard, takes the same colour.
       SystemUI.setBackgroundColorAsync(C.bg).catch(() => {});
     }
-  }, [mode, scale]);
+  }, [mode, palette, scale]);
   // The page's language follows the profile, so screen readers and the browser read Marathi and Hindi as such.
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') document.documentElement.lang = lang;

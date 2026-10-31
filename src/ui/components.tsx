@@ -14,10 +14,11 @@ import { C, F, lh, lift, MICRO, onThemeChange, S } from './theme';
 /** A chip's button is a finger wide and tall on every platform, sized by the box itself (the web adds no reach around a control); the chip stays 35 tall in the middle of it. */
 const PILL_REACH: ViewStyle = { minHeight: S.touch, minWidth: S.touch, justifyContent: 'center' };
 
-export function Screen({ children, refreshing, wide }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean }) {
+/** A scrolling page. `onBand`: it sits over a tab's tint band (`Page`), so it lets the band show through instead of painting the page colour. */
+export function Screen({ children, refreshing, wide, onBand }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean; onBand?: boolean }) {
   return (
     <ScrollView
-      style={st.screen}
+      style={[st.screen, onBand ? { backgroundColor: 'transparent' } : null]}
       contentContainerStyle={[st.screenContent, wide && { maxWidth: S.maxWide, paddingHorizontal: S.gutterWide, paddingTop: 4 }]}
       keyboardShouldPersistTaps="handled">
       {refreshing ? <ActivityIndicator color={C.accent} /> : null}

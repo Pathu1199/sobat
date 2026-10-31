@@ -30,7 +30,7 @@ import { useApp } from '../../store/AppProvider';
 import { useRecordOn } from '../../store/useRecordOn';
 import { BiText, Btn, Card, Divider, Micro, Pill, Row, Small } from '../../ui/components';
 import { C, F, lh, S } from '../../ui/theme';
-import { TopBar } from '../../ui/TopBar';
+import { TintBand, TopBar } from '../../ui/TopBar';
 import { useBreakpoint } from '../../ui/useBreakpoint';
 
 /** A text link a finger tall: the words stay small, the box around them is the 44 point control. */
@@ -310,6 +310,7 @@ export default function CoachScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <TintBand />
       <TopBar
         title={t('coach_title')}
         alt={lang === 'en' ? undefined : t('coach_title')}

@@ -1028,6 +1028,10 @@ const en: Dict = {
   rem_streak_job_one: 'Your {n}-day routine streak needs one more job today.',
   rem_streak_jobs: 'Your {n}-day routine streak needs {k} more jobs today.',
   rem_streak_meals: "Your {n}-day streak needs today's meals too.",
+  palette_title: 'Colours',
+  palette_emerald: 'Emerald and gold',
+  palette_indigo: 'Indigo and amber',
+  palette_saffron: 'Forest and saffron',
 };
 
 const mr: Dict = {
@@ -2058,6 +2062,10 @@ const mr: Dict = {
   rem_streak_job_one: 'तुमच्या {n} दिवसांच्या दिनक्रम मालिकेला आज अजून एक काम हवं.',
   rem_streak_jobs: 'तुमच्या {n} दिवसांच्या दिनक्रम मालिकेला आज अजून {k} कामं हवीत.',
   rem_streak_meals: 'तुमच्या {n} दिवसांच्या मालिकेला आजची जेवणंही हवीत.',
+  palette_title: 'रंग',
+  palette_emerald: 'पाचू आणि सोनेरी',
+  palette_indigo: 'नीळ आणि अंबर',
+  palette_saffron: 'वनहिरवा आणि केशरी',
 };
 
 const hi: Dict = {
@@ -3087,6 +3095,10 @@ const hi: Dict = {
   rem_streak_job_one: 'आपके {n} दिन के दिनचर्या सिलसिले को आज एक और काम चाहिए.',
   rem_streak_jobs: 'आपके {n} दिन के दिनचर्या सिलसिले को आज {k} और काम चाहिए.',
   rem_streak_meals: 'आपके {n} दिन के सिलसिले को आज के खाने भी चाहिए.',
+  palette_title: 'रंग',
+  palette_emerald: 'पन्ना और सुनहरा',
+  palette_indigo: 'नील और अंबर',
+  palette_saffron: 'गहरा हरा और केसरिया',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

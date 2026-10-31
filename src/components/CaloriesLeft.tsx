@@ -7,7 +7,7 @@ import { isOffDay } from '../core/week';
 import { fill, makeT, numberText } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Bar } from '../ui/components';
-import { C, F, lh } from '../ui/theme';
+import { C, F, lh, TITLE_WEIGHT } from '../ui/theme';
 
 /**
  * The one number the day is about, on the page and centred: calories left
@@ -38,7 +38,7 @@ export function CaloriesLeft({ mode, view, suggested }: { mode: DayMode; view: D
     <View style={{ alignItems: 'center', gap: 4 }} accessible accessibilityLabel={`${label ? `${n(w.kcal)} ${label}. ` : ''}${line}`}>
       {label ? (
         <>
-          <Text style={{ color: w.alarm ? C.red : C.text, fontSize: F.number, lineHeight: lh(F.number, true), fontWeight: '500', fontVariant: ['tabular-nums'] }}>{n(w.kcal)}</Text>
+          <Text style={{ color: w.alarm ? C.red : C.text, fontSize: F.number, lineHeight: lh(F.number, true), fontWeight: TITLE_WEIGHT, fontVariant: ['tabular-nums'] }}>{n(w.kcal)}</Text>
           <Text style={{ color: w.alarm ? C.red : C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{label}</Text>
           {/* On the page, not in a card, so the empty part of the bar takes a deeper grey than a card's. */}
           <View style={{ alignSelf: 'stretch', marginVertical: 6 }}>

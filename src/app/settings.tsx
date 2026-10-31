@@ -12,6 +12,7 @@ import { notifyNow, requestPermission } from '../services/notify';
 import { pushConfigured, stopPush, testPush } from '../services/push';
 import Constants from 'expo-constants';
 import { OllamaSetup } from '../components/OllamaSetup';
+import { PaletteSwatches } from '../components/PaletteSwatches';
 import { BreakPanel } from '../components/BreakPanel';
 import { BreakSettingsCard } from '../components/BreakSettingsCard';
 import { FeatureSettings } from '../components/FeatureSettings';
@@ -169,6 +170,8 @@ export default function SettingsScreen() {
               <Pill key={a} label={t(`appearance_${a}`)} active={s.appearance === a} onPress={() => app.setSettings({ appearance: a })} />
             ))}
           </Row>
+          <Micro>{t('palette_title')}</Micro>
+          <PaletteSwatches />
           <Divider />
           <Micro>{t('text_size')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>

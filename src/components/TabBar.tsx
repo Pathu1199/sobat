@@ -6,18 +6,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addSlot, barItems, viewedDate, type BarItem } from '../core/bar';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { C, F, lh, lift, S } from '../ui/theme';
+import { barHeight, PLUS_LIFT, PLUS_SIZE, TAB_GAP, TAB_ICON, TAB_PAD, TAB_PILL, tabLabelSize } from '../ui/barGeometry';
+import { C, lh, lift, S, textScale } from '../ui/theme';
 import { useAddSheet } from './AddSheet';
 
 /**
- * The bar: Today, the extra tabs the person chose (Progress unless changed),
- * ➕ in the middle, and Me. core/bar.ts sets the order, so the sidebar on a
- * wide screen shows the same list. The tabs are tabs in a tab list, so the
- * selected one is announced on the web too; ➕ is a button, not a tab, laid
- * over an empty slot in the list's middle: it adds food for the day Today is
- * showing. Holding any tab opens Customize, where the tabs are chosen.
- * Hand-rolled because the stock bar gives its label a box that clips
- * Devanagari marks on the web.
+ * The bar: Today, the extra tabs the person chose (Routine and Progress
+ * unless changed), ➕ in the middle, and Me. core/bar.ts sets the order, so
+ * the sidebar on a wide screen shows the same list. The tabs are tabs in a
+ * tab list, so the selected one is announced on the web too; ➕ is a button,
+ * not a tab, laid over an empty slot in the list's middle, lifted half its
+ * height above the bar: it logs anything for the day Today is showing. The
+ * sizes are ui/barGeometry.ts's. Holding any tab opens Customize, where the
+ * tabs are chosen. Hand-rolled because the stock bar gives its label a box
+ * that clips Devanagari marks on the web.
  */
 type IconName = keyof typeof Ionicons.glyphMap;
 type Route = { key: string; name: string; params?: object };
@@ -63,8 +65,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
         borderTopColor: C.border,
         ...lift(2),
         shadowOffset: { width: 0, height: -4 },
-        minHeight: 64 + bottom,
-        paddingTop: 8,
+        minHeight: barHeight(textScale()) + bottom,
         paddingBottom: bottom,
       }}>
       {/* The tab list holds only tabs; ➕'s place in it is an empty slot. */}
@@ -85,28 +86,23 @@ export function TabBar({ state, navigation }: TabBarProps) {
           ),
         )}
       </View>
-      {/* ➕ is a button laid over that slot, outside the list, so a screen reader never counts it as a tab. */}
-      <View style={{ position: 'absolute', top: 8, left: `${(slot.index / slot.count) * 100}%`, width: `${100 / slot.count}%`, alignItems: 'center' }}>
+      {/* ➕ is a button laid over that slot, outside the list, so a screen reader never counts it as a tab. Half of it rises above the bar. */}
+      <View style={{ position: 'absolute', top: -PLUS_LIFT, left: `${(slot.index / slot.count) * 100}%`, width: `${100 / slot.count}%`, alignItems: 'center' }}>
         <Pressable
           onPress={add}
           accessibilityRole="button"
           accessibilityLabel={addLabel}
           style={({ pressed }) => ({
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            marginTop: -26,
+            width: PLUS_SIZE,
+            height: PLUS_SIZE,
+            borderRadius: PLUS_SIZE / 2,
             backgroundColor: C.accent,
             alignItems: 'center',
             justifyContent: 'center',
-            borderWidth: 5,
-            borderColor: C.bgAlt,
             ...lift(2),
-            shadowColor: C.accent,
-            shadowOpacity: 0.4,
             transform: [{ scale: pressed ? 0.94 : 1 }],
           })}>
-          <Ionicons name="add" size={30} color={C.onAccent} />
+          <Ionicons name="add" size={28} color={C.onAccent} />
         </Pressable>
       </View>
     </View>
@@ -129,6 +125,7 @@ function TabButton({
   onLongPress: () => void;
 }) {
   const color = focused ? C.accentText : C.textFaint;
+  const size = tabLabelSize(textScale());
   return (
     <Pressable
       onPress={onPress}
@@ -137,12 +134,12 @@ function TabButton({
       aria-selected={focused}
       accessibilityLabel={label}
       accessibilityHint={hint}
-      style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'flex-start', gap: 3, paddingHorizontal: 2, opacity: pressed ? 0.6 : 1 })}>
-      {/* The active tab sits on a 48 × 32 tinted pill: seen before it is read. */}
-      <View style={{ width: 48, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: focused ? C.accentDim : 'transparent' }}>
-        <Ionicons name={item.icon as IconName} size={24} color={color} />
+      style={({ pressed }) => ({ flex: 1, minHeight: S.touch, alignItems: 'center', justifyContent: 'flex-start', gap: TAB_GAP, paddingTop: TAB_PAD, paddingHorizontal: 2, opacity: pressed ? 0.6 : 1 })}>
+      {/* The active tab sits on a soft pill: seen before it is read. */}
+      <View style={{ width: TAB_PILL.width, height: TAB_PILL.height, borderRadius: TAB_PILL.height / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: focused ? C.accentSoft : 'transparent' }}>
+        <Ionicons name={item.icon as IconName} size={TAB_ICON} color={color} />
       </View>
-      <Text numberOfLines={1} style={{ color, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500', includeFontPadding: false, textAlign: 'center' }}>
+      <Text numberOfLines={1} style={{ color, fontSize: size, lineHeight: lh(size), fontWeight: '500', includeFontPadding: false, textAlign: 'center' }}>
         {label}
       </Text>
     </Pressable>

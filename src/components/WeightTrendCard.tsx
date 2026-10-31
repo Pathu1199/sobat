@@ -9,7 +9,7 @@ import { weightPoints } from '../core/tiles';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Card, Micro, Row, Small } from '../ui/components';
-import { C, F, lh } from '../ui/theme';
+import { C, F, lh, TITLE_WEIGHT } from '../ui/theme';
 import { toPath } from '../ui/tileGeometry';
 import { spokenLine } from '../ui/toastWords';
 import { WeightSheet } from './WeightSheet';
@@ -79,7 +79,7 @@ export function WeightTrendCard() {
           </Row>
           {trend ? (
             <>
-              <Text style={{ color: C.text, fontSize: F.number, lineHeight: lh(F.number, true), fontWeight: '400', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ color: C.text, fontSize: F.number, lineHeight: lh(F.number, true), fontWeight: TITLE_WEIGHT, fontVariant: ['tabular-nums'] }}>
                 {oneDecimal(trend.kg)}
                 <Text style={{ color: C.textDim, fontSize: F.title, fontWeight: '400' }}>{` ${kg}`}</Text>
               </Text>
