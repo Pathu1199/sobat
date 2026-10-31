@@ -101,6 +101,16 @@ export function quickActions(mode: 'log' | 'plan', isToday: boolean): QuickActio
   ];
 }
 
+/** Room a tile's one-word label needs, in ems of its size: "Routine", the widest, is about 3.6 em. */
+export const QUICK_LABEL_EM = 3.6;
+export const QUICK_GAP = 6;
+
+/** How many tiles fit in a line of the quick row: all of them while each label has room, otherwise the row breaks into lines of half (3 + 2, or 2 + 2). */
+export function quickColumns(rowWidth: number, labelSize: number, count: number): number {
+  const room = (rowWidth - (count - 1) * QUICK_GAP) / count - 4;
+  return room >= QUICK_LABEL_EM * labelSize ? count : Math.ceil(count / 2);
+}
+
 /**
  * The slot the sheet opens on, among the day's slot ids: the one asked for;
  * else, today, the one whose turn it is; else the day's first slot not yet

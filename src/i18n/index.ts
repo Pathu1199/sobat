@@ -3110,7 +3110,7 @@ const hi: Dict = {
   add_any: 'जोड़ें',
   quick_food: 'खाना',
   quick_water_a11y: '{ml} ml पानी जोड़ें',
-  quick_walk_a11y: '{min} मिनट की सैर जोड़ें',
+  quick_walk_a11y: '{min} मिनट टहलना जोड़ें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

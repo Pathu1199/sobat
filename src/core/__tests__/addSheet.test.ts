@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, offersYesterday, plannedSummary, quickActions, removeUndoSteps, repeatItems, sheetMode, slotAllowance, slotBefore, slotLine, slotLineText, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
+import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, offersYesterday, plannedSummary, quickActions, quickColumns, removeUndoSteps, repeatItems, sheetMode, slotAllowance, slotBefore, slotLine, slotLineText, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
 import { addLine, basketFromLines, lineOf, setCount, slotPreview, type BasketLine } from '../basket';
-import { makeT } from '../../i18n';
+import { keysOf, makeT } from '../../i18n';
 import { addSkip } from '../menu';
 import { kcalForGrams } from '../nutrition';
 import { slotStates } from '../pattern';
@@ -58,10 +58,34 @@ describe('quickActions: ➕ logs anything', () => {
   });
 
   it('names every action in all three languages', () => {
+    // t() falls back to English, so the language's own dictionary is what is checked.
     for (const lang of ['en', 'mr', 'hi'] as const) {
+      const own = keysOf(lang);
+      const needed = [...quickActions('log', true).map((q) => q.labelKey), 'add_any', 'quick_water_a11y', 'quick_walk_a11y'];
+      for (const key of needed) expect(own, `${lang} ${key}`).toContain(key);
       const t = makeT(lang);
       for (const q of quickActions('log', true)) expect(t(q.labelKey), `${lang} ${q.key}`).not.toBe(q.labelKey);
     }
+  });
+
+  it('names the walk in Hindi by the word the tile shows, so voice control reaches it', () => {
+    const hi = makeT('hi');
+    expect(hi('quick_walk_a11y')).toContain(hi('tile_walk'));
+  });
+});
+
+describe('quickColumns: the quick row never cuts a label', () => {
+  it('keeps every tile in one line while each label has room', () => {
+    expect(quickColumns(280, 13, 5)).toBe(5);
+    expect(quickColumns(280, 12, 5)).toBe(5);
+    expect(quickColumns(335, 16, 5)).toBe(5);
+    expect(quickColumns(280, 16, 4)).toBe(4);
+  });
+
+  it('breaks the row into lines of half, 3 + 2 or 2 + 2, when the larger text needs more room', () => {
+    expect(quickColumns(280, 15, 5)).toBe(3);
+    expect(quickColumns(280, 16, 5)).toBe(3);
+    expect(quickColumns(200, 16, 4)).toBe(2);
   });
 });
 
