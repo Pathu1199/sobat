@@ -31,7 +31,7 @@ export function TopBarActions() {
         </Row>
       ) : null}
       {wide ? (
-        <IconButton name="add-circle-outline" label={t('add_food')} onPress={() => addSheet.open({ date: today })} />
+        <IconButton name="add-circle-outline" label={t('add_any')} onPress={() => addSheet.open({ date: today })} />
       ) : (
         <>
           {/* The guide lives in Me; the phone header keeps room for the name. */}

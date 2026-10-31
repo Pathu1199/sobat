@@ -1032,6 +1032,10 @@ const en: Dict = {
   palette_emerald: 'Emerald and gold',
   palette_indigo: 'Indigo and amber',
   palette_saffron: 'Forest and saffron',
+  add_any: 'Add',
+  quick_food: 'Food',
+  quick_water_a11y: 'Add {ml} ml of water',
+  quick_walk_a11y: 'Add a {min}-minute walk',
 };
 
 const mr: Dict = {
@@ -2066,6 +2070,10 @@ const mr: Dict = {
   palette_emerald: 'पाचू आणि सोनेरी',
   palette_indigo: 'नीळ आणि अंबर',
   palette_saffron: 'वनहिरवा आणि केशरी',
+  add_any: 'जोडा',
+  quick_food: 'जेवण',
+  quick_water_a11y: '{ml} ml पाणी जोडा',
+  quick_walk_a11y: '{min} मिनिटांचं चालणं जोडा',
 };
 
 const hi: Dict = {
@@ -3099,6 +3107,10 @@ const hi: Dict = {
   palette_emerald: 'पन्ना और सुनहरा',
   palette_indigo: 'नील और अंबर',
   palette_saffron: 'गहरा हरा और केसरिया',
+  add_any: 'जोड़ें',
+  quick_food: 'खाना',
+  quick_water_a11y: '{ml} ml पानी जोड़ें',
+  quick_walk_a11y: '{min} मिनट की सैर जोड़ें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

@@ -17,7 +17,7 @@ export type BarKey = 'today' | TabId | 'add' | 'me';
 export type BarItem = { key: BarKey; route: string | null; icon: string; labelKey: string };
 
 const TODAY: BarItem = { key: 'today', route: 'index', icon: 'today-outline', labelKey: 'tab_today' };
-const ADD: BarItem = { key: 'add', route: null, icon: 'add', labelKey: 'add_food' };
+const ADD: BarItem = { key: 'add', route: null, icon: 'add', labelKey: 'add_any' };
 const ME: BarItem = { key: 'me', route: 'me', icon: 'person-circle-outline', labelKey: 'tab_me' };
 const EXTRA: Record<TabId, BarItem> = {
   progress: { key: 'progress', route: 'progress', icon: 'trending-up-outline', labelKey: 'tab_progress' },

@@ -126,7 +126,7 @@ export default function CustomizeScreen() {
           <Small color={C.textDim}>{t('cust_tabs_note')}</Small>
           {locked('today-outline', t('tab_today'))}
           <Divider />
-          {locked('add', t('add_food'))}
+          {locked('add', t('add_any'))}
           <Divider />
           {locked('person-circle-outline', t('tab_me'))}
           {TAB_IDS.map((id) => (

@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { createContext, useContext, useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, Platform, ScrollView, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import {
   addRows,
   addsIntoMeal,
@@ -9,6 +10,7 @@ import {
   offersPlanned,
   offersYesterday,
   plannedSummary,
+  quickActions,
   repeatItems,
   sheetMode,
   slotAllowance,
@@ -21,6 +23,7 @@ import {
   undoSteps,
   yesterdayIn,
   type AddRow,
+  type QuickKey,
 } from '../core/addSheet';
 import { addLine, basketFromItems, basketFromLines, basketMeal, basketTotals, itemsMeal, lineOf, linesFromBasket, putLine, setCount, setGrams, slotPreview, stepCount, type BasketLine } from '../core/basket';
 import { addDays } from '../core/date';
@@ -37,12 +40,16 @@ import { useFeedback } from '../services/feedback';
 import { useMinute } from '../services/useClock';
 import { useApp } from '../store/AppProvider';
 import { Btn, Empty, Field, Micro, Pill } from '../ui/components';
+import { chosenProps } from '../ui/chosen';
 import { IconButton } from '../ui/IconButton';
 import { SheetFrame } from '../ui/Sheet';
 import { C, F, lh, S } from '../ui/theme';
+import { AbhyasCard } from './AbhyasCard';
 import { FoodRow, OneTapRow, PlannedCard, SaveAsOffer, ToolsRow } from './AddSheetRows';
 import { CustomFoodForm } from './CustomFoodForm';
 import { FoodDetailSheet } from './FoodDetailSheet';
+import { WALK_STEP_MIN } from './tiles/WalkTile';
+import { WeightSheet } from './WeightSheet';
 
 /**
  * What the add sheet is opened for: a date and a slot, the foods to start
@@ -83,8 +90,13 @@ export function AddSheetProvider({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * The ➕ sheet: anything eaten that is not ticked off the menu, for the date
- * and slot being looked at. Search sits at the top so its matches stay above
+ * The ➕ sheet logs anything: a row of quick actions at its top (Food, Water,
+ * Walk, Weight, Routine; core/addSheet.ts `quickActions`) over the food
+ * search. Water adds a bottle and Walk ten minutes to the date in one tap,
+ * with Undo on the toast as the sheet closes; Weight opens the weight entry;
+ * Routine shows the date's own list (the card on Today, to tick or start).
+ * The food search is anything eaten that is not ticked off the menu, for the
+ * date and slot being looked at. Search sits at the top so its matches stay above
  * the keyboard; under it any food with a − / + and a grams box, and a bar
  * with "N items · X kcal" and Save. Every meal goes through the store's
  * addMeal (or addMealFromPlan) with calories from the database. The fast ways
@@ -116,6 +128,10 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
   const [customOpen, setCustomOpen] = useState(false);
   // After a logged meal of two or more foods: its lines, offered as a saved meal, and the words saying it was logged.
   const [offer, setOffer] = useState<{ lines: PlanLine[]; logged: string } | null>(null);
+  // What the sheet shows under its quick actions: the food search, or the date's routine list.
+  const [panel, setPanel] = useState<'food' | 'routine'>('food');
+  const [weightOpen, setWeightOpen] = useState(false);
+  const quick = quickActions(mode, isToday);
 
   // The slot: the one asked for; else, today, the one whose turn it is; else the day's first still open.
   const { menuOn } = app;
@@ -277,6 +293,34 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
     onClose();
   }
 
+  /** A quick action: a panel shows, or water or a walk is logged to the date with Undo on the toast, or the weight entry opens. */
+  function onQuick(key: QuickKey) {
+    if (key === 'food' || key === 'routine') {
+      setPanel(key);
+      return;
+    }
+    if (key === 'weight') {
+      setWeightOpen(true);
+      return;
+    }
+    fb.haptic('light');
+    if (key === 'water') {
+      const ml = state.settings.bottleMl;
+      const id = app.addWater(ml, date);
+      fb.notify(fill(t('tile_added_water'), { ml }), { label: t('undo'), onPress: () => app.removeWater(id) });
+    } else {
+      const id = app.logWalk(date, WALK_STEP_MIN);
+      fb.notify(fill(t('tile_added_walk'), { min: WALK_STEP_MIN }), { label: t('undo'), onPress: () => app.removeActivity(id) });
+    }
+    onClose();
+  }
+
+  function quickLabel(key: QuickKey, label: string): string {
+    if (key === 'water') return fill(t('quick_water_a11y'), { ml: state.settings.bottleMl });
+    if (key === 'walk') return fill(t('quick_walk_a11y'), { min: WALK_STEP_MIN });
+    return label;
+  }
+
   function renderRow({ item }: { item: AddRow }) {
     switch (item.kind) {
       case 'head':
@@ -372,7 +416,7 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
     <SheetFrame open onClose={onClose} maxWidth={560} tall>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: S.padLg, paddingRight: 8, paddingTop: 8 }}>
         <Text accessibilityRole="header" style={{ flex: 1, color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' }}>
-          {mode === 'plan' ? t('add_plan_title') : t('add_food')}
+          {mode === 'plan' ? t('add_plan_title') : panel === 'routine' ? t('abhyas') : t('add_food')}
         </Text>
         <IconButton name="close" label={t('close')} onPress={onClose} />
       </View>
@@ -392,49 +436,87 @@ function AddSheet({ request, onClose }: { request: AddRequest; onClose: () => vo
         </ScrollView>
       ) : (
         <>
-          <View style={{ gap: 4, paddingBottom: 8 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: S.padLg }}>
-              {menu.meals.map((m) => (
-                <Pill key={m.id} label={`${slotName(m)} ${m.time}`} active={slot?.id === m.id} onPress={() => pickSlot(m.id)} />
-              ))}
-            </ScrollView>
-            {lineText ? <Text style={{ color: lineColor, fontSize: F.small, lineHeight: lh(F.small), paddingHorizontal: S.padLg }}>{lineText}</Text> : null}
-            <View style={{ flexDirection: 'row', paddingHorizontal: S.padLg, paddingTop: 4 }}>
-              <Field value={query} onChangeText={setQuery} placeholder={t('search_food')} accessibilityLabel={t('search_food')} />
-            </View>
-          </View>
-          <FlatList
-            data={rows}
-            keyExtractor={(r) => r.key}
-            renderItem={renderRow}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: S.padLg, paddingBottom: S.padLg }}
-            ListFooterComponent={
-              customOpen ? (
-                <CustomFoodForm
-                  initialName={query}
-                  onSaved={(f) => {
-                    setCustomOpen(false);
-                    addFood(f);
-                    setQuery('');
-                  }}
-                  onCancel={() => setCustomOpen(false)}
-                />
-              ) : null
-            }
-          />
-          {basket.length > 0 || mode === 'plan' ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: S.padLg, paddingVertical: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
-              <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
-                {fill(t(totals.items === 1 ? 'add_bar_one' : 'add_bar'), { n: totals.items, kcal: numberText(totals.kcal) })}
-              </Text>
-              <Btn label={mode === 'plan' ? t('add_save_menu') : t('save')} onPress={save} disabled={!slot} style={{ minWidth: 120 }} />
+          {quick.length > 0 ? (
+            <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: S.padLg, paddingTop: 4, paddingBottom: 10 }}>
+              {quick.map((q) => {
+                const on = q.panel && panel === q.key;
+                const label = t(q.labelKey);
+                return (
+                  <Pressable
+                    key={q.key}
+                    onPress={() => onQuick(q.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={quickLabel(q.key, label)}
+                    {...(q.panel ? chosenProps(on) : {})}
+                    style={({ pressed }) => ({ flex: 1, minWidth: 0, minHeight: 56, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 2, borderRadius: S.radiusSm, backgroundColor: on ? C.accentSoft : C.card, opacity: pressed ? 0.8 : 1 })}>
+                    <Ionicons name={q.icon as keyof typeof Ionicons.glyphMap} size={22} color={on ? C.accentText : C.textDim} />
+                    <Text numberOfLines={1} style={{ color: on ? C.accentText : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
           ) : null}
+          {panel === 'routine' ? (
+            <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: S.padLg, paddingBottom: S.padLg }}>
+              <AbhyasCard date={date} />
+            </ScrollView>
+          ) : (
+          <>
+            <View style={{ gap: 4, paddingBottom: 8 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: S.padLg }}>
+                {menu.meals.map((m) => (
+                  <Pill key={m.id} label={`${slotName(m)} ${m.time}`} active={slot?.id === m.id} onPress={() => pickSlot(m.id)} />
+                ))}
+              </ScrollView>
+              {lineText ? <Text style={{ color: lineColor, fontSize: F.small, lineHeight: lh(F.small), paddingHorizontal: S.padLg }}>{lineText}</Text> : null}
+              <View style={{ flexDirection: 'row', paddingHorizontal: S.padLg, paddingTop: 4 }}>
+                <Field value={query} onChangeText={setQuery} placeholder={t('search_food')} accessibilityLabel={t('search_food')} />
+              </View>
+            </View>
+            <FlatList
+              data={rows}
+              keyExtractor={(r) => r.key}
+              renderItem={renderRow}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingHorizontal: S.padLg, paddingBottom: S.padLg }}
+              ListFooterComponent={
+                customOpen ? (
+                  <CustomFoodForm
+                    initialName={query}
+                    onSaved={(f) => {
+                      setCustomOpen(false);
+                      addFood(f);
+                      setQuery('');
+                    }}
+                    onCancel={() => setCustomOpen(false)}
+                  />
+                ) : null
+              }
+            />
+            {basket.length > 0 || mode === 'plan' ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: S.padLg, paddingVertical: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
+                <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>
+                  {fill(t(totals.items === 1 ? 'add_bar_one' : 'add_bar'), { n: totals.items, kcal: numberText(totals.kcal) })}
+                </Text>
+                <Btn label={mode === 'plan' ? t('add_save_menu') : t('save')} onPress={save} disabled={!slot} style={{ minWidth: 120 }} />
+              </View>
+            ) : null}
+          </>
+          )}
         </>
       )}
+      {/* The weight entry, over the sheet; closing it closes both, as the weight was what the tap was for. */}
+      <WeightSheet
+        open={weightOpen}
+        onClose={() => {
+          setWeightOpen(false);
+          onClose();
+        }}
+      />
       <FoodDetailSheet
         food={detail}
         initial={editing ? { unit: editing.unit, gramsPerUnit: editing.gramsPerUnit, count: editing.count } : null}

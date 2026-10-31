@@ -78,6 +78,29 @@ export function sheetMode(date: ISODate, today: ISODate, asked?: 'log' | 'plan')
   return date > today ? 'plan' : (asked ?? 'log');
 }
 
+/** One of the quick actions above the food search: Food and Routine are panels of the sheet, the rest log in one tap. */
+export type QuickKey = 'food' | 'water' | 'walk' | 'weight' | 'routine';
+export type QuickAction = { key: QuickKey; icon: string; labelKey: string; panel: boolean };
+
+/**
+ * The row of quick actions at the top of the ➕ sheet, so ➕ logs anything:
+ * Food (the food search, where the sheet opens), Water (a bottle), Walk (ten
+ * minutes), Weight (the weight entry) and Routine (the day's list, to tick or
+ * start). Only when logging: a menu being changed is food alone. The weight
+ * only on today, the one day a weigh-in is entered for.
+ */
+export function quickActions(mode: 'log' | 'plan', isToday: boolean): QuickAction[] {
+  if (mode === 'plan') return [];
+  const weight: QuickAction[] = isToday ? [{ key: 'weight', icon: 'scale-outline', labelKey: 'add_weight', panel: false }] : [];
+  return [
+    { key: 'food', icon: 'restaurant-outline', labelKey: 'quick_food', panel: true },
+    { key: 'water', icon: 'water-outline', labelKey: 'water', panel: false },
+    { key: 'walk', icon: 'walk-outline', labelKey: 'tile_walk', panel: false },
+    ...weight,
+    { key: 'routine', icon: 'book-outline', labelKey: 'abhyas', panel: true },
+  ];
+}
+
 /**
  * The slot the sheet opens on, among the day's slot ids: the one asked for;
  * else, today, the one whose turn it is; else the day's first slot not yet

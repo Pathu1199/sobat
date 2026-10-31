@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import foodsJson from '../../data/foods.json';
-import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, offersYesterday, plannedSummary, removeUndoSteps, repeatItems, sheetMode, slotAllowance, slotBefore, slotLine, slotLineText, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
+import { addRows, addsIntoMeal, alreadySaved, filledIn, menuSave, offersPlanned, offersYesterday, plannedSummary, quickActions, removeUndoSteps, repeatItems, sheetMode, slotAllowance, slotBefore, slotLine, slotLineText, startLines, startSlot, switchDraft, undoSteps, yesterdayIn } from '../addSheet';
 import { addLine, basketFromLines, lineOf, setCount, slotPreview, type BasketLine } from '../basket';
 import { makeT } from '../../i18n';
 import { addSkip } from '../menu';
@@ -44,6 +44,24 @@ describe('addRows', () => {
 
   it('changing a menu offers no eating as planned, no yesterday, no photo or barcode', () => {
     expect(kinds(addRows({ ...base, mode: 'plan' }))).toEqual(['head:me_saved', 'saved', 'head:recent', 'food:poha', 'food:chapati']);
+  });
+});
+
+describe('quickActions: ➕ logs anything', () => {
+  it('offers Food, Water, Walk, Weight and Routine when logging today, Food and Routine as panels of the sheet', () => {
+    expect(quickActions('log', true).map((q) => `${q.key}${q.panel ? ' panel' : ''}`)).toEqual(['food panel', 'water', 'walk', 'weight', 'routine panel']);
+  });
+
+  it('leaves the weight out on another day, and offers nothing while a menu is being changed', () => {
+    expect(quickActions('log', false).map((q) => q.key)).toEqual(['food', 'water', 'walk', 'routine']);
+    expect(quickActions('plan', true)).toEqual([]);
+  });
+
+  it('names every action in all three languages', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const t = makeT(lang);
+      for (const q of quickActions('log', true)) expect(t(q.labelKey), `${lang} ${q.key}`).not.toBe(q.labelKey);
+    }
   });
 });
 
