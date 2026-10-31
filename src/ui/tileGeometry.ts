@@ -31,8 +31,9 @@ export const TILE_RADIUS = S.radius;
 export const TILE_LINE_GAP = 2;
 /**
  * Room left under the short line before the art zone starts. Small enough
- * that at text scale 1 a tile two to a row on a 360 point phone (16 point
- * gutters, the row's 12 point gap: 158 points wide) is still square.
+ * that at text scale 1 a tile two to a row on a 375 point phone (20 point
+ * gutters, the row's 12 point gap: 161 points wide) is still square; on a
+ * 360 point phone (154 wide) it is 3 points taller than wide.
  */
 const TILE_GAP = 2;
 

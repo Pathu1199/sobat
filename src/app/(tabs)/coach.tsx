@@ -321,7 +321,7 @@ export default function CoachScreen() {
           <ScrollView
             ref={scroller}
             style={{ flex: 1 }}
-            contentContainerStyle={{ padding: S.pad, gap: 14, maxWidth: 780, width: '100%', alignSelf: 'center' }}
+            contentContainerStyle={{ paddingVertical: S.pad, paddingHorizontal: S.gutter, gap: 14, maxWidth: 780, width: '100%', alignSelf: 'center' }}
             keyboardShouldPersistTaps="handled">
             <Row style={{ justifyContent: 'space-between' }}>
               <Pressable onPress={() => router.push('/memory')} accessibilityRole="link" style={LINK}>

@@ -5,7 +5,7 @@ import { PALETTES, S } from './theme';
  * The week strip's sizes and dots. Each day takes a seventh of the row, so
  * the seven always fit. On Today the strip sits on the page, not in a card,
  * so a day is a finger wide (44 points and more) on a 360 or 375 point phone.
- * On a 320 point phone a day is about 41 points wide, narrower than a finger,
+ * On a 320 point phone a day is about 40 points wide, narrower than a finger,
  * so its touch box is kept a finger and more tall as well
  * (`STRIP_DAY_HEIGHT`), with room for the weekday and the date in their pill
  * and the dot under it at the largest text size. Pure.

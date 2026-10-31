@@ -14,13 +14,15 @@ describe('the tab bar', () => {
   });
 
   it('holds the pill and a label with room for Devanagari matras at every text size, growing only past 60 when the label needs it', () => {
-    expect(barHeight(1)).toBe(60);
+    // Every text size pinned: 0.9, 1, 1.12, 1.25.
+    expect(TEXT_SCALES.map(barHeight)).toEqual([60, 60, 61, 64]);
     for (const scale of TEXT_SCALES) {
       const label = tabLabelSize(scale);
       expect(lh(label), `${scale}`).toBeGreaterThanOrEqual(label * 1.4);
-      expect(TAB_PAD + TAB_PILL.height + TAB_GAP + lh(label) + TAB_PAD, `${scale}`).toBeLessThanOrEqual(barHeight(scale));
+      // Written out, not from the module's own sum: 4 above, the 32 point pill, 2 between, a label line with room for
+      // matras (1.4 times its size), 4 below. A bar shorter than that clips Marathi and Hindi labels.
+      expect(barHeight(scale), `${scale}`).toBeGreaterThanOrEqual(4 + 32 + 2 + Math.ceil(1.4 * label) + 4);
     }
-    expect(barHeight(1.25)).toBe(64);
   });
 
   it('gives each of five places a finger and more on a 320 point phone, the pill and ➕ inside its share', () => {
