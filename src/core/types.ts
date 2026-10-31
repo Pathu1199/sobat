@@ -28,9 +28,9 @@ export type Profile = {
   onboarded: boolean;
   /** The day setup was finished, when no meal-time prompt goes out. Missing on older profiles: they are not on day one. */
   onboardedOn?: ISODate;
-  /** The day the current chapter began ("Start a new chapter"): the climb, the weekly challenge and the streak count from it. */
+  /** The day the current chapter began ("Start a new chapter"): the climb and the streak count from it. */
   chapterStart?: ISODate;
-  /** The start weight before the first new chapter: the kilo badges keep counting from it. */
+  /** The start weight before the first new chapter: the kilo medals keep counting from it. */
   firstStartWeightKg?: number;
   /** No meal is filled in from the plan on or before this date: the day the store moved to version 7, so an update never fills in a day already lived. */
   autoFillFrom?: ISODate;
@@ -313,7 +313,7 @@ export type AppState = {
   schedule: WorkSchedule;
   /** Retired in version 7: the one-week template became this week's `menus`. Always null after a load; kept so a merge with an older file clears it. */
   weekPlan?: import('./weekPlan').WeekPlan | null;
-  /** Wins already celebrated (badge:, level:, challenge: ids). Null until first seeded. */
+  /** Wins already celebrated (medal: and challenge:day: ids, and the badge:, level: and challenge: ids of the game before medals). Null until first seeded. */
   celebrated?: string[] | null;
   /** Activities done, by the person's own choice. */
   activities: ActivityLog[];

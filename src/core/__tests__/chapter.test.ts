@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chapterDays, chapterSince, chapterStreaks, newChapter } from '../chapter';
-import { gameView, nextWin } from '../game';
+import { gameView } from '../game';
+import { earnedMedals, MEDALS_SEEDED, nextWin } from '../medals';
 import type { DayMenu } from '../menu';
 import { dailyTargets, KCAL_FLOOR } from '../nutrition';
 import { planFrom, shownPlan } from '../plan';
@@ -104,35 +105,18 @@ describe('shownPlan', () => {
 });
 
 describe('gameView', () => {
-  const TODAY = '2026-10-28'; // a Wednesday; with Sunday as the weigh day its week starts on 25 October
+  const TODAY = '2026-10-28'; // a Wednesday
   const profile: Profile = { name: 'V', sex: 'male', birthYear: 1990, heightCm: 172, weightKg: 84.5, activity: 'sedentary', goalWeightKg: 75, rateKgPerWeek: 0.5, lang: 'en', onboarded: true, startWeightKg: 92 };
   const targets = dailyTargets(profile, new Date(`${TODAY}T12:00:00`));
-  const days = ['2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28'];
   const weights = [
     { date: '2026-09-01', kg: 92 },
     { date: '2026-10-10', kg: 86 },
     { date: '2026-10-25', kg: 85 },
     { date: '2026-10-27', kg: 84.5 },
   ];
-  // Every day of this week so far meets every weekly challenge, whichever one this week has.
-  const state = {
-    profile,
-    weights,
-    meals: days.map((date) => ({ id: date, at: `${date}T13:00:00`, date, type: 'lunch' as const, items: [], kcal: 1500, protein: 60 })),
-    water: days.map((date) => ({ id: `w${date}`, at: '', date, ml: 3000 })),
-    sleep: days.map((date) => ({ date, bed: '23:00', wake: '06:30', quality: 4, wakeups: 0, energy: 4, minutes: 450, score: 80 })),
-    steps: days.map((date) => ({ date, count: 8000 })),
-    workouts: [],
-    celebrated: [],
-    settings: { waterGoalMl: 3000, weighDay: 0, offDays: [] },
-  };
-  const view = (p: Profile, abhyasDone = 0) => gameView({ state: { ...state, profile: p }, targets, today: TODAY, streakDays: 3, bestStreakDays: 3, lifetime: { streakDays: 3, bestStreakDays: 3 }, abhyasDone });
+  const state = { profile, weights };
+  const view = (p: Profile) => gameView({ state: { ...state, profile: p }, targets, today: TODAY });
   const chapter = { ...profile, ...newChapter(profile, weights.filter((w) => w.date <= '2026-10-25'), '2026-10-26') };
-
-  it('counts the Abhyas items done over the whole journey, as it counts meals, so a new chapter takes none of their points away', () => {
-    expect(view(profile, 2).points - view(profile).points).toBe(2 * 15);
-    expect(view(chapter, 2).points).toBe(view(profile, 2).points);
-  });
 
   it('counts Lost, To go and the climb from the chapter\'s start, at the weight Progress shows', () => {
     const shown = shownWeight(weights, TODAY)!.kg;
@@ -146,20 +130,8 @@ describe('gameView', () => {
     expect(view(profile).trail).toHaveLength(4);
   });
 
-  it('starts the weekly challenge again from the chapter\'s first day', () => {
-    expect(view(profile).challenge.n).toBe(4);
-    expect(view(chapter).challenge.n).toBe(3);
-  });
-
-  it('keeps the kilo badges counting from the very first start, so a new chapter takes none away', () => {
-    const kg = (g: ReturnType<typeof view>) => Object.fromEntries(g.badges.map((b) => [b.key, b.earned]));
-    expect(kg(view(profile)).kg_5).toBe(true);
-    expect(kg(view(chapter)).kg_5).toBe(true);
-  });
-
-  it('ignores a chapter start after today (a clock ahead on another device): the challenge and the trail are as without one', () => {
+  it('ignores a chapter start after today (a clock ahead on another device): the trail is as without one', () => {
     const ahead = { ...profile, chapterStart: '2026-11-05' };
-    expect(view(ahead).challenge.n).toBe(view(profile).challenge.n);
     expect(view(ahead).trail).toEqual(view(profile).trail);
   });
 
@@ -170,7 +142,7 @@ describe('gameView', () => {
     const g = view(ahead);
     const none = view(profile);
     expect(g.plan.startKg).toBe(92);
-    expect({ plan: g.plan, progress: g.progress, camps: g.camps, trail: g.trail, points: g.points }).toEqual({ plan: none.plan, progress: none.progress, camps: none.camps, trail: none.trail, points: none.points });
+    expect(g).toEqual(none);
   });
 });
 
@@ -194,10 +166,11 @@ describe('the streak at a new chapter', () => {
   const record = { today: TODAY, routine, meals, skips: [], offDays: [] as number[], floor: KCAL_FLOOR.male, menuOn: menu };
   const profile: Profile = { name: 'V', sex: 'male', birthYear: 1990, heightCm: 172, weightKg: 84.5, activity: 'sedentary', goalWeightKg: 75, rateKgPerWeek: 0.5, lang: 'en', onboarded: true, startWeightKg: 92 };
   const targets = dailyTargets(profile, new Date(`${TODAY}T12:00:00`));
-  const state = { profile, weights: [{ date: '2026-10-27', kg: 84.5 }], meals, water: [], sleep: [], steps: [], workouts: [], celebrated: [], settings: { waterGoalMl: 3000, weighDay: 0, offDays: [] } };
+  const state = { profile, weights: [{ date: '2026-10-27', kg: 84.5 }] };
   const game = (p: Profile) => {
     const s = chapterStreaks({ ...record, chapterStart: p.chapterStart });
-    return { s, g: gameView({ state: { ...state, profile: p }, targets, today: TODAY, streakDays: s.days, bestStreakDays: s.best, lifetime: { streakDays: s.lifetimeDays, bestStreakDays: s.lifetimeBest }, abhyasDone: 0 }) };
+    const medals = earnedMedals({ meals: { now: s.lifetimeDays, best: s.lifetimeBest }, routine: null, lostKg: 0, totalKg: 0, weeks: [], challengesDone: 0, celebrated: [MEDALS_SEEDED] });
+    return { s, g: gameView({ state: { ...state, profile: p }, targets, today: TODAY }), medals };
   };
   const chapter = { ...profile, ...newChapter(profile, state.weights, TODAY) };
 
@@ -206,20 +179,17 @@ describe('the streak at a new chapter', () => {
     expect(game(chapter).s).toEqual({ days: 0, best: 0, lifetimeDays: 60, lifetimeBest: 60 });
   });
 
-  it('keeps the points of a sixty-day streak from before the chapter, and its streak badges', () => {
-    const before = game(profile).g;
-    const after = game(chapter).g;
-    expect(after.points).toBe(before.points);
-    const earned = (g: typeof after) => g.badges.filter((b) => b.earned).map((b) => b.key);
-    expect(earned(after)).toEqual(earned(before));
-    expect(earned(after)).toEqual(expect.arrayContaining(['streak_7', 'streak_30']));
+  it('keeps the streak medals of a sixty-day streak from before the chapter', () => {
+    const ids = (m: { id: string }[]) => m.map((x) => x.id);
+    expect(ids(game(chapter).medals)).toEqual(ids(game(profile).medals));
+    expect(ids(game(chapter).medals)).toEqual(['medal:meals:3', 'medal:meals:7', 'medal:meals:21', 'medal:meals:30']);
   });
 
-  it('a seven-day badge never celebrated before the chapter is still celebrated after it', () => {
-    const { g } = game(chapter);
-    const ids = nextWin({ earned: g.badges.filter((b) => b.earned).map((b) => b.key), level: g.level.key, challenge: g.challenge, celebrated: null }).seed!;
-    const celebrated = ids.filter((id) => id !== 'badge:streak_7');
-    expect(nextWin({ earned: g.badges.filter((b) => b.earned).map((b) => b.key), level: g.level.key, challenge: g.challenge, celebrated }).next?.id).toBe('badge:streak_7');
+  it('a seven-day medal never celebrated before the chapter is still celebrated after it', () => {
+    const { medals } = game(chapter);
+    const seed = nextWin({ medals, challengeDone: false, today: TODAY, celebrated: null }).seed!;
+    const celebrated = seed.filter((id) => id !== 'medal:meals:7');
+    expect(nextWin({ medals, challengeDone: false, today: TODAY, celebrated }).next?.id).toBe('medal:meals:7');
   });
 
   it('a chapter start after today limits nothing', () => {

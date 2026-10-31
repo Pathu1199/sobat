@@ -56,11 +56,11 @@ describe('one digit style', () => {
     }
   });
 
-  it('writes the app\'s own Marathi words with the same digits: badges, camps, the water toast, the household measures', () => {
-    for (const key of ['badge_streak_7', 'badge_meals_100', 'level_camp1', 'toast_water_added', 'measure_bowl', 'oc_walk_do', 'challenge_steps_4']) {
+  it('writes the app\'s own Marathi words with the same digits: medals, challenges, the water toast, the household measures', () => {
+    for (const key of ['medal_meals_title', 'medal_kg_title', 'chal_walk_more', 'toast_water_added', 'measure_bowl', 'oc_walk_do']) {
       expect(t('mr', key), key).not.toMatch(DEVANAGARI);
     }
-    expect(t('mr', 'badge_streak_7')).toMatch(/7/);
+    expect(fill(t('mr', 'medal_meals_title'), { n: 7 })).toMatch(/7/);
   });
 
   it('writes the Marathi of the coach\'s lines, the recipes, yoga, exercises, mantras and break nudges with the same digits', () => {

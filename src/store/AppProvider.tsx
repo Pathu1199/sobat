@@ -83,7 +83,7 @@ type Ctx = {
   streakDays: number;
   /** The longest run of full days in the streak's window (from a new chapter's first day at most), by the streak's own rule: the streak tile's "Best". */
   bestStreakDays: number;
-  /** The streak over the whole journey, a new chapter or not (still within the streak's own window): only the points and the streak badges count it. */
+  /** The streak over the whole journey, a new chapter or not (still within the streak's own window): only the streak medals count it. */
   lifetimeStreakDays: number;
   /** The best run over the whole journey, by the same rule: only the streak medals count it. */
   lifetimeBestStreakDays: number;
@@ -369,7 +369,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Full record days in a row, judged on the menus as they show; today only counts once it is full, and never breaks the run before then.
   // A full day eaten under the safe minimum neither counts nor ends the run; a full day with nothing eaten (under 50 kcal) ends it, today too.
-  // A new chapter starts the streak shown and the best run again from its first day; the points and the streak badges keep the whole
+  // A new chapter starts the streak shown and the best run again from its first day; the streak medals keep the whole
   // journey's (`chapterStreaks`). Worked out once here for every tile and screen that shows them.
   const streaks = useMemo(
     () =>

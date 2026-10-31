@@ -218,22 +218,6 @@ export function streak(data: AbhyasData, today: ISODate, now: Date): number {
   return streakRun(data, today, now).days;
 }
 
-/**
- * Items done over every day up to today, each item on each day once: the
- * climb's points count them. Finished sessions only, so the points move when
- * a timer stops, not every minute it runs.
- */
-export function doneCount(data: Omit<AbhyasData, 'running'>, today: ISODate): number {
-  const ticks = byDate(data.ticks);
-  const sessions = byDate(data.sessions);
-  let n = 0;
-  for (const date of new Set([...ticks.keys(), ...sessions.keys()])) {
-    // No timer, so the moment read at does not count.
-    if (date <= today) n += statusIn({ items: data.items, running: null }, date, ticks.get(date) ?? [], sessions.get(date) ?? [], new Date(0)).done;
-  }
-  return n;
-}
-
 /** What the user fills in for an item: everything it is but its id, place and dates. */
 export type AbhyasDraft = Pick<AbhyasItem, 'name' | 'icon' | 'kind' | 'days' | 'date' | 'targetMin' | 'times'>;
 

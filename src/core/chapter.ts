@@ -8,10 +8,10 @@ import type { ISODate, Meal, Profile, SlotSkip, WeightLog } from './types';
 /**
  * A new chapter: the climb starts again from the weight Progress shows (the
  * weight smoothed over a week, `shownWeight`, so Lost reads 0 on the first
- * day) and today, and the weekly challenge, the streak shown and the best run
- * count from that day. The very first start is kept, so the kilo badges still
- * count the whole journey, and the points and the streak badges count the
- * streak of the whole journey. Nothing is deleted. Pure.
+ * day) and today, and the streak shown and the best run count from that day.
+ * The very first start is kept, so the kilo medals still count the whole
+ * journey, and the streak medals count the streak of the whole journey.
+ * Nothing is deleted. Pure.
  */
 export function newChapter(
   profile: Pick<Profile, 'weightKg' | 'startWeightKg' | 'firstStartWeightKg'>,

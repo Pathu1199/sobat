@@ -4,7 +4,6 @@ import {
   archive,
   closeStale,
   dayStatus,
-  doneCount,
   draftProblem,
   isAbhyasSession,
   isDone,
@@ -259,25 +258,6 @@ describe('streak', () => {
   });
 });
 
-describe('doneCount', () => {
-  it('counts each item done on each day up to today, by tick or by minutes, once', () => {
-    const d = data({
-      items: [item('yoga'), item('read', { targetMin: 20 })],
-      ticks: [tick('yoga', '2026-10-26'), tick('yoga', TODAY), tick('read', '2026-10-27')],
-      sessions: [session('read', '2026-10-26', 25), session('read', '2026-10-27', 25), session('read', '2026-10-28', 10)],
-    });
-    // Monday both, Tuesday reading (ticked and timed: once), today yoga; Wednesday's ten minutes are short of the target.
-    expect(doneCount(d, TODAY)).toBe(4);
-    expect(doneCount({ ...d, ticks: [...d.ticks, tick('yoga', '2026-11-01')] }, TODAY)).toBe(4);
-    expect(doneCount(data(), TODAY)).toBe(0);
-  });
-
-  it('leaves out a tick for a day the item is not on, and the running timer until it stops', () => {
-    const d = data({ items: [item('swim', { days: [1], targetMin: 10 })], ticks: [tick('swim', TODAY)], running: start('swim', at('2026-10-26', '07:00')) });
-    expect(doneCount(d, TODAY)).toBe(0);
-  });
-});
-
 describe('the list', () => {
   const now = at(TODAY, '09:00');
   const draft = (extra: Partial<AbhyasDraft> = {}): AbhyasDraft => ({ name: 'Yoga', icon: 'leaf-outline', kind: 'repeat', days: ALL_WEEK, times: [], ...extra });
@@ -419,7 +399,7 @@ describe("the store's actions", () => {
     expect(withStaleClosed(none, NOW)).toBe(none);
   });
 
-  it('a timer stopped exactly at the target leaves the item done, as it was while the timer ran, and the points count it', () => {
+  it('a timer stopped exactly at the target leaves the item done, as it was while the timer ran', () => {
     const s = withStarted(state(), 'study', at(TODAY, '17:30'));
     const view = (x: AbhyasState): AbhyasData => ({ items: x.abhyasItems, ticks: x.abhyasTicks, sessions: x.abhyasSessions, running: x.abhyasRunning });
     expect(dayStatus(view(s), TODAY, NOW)).toEqual({ total: 2, done: 1, minutes: 30 });
@@ -427,7 +407,6 @@ describe("the store's actions", () => {
     expect(stopped.abhyasSessions.map((x) => x.minutes)).toEqual([30]);
     expect(dayStatus(view(stopped), TODAY, NOW)).toEqual({ total: 2, done: 1, minutes: 30 });
     expect(isDone(stopped.abhyasItems[1], TODAY, [], 30)).toBe(true);
-    expect(doneCount(view(stopped), TODAY)).toBe(1);
   });
 
   it('a timer already stopped on another device keeps that first stop when it is stopped here too', () => {
