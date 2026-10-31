@@ -17,7 +17,8 @@ export function PaletteSwatches() {
   const t = makeT(app.state.profile.lang);
   const chosen = app.state.settings.palette;
   return (
-    <View style={{ flexDirection: 'row', gap: 8 }}>
+    // Named for the web, which announces a group by its label; the heading right above the row says the same on the phone.
+    <View role="group" aria-label={t('palette_title')} style={{ flexDirection: 'row', gap: 8 }}>
       {PALETTE_IDS.map((id) => {
         const p = PALETTE_SETS[id][themeMode()];
         const on = id === chosen;

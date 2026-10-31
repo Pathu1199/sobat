@@ -11,7 +11,7 @@ export const TINT_BAND = 168;
 /** The soft tint at the top of every tab, in the palette's own colour, behind the header and what comes first under it. Drawn first, so the page scrolls over it. */
 export function TintBand() {
   const insets = useSafeAreaInsets();
-  return <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top + TINT_BAND, backgroundColor: C.tint }} />;
+  return <View style={{ pointerEvents: 'none', position: 'absolute', top: 0, left: 0, right: 0, height: insets.top + TINT_BAND, backgroundColor: C.tint }} />;
 }
 
 /** One compact bar per tab, over the tab's tint band. Replaces the stock navigation header. `over` is a small quiet line above the title (Today's date over its greeting). */

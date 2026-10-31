@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeT } from '../i18n';
 import { useNudges, type Nudge } from '../services/useNudges';
 import { useApp } from '../store/AppProvider';
+import { clearOfBar } from '../ui/barGeometry';
 import { Btn, Micro, Row } from '../ui/components';
-import { C, F, lh, S } from '../ui/theme';
+import { C, F, lh, S, textScale } from '../ui/theme';
+import { useBreakpoint } from '../ui/useBreakpoint';
 
 /** The interrupt itself: one line, one two-minute task, three ways out. */
 export function NudgeToast() {
@@ -18,6 +21,8 @@ export function NudgeToast() {
 function NudgeCard({ nudge, respond }: { nudge: Nudge; respond: (action: 'done' | 'snooze' | 'skip') => void }) {
   const { state } = useApp();
   const t = makeT(state.profile.lang);
+  const insets = useSafeAreaInsets();
+  const wide = useBreakpoint() !== 'mobile';
   const [left, setLeft] = useState(() => nudge.choice?.microTaskSeconds ?? 0);
   const [running, setRunning] = useState(false);
 
@@ -35,7 +40,8 @@ function NudgeCard({ nudge, respond }: { nudge: Nudge; respond: (action: 'done' 
         position: 'absolute',
         left: 12,
         right: 12,
-        bottom: 88,
+        // Shown over the tabs: on a phone, above the bar and the top of ➕; a wide screen has no bar.
+        bottom: wide ? 24 + insets.bottom : clearOfBar(textScale(), insets.bottom, Platform.OS === 'web'),
         backgroundColor: C.card,
         borderWidth: S.hairline,
         borderColor: C.accent,

@@ -1,10 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Platform, Pressable, Text, View } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SaidProvider, useAnnounce, useScreenReaderOn } from '../ui/announce';
 import { undoLinesShown } from '../ui/listUndo';
-import { C, F, M, S } from '../ui/theme';
+import { clearOfBar } from '../ui/barGeometry';
+import { C, F, M, S, textScale } from '../ui/theme';
 import { toastMs, toastSpeech } from '../ui/toastWords';
 import { useBreakpoint } from '../ui/useBreakpoint';
 
@@ -132,23 +133,30 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// The toast's reach: only its button takes a tap while it has one, none at all otherwise. In a StyleSheet, because the web only reads
+// 'box-none' there; written in a plain style object, react-native-web leaves it out and the toast's full width would take every tap.
+const pointer = StyleSheet.create({ withAction: { pointerEvents: 'box-none' }, plain: { pointerEvents: 'none' } });
+
 function ToastView({ text, opacity, action, onAction }: { text: string; opacity: Animated.Value; action: ToastAction | null; onAction: () => void }) {
   const insets = useSafeAreaInsets();
   const wide = useBreakpoint() !== 'mobile';
   return (
     <Animated.View
-      pointerEvents={action ? 'box-none' : 'none'}
-      style={{
-        position: 'absolute',
-        bottom: (wide ? 24 : 84) + insets.bottom,
-        right: wide ? 24 : undefined,
-        alignSelf: wide ? 'flex-end' : 'center',
-        left: wide ? undefined : 0,
-        width: wide ? undefined : '100%',
-        alignItems: 'center',
-        opacity,
-        zIndex: 950,
-      }}>
+      style={[
+        action ? pointer.withAction : pointer.plain,
+        {
+          position: 'absolute',
+          // On a phone, above the bar and the top of ➕; a wide screen has no bar.
+          bottom: wide ? 24 + insets.bottom : clearOfBar(textScale(), insets.bottom, Platform.OS === 'web'),
+          right: wide ? 24 : undefined,
+          alignSelf: wide ? 'flex-end' : 'center',
+          left: wide ? undefined : 0,
+          width: wide ? undefined : '100%',
+          alignItems: 'center',
+          opacity,
+          zIndex: 950,
+        },
+      ]}>
       <View
         style={{
           backgroundColor: C.cardHigh,

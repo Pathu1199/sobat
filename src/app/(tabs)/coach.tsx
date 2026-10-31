@@ -31,7 +31,8 @@ import { useRecordOn } from '../../store/useRecordOn';
 import { BiText, Btn, Card, Divider, Micro, Pill, Row, Small } from '../../ui/components';
 import { C, F, lh, S } from '../../ui/theme';
 import { TintBand, TopBar } from '../../ui/TopBar';
-import { useBreakpoint } from '../../ui/useBreakpoint';
+import { PLUS_LIFT } from '../../ui/barGeometry';
+import { useBreakpoint, useIsWide } from '../../ui/useBreakpoint';
 
 /** A text link a finger tall: the words stay small, the box around them is the 44 point control. */
 const LINK = { minHeight: S.touch, justifyContent: 'center' } as const;
@@ -51,6 +52,8 @@ export default function CoachScreen() {
   const lang = app.state.profile.lang;
   const t = makeT(lang);
   const wide = useBreakpoint() === 'desktop';
+  // The tab bar, and ➕ lifted above it, are there on a phone only: the sidebar replaces them from the tablet width up.
+  const barShown = !useIsWide();
   const [input, setInput] = useState('');
   const { ask: askParam } = useLocalSearchParams<{ ask?: string }>();
   const asked = useRef<string | null>(null);
@@ -444,7 +447,7 @@ export default function CoachScreen() {
           </ScrollView>
 
           {chatOpen ? (
-          <View style={{ padding: 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
+          <View style={{ padding: 12, paddingBottom: barShown ? 12 + PLUS_LIFT : 12, borderTopWidth: S.hairline, borderTopColor: C.border, backgroundColor: C.bgAlt }}>
             <View style={{ maxWidth: 780, width: '100%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <ChatInput value={input} onChangeText={setInput} placeholder={t('ask_placeholder')} onSubmit={() => send(input)} />

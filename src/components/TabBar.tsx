@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addSlot, barItems, viewedDate, type BarItem } from '../core/bar';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { barHeight, PLUS_LIFT, PLUS_SIZE, TAB_GAP, TAB_ICON, TAB_PAD, TAB_PILL, tabLabelSize } from '../ui/barGeometry';
+import { barBottom, barHeight, PLUS_LIFT, PLUS_SIZE, TAB_GAP, TAB_ICON, TAB_PAD, TAB_PILL, tabLabelSize } from '../ui/barGeometry';
 import { C, lh, lift, S, textScale } from '../ui/theme';
 import { useAddSheet } from './AddSheet';
 
@@ -22,6 +22,9 @@ import { useAddSheet } from './AddSheet';
  * that clips Devanagari marks on the web.
  */
 type IconName = keyof typeof Ionicons.glyphMap;
+// The slot ➕ sits in is a full slot wide, so it lets taps through to what is beside the circle. In a StyleSheet, because the web
+// only reads 'box-none' there; written in a plain style object, react-native-web leaves it out.
+const slotStyle = StyleSheet.create({ pass: { pointerEvents: 'box-none' } });
 type Route = { key: string; name: string; params?: object };
 
 type TabBarProps = {
@@ -55,7 +58,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const items = barItems(app.state.settings.tabs);
   const slot = addSlot(items);
   const addLabel = t(items[slot.index].labelKey);
-  const bottom = Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6);
+  const bottom = barBottom(insets.bottom, Platform.OS === 'web');
   return (
     <View
       style={{
@@ -87,7 +90,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
         )}
       </View>
       {/* ➕ is a button laid over that slot, outside the list, so a screen reader never counts it as a tab. Half of it rises above the bar. */}
-      <View style={{ position: 'absolute', top: -PLUS_LIFT, left: `${(slot.index / slot.count) * 100}%`, width: `${100 / slot.count}%`, alignItems: 'center' }}>
+      <View style={[slotStyle.pass, { position: 'absolute', top: -PLUS_LIFT, left: `${(slot.index / slot.count) * 100}%`, width: `${100 / slot.count}%`, alignItems: 'center' }]}>
         <Pressable
           onPress={add}
           accessibilityRole="button"

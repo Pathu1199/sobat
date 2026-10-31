@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BAR_HEIGHT, barHeight, PLUS_LIFT, PLUS_SIZE, TAB_ICON, TAB_LABEL, TAB_PILL, tabLabelSize } from '../barGeometry';
+import { BAR_HEIGHT, barBottom, barHeight, clearOfBar, PLUS_CLEAR_GAP, PLUS_LIFT, PLUS_SIZE, TAB_ICON, TAB_LABEL, TAB_PILL, tabLabelSize } from '../barGeometry';
 import { lh, S, TEXT_SCALES } from '../theme';
 
 describe('the tab bar', () => {
@@ -30,5 +30,23 @@ describe('the tab bar', () => {
     expect(share).toBeGreaterThanOrEqual(S.touch);
     expect(TAB_PILL.width).toBeLessThanOrEqual(share);
     expect(PLUS_SIZE).toBeLessThanOrEqual(share);
+  });
+
+  it('pads under the tabs by the safe area, never less than 6 on the phone and 10 on the web', () => {
+    expect(barBottom(34, true)).toBe(34);
+    expect(barBottom(34, false)).toBe(34);
+    expect(barBottom(0, false)).toBe(6);
+    expect(barBottom(0, true)).toBe(10);
+    expect(barBottom(8, false)).toBe(8);
+  });
+
+  it('keeps a floating thing 8 above the top of ➕: the bar, its padding and the lift, in points from the screen bottom', () => {
+    expect(PLUS_CLEAR_GAP).toBe(8);
+    // Written out, not from the module's own sum: 60 + 6 + 28 + 8, and 10 on the web; a 34 point inset replaces the padding.
+    expect(clearOfBar(1, 0, false)).toBe(102);
+    expect(clearOfBar(1, 0, true)).toBe(106);
+    expect(clearOfBar(1, 34, false)).toBe(130);
+    // The bar grows with the text size (64 at 1.25), and so does what must clear it.
+    expect(clearOfBar(1.25, 34, false)).toBe(134);
   });
 });
