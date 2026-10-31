@@ -283,6 +283,16 @@ describe('buildPushSchedule: Abhyas and the day so far (version 2)', () => {
     expect(buildPushSchedule(state, TODAY, en, 'Asia/Kolkata', menu).checklist!.body.split('\n')[0]).toBe('○ Lunch');
   });
 
+  it('leaves out a meal still being eaten, or not yet open, at the last of its times, as the phone does', () => {
+    const first = (times: string[]) => build(withSettings({ ...state, meals: [meal('breakfast')] }, { checklistTimes: times })).checklist!.body.split('\n')[0];
+    // Dinner at 20:30 is open until 21:15: at 21:00 it is being eaten, so it is not listed as not done.
+    expect(first(['21:00'])).not.toMatch(/Dinner/);
+    // At the default 21:30 its window has closed, so an uneaten dinner shows as not done.
+    expect(first(['21:30'])).toMatch(/○ Dinner/);
+    // Before dinner opens, it is not listed at all.
+    expect(first(['18:00'])).not.toMatch(/Dinner/);
+  });
+
   it('sends no day so far while it is off, on the day setup was finished, on a free day, or with everything done', () => {
     expect(build(withSettings(state, { reminders: { ...state.settings.reminders, checklist: false } })).checklist).toBeNull();
     expect(build(state, '2026-10-12').checklist).toBeNull();

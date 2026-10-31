@@ -163,6 +163,8 @@ function checklistPart(state: AppState, today: ISODate, t: (k: string) => string
     bottleMl: s.bottleMl,
     walkGoalMin: s.walkGoalMin,
     waterWalk: s.todayCards.some((c) => c.id === 'waterWalk' && c.on),
+    // As on the phone: a meal still open, or not open yet, at the last of the times is left out rather than shown as not done.
+    times: checklistTimes(s.checklistTimes),
     lang: state.profile.lang,
     t,
   });
