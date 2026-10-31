@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { LIMITS, validSchedule } from '../../../relay/src/schedule';
+import { dueAt, LIMITS, validSchedule } from '../../../relay/src/schedule';
+import { MAX_TIMES } from '../abhyas';
 import { makeT } from '../../i18n';
 import { EMPTY_STATE } from '../../store/defaults';
 import type { DayMenu } from '../menu';
@@ -132,16 +133,16 @@ describe('buildPushSchedule: Abhyas and the day so far (version 2)', () => {
 
   it('sends each repeating item in the user\'s order with its weekdays and times, and the words for a fresh day', () => {
     expect(build(state).abhyas).toEqual([
-      { id: 'coding', days: [2], times: ['20:00'], title: 'Coding', body: "Today's list" },
-      { id: 'yoga', days: [1, 2, 5], times: ['07:30', '18:00'], title: 'Yoga', body: '0 of 20 min today' },
+      { id: 'coding', days: [2], times: ['20:00'], title: 'Coding', body: "Today's list", order: 0 },
+      { id: 'yoga', days: [1, 2, 5], times: ['07:30', '18:00'], title: 'Yoga', body: '0 of 20 min today', order: 1 },
     ]);
   });
 
   it('sends each one-off from today on that is not done yet, one row a time, soonest first', () => {
     expect(build(state).once).toEqual([
-      { date: TODAY, time: '11:00', title: 'Bank', body: '0 of 30 min today' },
-      { date: '2026-10-14', time: '09:00', title: 'Fix the bike', body: "Today's list" },
-      { date: '2026-10-14', time: '10:00', title: 'Fix the bike', body: "Today's list" },
+      { date: TODAY, time: '11:00', title: 'Bank', body: '0 of 30 min today', order: 2 },
+      { date: '2026-10-14', time: '09:00', title: 'Fix the bike', body: "Today's list", order: 3 },
+      { date: '2026-10-14', time: '10:00', title: 'Fix the bike', body: "Today's list", order: 3 },
     ]);
     // Ticked on its day, a one-off is gone.
     expect(build({ ...state, abhyasTicks: [...state.abhyasTicks, tick('bike', '2026-10-14')] }).once.map((o) => o.title)).toEqual(['Bank']);
@@ -186,8 +187,16 @@ describe('buildPushSchedule: Abhyas and the day so far (version 2)', () => {
     expect(new TextEncoder().encode(JSON.stringify(s)).length).toBeLessThan(64 * 1024);
   });
 
-  it("matches the relay's limits", () => {
-    expect(PUSH_LIMITS).toEqual({ rows: LIMITS.rows, id: LIMITS.id, text: LIMITS.text, checklist: LIMITS.checklist });
+  it("matches the relay's limits, the reminder times an item may have among them", () => {
+    expect(PUSH_LIMITS).toEqual(LIMITS);
+    expect(MAX_TIMES).toBe(LIMITS.times);
+  });
+
+  it("has the relay send Abhyas items and one-offs due in the same minute in the user's order", () => {
+    // A one-off placed first in the list, at the same time as two repeating items.
+    const first = item('call', 'Call home', { kind: 'once', days: [], date: TODAY, times: ['20:00'], order: -1 });
+    const s = JSON.parse(JSON.stringify(build({ ...state, abhyasItems: [...items, first, item('read', 'Read', { days: [2], times: ['20:00'], order: 9 })] })));
+    expect(dueAt(s, { date: TODAY, weekday: 2, minutes: 20 * 60 }).map((r) => r.title)).toEqual(['Call home', 'Coding', 'Read']);
   });
 
   it('is a schedule the relay takes, in every language', () => {

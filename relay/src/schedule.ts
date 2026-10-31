@@ -19,10 +19,14 @@ export type PushSchedule = {
   mantras: { date: string; title: string; text: string }[];
   quiet: { from: number; to: number };
   weigh?: { weekday: number; title: string; body: string } | null;
-  /** Repeating Abhyas items: each at its times on its weekdays, off days too. `bodyToday` is the words on `doneDate`, when minutes were counted there. */
-  abhyas?: { id: string; days: number[]; times: string[]; title: string; body: string; bodyToday?: string }[];
+  /**
+   * Repeating Abhyas items: each at its times on its weekdays, off days too. `bodyToday` is the words on `doneDate`,
+   * when minutes were counted there. `order`, here and on a one-off, is the item's place in the user's list, both
+   * kinds together: items due in the same minute go out, and are kept over the limit of a run, in that order.
+   */
+  abhyas?: { id: string; days: number[]; times: string[]; title: string; body: string; bodyToday?: string; order?: number }[];
   /** One-off Abhyas items: one row per reminder time, on its date. */
-  once?: { date: string; time: string; title: string; body: string }[];
+  once?: { date: string; time: string; title: string; body: string; order?: number }[];
   /** Repeating items already done on `doneDate`: skipped that day only. */
   doneToday?: string[];
   doneDate?: string;
@@ -47,14 +51,45 @@ const isTimes = (v: unknown) => Array.isArray(v) && v.length <= LIMITS.times && 
 const isWeekdays = (v: unknown) => Array.isArray(v) && v.length <= 7 && v.every((d) => Number.isInteger(d) && d >= 0 && d <= 6);
 const isId = (v: unknown) => typeof v === 'string' && v.length > 0 && v.length <= LIMITS.id;
 const isList = (v: unknown, each: (x: unknown) => boolean) => Array.isArray(v) && v.length <= LIMITS.rows && v.every(each);
+const isOrder = (v: unknown) => v === undefined || (Number.isInteger(v) && (v as number) >= 0);
 
 function isAbhyasRow(v: unknown): boolean {
   if (!isObject(v)) return false;
-  return isId(v.id) && isWeekdays(v.days) && isTimes(v.times) && isText(v.title, LIMITS.text) && isText(v.body, LIMITS.text) && (v.bodyToday === undefined || isText(v.bodyToday, LIMITS.text));
+  return isId(v.id) && isWeekdays(v.days) && isTimes(v.times) && isText(v.title, LIMITS.text) && isText(v.body, LIMITS.text) && (v.bodyToday === undefined || isText(v.bodyToday, LIMITS.text)) && isOrder(v.order);
 }
 
 function isOnceRow(v: unknown): boolean {
-  return isObject(v) && isDate(v.date) && typeof v.time === 'string' && CLOCK.test(v.time) && isText(v.title, LIMITS.text) && isText(v.body, LIMITS.text);
+  return isObject(v) && isDate(v.date) && typeof v.time === 'string' && CLOCK.test(v.time) && isText(v.title, LIMITS.text) && isText(v.body, LIMITS.text) && isOrder(v.order);
+}
+
+/** A time zone the clock can be read in; an unknown one would make every run for the phone fail. */
+function isZone(v: unknown): boolean {
+  if (typeof v !== 'string' || !v) return false;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: v });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// The parts a version 1 schedule has too, as a run reads them: each row an object, and its times and words strings,
+// so nothing in them can make a run fail. What goes only into a reminder's key or a sum (a block's kind, a meal's id,
+// how often, the weigh day) is not checked, nor how long the words are: the app sends there what it always sent, and
+// an odd one fails no run, where refusing it would stop every reminder for the phone.
+const strings = (v: Record<string, unknown>, keys: string[]) => keys.every((k) => typeof v[k] === 'string');
+const isRows = (v: unknown, keys: string[]) => Array.isArray(v) && v.every((r) => isObject(r) && strings(r, keys));
+const isEvery = (v: unknown) => v === undefined || v === null || (isObject(v) && strings(v, ['from', 'to', 'title', 'body']));
+
+function isOlderParts(o: Record<string, unknown>): boolean {
+  return (
+    isZone(o.tz) &&
+    isRows(o.blocks, ['start', 'title', 'body']) &&
+    isRows(o.slots, ['at', 'title', 'body']) &&
+    isRows(o.mantras, ['date', 'title', 'text']) &&
+    isEvery(o.breaks) &&
+    isEvery(o.water)
+  );
 }
 
 function isChecklist(v: unknown): boolean {
@@ -63,16 +98,17 @@ function isChecklist(v: unknown): boolean {
 
 /**
  * Whether an upload is a schedule the relay keeps. Version 1, from an older
- * app, is checked as it always was; version 2 also has its Abhyas and "Day so
- * far" parts checked in full, each within `LIMITS`, so nothing malformed or
- * oversized is stored and read every five minutes.
+ * app, is checked as it always was; version 2 also has its time zone and the
+ * rows of its older parts checked, and its Abhyas and "Day so far" parts in
+ * full, each within `LIMITS`, so nothing malformed or oversized is stored and
+ * read every five minutes.
  */
 export function validSchedule(s: unknown): s is PushSchedule {
   if (!isObject(s)) return false;
   const o = s as Partial<PushSchedule>;
   const base = typeof o.tz === 'string' && Array.isArray(o.days) && Array.isArray(o.blocks) && Array.isArray(o.slots) && Array.isArray(o.mantras) && typeof o.quiet === 'object';
   if (o.v === 1) return base;
-  if (o.v !== 2 || !base || !isObject(o.quiet) || typeof o.quiet.from !== 'number' || typeof o.quiet.to !== 'number') return false;
+  if (o.v !== 2 || !base || !isObject(o.quiet) || typeof o.quiet.from !== 'number' || typeof o.quiet.to !== 'number' || !isOlderParts(s)) return false;
   return isList(o.abhyas, isAbhyasRow) && isList(o.once, isOnceRow) && isList(o.doneToday, isId) && isDate(o.doneDate) && isChecklist(o.checklist);
 }
 
@@ -140,17 +176,21 @@ export function dueAt(s: PushSchedule, now: LocalTime): Reminder[] {
   }
 
   // Abhyas: each repeating item on its own weekdays, free days too (they are the user's choice), but not on the day
-  // the app said it was done; each one-off on its date. A version 1 schedule has neither.
+  // the app said it was done; each one-off on its date. A version 1 schedule has neither. Both kinds together in the
+  // user's order; a row with no place keeps the one it came in, after those that have one.
   const uploadDay = now.date === s.doneDate;
+  const items: { r: Reminder; order: number }[] = [];
+  const place = (order: number | undefined) => order ?? Number.MAX_SAFE_INTEGER;
   for (const a of s.abhyas ?? []) {
     if (!a.days.includes(now.weekday) || (uploadDay && s.doneToday?.includes(a.id))) continue;
     for (const time of a.times) {
-      if (toMinutes(time) === now.minutes) out.push({ key: `abhyas-${a.id}-${now.date}-${time}`, title: a.title, body: uploadDay && a.bodyToday ? a.bodyToday : a.body, url: '/' });
+      if (toMinutes(time) === now.minutes) items.push({ r: { key: `abhyas-${a.id}-${now.date}-${time}`, title: a.title, body: uploadDay && a.bodyToday ? a.bodyToday : a.body, url: '/' }, order: place(a.order) });
     }
   }
   (s.once ?? []).forEach((o, i) => {
-    if (o.date === now.date && toMinutes(o.time) === now.minutes) out.push({ key: `once-${i}-${now.date}-${o.time}`, title: o.title, body: o.body, url: '/' });
+    if (o.date === now.date && toMinutes(o.time) === now.minutes) items.push({ r: { key: `once-${i}-${now.date}-${o.time}`, title: o.title, body: o.body, url: '/' }, order: place(o.order) });
   });
+  for (const x of items.sort((a, b) => a.order - b.order)) out.push(x.r);
 
   // "Day so far" says how its own date stood, so it goes out on that date only, and never on a free day.
   const c = s.checklist;

@@ -1,4 +1,4 @@
-import { cleanDays, cleanTimes, isDone, minutesOn } from './abhyas';
+import { cleanDays, cleanTimes, isDone, MAX_TIMES, minutesOn } from './abhyas';
 import { breaksAsSwitched } from './breaks';
 import { checklistTimes, dayChecklist } from './checklist';
 import { addDays, isIsoDate } from './date';
@@ -51,11 +51,12 @@ export type PushSchedule = {
   /**
    * Abhyas items that repeat: a reminder at each of `times` on each of `days`, off days too, as on the phone. `body`
    * is what it says on a day with nothing counted yet; `bodyToday`, there when minutes were counted on `doneDate` and
-   * the item is not done yet, says them on that day.
+   * the item is not done yet, says them on that day. `order`, here and on a one-off, is the item's place in the
+   * user's list, both kinds together, so the relay sends items due in the same minute in that order.
    */
-  abhyas: { id: string; days: number[]; times: string[]; title: string; body: string; bodyToday?: string }[];
+  abhyas: { id: string; days: number[]; times: string[]; title: string; body: string; bodyToday?: string; order: number }[];
   /** One-off Abhyas items still to do, from today on: one row for each reminder time, soonest first. */
-  once: { date: ISODate; time: string; title: string; body: string }[];
+  once: { date: ISODate; time: string; title: string; body: string; order: number }[];
   /** Repeating items already done on `doneDate`: the relay skips them that day only. */
   doneToday: string[];
   doneDate: ISODate;
@@ -65,9 +66,10 @@ export type PushSchedule = {
 
 /**
  * What the relay takes in the Abhyas and "Day so far" parts (relay/src/schedule.ts, `LIMITS`). A schedule over
- * them is refused whole, and every reminder with it, so the app keeps under them: the first rows, and the words cut.
+ * them is refused whole, and every reminder with it, so the app keeps under them: the first rows, the words cut,
+ * and no more reminder times than an item may have (`cleanTimes` keeps to them).
  */
-export const PUSH_LIMITS = { rows: 30, id: 64, text: 80, checklist: 800 } as const;
+export const PUSH_LIMITS = { rows: 30, id: 64, text: 80, checklist: 800, times: MAX_TIMES } as const;
 
 /** The text cut to `max` characters with an ellipsis, on a whole character, never half of an emoji. */
 function clip(text: string, max: number): string {
@@ -94,6 +96,9 @@ function abhyasPart(state: AppState, today: ISODate, t: (k: string) => string): 
   };
   const title = (item: AbhyasItem) => clip(item.name || t('rem_abhyas'), PUSH_LIMITS.text);
   const live = state.abhyasItems.filter((i) => !i.archivedAt && cleanTimes(i.times).length > 0);
+  // Each item's place in the user's list, as Today shows it (`itemsOn`).
+  const place = new Map([...live].sort((a, b) => a.order - b.order).map((i, n) => [i.id, n]));
+  const order = (item: AbhyasItem) => place.get(item.id) ?? 0;
 
   const repeating = live
     .filter((i) => i.kind !== 'once' && i.id.length > 0 && i.id.length <= PUSH_LIMITS.id && cleanDays(i.days).length > 0)
@@ -102,14 +107,14 @@ function abhyasPart(state: AppState, today: ISODate, t: (k: string) => string): 
   const doneToday = repeating.filter((i) => isDone(i, today, ticks, minutes(i, today))).map((i) => i.id);
   const abhyas = repeating.map((i) => {
     const n = minutes(i, today);
-    const row = { id: i.id, days: cleanDays(i.days), times: cleanTimes(i.times), title: title(i), body: words(i, 0) };
+    const row = { id: i.id, days: cleanDays(i.days), times: cleanTimes(i.times), title: title(i), body: words(i, 0), order: order(i) };
     return n > 0 && !doneToday.includes(i.id) ? { ...row, bodyToday: words(i, n) } : row;
   });
 
   const once = live
     .filter((i): i is AbhyasItem & { date: ISODate } => i.kind === 'once' && isIsoDate(i.date) && i.date >= today)
     .filter((i) => !isDone(i, i.date, ticks, minutes(i, i.date)))
-    .flatMap((i) => cleanTimes(i.times).map((time) => ({ date: i.date, time, title: title(i), body: words(i, minutes(i, i.date)) })))
+    .flatMap((i) => cleanTimes(i.times).map((time) => ({ date: i.date, time, title: title(i), body: words(i, minutes(i, i.date)), order: order(i) })))
     .sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)))
     .slice(0, PUSH_LIMITS.rows);
 

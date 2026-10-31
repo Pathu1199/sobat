@@ -215,6 +215,21 @@ describe('dueBetween: many at one time', () => {
     expect(sent.filter((k) => k.startsWith('abhyas-'))).toEqual(['item0', 'item1', 'item2', 'item3'].map((id) => `abhyas-${id}-2026-10-06-20:30`));
   });
 
+  it("sends Abhyas items and one-offs at one minute in the user's order, and keeps the first of them over the limit", () => {
+    const mixed: PushSchedule = {
+      ...V2,
+      doneToday: [],
+      checklist: null,
+      abhyas: Array.from({ length: 6 }, (_, i) => ({ id: `r${i}`, days: [2], times: ['19:00'], title: `r${i}`, body: "Today's list", order: i + 2 })),
+      once: [
+        { date: '2026-10-06', time: '19:00', title: 'o1', body: "Today's list", order: 1 },
+        { date: '2026-10-06', time: '19:00', title: 'o0', body: "Today's list", order: 0 },
+      ],
+    };
+    expect(dueAt(mixed, on('2026-10-06', '19:00')).map((r) => r.title)).toEqual(['o0', 'o1', 'r0', 'r1', 'r2', 'r3', 'r4', 'r5']);
+    expect(dueBetween(mixed, ms('2026-10-06', '18:55'), ms('2026-10-06', '19:00')).map((r) => r.title)).toEqual(['o0', 'o1', 'r0', 'r1', 'r2', 'r3']);
+  });
+
   it('keeps the latest of one kind after a stall', () => {
     const spread: PushSchedule = {
       ...V2,
@@ -238,6 +253,7 @@ describe('validSchedule', () => {
 
   it('takes a version 2 schedule, with or without the day so far', () => {
     expect(validSchedule(V2)).toBe(true);
+    expect(validSchedule({ ...V2, abhyas: V2.abhyas!.map((a, i) => ({ ...a, order: i })), once: V2.once!.map((o, i) => ({ ...o, order: 9 + i })) })).toBe(true);
     expect(validSchedule({ ...V2, checklist: null, abhyas: [], once: [], doneToday: [] })).toBe(true);
     expect(validSchedule(JSON.parse(JSON.stringify(V2)))).toBe(true);
   });
@@ -270,8 +286,80 @@ describe('validSchedule', () => {
       { checklist: { ...V2.checklist!, date: undefined } },
       { checklist: { ...V2.checklist!, times: '20:30' } },
       { checklist: [] },
+      { abhyas: [{ ...row, order: -1 }] },
+      { abhyas: [{ ...row, order: 1.5 }] },
+      { once: [{ ...V2.once![0], order: '1' }] },
     ];
     for (const change of bad) expect(validSchedule({ ...V2, ...change }), JSON.stringify(change)).toBe(false);
+  });
+
+  it('refuses a version 2 schedule whose time zone is not one, or whose older parts are malformed', () => {
+    const bad: Record<string, unknown>[] = [
+      { tz: 'Not/AZone' },
+      { tz: '' },
+      { blocks: [null] },
+      { blocks: [{ ...S.blocks[0], start: 900 }] },
+      { slots: ['lunch'] },
+      { slots: [{ ...S.slots[0], at: null }] },
+      { slots: [{ ...S.slots[0], title: undefined }] },
+      { mantras: [null] },
+      { mantras: [{ ...S.mantras[0], text: 5 }] },
+      { breaks: 'x' },
+      { breaks: { ...S.breaks!, from: 9 } },
+      { water: [] },
+      { water: { ...S.water!, to: null } },
+    ];
+    for (const change of bad) expect(validSchedule({ ...V2, ...change }), JSON.stringify(change)).toBe(false);
+    // Without the parts that may be missing or empty, and with what goes only into a key or a sum as it comes.
+    expect(validSchedule({ ...V2, offDays: undefined, weigh: undefined, breaks: null, water: null })).toBe(true);
+    expect(validSchedule({ ...V2, blocks: [{ ...S.blocks[0], kind: 7 }], water: { ...S.water!, everyMinutes: null }, weigh: { ...S.weigh!, weekday: null } })).toBe(true);
+    expect(validSchedule({ ...V2, tz: 'America/New_York' })).toBe(true);
+  });
+
+  it('takes no version 2 schedule that would make a run fail', () => {
+    const atoms: unknown[] = [null, undefined, 0, 7, -1, 1.5, NaN, '', 'x', '07:30', '2026-10-06', 'Not/AZone', [], {}, [null], [{}], ['07:30'], true];
+    const rows: Record<string, Record<string, unknown>> = {
+      blocks: S.blocks[0],
+      slots: S.slots[0],
+      mantras: S.mantras[0],
+      abhyas: V2.abhyas![0],
+      once: V2.once![0],
+      breaks: S.breaks!,
+      water: S.water!,
+      weigh: S.weigh!,
+      quiet: S.quiet,
+      checklist: V2.checklist!,
+    };
+    const lists = ['blocks', 'slots', 'mantras', 'abhyas', 'once'];
+    const variants: Record<string, unknown>[] = [];
+    for (const part of ['tz', 'lang', 'days', 'offDays', 'doneToday', 'doneDate', ...Object.keys(rows)]) {
+      for (const x of atoms) {
+        variants.push({ ...V2, [part]: x });
+        if (lists.includes(part)) variants.push({ ...V2, [part]: [x] });
+      }
+    }
+    for (const [part, row] of Object.entries(rows)) {
+      for (const field of Object.keys(row)) {
+        for (const x of atoms) {
+          const changed = { ...row, [field]: x };
+          variants.push({ ...V2, [part]: lists.includes(part) ? [changed] : changed });
+        }
+      }
+    }
+    // Every minute of a working Tuesday, the upload day, and of a free Sunday.
+    const run = (v: PushSchedule) => {
+      localTime(ms('2026-10-06', '12:00'), v.tz);
+      for (const [date, weekday] of [['2026-10-06', 2], ['2026-10-11', 0]] as const) {
+        for (let minutes = 0; minutes < 1440; minutes++) dueAt(v, { date, weekday, minutes });
+      }
+    };
+    let taken = 0;
+    for (const v of variants) {
+      if (!validSchedule(v)) continue;
+      taken++;
+      expect(() => run(v), JSON.stringify(v)).not.toThrow();
+    }
+    expect(taken).toBeGreaterThan(100);
   });
 
   it('refuses a version 2 schedule over the limits', () => {
