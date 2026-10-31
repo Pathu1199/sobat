@@ -104,6 +104,11 @@ export function swipeStep(dx: number, dy: number): -1 | 0 | 1 {
 export const WHEEL_STEP = 80;
 export const WHEEL_REST_MS = 300;
 
+/** A wheel event that is the strip's: more sideways than up-and-down. Anything else is the page's scroll. */
+export function wheelSideways(dx: number, dy: number): boolean {
+  return Math.abs(dx) > Math.abs(dy);
+}
+
 /** A sideways scroll so far: its distance, whether it has moved a week yet, and when it last moved. */
 export type WheelRun = { sum: number; fired: boolean; at: number };
 export const WHEEL_IDLE: WheelRun = { sum: 0, fired: false, at: -Infinity };
@@ -118,7 +123,7 @@ export const WHEEL_IDLE: WheelRun = { sum: 0, fired: false, at: -Infinity };
  */
 export function wheelStep(run: WheelRun, dx: number, dy: number, now: number): { run: WheelRun; step: -1 | 0 | 1 } {
   const live = now - run.at <= WHEEL_REST_MS ? run : WHEEL_IDLE;
-  if (Math.abs(dx) <= Math.abs(dy)) return { run: { ...live, at: now }, step: 0 };
+  if (!wheelSideways(dx, dy)) return { run: { ...live, at: now }, step: 0 };
   const sum = live.sum + dx;
   if (live.fired || Math.abs(sum) < WHEEL_STEP) return { run: { sum, fired: live.fired, at: now }, step: 0 };
   return { run: { sum: 0, fired: true, at: now }, step: sum > 0 ? 1 : -1 };

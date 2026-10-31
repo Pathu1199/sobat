@@ -7,12 +7,14 @@ import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { useRecordOn } from '../store/useRecordOn';
 import { AMBER_NOTE, C, F, lh, S } from '../ui/theme';
+import { spokenLine } from '../ui/toastWords';
 
 /**
  * Three logged days under the line: one amber note says so, once, plainly
- * (core/intake.ts `intakeNote`), and the whole note opens the plan. Nothing
- * otherwise. Amber, never red: eating too little is a thing to fix, not an
- * alarm.
+ * (core/intake.ts `intakeNote`), and the whole note opens the plan; a screen
+ * reader hears the note and then "Open the plan", in its name, since the web
+ * reads no hint. Nothing otherwise. Amber, never red: eating too little is a
+ * thing to fix, not an alarm.
  */
 export function IntakeCard() {
   const app = useApp();
@@ -33,8 +35,7 @@ export function IntakeCard() {
     <Pressable
       onPress={() => router.push('/food?s=plan')}
       accessibilityRole="button"
-      accessibilityLabel={text}
-      accessibilityHint={t('intake_open_plan')}
+      accessibilityLabel={spokenLine([text, t('intake_open_plan')])}
       style={({ pressed }) => ({
         minHeight: S.touch,
         flexDirection: 'row',

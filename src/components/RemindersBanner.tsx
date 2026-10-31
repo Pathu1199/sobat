@@ -76,8 +76,9 @@ export function RemindersBanner() {
   if (!kind) return null;
 
   const enable = () => {
-    // Asked inside the tap, before anything is awaited: an iPhone shows the question only then. Android 13 shows it only once a channel exists.
-    const asked = Platform.OS === 'android' ? setupAndroidChannel().then(requestPermission) : requestPermission();
+    // Asked inside the tap, before anything is awaited: an iPhone shows the question only then. Android 13 shows it only once a
+    // channel exists; a channel that could not be made still leaves the question to ask.
+    const asked = Platform.OS === 'android' ? setupAndroidChannel().catch(() => undefined).then(() => requestPermission()) : requestPermission();
     void asked
       .catch(() => false)
       .then(async (ok) => {

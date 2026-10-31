@@ -1,5 +1,6 @@
 import { fill } from '../i18n';
 import { isIsoDate } from './date';
+import type { Targets } from './nutrition';
 import { normalizeTabs } from './tabs';
 import { shortDecimal } from './tileText';
 import type { ISODate, Profile, TabId } from './types';
@@ -77,10 +78,14 @@ export function meRows(tabs: unknown): MeRow[] {
 /**
  * The line under the name on Me: the goal weight and the pace, "Goal 80 kg ·
  * 0.5 a week", in the user's language. The pace keeps its second place, as
- * the paces Settings offers include 0.25 and 0.75.
+ * the paces Settings offers include 0.25 and 0.75. While the targets hold the
+ * weight (`Targets.hold`: at the goal, underweight, or outside the adult
+ * ages) there is no pace to keep, so the line is the goal alone.
  */
-export function goalLine(profile: Pick<Profile, 'goalWeightKg' | 'rateKgPerWeek'>, t: (key: string) => string): string {
-  return fill(t('me_goal_line'), { kg: shortDecimal(profile.goalWeightKg), rate: String(Math.round(profile.rateKgPerWeek * 100) / 100) });
+export function goalLine(profile: Pick<Profile, 'goalWeightKg' | 'rateKgPerWeek'>, hold: Targets['hold'], t: (key: string) => string): string {
+  const kg = shortDecimal(profile.goalWeightKg);
+  if (hold) return fill(t('progress_goal'), { goal: kg });
+  return fill(t('me_goal_line'), { kg, rate: String(Math.round(profile.rateKgPerWeek * 100) / 100) });
 }
 
 /** A tab route's address: Today is the root, every other tab its own name. */

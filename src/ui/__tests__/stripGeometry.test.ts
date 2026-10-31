@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_GAP, STRIP_DOT_SIZE, STRIP_EDGE, STRIP_MARGIN, STRIP_PILL_PAD, STRIP_RING, stripDayWidth, stripRowWidth } from '../stripGeometry';
+import { STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_GAP, STRIP_DOT_SIZE, STRIP_EDGE, STRIP_MARGIN, STRIP_PILL_MARGIN, STRIP_PILL_PAD, STRIP_RING, stripDayWidth, stripRowWidth } from '../stripGeometry';
 import { lh, S, scaledSizes, TEXT_SCALES } from '../theme';
 
 /** A digit is about 0.6 of the type size wide (tabular figures). */
@@ -29,8 +29,8 @@ describe('the week strip on the narrowest phone', () => {
 
   it('a day on a 320 point phone still holds the date at the largest text size', () => {
     const day = stripDayWidth(stripRowWidth(320));
-    // Two digits, less the pill's outline on each side.
-    expect(2 * DIGIT * LARGEST.body).toBeLessThanOrEqual(day - 2 * S.hairline);
+    // Two digits, in the pill: the day's seventh less the pill's margin and its outline on each side.
+    expect(2 * DIGIT * LARGEST.body).toBeLessThanOrEqual(day - 2 * STRIP_PILL_MARGIN - 2 * S.hairline);
   });
 
   it('every day is a touch box at least a finger tall, and its weekday, date and dot fit in it at the largest text size', () => {

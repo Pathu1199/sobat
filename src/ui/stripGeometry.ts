@@ -15,6 +15,9 @@ export const STRIP_DAY_HEIGHT = 64;
 /** Above and below the weekday and the date, inside the pill that marks today (and the outline of the chosen day). */
 export const STRIP_PILL_PAD = 2;
 
+/** Each side of a day's pill, inside the day's seventh: the outline round the chosen day never touches the day beside it. */
+export const STRIP_PILL_MARGIN = 3;
+
 /** Between a day's pill and its dot. */
 export const STRIP_DOT_GAP = 4;
 

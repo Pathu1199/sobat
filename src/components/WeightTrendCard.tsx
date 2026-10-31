@@ -11,6 +11,7 @@ import { useApp } from '../store/AppProvider';
 import { Card, Micro, Row, Small } from '../ui/components';
 import { C, F, lh } from '../ui/theme';
 import { toPath } from '../ui/tileGeometry';
+import { spokenLine } from '../ui/toastWords';
 import { WeightSheet } from './WeightSheet';
 
 const SPARK_W = 100;
@@ -58,7 +59,8 @@ export function WeightTrendCard() {
         : t('progress_change_none');
 
   const kgWords = trend ? `${oneDecimal(trend.kg)} ${kg}` : t('progress_no_weight');
-  const label = [`${t('progress_trend')}: ${kgWords}`, changeWords, goalWords].filter(Boolean).join('. ');
+  // One full stop between two parts, even where a part ends with its own ("No weigh-in yet.").
+  const label = spokenLine([`${t('progress_trend')}: ${kgWords}`, changeWords, goalWords]);
 
   // The entry is a modal beside the card, not inside it, so it never adds to the card's own spacing.
   return (

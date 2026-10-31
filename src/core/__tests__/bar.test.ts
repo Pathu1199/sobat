@@ -140,11 +140,18 @@ describe("Me's header", () => {
 
   it('says the goal and the weekly pace in each language, without a needless ".0", the pace to its quarter kilo', () => {
     const profile = { goalWeightKg: 80, rateKgPerWeek: 0.5 };
-    expect(goalLine(profile, makeT('en'))).toBe('Goal 80 kg · 0.5 a week');
-    expect(goalLine(profile, makeT('mr'))).toBe('लक्ष्य 80 किलो · आठवड्याला 0.5');
-    expect(goalLine(profile, makeT('hi'))).toBe('लक्ष्य 80 किलो · हफ़्ते में 0.5');
-    expect(goalLine({ goalWeightKg: 72.5, rateKgPerWeek: 1 }, makeT('en'))).toBe('Goal 72.5 kg · 1 a week');
-    expect(goalLine({ goalWeightKg: 68.04, rateKgPerWeek: 0.25 }, makeT('en'))).toBe('Goal 68 kg · 0.25 a week');
-    expect(goalLine({ goalWeightKg: 90, rateKgPerWeek: 0.75 }, makeT('mr'))).toBe('लक्ष्य 90 किलो · आठवड्याला 0.75');
+    expect(goalLine(profile, null, makeT('en'))).toBe('Goal 80 kg · 0.5 a week');
+    expect(goalLine(profile, null, makeT('mr'))).toBe('लक्ष्य 80 किलो · आठवड्याला 0.5');
+    expect(goalLine(profile, null, makeT('hi'))).toBe('लक्ष्य 80 किलो · हफ़्ते में 0.5');
+    expect(goalLine({ goalWeightKg: 72.5, rateKgPerWeek: 1 }, null, makeT('en'))).toBe('Goal 72.5 kg · 1 a week');
+    expect(goalLine({ goalWeightKg: 68.04, rateKgPerWeek: 0.25 }, null, makeT('en'))).toBe('Goal 68 kg · 0.25 a week');
+    expect(goalLine({ goalWeightKg: 90, rateKgPerWeek: 0.75 }, null, makeT('mr'))).toBe('लक्ष्य 90 किलो · आठवड्याला 0.75');
+  });
+
+  it('says the goal alone while the targets hold the weight, since there is no weekly pace then', () => {
+    const profile = { goalWeightKg: 80, rateKgPerWeek: 0.5 };
+    for (const hold of ['at_goal', 'underweight', 'age'] as const) expect(goalLine(profile, hold, makeT('en')), hold).toBe('Goal 80 kg');
+    expect(goalLine(profile, 'at_goal', makeT('mr'))).toBe('लक्ष्य 80 किलो');
+    expect(goalLine({ goalWeightKg: 72.5, rateKgPerWeek: 1 }, 'underweight', makeT('hi'))).toBe('लक्ष्य 72.5 किलो');
   });
 });

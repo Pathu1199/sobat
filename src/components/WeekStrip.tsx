@@ -2,10 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { PanResponder, Platform, Pressable, Text, View } from 'react-native';
 import type { Lang } from '../core/types';
-import { stripDayLabel, swipeStep, WHEEL_IDLE, wheelStep, type StripDay, type WheelRun } from '../core/weekStrip';
+import { stripDayLabel, swipeStep, WHEEL_IDLE, wheelSideways, wheelStep, type StripDay, type WheelRun } from '../core/weekStrip';
 import { makeT } from '../i18n';
 import { chosenProps } from '../ui/chosen';
-import { STRIP_CHOSEN, STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_GAP, STRIP_DOT_SIZE, STRIP_PILL_PAD, STRIP_RING, STRIP_TODAY, stripDot } from '../ui/stripGeometry';
+import { STRIP_CHOSEN, STRIP_CORE, STRIP_DAY_HEIGHT, STRIP_DOT_GAP, STRIP_DOT_SIZE, STRIP_PILL_MARGIN, STRIP_PILL_PAD, STRIP_RING, STRIP_TODAY, stripDot } from '../ui/stripGeometry';
 import { C, F, lh, S } from '../ui/theme';
 
 /**
@@ -15,13 +15,14 @@ import { C, F, lh, S } from '../ui/theme';
  * is a soft teal pill, and a chosen day other than today has an outline (the
  * strip always holds the chosen day, so with no outline the pill is the
  * chosen one). For a screen reader or a keyboard, Previous week and Next week
- * wait out of sight at either end until they have the focus. Each day keeps a
- * full seventh of the width; on a phone too narrow for seven fingers side by
- * side (320 points) the days grow no wider than that seventh, so the row never
- * runs over, and each stays a finger and more tall (ui/stripGeometry.ts). A
- * day's words stay on one line at every text size: the weekday's short name,
- * the date, and the dot; what the dot means, and "today" for today, are in the
- * day's name for a screen reader (core/weekStrip.ts `stripDayLabel`).
+ * wait unseen in the page's margin at either end until they have the focus.
+ * Each day keeps a full seventh of the width; on a phone too narrow for seven
+ * fingers side by side (320 points) the days grow no wider than that seventh,
+ * so the row never runs over, and each stays a finger and more tall
+ * (ui/stripGeometry.ts). A day's words stay on one line at every text size:
+ * the weekday's short name, the date, and the dot; what the dot means, and
+ * "today" for today, are in the day's name for a screen reader
+ * (core/weekStrip.ts `stripDayLabel`).
  */
 export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; lang: Lang; onSelect: (date: string) => void; onWeek: (by: -1 | 1) => void }) {
   const t = makeT(lang);
@@ -49,11 +50,11 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
       const unit = e.deltaMode === 1 ? 16 : 1;
       const dx = e.deltaX * unit;
       const dy = e.deltaY * unit;
-      if (Math.abs(dx) <= Math.abs(dy)) return;
-      // Sideways is the strip's, not the browser's: no page scrolled sideways, no swipe back a page.
-      e.preventDefault();
+      // The run sees every event, so it rests only when the scrolling does (core/weekStrip.ts `wheelStep`).
       const next = wheelStep(run.current, dx, dy, e.timeStamp);
       run.current = next.run;
+      // Sideways is the strip's, not the browser's: no page scrolled sideways, no swipe back a page. Up and down stays the page's.
+      if (wheelSideways(dx, dy)) e.preventDefault();
       if (next.step !== 0) onWeek(next.step);
     };
     node.addEventListener('wheel', onWheel, { passive: false });
@@ -84,7 +85,7 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
             <View
               style={{
                 alignSelf: 'stretch',
-                marginHorizontal: 3,
+                marginHorizontal: STRIP_PILL_MARGIN,
                 alignItems: 'center',
                 paddingVertical: STRIP_PILL_PAD,
                 borderRadius: 999,
@@ -111,13 +112,16 @@ export function WeekStrip({ days, lang, onSelect, onWeek }: { days: StripDay[]; 
 
 /**
  * Previous week or Next week where a swipe is not to hand, for a screen reader
- * and a keyboard: a point in size, out of sight, until it has the focus, when
- * it shows as a round button over the strip's end. A screen reader finds it
- * before Monday and after Sunday either way.
+ * and a keyboard. Until it has the focus it is drawn as nothing, in the page's
+ * margin beside the strip's end, as tall as the strip: a finger feeling along
+ * the strip with VoiceOver or TalkBack finds it there, and it covers no part
+ * of Monday or Sunday, so a tap on a day is always the day's. With the focus
+ * it shows as a round button over the strip's end. A screen reader also finds
+ * it before Monday and after Sunday in reading order.
  */
 function WeekJump({ by, label, onWeek }: { by: -1 | 1; label: string; onWeek: (by: -1 | 1) => void }) {
   const [focused, setFocused] = useState(false);
-  const side = by < 0 ? { left: 0 } : { right: 0 };
+  const at = (x: number) => (by < 0 ? { left: x } : { right: x });
   return (
     <Pressable
       onPress={() => onWeek(by)}
@@ -126,10 +130,10 @@ function WeekJump({ by, label, onWeek }: { by: -1 | 1; label: string; onWeek: (b
       accessibilityRole="button"
       accessibilityLabel={label}
       style={[
-        { position: 'absolute', zIndex: 1, ...side },
+        { position: 'absolute', zIndex: 1 },
         focused
-          ? { top: (STRIP_DAY_HEIGHT - S.touch) / 2, width: S.touch, height: S.touch, borderRadius: S.touch / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: C.card, ...S.shadow }
-          : { top: 0, width: 1, height: 1, overflow: 'hidden' },
+          ? { ...at(0), top: (STRIP_DAY_HEIGHT - S.touch) / 2, width: S.touch, height: S.touch, borderRadius: S.touch / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: C.card, ...S.shadow }
+          : { ...at(-S.pad), top: 0, width: S.pad, height: STRIP_DAY_HEIGHT },
       ]}>
       {focused ? <Ionicons name={by < 0 ? 'chevron-back' : 'chevron-forward'} size={22} color={C.textDim} /> : null}
     </Pressable>

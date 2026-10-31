@@ -18,9 +18,10 @@ import { Page } from '../../ui/TopBar';
 type IconName = keyof typeof Ionicons.glyphMap;
 
 /**
- * Me: the user's first name with their goal and pace under it and the
- * Dhyey mark beside them ("Me" when no name was given), then a plain list of
- * everything that is not on the bar, each one tap from its page or its sheet.
+ * Me: the user's first name with their goal and pace under it (the goal
+ * alone while the targets hold the weight) and the Dhyey mark beside them
+ * ("Me" when no name was given), then a plain list of everything that is not
+ * on the bar, each one tap from its page or its sheet.
  */
 export default function MeScreen() {
   const app = useApp();
@@ -31,7 +32,7 @@ export default function MeScreen() {
   return (
     <Page
       title={firstName(profile.name) ?? t('tab_me')}
-      subtitle={goalLine(profile, t)}
+      subtitle={goalLine(profile, app.targets.hold, t)}
       right={
         <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
           {/* The mark in the accent's word colour, which holds 4.5:1 on the soft circle in both themes. */}

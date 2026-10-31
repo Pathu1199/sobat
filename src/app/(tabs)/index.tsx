@@ -34,7 +34,7 @@ import { fill, makeT } from '../../i18n';
 import { useMinute } from '../../services/useWorkSchedule';
 import { useApp } from '../../store/AppProvider';
 import { Row, Small } from '../../ui/components';
-import { C } from '../../ui/theme';
+import { C, S } from '../../ui/theme';
 import { Page } from '../../ui/TopBar';
 
 /**
@@ -104,7 +104,7 @@ export default function TodayScreen() {
       }>
       {queued > 0 ? <Small color={C.cyan}>{fill(t(queued === 1 ? 'photos_queued' : 'photos_queued_plural'), { n: queued })}</Small> : null}
       {/* The strip and the number, close together, on the page: each day is a finger wide on a 360 point phone (ui/stripGeometry.ts). */}
-      <View style={{ gap: 12 }}>
+      <View style={{ gap: S.gap }}>
         <WeekStrip days={days} lang={lang} onSelect={go} onWeek={onWeek} />
         <CaloriesLeft mode={mode} view={view} suggested={suggested} />
       </View>
