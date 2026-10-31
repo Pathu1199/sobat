@@ -1,4 +1,5 @@
 import { addDays, isIsoDate, localDate, toISODate } from './date';
+import { weekdayOf } from './routine';
 import type { AbhyasItem, AbhyasRunning, AbhyasSession, AbhyasTick, AppState, ISODate } from './types';
 
 /**
@@ -6,7 +7,8 @@ import type { AbhyasItem, AbhyasRunning, AbhyasSession, AbhyasTick, AppState, IS
  * study to "fix the bike". An item repeats on chosen weekdays from the day it
  * was added, or belongs to one date; an item removed (archived) leaves the
  * days from its removal on and stays on the days before, so history reads as
- * it was. An item is done on a date when it was ticked, or when it has a
+ * it was (a removal with no readable date, from a damaged file, leaves every
+ * day, as every other rule here already reads it as removed). An item is done on a date when it was ticked, or when it has a
  * minutes target and the timer counted that much. One timer runs at a time;
  * it remembers when it started, so closing the app loses nothing, and it
  * stops itself at three hours or at the end of its own day, so a forgotten
@@ -29,21 +31,20 @@ export type AbhyasData = { items: AbhyasItem[]; ticks: AbhyasTick[]; sessions: A
 /** What a date shows: items done of items on it, and the minutes counted on it. */
 export type DayStatus = { total: number; done: number; minutes: number };
 
-function weekday(date: ISODate): number {
-  return new Date(`${date}T12:00:00`).getDay();
-}
-
-/** Whether an item belongs to a date: a one-off on its own date, a repeating one on its weekdays from the day it was added; neither from the day it was removed. */
+/**
+ * Whether an item belongs to a date: a one-off on its own date, a repeating one on its weekdays from the day it was added;
+ * neither from the day it was removed, nor on any day when the removal's date cannot be read.
+ */
 function isOn(item: AbhyasItem, date: ISODate): boolean {
   if (item.archivedAt) {
     const gone = localDate(item.archivedAt);
-    if (isIsoDate(gone) && gone <= date) return false;
+    if (!isIsoDate(gone) || gone <= date) return false;
   }
   if (item.kind === 'once') return item.date === date;
   // A repeating item added today does not go back and leave the days before it undone.
   const added = localDate(item.createdAt);
   if (isIsoDate(added) && added > date) return false;
-  return item.days.includes(weekday(date));
+  return item.days.includes(weekdayOf(date));
 }
 
 /** The items that belong to a date, in the user's order. */
@@ -77,14 +78,14 @@ export function isDone(item: AbhyasItem, date: ISODate, ticks: AbhyasTick[], min
   return typeof item.targetMin === 'number' && item.targetMin > 0 && minutes >= item.targetMin;
 }
 
-/** `dayStatus` on the ticks and sessions of that date alone, already picked out. */
-function statusIn(data: AbhyasData, date: ISODate, ticks: AbhyasTick[], sessions: AbhyasSession[], now: Date): DayStatus {
-  const items = itemsOn(data.items, date);
+/** `dayStatus` from the items and the timer, on the ticks and sessions of that date alone, already picked out. */
+function statusIn({ items, running }: Pick<AbhyasData, 'items' | 'running'>, date: ISODate, ticks: AbhyasTick[], sessions: AbhyasSession[], now: Date): DayStatus {
+  const on = itemsOn(items, date);
   let done = 0;
-  for (const item of items) if (isDone(item, date, ticks, minutesOn(sessions, data.running, item.id, date, now))) done++;
+  for (const item of on) if (isDone(item, date, ticks, minutesOn(sessions, running, item.id, date, now))) done++;
   const finished = sessions.reduce((a, s) => a + s.minutes, 0);
-  const live = data.running && localDate(data.running.startedAt) === date ? runningMinutes(data.running, now) : 0;
-  return { total: items.length, done, minutes: finished + live };
+  const live = running && localDate(running.startedAt) === date ? runningMinutes(running, now) : 0;
+  return { total: on.length, done, minutes: finished + live };
 }
 
 /** A date's items done of the items on it, and every minute counted on it, the running timer's included. */
@@ -132,7 +133,7 @@ export function stop(running: AbhyasRunning, now: Date): AbhyasSession | null {
     date: localDate(running.startedAt),
     startedAt: running.startedAt,
     endedAt: new Date(end).toISOString(),
-    minutes: Math.min(minutes, MAX_SESSION_MIN),
+    minutes,
   };
 }
 
@@ -216,10 +217,10 @@ export function streak(data: AbhyasData, today: ISODate, now: Date): number {
 export function doneCount(data: Omit<AbhyasData, 'running'>, today: ISODate): number {
   const ticks = byDate(data.ticks);
   const sessions = byDate(data.sessions);
-  const finished: AbhyasData = { ...data, running: null };
   let n = 0;
   for (const date of new Set([...ticks.keys(), ...sessions.keys()])) {
-    if (date <= today) n += statusIn(finished, date, ticks.get(date) ?? [], sessions.get(date) ?? [], new Date(0)).done;
+    // No timer, so the moment read at does not count.
+    if (date <= today) n += statusIn({ items: data.items, running: null }, date, ticks.get(date) ?? [], sessions.get(date) ?? [], new Date(0)).done;
   }
   return n;
 }

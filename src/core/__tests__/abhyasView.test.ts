@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { start, type AbhyasData } from '../abhyas';
+import { dayStatus, start, type AbhyasData } from '../abhyas';
 import { abhyasCard, abhyasProgress, comingUp, draftOf, formDraft, movedPlace, newDraft, parseTime, recentDays, repeating, targetText, TARGET_CHOICES, WEEK_ORDER, weekdayRuns, type SheetForm } from '../abhyasView';
 import type { AbhyasItem, AbhyasSession, AbhyasTick } from '../types';
 
@@ -26,6 +26,28 @@ describe("abhyasCard: the card's header and rows for a date", () => {
     expect(card.done).toBe(1);
     expect(card.total).toBe(3);
     expect(abhyasCard(data({ items: [bike] }), TOMORROW, TODAY, NOW)).toEqual({ rows: [], done: 0, total: 0 });
+  });
+
+  it("the header's count is the day's own (dayStatus), on a past day, today with a timer running, and a day still to come", () => {
+    const read = item('read', { order: 3, targetMin: 20 });
+    const swim = item('swim', { order: 4, days: [1] });
+    const d = data({
+      items: [yoga, study, bike, read, swim, item('gone', { order: 5, archivedAt: at(YESTERDAY, '10:00').toISOString() })],
+      // A tick for a day the item is not on counts on neither side.
+      ticks: [tick('yoga', TODAY), tick('swim', TODAY), tick('yoga', YESTERDAY), tick('gone', YESTERDAY)],
+      sessions: [session('study', YESTERDAY, 30), session('read', TODAY, 12)],
+      running: start('read', at(TODAY, '17:50')),
+    });
+    for (const date of [YESTERDAY, TODAY, TOMORROW, '2026-10-26']) {
+      for (const now of [NOW, at(TODAY, '17:55')]) {
+        const card = abhyasCard(d, date, TODAY, now);
+        const status = dayStatus(d, date, now);
+        expect({ done: card.done, total: card.total }, `${date} ${now.toISOString()}`).toEqual({ done: status.done, total: status.total });
+      }
+    }
+    // The running timer reaches the read's target at 18:00, on both sides alike.
+    expect(abhyasCard(d, TODAY, TODAY, NOW).done).toBe(2);
+    expect(abhyasCard(d, TODAY, TODAY, at(TODAY, '17:55')).done).toBe(1);
   });
 
   it('today: a tick-only item ticks and unticks, has no minutes and no timer', () => {
@@ -109,6 +131,8 @@ describe('the item sheet', () => {
     expect(parseTime('07:30')).toBe('07:30');
     expect(parseTime('7:30')).toBe('07:30');
     expect(parseTime(' 0730 ')).toBe('07:30');
+    expect(parseTime('730')).toBe('07:30');
+    expect(parseTime('1915')).toBe('19:15');
     expect(parseTime('19.05')).toBe('19:05');
     expect(parseTime('7')).toBe('07:00');
     expect(parseTime('23:59')).toBe('23:59');

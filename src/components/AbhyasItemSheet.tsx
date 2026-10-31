@@ -35,11 +35,14 @@ const PROBLEM_WORDS = { name: 'abh_need_name', days: 'abh_need_day', date: 'abh_
  * it repeats on chosen weekdays (all on to start) or belongs to one day (the
  * date the sheet was opened for, moved a day at a time), a minutes target
  * from the chips or the box beside them, and up to three times to be
- * reminded at. Save checks it first (core/abhyasView.ts `formDraft`) and says
- * what is missing under the part it is about. Remove, on an item already on
- * the list, takes it off from today on and hands it to `onRemove`, which
- * shows the Undo where the item was. Mounted afresh for each opening (the
- * caller keys it), so it always opens on the item as it is.
+ * reminded at (a box added takes the focus). Save checks it first
+ * (core/abhyasView.ts `formDraft`) and says what is missing under the part it
+ * is about; a missing name, at the top, is said beside Save as well. Remove,
+ * on an item already on the list, takes it off from today on and hands it to
+ * `onRemove`, which shows the Undo where the item was. A sheet opened for a
+ * day before today has no Remove: the item would stay on that day, as history
+ * does, so there it would seem to do nothing. Mounted afresh for each opening
+ * (the caller keys it), so it always opens on the item as it is.
  */
 export function AbhyasItemSheet({
   open,
@@ -74,6 +77,8 @@ export function AbhyasItemSheet({
   // The box beside the chips: a target that is not one of them, as typed.
   const [other, setOther] = useState(first.targetMin !== undefined && !(TARGET_CHOICES as readonly number[]).includes(first.targetMin) ? String(first.targetMin) : '');
   const [times, setTimes] = useState(first.times);
+  // The time box just added, which takes the focus as it appears; none of the boxes the sheet opened with.
+  const [added, setAdded] = useState<number | null>(null);
   // What is missing shows once Save was pressed, and then follows each change.
   const [tried, setTried] = useState(false);
 
@@ -210,6 +215,7 @@ export function AbhyasItemSheet({
               value={time}
               keyboardType="numeric"
               placeholder="07:00"
+              autoFocus={i === added}
               accessibilityLabel={fill(t('abh_time_n'), { n: i + 1 })}
               onChangeText={(v) => setTimes(times.map((x, n) => (n === i ? v : x)))}
             />
@@ -222,58 +228,79 @@ export function AbhyasItemSheet({
             tone="soft"
             label={t('abh_add_time')}
             icon={<Ionicons name="add" size={18} color={C.accentText} />}
-            onPress={() => setTimes([...times, ''])}
+            onPress={() => {
+              setAdded(times.length);
+              setTimes([...times, '']);
+            }}
             style={{ alignSelf: 'flex-start' }}
           />
         ) : null}
         {problemLine('time')}
       </View>
 
+      {/* The name is at the top, out of sight under the keyboard or after a scroll: what it lacks is said here too. */}
+      {problemLine('name')}
       <Row style={{ gap: 10, marginTop: 4 }}>
         <Btn label={t('save')} onPress={save} style={{ flex: 1 }} />
-        {item ? <Btn label={t('abh_remove')} tone="danger" onPress={remove} /> : null}
+        {item && date >= app.today ? <Btn label={t('abh_remove')} tone="danger" onPress={remove} /> : null}
       </Row>
     </Sheet>
   );
 }
 
+/** Between two weekday toggles, across and down. */
+const TOGGLE_GAP = 2;
+
 /**
  * The weekdays an item repeats on, Monday to Sunday side by side, each a
- * seventh of the row and a finger tall (a seventh of a 360 point phone's
- * sheet is still 44 wide), on in teal. Read out as buttons that say whether
- * they are on.
+ * seventh of the row and a finger tall and wide (a seventh of a 360 point
+ * phone's sheet is just 44 wide), on in teal. On a sheet too narrow for seven
+ * fingers they wrap into two rows of four, Monday to Thursday over Friday to
+ * Sunday, rather than shrink. Read out as buttons that say whether they are on.
  */
 function WeekdayToggles({ days, onToggle, t }: { days: number[]; onToggle: (d: number) => void; t: (key: string) => string }) {
+  const [perRow, setPerRow] = useState<number>(WEEK_ORDER.length);
+  const rows: readonly (readonly number[])[] = perRow === WEEK_ORDER.length ? [WEEK_ORDER] : [WEEK_ORDER.slice(0, perRow), WEEK_ORDER.slice(perRow)];
   return (
-    <View style={{ flexDirection: 'row', gap: 2 }}>
-      {WEEK_ORDER.map((d) => {
-        const on = days.includes(d);
-        return (
-          <Pressable
-            key={d}
-            onPress={() => onToggle(d)}
-            accessibilityRole="button"
-            accessibilityLabel={t(`wd_${d}`)}
-            {...chosenProps(on)}
-            style={({ pressed }) => ({
-              flex: 1,
-              minWidth: 0,
-              minHeight: S.touch,
-              paddingHorizontal: 2,
-              borderRadius: S.radiusXs,
-              borderWidth: S.hairline,
-              borderColor: on ? C.accent : C.border,
-              backgroundColor: on ? C.accent : C.card,
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: pressed ? 0.8 : 1,
-            })}>
-            <Text numberOfLines={1} style={{ color: on ? C.onAccent : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
-              {t(`wd_${d}`)}
-            </Text>
-          </Pressable>
-        );
-      })}
+    <View
+      style={{ gap: TOGGLE_GAP }}
+      onLayout={(e) => setPerRow(e.nativeEvent.layout.width >= WEEK_ORDER.length * S.touch + (WEEK_ORDER.length - 1) * TOGGLE_GAP ? WEEK_ORDER.length : 4)}>
+      {rows.map((row) => (
+        <View key={row[0]} style={{ flexDirection: 'row', gap: TOGGLE_GAP }}>
+          {/* Each in a plain cell of the same share as the empty place, so Friday to Sunday line up under Monday to Wednesday. */}
+          {row.map((d) => (
+            <View key={d} style={{ flex: 1, minWidth: S.touch }}>
+              <WeekdayToggle d={d} on={days.includes(d)} onToggle={onToggle} t={t} />
+            </View>
+          ))}
+          {row.length < perRow ? <View style={{ flex: 1 }} /> : null}
+        </View>
+      ))}
     </View>
+  );
+}
+
+function WeekdayToggle({ d, on, onToggle, t }: { d: number; on: boolean; onToggle: (d: number) => void; t: (key: string) => string }) {
+  return (
+    <Pressable
+      onPress={() => onToggle(d)}
+      accessibilityRole="button"
+      accessibilityLabel={t(`wd_${d}`)}
+      {...chosenProps(on)}
+      style={({ pressed }) => ({
+        minHeight: S.touch,
+        paddingHorizontal: 2,
+        borderRadius: S.radiusXs,
+        borderWidth: S.hairline,
+        borderColor: on ? C.accent : C.border,
+        backgroundColor: on ? C.accent : C.card,
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: pressed ? 0.8 : 1,
+      })}>
+      <Text numberOfLines={1} style={{ color: on ? C.onAccent : C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>
+        {t(`wd_${d}`)}
+      </Text>
+    </Pressable>
   );
 }

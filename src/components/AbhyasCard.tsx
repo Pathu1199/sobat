@@ -25,8 +25,10 @@ import { UndoLine, useUndoable } from './tiles/UndoLine';
  * motion, and a done row is greyed with its tick filled. The + adds a
  * one-off for the viewed date and a tap on a name edits the item, both in the
  * item sheet; a removal from there leaves "Removed … · Undo" in the row's
- * place for five seconds. A day before ticks but starts no timer; a day still
- * to come shows what is planned, with nothing to tick yet.
+ * place for five seconds (the sheet offers Remove only from today on, where
+ * the item leaves the list). A day before ticks but starts no timer; a day
+ * still to come shows what is planned, with nothing to tick yet. The card
+ * comes new for each day looked at, without its entrance moving again.
  */
 export function AbhyasCard({ date }: { date: ISODate }) {
   const app = useApp();
@@ -46,14 +48,14 @@ export function AbhyasCard({ date }: { date: ISODate }) {
     fb.haptic('light');
   };
 
-  // The Undo line goes where the removed row was; on a day before the removal the item stays on that day, so it goes just under it.
+  // The Undo line goes where the removed row was.
   const held = removed.held;
-  const still = held ? rows.findIndex((r) => r.item.id === held.item.id) : -1;
-  const list = withUndoAt(rows, held ? (still >= 0 ? still + 1 : held.index) : null);
+  const list = withUndoAt(rows, held ? held.index : null);
   const empty = t(date === app.today ? 'abh_add_today' : 'abh_add_day');
 
   return (
-    <Card>
+    // Still: Today keys the card by its date, so a swipe to another day would play the entrance again.
+    <Card still>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: total > 0 ? S.touch : undefined, marginVertical: total > 0 ? -8 : 0 }}>
         <Text accessibilityRole="header" style={[MICRO, { flex: 1, color: C.textDim }]}>
           {total > 0 ? `${t('abhyas')} · ${fill(t('abh_done_of'), { n: done, m: total })}` : t('abhyas')}

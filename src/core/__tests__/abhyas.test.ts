@@ -70,6 +70,15 @@ describe('itemsOn', () => {
     expect(itemsOn([bike], '2026-11-03')).toEqual([]);
   });
 
+  it('a removal whose date cannot be read (a damaged file) takes the item off every day, as the rest of the app reads it as removed', () => {
+    for (const archivedAt of ['soon', '2026-13-45T00:00:00Z']) {
+      const odd = item('odd', { archivedAt });
+      expect(itemsOn([odd], TODAY), archivedAt).toEqual([]);
+      expect(itemsOn([odd], '2026-10-02'), archivedAt).toEqual([]);
+      expect(dayStatus(data({ items: [odd], ticks: [tick('odd', '2026-10-30')] }), '2026-10-30', NOW).total, archivedAt).toBe(0);
+    }
+  });
+
   it('a repeating item starts on the day it was added, so the days before it are not left undone; a one-off added later keeps its own date', () => {
     const fresh = item('fresh', { createdAt: at(TODAY, '08:00').toISOString() });
     expect(itemsOn([fresh], '2026-10-30')).toEqual([]);
@@ -408,6 +417,17 @@ describe("the store's actions", () => {
     expect(withStaleClosed(lastNight, at(TODAY, '06:00'))).toMatchObject({ abhyasRunning: null, abhyasSessions: [{ date: '2026-10-30', minutes: 60 }] });
     const none = state();
     expect(withStaleClosed(none, NOW)).toBe(none);
+  });
+
+  it('a timer stopped exactly at the target leaves the item done, as it was while the timer ran, and the points count it', () => {
+    const s = withStarted(state(), 'study', at(TODAY, '17:30'));
+    const view = (x: AbhyasState): AbhyasData => ({ items: x.abhyasItems, ticks: x.abhyasTicks, sessions: x.abhyasSessions, running: x.abhyasRunning });
+    expect(dayStatus(view(s), TODAY, NOW)).toEqual({ total: 2, done: 1, minutes: 30 });
+    const stopped = withStopped(s, NOW);
+    expect(stopped.abhyasSessions.map((x) => x.minutes)).toEqual([30]);
+    expect(dayStatus(view(stopped), TODAY, NOW)).toEqual({ total: 2, done: 1, minutes: 30 });
+    expect(isDone(stopped.abhyasItems[1], TODAY, [], 30)).toBe(true);
+    expect(doneCount(view(stopped), TODAY)).toBe(1);
   });
 
   it('a timer already stopped on another device keeps that first stop when it is stopped here too', () => {
