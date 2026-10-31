@@ -23,9 +23,20 @@ import { createInterface } from 'node:readline/promises';
 
 const save = process.argv.includes('--save');
 
-async function ask(question) {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const answer = (await rl.question(question)).trim();
+async function ask(question, { hidden = false } = {}) {
+  const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+  // A hidden answer (the client secret) is not echoed, so it never lands in
+  // the terminal's scrollback. `_writeToOutput` is readline's own echo hook.
+  let mute = false;
+  const echo = rl._writeToOutput.bind(rl);
+  rl._writeToOutput = (text) => {
+    if (!mute) echo(text);
+  };
+  process.stdout.write(question);
+  mute = hidden;
+  const answer = (await rl.question('')).trim();
+  mute = false;
+  if (hidden) process.stdout.write('\n');
   rl.close();
   return answer;
 }
@@ -43,7 +54,7 @@ function putSecret(name, value) {
 let clientId = process.env.GOOGLE_CLIENT_ID;
 let clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 if (save && !clientId) clientId = await ask('Google OAuth client id: ');
-if (save && !clientSecret) clientSecret = await ask('Google OAuth client secret: ');
+if (save && !clientSecret) clientSecret = await ask('Google OAuth client secret (not shown): ', { hidden: true });
 if (!clientId || !clientSecret) {
   console.error('Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in the environment first, or run with --save to be asked.');
   process.exit(1);
