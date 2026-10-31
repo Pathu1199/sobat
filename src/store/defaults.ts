@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import foodsJson from '../data/foods.json';
 import { DEFAULT_BREAK_SETTINGS } from '../core/breaks';
+import { DEFAULT_CHECKLIST_TIMES } from '../core/checklist';
 import { NEUTRAL_ROUTINE } from '../core/routine';
 import { DEFAULT_SCHEDULE } from '../core/schedule';
 import { DEFAULT_TABS, DEFAULT_TODAY_CARDS } from '../core/tabs';
@@ -69,8 +70,9 @@ export const DEFAULT_SETTINGS: Settings = {
   todayCards: DEFAULT_TODAY_CARDS.map((c) => ({ ...c })),
   // Off unless switched on: the screen breaks, the mantra and the plates the app makes up.
   features: { breaks: false, mantra: false, autoPlates: false },
-  // The meal-time prompt and the user's own Abhyas times are on; the rest are a switch away.
-  reminders: { mealPrompt: true, abhyas: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false },
+  // The meal-time prompt, the user's own Abhyas times and the day so far are on; the rest are a switch away.
+  reminders: { mealPrompt: true, abhyas: true, checklist: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false },
+  checklistTimes: [...DEFAULT_CHECKLIST_TIMES],
   // Most of the people this is built for are vegetarian; the setting is one tap away.
   diet: 'veg',
   appearance: 'system',

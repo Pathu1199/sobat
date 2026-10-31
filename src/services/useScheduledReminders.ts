@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
 import { breaksAsSwitched, type BreakSettings } from '../core/breaks';
+import { checklistTimes, dayChecklist } from '../core/checklist';
 import { addDays } from '../core/date';
 import { settledSlotIds, slotStates } from '../core/pattern';
 import type { DayRecordState } from '../core/record';
@@ -9,6 +10,7 @@ import {
   lastLogDate,
   MORNING_HOUR,
   officeReminders,
+  OWN_DAYS,
   pendingFit,
   PLANNED_PREFIX,
   plannedReminders,
@@ -23,6 +25,7 @@ import {
   type ReminderOp,
   type WeeklyReminder,
 } from '../core/reminders';
+import type { ISODate } from '../core/types';
 import { stripSince } from '../core/weekStrip';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
@@ -118,7 +121,8 @@ export function useReminderGate(): { known: boolean; active: boolean } {
  */
 export function useScheduledReminders() {
   const app = useApp();
-  const { quietStartHour, quietEndHour, offDays, reminders, features, reviewedWeeks } = app.state.settings;
+  const { quietStartHour, quietEndHour, offDays, reminders, features, reviewedWeeks, waterGoalMl, bottleMl, walkGoalMin, todayCards } = app.state.settings;
+  const storedTimes = app.state.settings.checklistTimes;
   const { lang, onboardedOn, autoFillFrom } = app.state.profile;
   const mantra = useMantra();
   // The day's line goes out only while it is switched on in Settings.
@@ -178,7 +182,50 @@ export function useScheduledReminders() {
     return r ? JSON.stringify(r) : '';
   }, [reminders.weeklyReport, today, minute, morning, onboardedOn, autoFillFrom, recordOn, app.state.meals, app.state.weights, app.targets.kcal, lang]);
 
-  const anyOn = reminders.mealPrompt || reminders.away || reminders.fillYesterday || reminders.planWeek || reminders.weeklyReport;
+  // The Abhyas list while its reminders are on: the items, with the ticks and finished sessions of the days that get
+  // reminders. A tick or a stopped timer changes it, so the next reconcile drops the item's prompts for that day.
+  const { abhyasItems, abhyasTicks, abhyasSessions, meals, slotSkips, water: waterLogs } = app.state;
+  const activities = app.state.activities;
+  const abhyas = useMemo(() => {
+    if (!reminders.abhyas) return null;
+    const last = addDays(today, OWN_DAYS - 1);
+    const near = (date: ISODate) => date >= today && date <= last;
+    return { items: abhyasItems, ticks: abhyasTicks.filter((x) => near(x.date)), sessions: abhyasSessions.filter((x) => near(x.date)) };
+  }, [reminders.abhyas, abhyasItems, abhyasTicks, abhyasSessions, today]);
+
+  // "Day so far" for each day it can come, as the day stands now, as one string: a meal, a skip, a bottle, a walk, a tick
+  // or a stopped timer changes its words, and so the pending one is replaced. The running timer is left out, as above, so
+  // the words do not change every minute it runs. Water and the walk are listed while their card is on Today.
+  const waterWalk = todayCards.some((c) => c.id === 'waterWalk' && c.on);
+  const checklistJson = useMemo(() => {
+    if (Platform.OS === 'web' || !reminders.checklist) return '';
+    const t = makeT(lang);
+    const data = { items: abhyasItems, ticks: abhyasTicks, sessions: abhyasSessions, running: null };
+    const texts: Record<ISODate, { title: string; body: string } | null> = {};
+    for (let k = 0; k < OWN_DAYS; k++) {
+      const date = addDays(today, k);
+      texts[date] = dayChecklist({
+        date,
+        routine,
+        menu: menuOn(date),
+        meals,
+        skips: slotSkips,
+        abhyas: data,
+        now: new Date(`${date}T12:00:00`),
+        water: waterLogs,
+        activities: activities ?? [],
+        waterGoalMl,
+        bottleMl,
+        walkGoalMin,
+        waterWalk,
+        lang,
+        t,
+      });
+    }
+    return JSON.stringify(texts);
+  }, [reminders.checklist, lang, abhyasItems, abhyasTicks, abhyasSessions, today, routine, menuOn, meals, slotSkips, waterLogs, activities, waterGoalMl, bottleMl, walkGoalMin, waterWalk]);
+
+  const anyOn = reminders.mealPrompt || reminders.away || reminders.fillYesterday || reminders.planWeek || reminders.weeklyReport || reminders.abhyas || reminders.checklist;
   const wanted = useMemo(() => {
     if (Platform.OS === 'web' || !active || !anyOn) return [];
     return plannedReminders({
@@ -203,6 +250,8 @@ export function useScheduledReminders() {
       planWeek: reminders.planWeek,
       reviewedWeeks: reviewedWeeks ?? [],
       report: reportJson ? (JSON.parse(reportJson) as { monday: string; text: string }) : null,
+      abhyas,
+      checklist: checklistJson ? { times: checklistTimes(storedTimes), texts: JSON.parse(checklistJson) as Record<ISODate, { title: string; body: string } | null> } : null,
     });
   }, [
     active,
@@ -227,6 +276,9 @@ export function useScheduledReminders() {
     recordsJson,
     reviewedWeeks,
     reportJson,
+    abhyas,
+    checklistJson,
+    storedTimes,
   ]);
   // Under the phone's cap: the soonest planned ones, then the office day, then room for the daily ones.
   const fit = pendingFit(wanted.length, office.length);

@@ -12,6 +12,7 @@ import {
   missedDays,
   OFFICE_PREFIX,
   officeReminders,
+  OWN_DAYS,
   opList,
   PENDING_LIMIT,
   pendingFit,
@@ -39,7 +40,7 @@ import {
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import { DEFAULT_SCHEDULE, type WorkSchedule } from '../schedule';
 import { shownWeight } from '../tileText';
-import type { FoodItem, Meal } from '../types';
+import type { AbhyasItem, FoodItem, Meal } from '../types';
 import foodsJson from '../../data/foods.json';
 import { makeT } from '../../i18n';
 import { DEFAULT_SETTINGS, EMPTY_STATE } from '../../store/defaults';
@@ -54,6 +55,7 @@ const WORDS: Record<string, string> = {
   rem_report_full: '{n} of {m} full',
   rem_report_avg: 'average {avg}, goal {goal}',
   rem_report_weight: 'weight {kg} kg in {weeks} weeks',
+  rem_abhyas_min: '{n} of {m} min today',
 };
 const t = (k: string) => WORDS[k] ?? k;
 const plannedKcal: Record<string, number> = {};
@@ -297,6 +299,103 @@ describe('plannedReminders: plan next week and the weekly report', () => {
   });
 });
 
+describe('plannedReminders: the user\'s Abhyas items', () => {
+  const item = (id: string, p: Partial<AbhyasItem> = {}): AbhyasItem => ({ id, name: id, icon: 'book-outline', kind: 'repeat', days: [0, 1, 2, 3, 4, 5, 6], times: ['07:00'], order: 0, createdAt: '2026-10-01T08:00:00.000Z', ...p });
+  const reading = item('Reading', { targetMin: 30, times: ['07:00', '18:00'] });
+  const coding = item('Coding', { times: ['21:00'], order: 1 });
+  const list = (p: Partial<NonNullable<ReminderInput['abhyas']>> = {}) => ({ items: [reading, coding], ticks: [], sessions: [], ...p });
+  const abhyas = (x: ReturnType<typeof plannedReminders>) => x.filter((r) => r.data.kind === 'abhyas');
+
+  it('comes for each item on each of its times, today (only what is still to come) and the next two days, titled with its name', () => {
+    const r = plannedReminders({ ...quiet, abhyas: list() });
+    // Monday at 10:00: reading at 18:00 and coding at 21:00 today, then all three times on Tuesday and Wednesday.
+    expect(r.map((x) => `${x.date} ${x.time} ${x.title}`)).toEqual([
+      '2026-10-12 18:00 Reading',
+      '2026-10-12 21:00 Coding',
+      '2026-10-13 07:00 Reading',
+      '2026-10-13 18:00 Reading',
+      '2026-10-13 21:00 Coding',
+      '2026-10-14 07:00 Reading',
+      '2026-10-14 18:00 Reading',
+      '2026-10-14 21:00 Coding',
+    ]);
+    expect(OWN_DAYS).toBe(3);
+    expect(r[0]).toEqual({ id: 'abhyas:Reading:18:00:2026-10-12', date: '2026-10-12', time: '18:00', title: 'Reading', body: '0 of 30 min today', data: { kind: 'abhyas', itemId: 'Reading', date: '2026-10-12' } });
+    // A tick-only item says it is on today's list.
+    expect(r[1].body).toBe('rem_abhyas_list');
+  });
+
+  it('says the minutes so far today, and is quiet for an item done: ticked, or its target reached by the timer', () => {
+    const session = (minutes: number, date = '2026-10-12') => ({ id: `s${minutes}${date}`, itemId: 'Reading', date, startedAt: `${date}T07:00:00.000Z`, endedAt: `${date}T08:00:00.000Z`, minutes });
+    const some = abhyas(plannedReminders({ ...quiet, abhyas: list({ sessions: [session(12)] }) }));
+    expect(some.find((x) => x.id === 'abhyas:Reading:18:00:2026-10-12')?.body).toBe('12 of 30 min today');
+    expect(some.find((x) => x.id === 'abhyas:Reading:07:00:2026-10-13')?.body).toBe('0 of 30 min today');
+    const target = abhyas(plannedReminders({ ...quiet, abhyas: list({ sessions: [session(30)] }) }));
+    expect(target.filter((x) => x.date === '2026-10-12').map((x) => x.title)).toEqual(['Coding']);
+    const ticked = abhyas(plannedReminders({ ...quiet, abhyas: list({ ticks: [{ id: 't', itemId: 'Coding', date: '2026-10-13', at: '2026-10-13T09:00:00.000Z' }] }) }));
+    expect(ticked.filter((x) => x.title === 'Coding').map((x) => x.date)).toEqual(['2026-10-12', '2026-10-14']);
+  });
+
+  it('keeps to the item\'s own days, a one-off to its date, and leaves out an item removed', () => {
+    const r = plannedReminders({
+      ...quiet,
+      abhyas: { items: [item('Swim', { days: [3] }), item('Bike', { kind: 'once', days: [], date: '2026-10-13' }), item('Gone', { archivedAt: '2026-10-11T08:00:00.000Z' })], ticks: [], sessions: [] },
+    });
+    expect(r.map((x) => `${x.title} ${x.date}`)).toEqual(['Bike 2026-10-13', 'Swim 2026-10-14']);
+  });
+
+  it('never in quiet hours; on an off day, which the item\'s own days decide; nothing while the switch is off', () => {
+    const late = plannedReminders({ ...quiet, abhyas: { items: [item('Late', { times: ['23:00', '06:30'] })], ticks: [], sessions: [] } });
+    expect(late).toEqual([]);
+    expect(abhyas(plannedReminders({ ...quiet, offDays: [2], abhyas: list() })).some((x) => x.date === '2026-10-13')).toBe(true);
+    expect(plannedReminders({ ...quiet, abhyas: null })).toEqual([]);
+    expect(plannedReminders(quiet)).toEqual([]);
+  });
+
+  it('reads an item\'s times as kept: clock times only, each once', () => {
+    const odd = item('Odd', { times: ['18:00', '25:00', 'x', '18:00'] });
+    expect(plannedReminders({ ...quiet, abhyas: { items: [odd], ticks: [], sessions: [] } }).map((x) => x.time)).toEqual(['18:00', '18:00', '18:00']);
+  });
+
+  it('keeps a list of four items at two times each, with the meal-time prompts and the day so far, well under the phone\'s cap', () => {
+    const four = ['A', 'B', 'C', 'D'].map((id, i) => item(id, { times: ['11:00', '17:00'], order: i }));
+    const texts = { '2026-10-12': { title: 'T', body: 'B' }, '2026-10-13': { title: 'T', body: 'B' }, '2026-10-14': { title: 'T', body: 'B' } };
+    const r = plannedReminders({ ...base, abhyas: { items: four, ticks: [], sessions: [] }, checklist: { times: ['20:30'], texts } });
+    expect(r.filter((x) => x.data.kind === 'abhyas')).toHaveLength(4 * 2 * 3);
+    expect(r.length).toBeLessThanOrEqual(PENDING_LIMIT / 2 + 8);
+    expect(r.some((x) => x.date > '2026-10-14' && (x.data.kind === 'abhyas' || x.data.kind === 'checklist'))).toBe(false);
+  });
+});
+
+describe('plannedReminders: "Day so far"', () => {
+  const texts = { '2026-10-12': { title: 'Dhyey · Day so far', body: '○ Lunch' }, '2026-10-13': { title: 'Dhyey · Day so far', body: '○ Breakfast' }, '2026-10-14': null, '2026-10-15': { title: 'x', body: 'y' } };
+  const checklist = { times: ['13:00', '20:30'], texts };
+
+  it('comes at each of its times with the words worked out for that day, today and the next two days; a day with nothing to say gets none', () => {
+    const r = plannedReminders({ ...quiet, checklist });
+    expect(r.map((x) => [x.id, x.body])).toEqual([
+      ['checklist:13:00:2026-10-12', '○ Lunch'],
+      ['checklist:20:30:2026-10-12', '○ Lunch'],
+      ['checklist:13:00:2026-10-13', '○ Breakfast'],
+      ['checklist:20:30:2026-10-13', '○ Breakfast'],
+    ]);
+    expect(r[0]).toEqual({ id: 'checklist:13:00:2026-10-12', date: '2026-10-12', time: '13:00', title: 'Dhyey · Day so far', body: '○ Lunch', data: { kind: 'checklist', date: '2026-10-12' } });
+  });
+
+  it('only what is still to come today, never in quiet hours, on an off day or on the day setup was finished, and nothing while it is off', () => {
+    expect(plannedReminders({ ...quiet, nowMinutes: 14 * 60, checklist }).map((x) => x.id)).toEqual(['checklist:20:30:2026-10-12', 'checklist:13:00:2026-10-13', 'checklist:20:30:2026-10-13']);
+    expect(plannedReminders({ ...quiet, checklist: { ...checklist, times: ['22:30', '06:00'] } })).toEqual([]);
+    expect(plannedReminders({ ...quiet, offDays: [1], checklist }).map((x) => x.date)).toEqual(['2026-10-13', '2026-10-13']);
+    expect(plannedReminders({ ...quiet, onboardedOn: '2026-10-12', checklist }).map((x) => x.date)).toEqual(['2026-10-13', '2026-10-13']);
+    expect(plannedReminders({ ...quiet, checklist: null })).toEqual([]);
+    expect(plannedReminders({ ...quiet, checklist: { ...checklist, times: [] } })).toEqual([]);
+  });
+
+  it('reads its times as kept: clock times only, each once', () => {
+    expect(plannedReminders({ ...quiet, checklist: { times: ['20:30', '20:30', '9:00', 'x'], texts } }).map((x) => x.id)).toEqual(['checklist:20:30:2026-10-12', 'checklist:20:30:2026-10-13']);
+  });
+});
+
 describe('weekReport: the week before a Monday, by the rules Progress uses', () => {
   const monday = '2026-10-19';
   // Monday 12th to Sunday 18th; the 15th is complete with every meal skipped.
@@ -456,6 +555,12 @@ describe('a tap on a notification', () => {
     expect(tapRoute({ kind: 'fill', date: '2026-02-30' }, '2026-10-12')).toBe('/');
     expect(tapRoute({ kind: 'planweek', date: 7 }, '2026-10-12')).toBe('/plan');
     expect(tapRoute({}, '2026-10-12')).toBe('/');
+  });
+
+  it('an Abhyas reminder and "Day so far" open Today, whatever day they were for', () => {
+    expect(tapRoute({ kind: 'abhyas', itemId: 'reading', date: '2026-10-12' }, '2026-10-12')).toBe('/');
+    expect(tapRoute({ kind: 'abhyas', itemId: 'reading', date: '2026-10-11' }, '2026-10-12')).toBe('/');
+    expect(tapRoute({ kind: 'checklist', date: '2026-10-11' }, '2026-10-12')).toBe('/');
   });
 
   it('a daily reminder opens its own page: the check-in, and Today for water, the review, a break and the day\'s line', () => {
@@ -638,7 +743,7 @@ describe('the phone\'s cap on pending notifications', () => {
   it('keeps the planned reminders first, then the daily ones and the office day, and leaves the long breaks what is left', () => {
     expect(pendingFit(30, 6)).toEqual({ planned: 30, office: 6, daily: 28 });
     expect(pendingFit(0, 0)).toEqual({ planned: 0, office: 0, daily: 64 });
-    // More than 64 planned cannot happen (three days of prompts and a few morning lines, as the next test shows), but the cap holds if it did.
+    // More than 64 planned is unlikely (three days of prompts, Abhyas times and a few morning lines), but the cap holds if it comes.
     expect(pendingFit(70, 6)).toEqual({ planned: 64, office: 0, daily: 0 });
     expect(pendingFit(60, 6)).toEqual({ planned: 60, office: 4, daily: 0 });
   });
@@ -695,17 +800,27 @@ describe('the phone\'s cap on pending notifications', () => {
 });
 
 describe('Settings: a switch for every reminder', () => {
-  it('lists each reminder once, in the order they come in a day and a week, the meal-time prompt first and the only one listed on to begin with', () => {
-    // The Abhyas switch, on from the start, gets its row with the Abhyas reminders themselves (spec Part 4).
-    expect(REMINDER_ROWS.map((r) => r.key).sort()).toEqual(Object.keys(DEFAULT_SETTINGS.reminders).filter((k) => k !== 'abhyas').sort());
-    expect(REMINDER_ROWS.map((r) => r.key)).toEqual(['mealPrompt', 'fillYesterday', 'planWeek', 'weeklyReport', 'sleepCheckin', 'water', 'dayReview', 'away']);
-    expect(Object.entries(DEFAULT_SETTINGS.reminders).filter(([, on]) => on).map(([k]) => k)).toEqual(['mealPrompt', 'abhyas']);
+  it('lists each reminder once, in the order they come in a day and a week, the meal-time prompt first; it, Abhyas and the day so far are on to begin with', () => {
+    expect(REMINDER_ROWS.map((r) => r.key).sort()).toEqual(Object.keys(DEFAULT_SETTINGS.reminders).sort());
+    expect(REMINDER_ROWS.map((r) => r.key)).toEqual(['mealPrompt', 'abhyas', 'fillYesterday', 'planWeek', 'weeklyReport', 'sleepCheckin', 'water', 'checklist', 'dayReview', 'away']);
+    expect(Object.entries(DEFAULT_SETTINGS.reminders).filter(([, on]) => on).map(([k]) => k)).toEqual(['mealPrompt', 'abhyas', 'checklist']);
+    // Every switch is a switch; the day so far's times sit beside them.
+    expect(Object.values(DEFAULT_SETTINGS.reminders).every((v) => typeof v === 'boolean')).toBe(true);
+    expect(DEFAULT_SETTINGS.checklistTimes).toEqual(['20:30']);
     expect(Object.values(DEFAULT_SETTINGS.features)).toEqual([false, false, false]);
   });
 
   it('names every switch in English, Marathi and Hindi, in plain words', () => {
     const keys = [
       ...REMINDER_ROWS.flatMap((r) => [`rem_${r.name}`, `rem_${r.name}_desc`]),
+      'rem_abhyas_min',
+      'rem_abhyas_list',
+      'rem_checklist_title',
+      'rem_checklist_skipped',
+      'rem_checklist_times',
+      'rem_checklist_time',
+      'rem_checklist_add',
+      'rem_checklist_remove',
       'rem_web_note',
       'rem_nudges',
       'rem_nudges_desc',

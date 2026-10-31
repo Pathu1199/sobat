@@ -1,3 +1,4 @@
+import { cleanTimes, isDone, itemsOn, minutesOn, type AbhyasData } from './abhyas';
 import type { BreakSettings } from './breaks';
 import { addDays, isIsoDate, toISODate, weekDates } from './date';
 import { menuSlots, recordStart, skippedOn, type DayMenu } from './menu';
@@ -22,11 +23,13 @@ import { fill, numberText } from '../i18n';
  * planned empty, on an off day, or on the day the person finished setup.
  * Fill in yesterday, plan next week and the weekly report are off by
  * default, and so are the lines after days away, which stop after the fourth
- * day: an app that keeps nagging gets uninstalled. Today's reminders stay in
- * the list through their own minute, so a reconcile in that minute never
- * cancels one as it goes out.
+ * day: an app that keeps nagging gets uninstalled. The user's own Abhyas
+ * items come at their own times until each is done, and "Day so far" at the
+ * times chosen for it; both, like the meal-time prompt, only today and the
+ * next two days. Today's reminders stay in the list through their own minute,
+ * so a reconcile in that minute never cancels one as it goes out.
  */
-export type ReminderKind = 'slot' | 'fill' | 'planweek' | 'report' | 'away';
+export type ReminderKind = 'slot' | 'fill' | 'planweek' | 'report' | 'away' | 'abhyas' | 'checklist';
 
 /**
  * Settings → Reminders: one switch for each reminder the app sends on its
@@ -35,11 +38,13 @@ export type ReminderKind = 'slot' | 'fill' | 'planweek' | 'report' | 'away';
  */
 export const REMINDER_ROWS: { key: keyof Settings['reminders']; name: string }[] = [
   { key: 'mealPrompt', name: 'meal_prompt' },
+  { key: 'abhyas', name: 'abhyas' },
   { key: 'fillYesterday', name: 'fill' },
   { key: 'planWeek', name: 'planweek' },
   { key: 'weeklyReport', name: 'report' },
   { key: 'sleepCheckin', name: 'sleep' },
   { key: 'water', name: 'water' },
+  { key: 'checklist', name: 'checklist' },
   { key: 'dayReview', name: 'review' },
   { key: 'away', name: 'away' },
 ];
@@ -105,6 +110,16 @@ export type ReminderInput = {
   reviewedWeeks: ISODate[];
   /** The weekly report for the Monday it goes out (`weeklyReport`); null while it is off or there is nothing to say. */
   report: { monday: ISODate; text: string } | null;
+  /**
+   * The user's Abhyas list (`settings.reminders.abhyas`); null or missing while it is off. Ticks and finished
+   * sessions only: a running timer counts once it stops, so the planned words do not change every minute it runs.
+   */
+  abhyas?: Pick<AbhyasData, 'items' | 'ticks' | 'sessions'> | null;
+  /**
+   * "Day so far" (`settings.reminders.checklist`); null or missing while it is off. Its times, and its words for
+   * each date as `dayChecklist` gives them, null for a date with nothing to say; a date not in here gets none.
+   */
+  checklist?: { times: string[]; texts: Record<ISODate, { title: string; body: string } | null> } | null;
 };
 
 /** iOS keeps at most 64 pending notifications for an app and drops the rest without a word. */
@@ -117,8 +132,9 @@ export const PENDING_LIMIT = 64;
  * the daily reminders; the long breaks get what is left (`dailyReminders`
  * with `room`). `planned` is how many of the planned list to hold, `office`
  * how many of the office day's, `daily` the room for the daily ones. More
- * than 64 planned cannot come up (three days of meal-time prompts and a few
- * morning lines stay far under it), but the cap would hold if it did.
+ * than 64 planned is unlikely (three days of meal-time prompts, Abhyas times
+ * and "Day so far", and a few morning lines, stay under it for a usual list),
+ * but the cap holds if it comes: the soonest are kept.
  */
 export function pendingFit(planned: number, office: number, limit = PENDING_LIMIT): { planned: number; office: number; daily: number } {
   const kept = Math.min(planned, limit);
@@ -130,6 +146,13 @@ export function pendingFit(planned: number, office: number, limit = PENDING_LIMI
 const PLAN_DAYS = 8;
 /** Days of slot prompts, today included: a week away is not fifty prompts, and the phone's cap on pending notifications stays far off. */
 export const SLOT_DAYS = 3;
+/**
+ * Days of Abhyas reminders and "Day so far", today included, for the same reasons: a list of four items at two
+ * times each would be 64 over a week, the whole cap, and leave no room for the office day or the daily ones.
+ */
+export const OWN_DAYS = SLOT_DAYS;
+/** `minutesOn` reads the clock only for a running timer, and the planned list counts none. */
+const NO_TIMER_CLOCK = new Date(0);
 /** Mornings with a "fill in yesterday": today's and tomorrow's. */
 const FILL_DAYS = 2;
 /** The morning lines (fill in yesterday, the report, days away) go out at nine, or when quiet hours end. */
@@ -247,6 +270,32 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
         out.push({ id: `away:${date}`, date, time: hhmm(morning), title: input.t(`away_${gap}_title`), body: input.t(`away_${gap}_body`), data: { kind: 'away', date } });
       }
     }
+
+    // Each Abhyas item on the date at each of its times, until it is done. Off days too: the item's own days are the user's choice.
+    const abhyas = input.abhyas;
+    if (abhyas && k < OWN_DAYS) {
+      for (const item of itemsOn(abhyas.items, date)) {
+        const minutes = minutesOn(abhyas.sessions, null, item.id, date, NO_TIMER_CLOCK);
+        if (isDone(item, date, abhyas.ticks, minutes)) continue;
+        const target = typeof item.targetMin === 'number' && item.targetMin > 0 ? item.targetMin : null;
+        const body = target ? fill(input.t('rem_abhyas_min'), { n: minutes, m: target }) : input.t('rem_abhyas_list');
+        for (const time of cleanTimes(item.times)) {
+          const at = toMinutes(time);
+          if (quiet(at) || !ahead(k, at)) continue;
+          out.push({ id: `abhyas:${item.id}:${time}:${date}`, date, time, title: item.name || input.t('rem_abhyas'), body, data: { kind: 'abhyas', itemId: item.id, date } });
+        }
+      }
+    }
+
+    // "Day so far" at each of its times, as the day stands at this open; never on an off day or the day setup was finished.
+    const text = input.checklist && k < OWN_DAYS && !off && date !== input.onboardedOn ? input.checklist.texts[date] : null;
+    if (input.checklist && text) {
+      for (const time of cleanTimes(input.checklist.times)) {
+        const at = toMinutes(time);
+        if (quiet(at) || !ahead(k, at)) continue;
+        out.push({ id: `checklist:${time}:${date}`, date, time, title: text.title, body: text.body, data: { kind: 'checklist', date } });
+      }
+    }
   }
   return out.sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)));
 }
@@ -341,11 +390,13 @@ export function weeklyReport(input: {
  * Where a tap on a notification goes: Today on the day it is about, the plan
  * screen at next week, or Progress for the report; for a daily one, the
  * check-in for the morning check-in, and Today for the rest, the day's line
- * included.
+ * included. An Abhyas reminder and "Day so far" open Today; bringing the
+ * Abhyas card into view (by `data.itemId`) is Today's to do.
  */
 export function tapRoute(data: Record<string, unknown>, today: ISODate): string {
   const date = isIsoDate(data.date) ? data.date : null;
   if (data.kind === 'slot' || data.kind === 'fill') return date && date !== today ? `/?date=${date}` : '/';
+  if (data.kind === 'abhyas' || data.kind === 'checklist') return '/';
   if (data.kind === 'planweek') return date ? `/plan?date=${date}` : '/plan';
   if (data.kind === 'report') return '/progress';
   if (data.kind === 'sleep') return '/sleep';

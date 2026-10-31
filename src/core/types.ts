@@ -57,11 +57,13 @@ export type Settings = {
   todayCards: { id: TodayCardId; on: boolean }[];
   /** Parts of the app that stay off unless switched on in Settings. */
   features: { breaks: boolean; mantra: boolean; autoPlates: boolean };
-  /** Which reminders go out, one switch each. The meal-time prompt and Abhyas are on by default. */
+  /** Which reminders go out, one switch each. The meal-time prompt, Abhyas and the day so far are on by default. */
   reminders: {
     mealPrompt: boolean;
     /** Each Abhyas item at its own times, until it is done. */
     abhyas: boolean;
+    /** "Day so far": what is done today and what is not yet, at `checklistTimes`. */
+    checklist: boolean;
     fillYesterday: boolean;
     planWeek: boolean;
     weeklyReport: boolean;
@@ -74,6 +76,11 @@ export type Settings = {
     /** The evening review at 21:30. */
     dayReview: boolean;
   };
+  /**
+   * When "Day so far" comes, "HH:MM", at most three. Beside the switches, not among them: the switches are read
+   * and merged one boolean each. A store from before it existed has none; read it through `checklistTimes`.
+   */
+  checklistTimes: string[];
   /** Mondays of the weeks the person looked over and saved on the plan screen, newest first. */
   reviewedWeeks?: ISODate[];
   /** When the last Google Drive backup was written, ISO time. */
