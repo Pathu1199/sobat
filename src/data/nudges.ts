@@ -10,8 +10,8 @@ type Msg = { title: string; body: string; task: string };
 export const NUDGES: Record<Lang, Record<NudgeType, Msg[]>> = {
   en: {
     water: [
-      { title: 'Water break', body: 'One glass now gets the day\'s water moving.', task: 'Drink a full glass' },
-      { title: 'Thirsty?', body: 'Half a litre to go today. One glass is a good start.', task: 'Drink a full glass' },
+      { title: 'Water break', body: "One glass now gets the day's water moving.", task: 'Drink a full glass' },
+      { title: 'Thirsty?', body: 'A glass now keeps the day on pace.', task: 'Drink a full glass' },
     ],
     stand: [
       { title: 'Stand up', body: 'Ninety minutes in the chair. Two minutes on your feet.', task: 'Walk to another room and back' },
@@ -37,7 +37,7 @@ export const NUDGES: Record<Lang, Record<NudgeType, Msg[]>> = {
   mr: {
     water: [
       { title: 'पाणी प्या', body: 'आजचं पाणी अजून हवं आहे. एक ग्लास घ्या.', task: 'पूर्ण एक ग्लास पाणी प्या' },
-      { title: 'तहान लागली का?', body: 'आज अजून अर्धा लिटर हवं. एक ग्लास म्हणजे छान सुरुवात.', task: 'पूर्ण एक ग्लास पाणी प्या' },
+      { title: 'तहान लागली का?', body: 'आत्ता एक ग्लास घेतलात की आजचं पाणी वेळेवर राहतं.', task: 'पूर्ण एक ग्लास पाणी प्या' },
     ],
     stand: [
       { title: 'उठा', body: 'दीड तास बसून झाले. दोन मिनिटे उभे रहा.', task: 'दुसऱ्या खोलीत जाऊन या' },

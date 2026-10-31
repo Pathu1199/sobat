@@ -313,7 +313,7 @@ export type AppState = {
   schedule: WorkSchedule;
   /** Retired in version 7: the one-week template became this week's `menus`. Always null after a load; kept so a merge with an older file clears it. */
   weekPlan?: import('./weekPlan').WeekPlan | null;
-  /** Wins already celebrated (medal: and challenge:day: ids, and the badge:, level: and challenge: ids of the game before medals). Null until first seeded. */
+  /** Wins already celebrated (medal: and challenge:day: ids, and the badge:, level: and challenge: ids of the game before medals; the streak, kilo, halfway and summit badges count as the medals they became). Null until first seeded. */
   celebrated?: string[] | null;
   /** Activities done, by the person's own choice. */
   activities: ActivityLog[];

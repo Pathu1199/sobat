@@ -60,7 +60,16 @@ export type ChapterStreaks = {
  * medals count, so a new chapter takes none of them away. Both by the
  * record's one rule (`recordStreak`, `bestStreak`), and with `shield` both
  * with the streak shield (`recordRun`), which then also says the days it
- * covered in the chapter's window. Each date's menu is read once for all four.
+ * covered in the chapter's window. Each date's menu is read once, however many
+ * of these runs are worked out.
+ *
+ * Each window is worked out from its own first day, so each has a shield of its
+ * own that starts fresh there: a chapter's window can therefore show more days
+ * than the lifetime streak does (a shield the lifetime streak spent earlier
+ * that week is unspent in the chapter), and nothing may assume `days` is at
+ * most `lifetimeDays`. A window that starts mid-week also cannot know whether
+ * the shield was spent earlier in that first week (at the 120 day cap, a run
+ * near the cap may differ by a few days); the shield is meant to be generous.
  */
 export function chapterStreaks(input: {
   today: ISODate;

@@ -10,8 +10,8 @@ import type { AppState, ISODate, WeightLog } from './types';
  * logs, nothing stored. The rewards (medals, the daily challenge) are
  * core/medals.ts and core/challenge.ts; the points, camps-as-levels, badges
  * and weekly challenge that were here are retired, and the ids they were
- * celebrated under stay readable in `celebrated` (the streak and kilo badges
- * count as the medals they became).
+ * celebrated under stay readable in `celebrated` (the streak, kilo, halfway and
+ * summit badges count as the medals they became).
  */
 
 /** Where each weigh-in sits on the climb, 0 at the start weight and 1 at the goal. */

@@ -89,7 +89,7 @@ nudge carries a two-minute task with a timer, not just a sentence.
 > **Code does the numbers. The model does the words.**
 
 Calorie targets, budgets, sleep scores, readiness and every decision are pure
-TypeScript in `src/core`, covered by 370 unit tests. The language model only
+TypeScript in `src/core`, covered by more than 1,800 unit tests. The language model only
 identifies food in photos and rewrites the already-decided advice in a friendlier
 voice. Its output then passes through `guardrails.ts`, which rejects calorie
 figures below the floor, meal skipping and anything that reads as a diagnosis.
@@ -157,7 +157,11 @@ src/
     breaks      Screen breaks: four kinds, strictness, smart pause
     nudge       Which reminder, when, and when to shut up
     guardrails  Crisis detection and model-output checks
-    game        The mountain: camps, badges, XP, weekly challenge
+    game        The climb: the mountain, its camps and the trail of weigh-ins
+    medals      Medals earned from the logs and kept once celebrated
+    challenge   Today's challenge: one small step from your own last week
+    shield      The streak shield: one free rest day a week
+    perfect     Perfect days and perfect weeks, the gold ones
   services/     Clock, break monitor, notifications, push, auth, cloud sync, Drive backup
   ai/           Ollama client, prompts, schemas
   data/         Indian foods, exercises, yoga, nudges, mantras
@@ -222,7 +226,8 @@ Working: accounts; one file per account in the app maker's Google Drive,
 merged per record between devices; the rule-based coach that answers with the
 PC off; a diet plan for the week, a fixed daily routine, a grocery list, free
 days; any activity in minutes counted in calories; a yoga library; the
-mountain with camps, badges and a weekly challenge; four kinds of screen
+mountain with camps; medals for streaks, kilos and perfect weeks, a daily
+challenge and a streak shield; four kinds of screen
 break; reminders that keep their distance, and through the relay while the
 app is closed; English, Marathi, Hindi; light and dark; the signed APK and the
 website built and published on every push; an eating pattern of meal slots

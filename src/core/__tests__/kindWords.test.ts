@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GUIDE } from '../../data/guide';
+import { MANTRAS } from '../../data/mantras';
 import { NUDGES } from '../../data/nudges';
 import { keysOf, t } from '../../i18n';
 
@@ -11,8 +12,8 @@ import { keysOf, t } from '../../i18n';
  */
 const SCOLDING = {
   en: /\b(miss|missed|missing|fail|failed|behind|slip|slipped|lazy|cheat|cheated)\b|below the line/i,
-  mr: /चुकल|चुकले|राहिल|मागे आहे|रेषेखाली/,
-  hi: /छूट गय|छूटे|छूटने|पीछे है|रेखा से नीचे/,
+  mr: /चुकल|चुकले|चूक|राहिल|मागे आहे|रेषेखाली/,
+  hi: /छूट ?ग|छूटे|छूटने|छूटा|छूटी|चूक|पीछे है|रेखा से नीचे/,
 } as const;
 const NOT_THE_USER: Record<string, string[]> = { en: ['storage_save_failed', 'w_f1_b'], mr: ['auth_err_generic', 'pain_note'], hi: [] };
 
@@ -24,11 +25,12 @@ describe('kind words', () => {
     });
   }
 
-  it('the guide and the nudges, written outside the dictionaries, hold to the same rule', () => {
+  it('the guide, the nudges and the day\'s lines, written outside the dictionaries, hold to the same rule', () => {
     for (const lang of ['en', 'mr', 'hi'] as const) {
       const lines = [
         ...GUIDE[lang].flatMap((g) => [g.title, ...g.lines]),
         ...Object.values(NUDGES[lang]).flatMap((list) => list.flatMap((m) => [m.title, m.body, m.task])),
+        ...MANTRAS[lang].flatMap((m) => [m.text, m.why]),
       ];
       expect(lines.filter((l) => SCOLDING[lang].test(l)), lang).toEqual([]);
     }
