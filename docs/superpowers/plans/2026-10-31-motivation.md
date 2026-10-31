@@ -7290,7 +7290,7 @@ Replace the whole `src/components/useRewards.ts` with:
 import { useMemo } from 'react';
 import { streakRun } from '../core/abhyas';
 import { challengeProgress, challengesDone, dailyChallenge, type ChallengeData } from '../core/challenge';
-import { earnedMedals, type MedalInput } from '../core/medals';
+import { earnedMedals, namesOfJobs, type MedalInput } from '../core/medals';
 import { perfectWeeks } from '../core/perfect';
 import { useApp } from '../store/AppProvider';
 import { useGame } from './useGame';
@@ -7355,9 +7355,11 @@ export function useMedals() {
       weeks,
       challengesDone: done,
       celebrated,
+      // Names for kept perfect-week medals, removed jobs included (98383c1).
+      jobNames: namesOfJobs(items),
     };
     return { input, medals: earnedMedals(input) };
-  }, [profile.firstStartWeightKg, profile.goalWeightKg, g.plan.startKg, g.plan.currentKg, lifetimeStreakDays, lifetimeBestStreakDays, items.length, routine, weeks, done, celebrated]);
+  }, [profile.firstStartWeightKg, profile.goalWeightKg, g.plan.startKg, g.plan.currentKg, lifetimeStreakDays, lifetimeBestStreakDays, items, routine, weeks, done, celebrated]);
 }
 ```
 
