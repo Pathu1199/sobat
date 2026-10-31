@@ -69,6 +69,11 @@ export function msToNextMinute(now: Date = new Date()): number {
   return 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
 }
 
+/** The moment a minute of a day begins, local time: the shared clock's date and minute (`useMinute`) as a time, read without a clock. */
+export function atMinute(date: ISODate, minutes: number): Date {
+  return new Date(`${date}T${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}:00`);
+}
+
 export function hhmm(d: Date = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }

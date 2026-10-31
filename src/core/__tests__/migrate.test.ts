@@ -79,7 +79,7 @@ describe('migrateState', () => {
 
   it('marks the result as the current version and is idempotent', () => {
     const once = migrateState(v1);
-    expect(once.version).toBe(7);
+    expect(once.version).toBe(8);
     const twice = migrateState(once);
     expect(twice).toEqual(once);
   });
@@ -154,7 +154,7 @@ describe('migrateState', () => {
       },
     };
     const out = migrateState(v5, NOW);
-    expect(out.version).toBe(7);
+    expect(out.version).toBe(8);
     expect(out.routine.slots.every((s) => typeof s.share === 'number')).toBe(true);
     expect(out.routine.slots.find((s) => s.id === 'lunch')!.share).toBe(35);
     expect(out.routine.slots.some((s) => s.type === 'dinner')).toBe(true);
@@ -723,10 +723,10 @@ describe('settings in an odd shape, from sync or an old file', () => {
   const FEATURES = { breaks: false, mantra: false, autoPlates: false };
   const REMINDERS = { mealPrompt: true, abhyas: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false };
 
-  it('the Today cards: every known card once, in the order stored, the unknown and second copies dropped, the missing ones added off', () => {
+  it('the Today cards: every known card once, in the order stored, the unknown and second copies dropped, the missing ones added off but Abhyas, new in version 8', () => {
     const cards = settingsOf({ todayCards: [{ id: 'steps', on: true }, { id: 'nope', on: true }, { id: 'menu', on: 'yes' }, { id: 'steps', on: false }] }).todayCards;
     expect(cards.map((c) => c.id)).toEqual(['steps', 'menu', 'coach', 'waterWalk', 'abhyas', 'weight', 'sleep', 'climb', 'mantra']);
-    expect(cards.filter((c) => c.on).map((c) => c.id)).toEqual(['steps']);
+    expect(cards.filter((c) => c.on).map((c) => c.id)).toEqual(['steps', 'abhyas']);
     expect(settingsOf({ todayCards: { menu: true } }).todayCards).toEqual(DEFAULT_TODAY_CARDS);
   });
 
@@ -980,6 +980,112 @@ describe('the lived days the app kept', () => {
     expect(migrateState(s, NOW)).toEqual(s);
     // A day later the edge goes too, the same way on every device.
     expect(migrateState(s, new Date('2026-10-29T10:00:00')).menus).toEqual([edited, unfrozen]);
+  });
+});
+
+describe("version 8: the user's own list (Abhyas)", () => {
+  const v7 = { ...v1, version: 7, settings: { ...v1.settings, glassMl: undefined, reminders: { mealPrompt: true, fillYesterday: true } } };
+  const item = { id: 'a', name: 'Yoga', icon: 'leaf-outline', kind: 'repeat', days: [1, 3, 5], times: ['07:00'], order: 0, createdAt: '2026-10-20T03:00:00.000Z' };
+  const once = { ...item, id: 'o', name: 'Fix the bike', kind: 'once', days: [], date: '2026-10-29', targetMin: 30, times: [], order: 1, archivedAt: '2026-10-28T03:00:00.000Z' };
+  const session = { id: 'a@2026-10-26T03:00:00.000Z', itemId: 'a', date: '2026-10-26', startedAt: '2026-10-26T03:00:00.000Z', endedAt: '2026-10-26T03:20:00.000Z', minutes: 20 };
+  const tick = { id: 'a@2026-10-26', itemId: 'a', date: '2026-10-26', at: '2026-10-26T04:00:00.000Z' };
+  const running = { itemId: 'a', startedAt: '2026-10-28T04:00:00.000Z' };
+  const cards = (s: AppState) => s.settings.todayCards.map((c) => `${c.id}${c.on ? '' : ' off'}`);
+
+  it('gives an older store an empty list and no timer, and touches nothing logged', () => {
+    const s = migrateState(v7, NOW);
+    expect([s.abhyasItems, s.abhyasSessions, s.abhyasTicks, s.abhyasRunning]).toEqual([[], [], [], null]);
+    expect(s.version).toBe(8);
+    // Everything but the settings reads as it would with no step to version 8 at all.
+    expect({ ...s, settings: null }).toEqual({ ...migrateState({ ...v7, version: 8 }, NOW), settings: null });
+    expect(s.meals.map((m) => m.kcal)).toEqual([300]);
+    expect(s.breaks.map((b) => b.id)).toEqual(['b1', 'b2']);
+  });
+
+  it('switches the Abhyas reminders on for an older store, and keeps every other switch it had', () => {
+    const s = migrateState(v7, NOW);
+    expect(s.settings.reminders).toMatchObject({ mealPrompt: true, fillYesterday: true, abhyas: true });
+    expect(migrateState({ ...v7, settings: { ...v7.settings, reminders: { mealPrompt: false, abhyas: false } } }, NOW).settings.reminders).toMatchObject({ mealPrompt: false, abhyas: true });
+  });
+
+  it('puts the Abhyas card on Today, switched on, right after water and walk, wherever the user moved those and whatever else they switched', () => {
+    const mine = [{ id: 'steps', on: true }, { id: 'menu', on: true }, { id: 'waterWalk', on: false }, { id: 'coach', on: true }];
+    expect(cards(migrateState({ ...v7, settings: { ...v7.settings, todayCards: mine } }, NOW)).slice(0, 6)).toEqual(['steps', 'menu', 'waterWalk off', 'abhyas', 'coach', 'weight off']);
+    // A list from before water and walk were a card: both are added, the water and walk off as before, Abhyas on after it.
+    expect(cards(migrateState({ ...v7, settings: { ...v7.settings, todayCards: [{ id: 'menu', on: true }] } }, NOW))).toEqual(['menu', 'coach off', 'waterWalk off', 'abhyas', 'weight off', 'sleep off', 'steps off', 'climb off', 'mantra off']);
+    // A list that already names Abhyas, off at the end (as a load at version 7 of this build left it), still gets it on after water and walk.
+    const appended = [...DEFAULT_TODAY_CARDS.filter((c) => c.id !== 'abhyas'), { id: 'abhyas', on: false }];
+    expect(cards(migrateState({ ...v7, settings: { ...v7.settings, todayCards: appended } }, NOW)).slice(0, 5)).toEqual(['menu', 'coach', 'waterWalk', 'abhyas', 'weight off']);
+    // A store with no cards at all gets the default list, Abhyas on in its place.
+    expect(migrateState({ ...v7, settings: { ...v7.settings, todayCards: undefined } }, NOW).settings.todayCards).toEqual(DEFAULT_TODAY_CARDS);
+  });
+
+  it('a store at version 8 keeps the card and the switch as the user set them: off, or moved', () => {
+    const moved = [{ id: 'abhyas', on: true }, ...DEFAULT_TODAY_CARDS.filter((c) => c.id !== 'abhyas')];
+    const s = migrateState({ ...v7, version: 8, settings: { ...v7.settings, todayCards: moved, reminders: { abhyas: false } } }, NOW);
+    expect(s.settings.todayCards).toEqual(moved);
+    expect(s.settings.reminders.abhyas).toBe(false);
+    const off = DEFAULT_TODAY_CARDS.map((c) => (c.id === 'abhyas' ? { ...c, on: false } : c));
+    expect(migrateState({ ...v7, version: 8, settings: { ...v7.settings, todayCards: off } }, NOW).settings.todayCards).toEqual(off);
+  });
+
+  it('a second load changes nothing, from an older store or one at version 8', () => {
+    const once = migrateState(v7, NOW);
+    expect(migrateState(once, NOW)).toEqual(once);
+    const kept = migrateState({ ...v7, version: 8, abhyasItems: [item, once], abhyasSessions: [session], abhyasTicks: [tick], abhyasRunning: running }, NOW);
+    expect(migrateState(kept, NOW)).toEqual(kept);
+  });
+
+  it('keeps the list, the minutes, the ticks and the running timer as they were', () => {
+    const s = migrateState({ ...v7, version: 8, abhyasItems: [item, once], abhyasSessions: [session], abhyasTicks: [tick], abhyasRunning: running }, NOW);
+    expect(s.abhyasItems).toEqual([item, once]);
+    expect(s.abhyasSessions).toEqual([session]);
+    expect(s.abhyasTicks).toEqual([tick]);
+    expect(s.abhyasRunning).toEqual(running);
+  });
+
+  it('drops a record in another shape, from a file or sync, and keeps the rest; a timer that is not one is no timer; a list that is not a list is empty', () => {
+    const s = migrateState(
+      {
+        ...v7,
+        version: 8,
+        abhyasItems: [
+          item,
+          null,
+          'yoga',
+          { ...item, id: 'b', kind: 'once' },
+          { ...item, id: 'c', days: 'daily' },
+          { ...item, id: 'd', order: Number.NaN },
+          { ...item, id: 'e', targetMin: '30' },
+          { ...item, id: 'f', times: [7] },
+          { ...item, id: 'g', kind: 'often' },
+          { ...item, id: 'h', archivedAt: 5 },
+          { ...item, id: 7 },
+        ],
+        abhyasSessions: [session, null, { ...session, id: 't', minutes: 'twenty' }, { ...session, id: 'u', endedAt: null }, { ...session, id: 'v', minutes: Number.POSITIVE_INFINITY }],
+        abhyasTicks: [tick, { id: 'x' }, { ...tick, id: 'y', at: 3 }, 'tick'],
+        abhyasRunning: { itemId: 'a' },
+      },
+      NOW,
+    );
+    expect(s.abhyasItems.map((i) => i.id)).toEqual(['a']);
+    expect(s.abhyasSessions.map((x) => x.id)).toEqual([session.id]);
+    expect(s.abhyasTicks.map((x) => x.id)).toEqual([tick.id]);
+    expect(s.abhyasRunning).toBeNull();
+    expect(migrateState(s, NOW)).toEqual(s);
+    for (const bad of ['a', 7, [running], { itemId: 1, startedAt: running.startedAt }]) expect(migrateState({ ...v7, version: 8, abhyasRunning: bad }, NOW).abhyasRunning, JSON.stringify(bad)).toBeNull();
+    const lists = migrateState({ ...v7, version: 8, abhyasItems: { a: item }, abhyasSessions: 'none', abhyasTicks: 3 }, NOW);
+    expect([lists.abhyasItems, lists.abhyasSessions, lists.abhyasTicks]).toEqual([[], [], []]);
+  });
+
+  it('an account file from a build before version 8 comes up the same way through a sync round', () => {
+    const file = forCloud(migrateState(v7, NOW)) as unknown as Record<string, unknown>;
+    const older = { ...file, version: 7 } as unknown as CloudState;
+    for (const k of ['abhyasItems', 'abhyasSessions', 'abhyasTicks', 'abhyasRunning']) delete (older as unknown as Record<string, unknown>)[k];
+    const up = upgradeFile(NOW)(older);
+    expect([up.abhyasItems, up.abhyasSessions, up.abhyasTicks, up.abhyasRunning]).toEqual([[], [], [], null]);
+    expect(up.settings.reminders.abhyas).toBe(true);
+    expect(up.version).toBe(8);
   });
 });
 

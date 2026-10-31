@@ -1,4 +1,5 @@
-import type { AppState, Settings } from './types';
+import { ranOut, stop, withSession } from './abhyas';
+import type { AbhyasRunning, AbhyasSession, AppState, Settings } from './types';
 
 /**
  * How the account's copy and the device's copy are reconciled.
@@ -12,7 +13,9 @@ import type { AppState, Settings } from './types';
  * touched stays. A day's menu says when it was last edited, so when both sides
  * changed the same date the newer edit wins, wherever it was made; and since
  * nothing ever takes a menu out, a date one side does not have is one it never
- * had, never one it deleted. Pure, so every case has a test.
+ * had, never one it deleted. The Abhyas timer that is running is one value
+ * with a rule of its own (`mergeRunning`), so a timer started on the phone
+ * shows on the PC and can be stopped there. Pure, so every case has a test.
  */
 
 /** Settings that describe this machine, not the person: never synced. */
@@ -29,10 +32,11 @@ export type CloudState = Omit<AppState, LocalKey | 'settings'> & { settings: Clo
 type AnyRecord = Record<string, unknown>;
 
 /**
- * The record arrays, each with the field that identifies one record, for some the field that says when it was last edited,
- * and whether its records are never deleted, so one missing on a side is kept from the other whatever the base held.
+ * The record arrays, each with the field that identifies one record, for some the field that says when it was last edited
+ * (changed on both sides, the newer wins, or with `firstWins` the older), and whether its records are never deleted, so one
+ * missing on a side is kept from the other whatever the base held.
  */
-export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => string; stampOf?: (r: AnyRecord) => string; neverDeleted?: true }[] = [
+export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => string; stampOf?: (r: AnyRecord) => string; firstWins?: true; neverDeleted?: true }[] = [
   { key: 'meals', idOf: (r) => String(r.id) },
   { key: 'water', idOf: (r) => String(r.id) },
   { key: 'weights', idOf: (r) => String(r.date) },
@@ -57,10 +61,19 @@ export const COLLECTIONS: { key: keyof CloudState; idOf: (r: AnyRecord) => strin
   { key: 'menus', idOf: (r) => String(r.date), stampOf: (r) => String(r.editedAt ?? ''), neverDeleted: true },
   { key: 'slotSkips', idOf: (r) => String(r.id) },
   { key: 'savedMeals', idOf: (r) => String(r.id) },
+  // The user's own list (Abhyas). A tick's id is its item's and its date's, and a session's its item's and its start's, so
+  // the same tick made on two devices is one tick, and the same timer stopped on two is one session: the stop that came
+  // first, since a later one only stopped a copy still running there.
+  { key: 'abhyasItems', idOf: (r) => String(r.id) },
+  { key: 'abhyasSessions', idOf: (r) => String(r.id), stampOf: (r) => String(r.endedAt ?? ''), firstWins: true },
+  { key: 'abhyasTicks', idOf: (r) => String(r.id) },
 ];
 
-/** Everything else in the file: one value each, merged whole, but for the profile and the settings, merged field by field (`BY_FIELD`). */
-export const SINGLETONS = ['version', 'profile', 'settings', 'breakSettings', 'routine', 'schedule', 'weekPlan', 'celebrated', 'groceryTicks'] as const;
+/**
+ * Everything else in the file: one value each, merged whole, but for the profile and the settings, merged field by field
+ * (`BY_FIELD`), and the Abhyas timer, by its own rule (`mergeRunning`).
+ */
+export const SINGLETONS = ['version', 'profile', 'settings', 'breakSettings', 'routine', 'schedule', 'weekPlan', 'celebrated', 'groceryTicks', 'abhyasRunning'] as const;
 
 /**
  * Single objects merged field by field, each field one value: merged whole, a
@@ -160,8 +173,12 @@ function timeOf(r: AnyRecord): string {
   return String(r.at ?? r.date ?? '');
 }
 
+function inTimeOrder(list: AnyRecord[]): AnyRecord[] {
+  return [...list].sort((x, y) => timeOf(x).localeCompare(timeOf(y)));
+}
+
 function mergeCollection(
-  { idOf, stampOf, neverDeleted }: Pick<(typeof COLLECTIONS)[number], 'idOf' | 'stampOf' | 'neverDeleted'>,
+  { idOf, stampOf, firstWins, neverDeleted }: Pick<(typeof COLLECTIONS)[number], 'idOf' | 'stampOf' | 'firstWins' | 'neverDeleted'>,
   base: unknown,
   local: unknown,
   remote: unknown,
@@ -177,8 +194,8 @@ function mergeCollection(
     if (neverDeleted && (!lv || !rv)) return lv ?? rv;
     const mine = stable(lv) !== bs;
     const theirs = stable(rv) !== bs;
-    // Changed on both sides, and the records say when: the newer edit wins, wherever it was made.
-    if (mine && theirs && stampOf && lv && rv) return stampOf(rv) > stampOf(lv) ? rv : lv;
+    // Changed on both sides, and the records say when: the newer edit wins, wherever it was made (the older, `firstWins`).
+    if (mine && theirs && stampOf && lv && rv) return (firstWins ? stampOf(rv) < stampOf(lv) : stampOf(rv) > stampOf(lv)) ? rv : lv;
     if (mine) return lv;
     if (theirs) return rv;
     return lv;
@@ -198,7 +215,69 @@ function mergeCollection(
   }
   // Records deleted on both sides are simply absent; those only in base were deleted on one side, unless they are never deleted.
   const hasTime = out.some((x) => x.at !== undefined || x.date !== undefined);
-  return hasTime ? [...out].sort((x, y) => timeOf(x).localeCompare(timeOf(y))) : out;
+  return hasTime ? inTimeOrder(out) : out;
+}
+
+/** The running timer as the merge reads it: an item and a start. Anything else, from a damaged file, is no timer. */
+function timerOf(v: unknown): AbhyasRunning | null {
+  return isObject(v) && typeof v.itemId === 'string' && typeof v.startedAt === 'string' ? (v as AbhyasRunning) : null;
+}
+
+/** A time as a number to put moves in order by; one that is not a time comes before every other. */
+function momentOf(iso: unknown): number {
+  const t = Date.parse(String(iso));
+  return Number.isFinite(t) ? t : -Infinity;
+}
+
+/**
+ * When a side moved its timer since the base: each start (of the timer running there, and of each session it wrote since)
+ * and each stop (where those sessions end). A session that ran out at three hours or midnight was stopped by nobody, and the
+ * base's own timer was started before the base. A stop inside a timer's first minute writes no session, so it leaves no
+ * moment to go by.
+ */
+function movesOf(timer: AbhyasRunning | null, sessions: unknown, base: Partial<CloudState>): number[] {
+  const before = toMap(base.abhyasSessions, (r) => String(r.id));
+  const baseStart = timerOf(base.abhyasRunning)?.startedAt;
+  const out = timer ? [momentOf(timer.startedAt)] : [];
+  for (const [id, s] of toMap(sessions, (r) => String(r.id))) {
+    if (before.has(id)) continue;
+    if (s.startedAt !== baseStart) out.push(momentOf(s.startedAt));
+    if (!ranOut(s as AbhyasSession)) out.push(momentOf(s.endedAt));
+  }
+  return out;
+}
+
+/**
+ * The Abhyas timer that is running, one value merged three ways, and the sessions with any it stops.
+ *
+ * Changed on one side only, that side's: a stop on the phone ends a timer the PC left alone, and a start on the PC shows on
+ * the phone. Changed on both, the two sides' moves are put in time order, as one device would have made them (`movesOf`):
+ * the side that moved last decides, and a timer still running on the other side stops at the first move made after it
+ * started there, keeping its minutes, as starting a second item stops the first. So:
+ * - started on one device, stopped on the other: a start made after the stop keeps running; a stop made after the start
+ *   stops it there. A stop that leaves nothing to say when it was made (a timer that ran out by itself, or one stopped
+ *   inside its first minute) never ends a timer started on the other side.
+ * - a different item started on each: the later start runs, and the earlier timer ends where the later began. The same
+ *   item started on both counts from the first start, as one timer would.
+ * - stopped on both: no timer, and the same timer's session is one, the stop that came first (`COLLECTIONS`).
+ * At the same moment a start beats a stop, and of two starts the item first by id, so every device ends on the same timer.
+ * With no base nothing says which side moved: a timer on either side is kept, and of two the later start runs.
+ * Sessions already written stay as written, so timers that ran on two devices at once, neither knowing of the other, can
+ * overlap for that time.
+ */
+function mergeRunning(base: Partial<CloudState>, local: CloudState, remote: CloudState, sessions: AnyRecord[]): { abhyasRunning: AbhyasRunning | null; abhyasSessions: AnyRecord[] } {
+  const [b, l, r] = [timerOf(base.abhyasRunning), timerOf(local.abhyasRunning), timerOf(remote.abhyasRunning)];
+  if (stable(l) === stable(b)) return { abhyasRunning: r, abhyasSessions: sessions };
+  if (stable(r) === stable(b) || stable(l) === stable(r)) return { abhyasRunning: l, abhyasSessions: sessions };
+  const lm = movesOf(l, local.abhyasSessions, base);
+  const rm = movesOf(r, remote.abhyasSessions, base);
+  const [lastL, lastR] = [Math.max(...lm), Math.max(...rm)];
+  const theirs = lastR > lastL || (lastR === lastL && (l === null || (r !== null && r.itemId < l.itemId)));
+  const [won, lost, moves] = theirs ? [r, l, rm] : [l, r, lm];
+  if (!lost) return { abhyasRunning: won, abhyasSessions: sessions };
+  const from = momentOf(lost.startedAt);
+  const cut = stop(lost, new Date(Math.min(...moves.filter((m) => m >= from))));
+  return { abhyasRunning: won, abhyasSessions: cut ? inTimeOrder(withSession(sessions as AbhyasSession[], cut)) : sessions };
 }
 
 /**
@@ -222,6 +301,10 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
   for (const key of SINGLETONS) {
     if (key === 'version') {
       out.version = Math.max(Number(local.version ?? 0), Number(remote.version ?? 0));
+      continue;
+    }
+    if (key === 'abhyasRunning') {
+      Object.assign(out, mergeRunning(b, local, remote, out.abhyasSessions as AnyRecord[]));
       continue;
     }
     const lv = local[key];

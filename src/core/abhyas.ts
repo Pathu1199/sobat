@@ -1,5 +1,5 @@
-import { addDays, isIsoDate, localDate } from './date';
-import type { AbhyasItem, AbhyasRunning, AbhyasSession, AbhyasTick, ISODate } from './types';
+import { addDays, isIsoDate, localDate, toISODate } from './date';
+import type { AbhyasItem, AbhyasRunning, AbhyasSession, AbhyasTick, AppState, ISODate } from './types';
 
 /**
  * Abhyas: the user's own list for the day, any job at all, from yoga and
@@ -52,7 +52,7 @@ export function itemsOn(items: AbhyasItem[], date: ISODate): AbhyasItem[] {
 }
 
 /** When a running timer stops by itself: three hours after it started, or at midnight after its own day, whichever comes first. NaN for a start that is not a time. */
-function limitOf(running: AbhyasRunning): number {
+function limitOf(running: Pick<AbhyasRunning, 'startedAt'>): number {
   const start = Date.parse(running.startedAt);
   const midnight = new Date(`${addDays(localDate(running.startedAt), 1)}T00:00:00`).getTime();
   return Math.min(start + MAX_SESSION_MIN * 60000, midnight);
@@ -133,6 +133,24 @@ export function closeStale(running: AbhyasRunning | null, now: Date): { running:
   if (!running) return { running: null, session: null };
   if (now.getTime() < limitOf(running)) return { running, session: null };
   return { running: null, session: stop(running, now) };
+}
+
+/** A session that ran until its timer stopped by itself, at three hours or at midnight: nobody pressed Stop where it ends. */
+export function ranOut(session: Pick<AbhyasSession, 'startedAt' | 'endedAt'>): boolean {
+  return Date.parse(session.endedAt) >= limitOf(session);
+}
+
+/**
+ * The sessions with one more. The same timer stopped on two devices is one
+ * session (its id is the item's and the start's): the stop that came first
+ * stays, since a later one only stopped a copy still running elsewhere. The
+ * same list when the session there already ends first.
+ */
+export function withSession(sessions: AbhyasSession[], session: AbhyasSession): AbhyasSession[] {
+  const i = sessions.findIndex((s) => s.id === session.id);
+  if (i < 0) return [...sessions, session];
+  if (sessions[i].endedAt <= session.endedAt) return sessions;
+  return sessions.map((s, n) => (n === i ? session : s));
 }
 
 /** Records by their date, so a rule that reads many days finds each day's at once. */
@@ -220,17 +238,9 @@ export function draftProblem(d: AbhyasDraft): 'name' | 'days' | 'date' | 'target
   return null;
 }
 
-/**
- * The list with a new item at its end, its id from the caller (`newId()`).
- * The name is trimmed, the weekdays and times cleaned, a date kept only for
- * a one-off, and an icon not in the picker's list becomes the default. The
- * same list when the draft cannot be saved (`draftProblem`).
- */
-export function addItem(items: AbhyasItem[], draft: AbhyasDraft, id: string, now: Date): AbhyasItem[] {
-  if (draftProblem(draft)) return items;
-  const order = items.reduce((top, i) => Math.max(top, i.order + 1), 0);
-  const item: AbhyasItem = {
-    id,
+/** A draft as an item's own fields: the name trimmed, the weekdays and times cleaned, a date kept only for a one-off, and an icon not in the picker's list the default. */
+function fieldsOf(draft: AbhyasDraft): AbhyasDraft {
+  return {
     name: draft.name.trim(),
     icon: (ABHYAS_ICONS as readonly string[]).includes(draft.icon) ? draft.icon : ABHYAS_ICONS[0],
     kind: draft.kind,
@@ -238,10 +248,28 @@ export function addItem(items: AbhyasItem[], draft: AbhyasDraft, id: string, now
     ...(draft.kind === 'once' ? { date: draft.date } : {}),
     ...(draft.targetMin !== undefined ? { targetMin: draft.targetMin } : {}),
     times: cleanTimes(draft.times),
-    order,
-    createdAt: now.toISOString(),
   };
-  return [...items, item];
+}
+
+/**
+ * The list with a new item at its end, its id from the caller (`newId()`),
+ * its fields cleaned (`fieldsOf`). The same list when the draft cannot be
+ * saved (`draftProblem`).
+ */
+export function addItem(items: AbhyasItem[], draft: AbhyasDraft, id: string, now: Date): AbhyasItem[] {
+  if (draftProblem(draft)) return items;
+  const order = items.reduce((top, i) => Math.max(top, i.order + 1), 0);
+  return [...items, { id, ...fieldsOf(draft), order, createdAt: now.toISOString() }];
+}
+
+/**
+ * An item edited: the draft's fields, cleaned as `addItem` cleans them, with
+ * its id, place, start and removal kept. The same list when the draft cannot
+ * be saved or there is no such item.
+ */
+export function updateItem(items: AbhyasItem[], id: string, draft: AbhyasDraft): AbhyasItem[] {
+  if (draftProblem(draft) || !items.some((i) => i.id === id)) return items;
+  return items.map((i) => (i.id === id ? { id, ...fieldsOf(draft), order: i.order, createdAt: i.createdAt, ...(i.archivedAt ? { archivedAt: i.archivedAt } : {}) } : i));
 }
 
 /** An item removed now: it leaves today and the days after, and stays on the days before. The same list when there is no such item on it. */
@@ -268,4 +296,58 @@ export function reorder(items: AbhyasItem[], id: string, by: -1 | 1): AbhyasItem
   [all[a], all[b]] = [all[b], all[a]];
   const place = new Map(all.map((i, n) => [i.id, n]));
   return items.map((i) => (i.order === place.get(i.id) ? i : { ...i, order: place.get(i.id) ?? i.order }));
+}
+
+/** The part of the store Abhyas keeps; the store's actions below change only it, and give back the same state when nothing changes. */
+export type AbhyasState = Pick<AppState, 'abhyasItems' | 'abhyasSessions' | 'abhyasTicks' | 'abhyasRunning'>;
+
+/** A tick's id: its item's and its date's, so the same tick made on two devices is one tick. */
+export function tickId(itemId: string, date: ISODate): string {
+  return `${itemId}@${date}`;
+}
+
+/** An item ticked done on a date, by hand: once, for an item on the list, on today or a day before, never a day still to come. */
+export function withTick<S extends AbhyasState>(s: S, itemId: string, date: ISODate, now: Date): S {
+  if (!isIsoDate(date) || date > toISODate(now) || !s.abhyasItems.some((i) => i.id === itemId)) return s;
+  if (s.abhyasTicks.some((t) => t.itemId === itemId && t.date === date)) return s;
+  return { ...s, abhyasTicks: [...s.abhyasTicks, { id: tickId(itemId, date), itemId, date, at: now.toISOString() }] };
+}
+
+/** An item's tick on a date taken away. */
+export function withoutTick<S extends AbhyasState>(s: S, itemId: string, date: ISODate): S {
+  const abhyasTicks = s.abhyasTicks.filter((t) => !(t.itemId === itemId && t.date === date));
+  return abhyasTicks.length === s.abhyasTicks.length ? s : { ...s, abhyasTicks };
+}
+
+/** The state with a timer's session kept, when it counted a whole minute. */
+function withSessionOf<S extends AbhyasState>(s: S, running: AbhyasRunning | null, session: AbhyasSession | null): S {
+  return { ...s, abhyasRunning: running, abhyasSessions: session ? withSession(s.abhyasSessions, session) : s.abhyasSessions };
+}
+
+/** The timer stopped now, its minutes kept on the day it started (`stop`). */
+export function withStopped<S extends AbhyasState>(s: S, now: Date): S {
+  return s.abhyasRunning ? withSessionOf(s, null, stop(s.abhyasRunning, now)) : s;
+}
+
+/**
+ * A timer started now for an item on the list. One timer runs at a time:
+ * one running for another item stops first and keeps its minutes. Start on
+ * the item already running changes nothing, and a removed item gets none.
+ */
+export function withStarted<S extends AbhyasState>(s: S, itemId: string, now: Date): S {
+  if (s.abhyasRunning?.itemId === itemId || !s.abhyasItems.some((i) => i.id === itemId && !i.archivedAt)) return s;
+  return { ...withStopped(s, now), abhyasRunning: start(itemId, now) };
+}
+
+/** On open and each minute: a timer at three hours, or from before today, stopped where it stops by itself (`closeStale`). */
+export function withStaleClosed<S extends AbhyasState>(s: S, now: Date): S {
+  const closed = closeStale(s.abhyasRunning, now);
+  return closed.running === s.abhyasRunning ? s : withSessionOf(s, closed.running, closed.session);
+}
+
+/** An item removed now (`archive`); its timer, if it runs, stops and keeps its minutes. */
+export function withArchived<S extends AbhyasState>(s: S, id: string, now: Date): S {
+  const abhyasItems = archive(s.abhyasItems, id, now);
+  if (abhyasItems === s.abhyasItems) return s;
+  return { ...(s.abhyasRunning?.itemId === id ? withStopped(s, now) : s), abhyasItems };
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { makeT } from '../../i18n';
-import { daysBetween, formatDayLabel, formatDayLong, formatDayMonth, formatDayMonthYear, formatHalfHours, formatMinutes, formatMoment, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
+import { atMinute, daysBetween, formatDayLabel, formatDayLong, formatDayMonth, formatDayMonthYear, formatHalfHours, formatMinutes, formatMoment, formatMonthYear, isIsoDate, localDate, localHHMM, localHour, loggedAt, mondayOf, msToNextMinute, weekDates } from '../date';
 
 // vitest.config.mts pins TZ to Asia/Kolkata (UTC+5:30).
 describe('local time from ISO strings', () => {
@@ -88,6 +88,14 @@ describe('msToNextMinute', () => {
       expect(landed.getMilliseconds()).toBe(0);
       expect(landed.getMinutes()).toBe((start.getMinutes() + 1) % 60);
     }
+  });
+});
+
+describe('atMinute', () => {
+  it('is the moment a minute of a day begins, local time: the shared clock\'s date and minute as a time', () => {
+    expect(atMinute('2026-10-31', 0).getTime()).toBe(new Date('2026-10-31T00:00:00').getTime());
+    expect(atMinute('2026-10-31', 18 * 60 + 5).getTime()).toBe(new Date('2026-10-31T18:05:00').getTime());
+    expect(atMinute('2026-10-31', 23 * 60 + 59).toISOString()).toBe('2026-10-31T18:29:00.000Z');
   });
 });
 

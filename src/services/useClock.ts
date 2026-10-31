@@ -1,6 +1,6 @@
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { AppState as RNAppState } from 'react-native';
-import { msToNextMinute, toISODate } from '../core/date';
+import { atMinute, msToNextMinute, toISODate } from '../core/date';
 import type { ISODate } from '../core/types';
 
 export type Clock = { date: ISODate; hour: number };
@@ -85,4 +85,15 @@ export function nowMinutes(d: Date = new Date()): number {
 /** Minutes since midnight, re-read on the minute by the same timer as the date and hour. For countdowns and "what is on now". */
 export function useMinute(): number {
   return useSyncExternalStore(subscribe, () => now.minutes, () => now.minutes);
+}
+
+/**
+ * Now, to the minute: a time that moves with the same timer, so a screen
+ * reads a running Abhyas timer's minutes without a clock read during render,
+ * and they move every minute without a session being written.
+ */
+export function useNow(): Date {
+  const { date } = useClock();
+  const minutes = useMinute();
+  return useMemo(() => atMinute(date, minutes), [date, minutes]);
 }

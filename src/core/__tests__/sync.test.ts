@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { applyCloud, bindStart, encodeSavedBase, forCloud, fromNewerApp, inAccount, isPristine, landMerge, merge3, RoundStop, syncRound, type AccountFile, type RoundIO, readSavedBase, sameCloud, signOutPlan, stable, type CloudState } from '../sync';
-import type { AppState, Meal } from '../types';
+import type { AbhyasItem, AppState, Meal } from '../types';
 import type { DayMenu } from '../menu';
+import { minutesOn, withoutTick, withStaleClosed, withStarted, withStopped, withTick } from '../abhyas';
 
 const meal = (id: string, at: string, kcal = 300): Meal => ({
   id,
@@ -735,5 +736,162 @@ describe('menus, skips and saved meals', () => {
     // Lunch on the 26th was un-skipped on the other device; each side added one skip.
     expect(out.slotSkips.map((s) => s.id).sort()).toEqual(['2026-10-27:dinner', '2026-10-27:morning']);
     expect(out.savedMeals).toEqual([thali]);
+  });
+});
+
+describe("the user's own list (Abhyas)", () => {
+  const yoga: AbhyasItem = { id: 'yoga', name: 'Yoga', icon: 'leaf-outline', kind: 'repeat', days: [0, 1, 2, 3, 4, 5, 6], times: ['07:00'], order: 0, createdAt: '2026-10-01T03:00:00.000Z' };
+  const study: AbhyasItem = { ...yoga, id: 'study', name: 'Study', order: 1, targetMin: 30 };
+  const read: AbhyasItem = { ...yoga, id: 'read', name: 'Read', order: 2 };
+  // Saturday 31 October 2026, Asia/Kolkata.
+  const DAY = '2026-10-31';
+  const T = (hhmm: string) => new Date(`${DAY}T${hhmm}:00`);
+  const file = (extra: Partial<AppState> = {}) => cloudOf(used([], { abhyasItems: [yoga, study, read], ...extra }));
+  // A device's moves, made one after another on the file it last saw, the way the store makes them.
+  type Move = (s: CloudState) => CloudState;
+  const startAt = (itemId: string, hhmm: string): Move => (s) => withStarted(s, itemId, T(hhmm));
+  const stopAt = (hhmm: string): Move => (s) => withStopped(s, T(hhmm));
+  const after = (from: CloudState, ...moves: Move[]) => moves.reduce((s, m) => m(s), from);
+  const minutes = (s: CloudState) => Object.fromEntries(s.abhyasSessions.map((x) => [x.itemId, x.minutes]));
+  // Both ways round: whichever device merges, the timer and the minutes come out the same.
+  const both = (base: CloudState | null, a: CloudState, b: CloudState) => {
+    const one = merge3(base, a, b);
+    const two = merge3(base, b, a);
+    expect(two.abhyasRunning).toEqual(one.abhyasRunning);
+    expect(minutes(two)).toEqual(minutes(one));
+    expect(two.abhyasSessions.map((x) => x.endedAt).sort()).toEqual(one.abhyasSessions.map((x) => x.endedAt).sort());
+    return one;
+  };
+  // Yoga running since 07:00, on both devices.
+  const yogaOn = after(file(), startAt('yoga', '07:00'));
+
+  it('items, sessions and ticks merge record by record: an edit here and an item, a session and a tick added there all stay', () => {
+    const base = file();
+    const local = file({ abhyasItems: [{ ...yoga, name: 'Morning yoga' }, study, read] });
+    const remote = after(file({ abhyasItems: [yoga, study, read, { ...read, id: 'bike', kind: 'once', days: [], date: DAY }] }), startAt('study', '09:00'), stopAt('09:25'), (s) => withTick(s, 'yoga', DAY, T('10:00')));
+    const out = merge3(base, local, remote);
+    expect(out.abhyasItems.map((i) => [i.id, i.name])).toEqual([['yoga', 'Morning yoga'], ['study', 'Study'], ['read', 'Read'], ['bike', 'Read']]);
+    expect(minutes(out)).toEqual({ study: 25 });
+    expect(out.abhyasTicks.map((x) => x.id)).toEqual([`yoga@${DAY}`]);
+  });
+
+  it('a tick taken away on one side is gone; the same tick made on both sides is one tick', () => {
+    const base = file();
+    const ticked = after(base, (s) => withTick(s, 'yoga', DAY, T('08:00')));
+    expect(merge3(ticked, after(ticked, (s) => withoutTick(s, 'yoga', DAY)), ticked).abhyasTicks).toEqual([]);
+    expect(merge3(ticked, ticked, after(ticked, (s) => withoutTick(s, 'yoga', DAY))).abhyasTicks).toEqual([]);
+    const later = after(base, (s) => withTick(s, 'yoga', DAY, T('09:00')));
+    expect(both(base, ticked, later).abhyasTicks).toHaveLength(1);
+  });
+
+  it('a timer started on the phone shows on the PC, and stopped on the PC it stops on the phone, its minutes kept', () => {
+    const idle = file();
+    const phone = after(idle, startAt('study', '09:00'));
+    expect(merge3(idle, idle, phone).abhyasRunning).toEqual(phone.abhyasRunning);
+    expect(merge3(idle, phone, idle).abhyasRunning).toEqual(phone.abhyasRunning);
+    // The PC took the phone's file, then stopped the timer; the phone, still running it, takes the stop.
+    const pc = after(phone, stopAt('09:40'));
+    for (const out of [merge3(phone, phone, pc), merge3(phone, pc, phone)]) {
+      expect(out.abhyasRunning).toBeNull();
+      expect(minutes(out)).toEqual({ study: 40 });
+    }
+  });
+
+  it('started on one device and stopped on the other, the stop made later wins: the started timer stops then, keeping its minutes', () => {
+    // The phone starts study at 08:00, which stops yoga; the PC, still showing yoga, stops it at 08:30.
+    const phone = after(yogaOn, startAt('study', '08:00'));
+    const pc = after(yogaOn, stopAt('08:30'));
+    const out = both(yogaOn, phone, pc);
+    expect(out.abhyasRunning).toBeNull();
+    // Yoga stopped first on the phone, at 08:00; study ran until the stop at 08:30.
+    expect(minutes(out)).toEqual({ yoga: 60, study: 30 });
+  });
+
+  it('stopped on one device and started on the other later, the start wins and keeps running', () => {
+    const pc = after(yogaOn, stopAt('07:45'));
+    const phone = after(yogaOn, startAt('study', '08:00'));
+    const out = both(yogaOn, phone, pc);
+    expect(out.abhyasRunning).toEqual(phone.abhyasRunning);
+    expect(minutes(out)).toEqual({ yoga: 45 });
+  });
+
+  it('a timer that ran out by itself on one device, or was stopped inside its first minute, is no stop made later: a start on the other keeps running', () => {
+    const early = after(file(), startAt('yoga', '05:00'));
+    // The PC was closed until 09:00 and stopped yoga at its three hours, 08:00; the phone had started study at 07:30.
+    const phone = after(early, startAt('study', '07:30'));
+    const pc = after(early, (s) => withStaleClosed(s, T('09:00')));
+    expect(minutes(pc)).toEqual({ yoga: 180 });
+    const out = both(early, phone, pc);
+    expect(out.abhyasRunning).toEqual(phone.abhyasRunning);
+    expect(minutes(out)).toEqual({ yoga: 150 });
+    // Stopped under a minute in, nothing was written, so nothing says when.
+    const tapped = after(file(), startAt('yoga', '07:59'));
+    const quick = after(tapped, (s) => withStopped(s, new Date(T('07:59').getTime() + 30_000)));
+    const started = after(tapped, startAt('study', '08:00'));
+    expect(both(tapped, quick, started).abhyasRunning).toEqual(started.abhyasRunning);
+  });
+
+  it('started on both devices, the later start runs, and the other timer keeps its minutes up to it', () => {
+    const phone = after(yogaOn, startAt('study', '08:00'));
+    const pc = after(yogaOn, startAt('read', '08:20'));
+    const out = both(yogaOn, phone, pc);
+    expect(out.abhyasRunning).toEqual(pc.abhyasRunning);
+    expect(minutes(out)).toEqual({ yoga: 60, study: 20 });
+    // From no timer at all, the same.
+    const idle = file();
+    const fresh = both(idle, after(idle, startAt('study', '08:00')), after(idle, startAt('read', '08:20')));
+    expect(fresh.abhyasRunning?.itemId).toBe('read');
+    expect(minutes(fresh)).toEqual({ study: 20 });
+  });
+
+  it('the same item started on both devices counts from the first start, as one timer would', () => {
+    const idle = file();
+    const out = both(idle, after(idle, startAt('study', '08:00')), after(idle, startAt('study', '08:10')));
+    expect(out.abhyasRunning).toEqual({ itemId: 'study', startedAt: T('08:10').toISOString() });
+    expect(minutesOn(out.abhyasSessions, out.abhyasRunning, 'study', DAY, T('09:00'))).toBe(60);
+  });
+
+  it('stopped on both devices: no timer, and one session, the stop that came first', () => {
+    const out = both(yogaOn, after(yogaOn, stopAt('08:00')), after(yogaOn, stopAt('08:30')));
+    expect(out.abhyasRunning).toBeNull();
+    expect(out.abhyasSessions).toHaveLength(1);
+    expect(out.abhyasSessions[0]).toMatchObject({ itemId: 'yoga', minutes: 60, endedAt: T('08:00').toISOString() });
+  });
+
+  it('ends the same on both devices, whichever writes first', () => {
+    const phone = after(yogaOn, startAt('study', '08:00'));
+    const pc = after(yogaOn, startAt('read', '08:20'), stopAt('08:50'));
+    // The phone writes first, untouched by the PC; the PC merges onto it and writes; the phone then takes that.
+    const first = merge3(yogaOn, phone, yogaOn);
+    const second = merge3(yogaOn, pc, first);
+    const back = merge3(first, phone, second);
+    expect(sameCloud(back, second)).toBe(true);
+    expect(back.abhyasRunning).toBeNull();
+    expect(minutes(back)).toEqual({ yoga: 60, study: 20, read: 30 });
+  });
+
+  it('a merge landing after a stop made here while the request was out keeps the stop', () => {
+    const sent = after(yogaOn, startAt('study', '08:00'));
+    const now = withStopped(applyCloud(used([]), sent), T('08:30'));
+    const landed = landMerge(now, sent, sent);
+    expect(landed.abhyasRunning).toBeNull();
+    expect(minutes(cloudOf(landed))).toEqual({ yoga: 60, study: 30 });
+  });
+
+  it('with no base, a timer on either side is kept, and of two the later start runs', () => {
+    const idle = file();
+    const on = after(idle, startAt('study', '08:00'));
+    expect(merge3(null, idle, on).abhyasRunning).toEqual(on.abhyasRunning);
+    expect(merge3(null, on, idle).abhyasRunning).toEqual(on.abhyasRunning);
+    const out = both(null, on, after(idle, startAt('read', '08:20')));
+    expect(out.abhyasRunning?.itemId).toBe('read');
+    expect(minutes(out)).toEqual({ study: 20 });
+  });
+
+  it('a timer in another shape, from a damaged file, is no timer', () => {
+    const idle = file();
+    const damaged = { ...idle, abhyasRunning: { itemId: 'study' } } as unknown as CloudState;
+    expect(merge3(idle, idle, damaged).abhyasRunning).toBeNull();
+    expect(merge3(null, damaged, idle).abhyasRunning).toBeNull();
   });
 });

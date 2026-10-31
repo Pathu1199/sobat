@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import exercisesJson from '../data/exercises.json';
+import { addItem, draftProblem, reorder, updateItem, withArchived, withoutTick, withStaleClosed, withStarted, withStopped, withTick, type AbhyasData, type AbhyasDraft } from '../core/abhyas';
 import { mondayOf, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
 import { newId } from '../core/id';
@@ -167,6 +168,26 @@ type Ctx = {
   removeActivity: (id: string) => void;
   burnedToday: number;
   markCelebrated: (ids: string[]) => void;
+  /**
+   * The user's own list (Abhyas) as one bundle for the rules in core/abhyas.ts. A screen reads the running timer at
+   * `useNow()`, so its minutes move every minute without a session being written.
+   */
+  abhyas: AbhyasData;
+  /** A new item from the sheet. Returns its id; null when the draft cannot be saved (`draftProblem`), and then nothing changes. */
+  addAbhyasItem: (draft: AbhyasDraft) => string | null;
+  /** An item edited from the sheet; its place, its start and its history stay. */
+  setAbhyasItem: (id: string, draft: AbhyasDraft) => void;
+  /** An item removed from today on; the days before keep it. Its timer, if it runs, stops and keeps its minutes. */
+  archiveAbhyasItem: (id: string) => void;
+  /** An item one place up (-1) or down (1) among the items of its kind. */
+  reorderAbhyas: (id: string, by: -1 | 1) => void;
+  /** Done on a date, by hand: today or a day before, never a day still to come. */
+  tickAbhyas: (itemId: string, date: ISODate) => void;
+  untickAbhyas: (itemId: string, date: ISODate) => void;
+  /** The timer started for an item. One runs at a time: one running for another item stops first and keeps its minutes. */
+  startAbhyas: (itemId: string) => void;
+  /** The timer stopped, its minutes kept on the day it started. */
+  stopAbhyas: () => void;
   toggleGrocery: (week: string, foodId: string) => void;
   setSchedule: (s: Partial<WorkSchedule>) => void;
   addSpend: (s: Pick<SpendLog, 'category' | 'rupees' | 'spreadDays'>) => void;
@@ -361,13 +382,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
   const { days: streakDays, best: bestStreakDays, lifetimeDays: lifetimeStreakDays, lifetimeBest: lifetimeBestStreakDays } = streaks;
 
-  // Planned meals fill themselves 90 minutes after their slot, and today is noted as a day the app was open: checked once the
-  // store is loaded, then on each turn of the shared minute clock, which also catches midnight and catches up when the app
-  // comes back to the front. Never while one account's data is being put aside.
+  // Planned meals fill themselves 90 minutes after their slot, today is noted as a day the app was open, and an Abhyas timer
+  // left running stops where it stops by itself (three hours, or midnight after its day): checked once the store is loaded,
+  // then on each turn of the shared minute clock, which also catches midnight and catches up when the app comes back to the
+  // front. Never while one account's data is being put aside.
   useEffect(() => {
     if (!ready) return;
     const run = setTimeout(() => {
-      if (!switching.current) setState(withAutoFillNow);
+      if (!switching.current) setState((s) => withStaleClosed(withAutoFillNow(s), new Date()));
     }, 0);
     return () => clearTimeout(run);
   }, [ready, today, minute]);
@@ -384,6 +406,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     return states.length > 0 ? states.filter((x) => x.status === 'now' || x.status === 'missed' || x.status === 'later').length : undefined;
   }, [state.routine, state.profile, state.meals, state.slotSkips, today, minute]);
+
+  // The list as one bundle, a new object only when one of its parts changes, so a screen's memo over it holds through a bottle of water.
+  const abhyas = useMemo<AbhyasData>(
+    () => ({ items: state.abhyasItems, ticks: state.abhyasTicks, sessions: state.abhyasSessions, running: state.abhyasRunning }),
+    [state.abhyasItems, state.abhyasTicks, state.abhyasSessions, state.abhyasRunning],
+  );
 
   // This week as the grocery list reads it, worked out only when what it shows changes: a bottle of water rebuilds no week.
   const weekPlan = useMemo(
@@ -608,6 +636,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       burnedToday,
       toggleGrocery: (week, foodId) => update((s) => ({ ...s, groceryTicks: toggleTick(s.groceryTicks, week, foodId, groceryThisWeek(today)) })),
       markCelebrated: (ids) => update((s) => ({ ...s, celebrated: Array.from(new Set([...(s.celebrated ?? []), ...ids])) })),
+      abhyas,
+      addAbhyasItem: (draft) => {
+        // Refused at the tap, so the sheet knows nothing was saved.
+        if (draftProblem(draft)) return null;
+        const id = newId();
+        update((s) => ({ ...s, abhyasItems: addItem(s.abhyasItems, draft, id, new Date()) }));
+        return id;
+      },
+      setAbhyasItem: (id, draft) =>
+        update((s) => {
+          const abhyasItems = updateItem(s.abhyasItems, id, draft);
+          return abhyasItems === s.abhyasItems ? s : { ...s, abhyasItems };
+        }),
+      archiveAbhyasItem: (id) => update((s) => withArchived(s, id, new Date())),
+      reorderAbhyas: (id, by) =>
+        update((s) => {
+          const abhyasItems = reorder(s.abhyasItems, id, by);
+          return abhyasItems === s.abhyasItems ? s : { ...s, abhyasItems };
+        }),
+      tickAbhyas: (itemId, date) => update((s) => withTick(s, itemId, date, new Date())),
+      untickAbhyas: (itemId, date) => update((s) => withoutTick(s, itemId, date)),
+      startAbhyas: (itemId) => update((s) => withStarted(s, itemId, new Date())),
+      stopAbhyas: () => update((s) => withStopped(s, new Date())),
       setSchedule: (x) => update((s) => ({ ...s, schedule: { ...s.schedule, ...x } })),
       addSpend: (x) =>
         update((s) => ({
@@ -646,7 +697,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, menuOn, streakDays, bestStreakDays, lifetimeStreakDays, lifetimeBestStreakDays, patternMealsLeft, weekPlan]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, menuOn, streakDays, bestStreakDays, lifetimeStreakDays, lifetimeBestStreakDays, patternMealsLeft, weekPlan, abhyas]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

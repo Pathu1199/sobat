@@ -7,7 +7,7 @@ import { slotShare } from '../core/pattern';
 import { canPlace, DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
 import { forCloud, stable, type CloudState } from '../core/sync';
 import { normalizeTabs, normalizeTodayCards } from '../core/tabs';
-import type { AppState, Diet, FoodItem, ISODate, Meal, SavedMeal, SlotSkip } from '../core/types';
+import type { AbhyasItem, AbhyasRunning, AbhyasSession, AbhyasTick, AppState, Diet, FoodItem, ISODate, Meal, SavedMeal, SlotSkip } from '../core/types';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
 import { allFoods, DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER, STATE_VERSION } from './defaults';
 
@@ -250,6 +250,39 @@ function onlyRecords<T>(list: unknown[]): T[] {
   return (kept.length === list.length ? list : kept) as T[];
 }
 
+/** A number the app can count with: not NaN, not infinite. */
+function isCount(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v);
+}
+
+/** An Abhyas item as the app reads it: named and placed, its weekdays whole numbers, its times words, its target a number if it has one; a one-off with its date. */
+function isAbhyasItem(v: unknown): v is AbhyasItem {
+  if (!isRecord(v) || typeof v.id !== 'string' || typeof v.name !== 'string' || typeof v.icon !== 'string' || !isCount(v.order) || typeof v.createdAt !== 'string') return false;
+  if (!Array.isArray(v.days) || !v.days.every((d) => Number.isInteger(d)) || !Array.isArray(v.times) || !v.times.every((t) => typeof t === 'string')) return false;
+  if ((v.targetMin !== undefined && !isCount(v.targetMin)) || (v.archivedAt !== undefined && typeof v.archivedAt !== 'string')) return false;
+  return v.kind === 'repeat' || (v.kind === 'once' && typeof v.date === 'string');
+}
+
+function isAbhyasSession(v: unknown): v is AbhyasSession {
+  return isRecord(v) && typeof v.id === 'string' && typeof v.itemId === 'string' && typeof v.date === 'string' && typeof v.startedAt === 'string' && typeof v.endedAt === 'string' && isCount(v.minutes);
+}
+
+function isAbhyasTick(v: unknown): v is AbhyasTick {
+  return isRecord(v) && typeof v.id === 'string' && typeof v.itemId === 'string' && typeof v.date === 'string' && typeof v.at === 'string';
+}
+
+/** The running timer as the app reads it: an item and a start. Anything else is no timer. */
+function readRunning(v: unknown): AbhyasRunning | null {
+  return isRecord(v) && typeof v.itemId === 'string' && typeof v.startedAt === 'string' ? (v as AbhyasRunning) : null;
+}
+
+/** Version 8: the Abhyas card on Today, switched on, right after the water and walk tiles (always in a cleaned list). */
+function withAbhyasCard(cards: AppState['settings']['todayCards']): AppState['settings']['todayCards'] {
+  const rest = cards.filter((c) => c.id !== 'abhyas');
+  const after = rest.findIndex((c) => c.id === 'waterWalk') + 1;
+  return [...rest.slice(0, after), { id: 'abhyas', on: true }, ...rest.slice(after)];
+}
+
 /** The records of a list that have the shape the app reads; a record in any other shape, from a file or sync, is dropped rather than thrown on later. */
 function wellFormed<T>(v: unknown, ok: (r: unknown) => r is T): T[] {
   return Array.isArray(v) ? v.filter(ok) : [];
@@ -296,6 +329,12 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
   // Version 7: the old reminders are off unless switched on again, each with its own switch; the hourly in-app nudges too.
   // After upgradeAppSettings, which read the stored switch to set the meal-time prompt: that choice is already made.
   if (fromVersion < 7) settings.nudgesEnabled = false;
+  // Version 8: the user's own list (Abhyas) arrives with its reminders on and its card on Today. A store at version 8 or later
+  // keeps both as the user set them, the card off or moved included.
+  if (fromVersion < 8) {
+    settings.reminders.abhyas = true;
+    settings.todayCards = withAbhyasCard(settings.todayCards);
+  }
   const profile = { ...EMPTY_STATE.profile, ...(raw.profile as object) } as AppState['profile'];
   if (profile.startWeightKg === undefined) {
     const dated = (w: unknown): w is AppState['weights'][number] => isRecord(w) && typeof w.date === 'string';
@@ -357,6 +396,11 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
     actionsDone: actions.filter((a) => !isSkipKey(a)) as AppState['actionsDone'],
     slotSkips,
     savedMeals: wellFormed(raw.savedMeals, isSavedMeal),
+    // Version 8: the user's own list. A store from before has none and no timer; a record in another shape is dropped.
+    abhyasItems: wellFormed(raw.abhyasItems, isAbhyasItem),
+    abhyasSessions: wellFormed(raw.abhyasSessions, isAbhyasSession),
+    abhyasTicks: wellFormed(raw.abhyasTicks, isAbhyasTick),
+    abhyasRunning: readRunning(raw.abhyasRunning),
     openedDates: Array.isArray(raw.openedDates) ? raw.openedDates.filter((d): d is string => typeof d === 'string') : [],
   };
 }

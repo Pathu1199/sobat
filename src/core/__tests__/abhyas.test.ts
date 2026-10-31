@@ -1,5 +1,33 @@
 import { describe, expect, it } from 'vitest';
-import { addItem, archive, closeStale, dayStatus, doneCount, draftProblem, isDone, itemsOn, MAX_SESSION_MIN, minutesOn, reorder, start, stop, streak, type AbhyasData, type AbhyasDraft } from '../abhyas';
+import {
+  addItem,
+  archive,
+  closeStale,
+  dayStatus,
+  doneCount,
+  draftProblem,
+  isDone,
+  itemsOn,
+  MAX_SESSION_MIN,
+  minutesOn,
+  ranOut,
+  reorder,
+  start,
+  stop,
+  streak,
+  tickId,
+  updateItem,
+  withArchived,
+  withoutTick,
+  withSession,
+  withStaleClosed,
+  withStarted,
+  withStopped,
+  withTick,
+  type AbhyasData,
+  type AbhyasDraft,
+  type AbhyasState,
+} from '../abhyas';
 import type { AbhyasItem, AbhyasSession, AbhyasTick } from '../types';
 
 // Saturday 31 October 2026; the clock is Asia/Kolkata (vitest.config.mts).
@@ -145,6 +173,26 @@ describe('the timer', () => {
     expect(closeStale(null, NOW)).toEqual({ running: null, session: null });
     expect(closeStale({ itemId: 'study', startedAt: 'soon' }, NOW)).toEqual({ running: null, session: null });
   });
+
+  it('tells a session that ran out by itself, at three hours or at midnight, from one somebody stopped', () => {
+    const morning = start('study', at(TODAY, '07:00'));
+    expect(ranOut(stop(morning, at(TODAY, '12:00'))!)).toBe(true);
+    expect(ranOut(closeStale(morning, at(TODAY, '16:00')).session!)).toBe(true);
+    expect(ranOut(stop(morning, at(TODAY, '09:59'))!)).toBe(false);
+    expect(ranOut(stop(start('read', at('2026-10-30', '23:20')), at(TODAY, '00:30'))!)).toBe(true);
+    expect(ranOut(stop(start('read', at('2026-10-30', '23:20')), at('2026-10-30', '23:50'))!)).toBe(false);
+  });
+
+  it('keeps one session for one timer: stopped twice, on two devices, the stop that came first stays', () => {
+    const running = start('study', at(TODAY, '07:00'));
+    const first = stop(running, at(TODAY, '07:30'))!;
+    const later = stop(running, at(TODAY, '08:15'))!;
+    const other = session('yoga', TODAY, 20);
+    expect(withSession([other], first)).toEqual([other, first]);
+    const kept = [other, first];
+    expect(withSession(kept, later)).toBe(kept);
+    expect(withSession([other, later], first)).toEqual([other, first]);
+  });
 });
 
 describe('streak', () => {
@@ -262,5 +310,100 @@ describe('the list', () => {
     const removed = item('r', { order: 1, archivedAt: NOW.toISOString() });
     expect(reorder([a, removed, b], 'r', -1)).toEqual([a, removed, b]);
     expect(sorted(reorder([a, removed, b], 'b', -1))).toEqual(['b', 'r', 'a']);
+  });
+});
+
+describe('editing an item', () => {
+  const now = at(TODAY, '09:00');
+  const draft = (extra: Partial<AbhyasDraft> = {}): AbhyasDraft => ({ name: 'Yoga', icon: 'leaf-outline', kind: 'repeat', days: ALL_WEEK, times: [], ...extra });
+
+  it('takes the new fields, cleaned as when it was added, and keeps its id, place, start and removal', () => {
+    const list = [item('a', { order: 3, targetMin: 30, times: ['07:00'] }), item('b')];
+    const edited = updateItem(list, 'a', draft({ name: ' Study ', icon: 'code-slash-outline', days: [5, 1, 1], times: ['21:00', '06:30', 'soon'] }));
+    expect(edited[0]).toEqual({ id: 'a', name: 'Study', icon: 'code-slash-outline', kind: 'repeat', days: [1, 5], times: ['06:30', '21:00'], order: 3, createdAt: list[0].createdAt });
+    expect(edited[1]).toBe(list[1]);
+    const once = updateItem(list, 'a', draft({ kind: 'once', days: [2], date: TODAY, targetMin: 45, icon: 'rocket' }))[0];
+    expect(once).toEqual({ id: 'a', name: 'Yoga', icon: 'book-outline', kind: 'once', days: [], date: TODAY, targetMin: 45, times: [], order: 3, createdAt: list[0].createdAt });
+    const gone = item('g', { archivedAt: now.toISOString() });
+    expect(updateItem([gone], 'g', draft())[0].archivedAt).toBe(now.toISOString());
+  });
+
+  it('the same list when the draft cannot be saved or there is no such item', () => {
+    const list = [item('a')];
+    expect(updateItem(list, 'a', draft({ name: ' ' }))).toBe(list);
+    expect(updateItem(list, 'nope', draft())).toBe(list);
+  });
+});
+
+describe("the store's actions", () => {
+  const state = (extra: Partial<AbhyasState> = {}): AbhyasState => ({ abhyasItems: [item('yoga'), item('study', { targetMin: 30 })], abhyasSessions: [], abhyasTicks: [], abhyasRunning: null, ...extra });
+
+  it('ticks an item once a date, today or a day before, never a day still to come; untick takes it away', () => {
+    const s = state();
+    const ticked = withTick(s, 'yoga', TODAY, NOW);
+    expect(ticked.abhyasTicks).toEqual([{ id: `yoga@${TODAY}`, itemId: 'yoga', date: TODAY, at: NOW.toISOString() }]);
+    expect(tickId('yoga', TODAY)).toBe(`yoga@${TODAY}`);
+    expect(withTick(ticked, 'yoga', TODAY, at(TODAY, '19:00'))).toBe(ticked);
+    expect(withTick(s, 'yoga', '2026-10-30', NOW).abhyasTicks.map((t) => t.date)).toEqual(['2026-10-30']);
+    expect(withTick(s, 'yoga', '2026-11-01', NOW)).toBe(s);
+    expect(withTick(s, 'yoga', 'today', NOW)).toBe(s);
+    expect(withTick(s, 'nope', TODAY, NOW)).toBe(s);
+    expect(withoutTick(ticked, 'yoga', TODAY).abhyasTicks).toEqual([]);
+    expect(withoutTick(ticked, 'yoga', '2026-10-30')).toBe(ticked);
+    expect(withoutTick(s, 'yoga', TODAY)).toBe(s);
+  });
+
+  it('runs one timer at a time: starting another item stops the first and keeps its minutes', () => {
+    const s = withStarted(state(), 'yoga', at(TODAY, '07:00'));
+    expect(s.abhyasRunning).toEqual({ itemId: 'yoga', startedAt: at(TODAY, '07:00').toISOString() });
+    expect(s.abhyasSessions).toEqual([]);
+    // Start on the item already running changes nothing: the timer keeps its start.
+    expect(withStarted(s, 'yoga', at(TODAY, '07:10'))).toBe(s);
+    const next = withStarted(s, 'study', at(TODAY, '07:20'));
+    expect(next.abhyasRunning).toEqual({ itemId: 'study', startedAt: at(TODAY, '07:20').toISOString() });
+    expect(next.abhyasSessions.map((x) => [x.itemId, x.minutes])).toEqual([['yoga', 20]]);
+    // No timer for an item that is not on the list, or was removed.
+    expect(withStarted(state(), 'nope', NOW)).toEqual(state());
+    const removed = state({ abhyasItems: [item('yoga', { archivedAt: NOW.toISOString() })] });
+    expect(withStarted(removed, 'yoga', NOW)).toBe(removed);
+  });
+
+  it('stop keeps the minutes on the day the timer started; under a minute writes nothing; with no timer nothing changes', () => {
+    const s = withStarted(state(), 'study', at(TODAY, '17:30'));
+    expect(withStopped(s, NOW)).toMatchObject({ abhyasRunning: null, abhyasSessions: [{ itemId: 'study', date: TODAY, minutes: 30 }] });
+    expect(withStopped(s, new Date(at(TODAY, '17:30').getTime() + 30_000))).toMatchObject({ abhyasRunning: null, abhyasSessions: [] });
+    const none = state();
+    expect(withStopped(none, NOW)).toBe(none);
+  });
+
+  it('on the clock tick, a timer at three hours or from before today stops by itself; a fresh one runs on', () => {
+    const fresh = withStarted(state(), 'study', at(TODAY, '17:00'));
+    expect(withStaleClosed(fresh, NOW)).toBe(fresh);
+    const stale = withStarted(state(), 'study', at(TODAY, '14:00'));
+    expect(withStaleClosed(stale, NOW)).toMatchObject({ abhyasRunning: null, abhyasSessions: [{ itemId: 'study', minutes: 180 }] });
+    const lastNight = withStarted(state(), 'study', at('2026-10-30', '23:00'));
+    expect(withStaleClosed(lastNight, at(TODAY, '06:00'))).toMatchObject({ abhyasRunning: null, abhyasSessions: [{ date: '2026-10-30', minutes: 60 }] });
+    const none = state();
+    expect(withStaleClosed(none, NOW)).toBe(none);
+  });
+
+  it('a timer already stopped on another device keeps that first stop when it is stopped here too', () => {
+    const s = withStarted(state(), 'study', at(TODAY, '17:00'));
+    const there = stop(s.abhyasRunning!, at(TODAY, '17:20'))!;
+    const out = withStopped({ ...s, abhyasSessions: [there] }, NOW);
+    expect(out.abhyasSessions).toEqual([there]);
+    expect(out.abhyasRunning).toBeNull();
+  });
+
+  it('removing an item stops its timer and keeps its minutes; removing another item leaves the timer running', () => {
+    const s = withStarted(state(), 'study', at(TODAY, '17:40'));
+    const gone = withArchived(s, 'study', NOW);
+    expect(gone.abhyasItems.find((i) => i.id === 'study')?.archivedAt).toBe(NOW.toISOString());
+    expect(gone.abhyasRunning).toBeNull();
+    expect(gone.abhyasSessions.map((x) => x.minutes)).toEqual([20]);
+    expect(withArchived(gone, 'study', NOW)).toBe(gone);
+    const other = withArchived(s, 'yoga', NOW);
+    expect(other.abhyasRunning).toBe(s.abhyasRunning);
+    expect(other.abhyasSessions).toBe(s.abhyasSessions);
   });
 });
