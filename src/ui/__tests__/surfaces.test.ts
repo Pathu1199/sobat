@@ -81,6 +81,13 @@ describe('applyTheme', () => {
     applyTheme('dark', 'emerald');
     expect(C).toEqual(PALETTES.dark);
   });
+
+  it('reads a palette this build does not know (a damaged or newer setting) as the default, never leaving the app without colours', () => {
+    applyTheme('light', 'indigo');
+    applyTheme('light', 'rose' as never);
+    expect(paletteNow()).toBe('emerald');
+    expect(C).toEqual(PALETTES.light);
+  });
 });
 
 describe('corners', () => {

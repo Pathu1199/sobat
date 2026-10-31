@@ -91,7 +91,7 @@ describe('palette', () => {
           }
         }
         expect(stripDot('planned', false)).toEqual({ kind: 'ring', color: STRIP_DOT.outline });
-        // A day of meals all skipped and nothing eaten: a quiet grey dot, never the teal of a full day.
+        // A day of meals all skipped and nothing eaten: a quiet grey dot, never the action colour of a full day.
         expect(stripDot('skipped', false)).toEqual({ kind: 'dot', color: STRIP_DOT.skipped });
         expect(stripDot('skipped', true)).toEqual({ kind: 'dot', color: STRIP_DOT.skipped });
         expect(STRIP_DOT.skipped).not.toBe(STRIP_DOT.full);

@@ -12,7 +12,7 @@
  * (src/ui/__tests__/contrast.test.ts holds them to that).
  */
 import { Platform, type ViewStyle } from 'react-native';
-import { DEFAULT_PALETTE, type PaletteId } from '../core/palette';
+import { DEFAULT_PALETTE, paletteOf, type PaletteId } from '../core/palette';
 
 const listeners = new Set<() => void>();
 
@@ -261,8 +261,9 @@ export function paletteNow(): PaletteId {
   return currentPalette;
 }
 
-/** Light or dark, in a palette (the one in use unless named). */
-export function applyTheme(mode: ThemeMode, palette: PaletteId = currentPalette): void {
+/** Light or dark, in a palette (the one in use unless named; one this build does not know is the default, so a damaged or newer setting cannot leave the app without colours). */
+export function applyTheme(mode: ThemeMode, named: PaletteId = currentPalette): void {
+  const palette = paletteOf(named);
   if (mode === current && palette === currentPalette) return;
   current = mode;
   currentPalette = palette;

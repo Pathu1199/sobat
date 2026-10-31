@@ -1,5 +1,6 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import React, { type PropsWithChildren } from 'react';
+import { START_BG, startScript } from '../core/startLook';
 
 /**
  * Make the page behave like an app rather than a document: no bounce at the
@@ -10,11 +11,15 @@ import React, { type PropsWithChildren } from 'react';
  * Text uses the phone's own font: the system face, Roboto on Android, and
  * Noto Sans Devanagari for Marathi and Hindi where the system face has none.
  * Icons set their own font inline and are left alone.
+ *
+ * The page colour is the default look's (daylight, or dark on a dark phone)
+ * until the start script, run in the head, finds the user's own look in the
+ * browser's storage and sets `--dhyey-bg` (core/startLook.ts).
  */
 const APP_CSS = `
 #root div[dir="auto"]:not([style*="font-family"]), #root input, #root textarea, #root button { font-family: system-ui, Roboto, "Noto Sans Devanagari", sans-serif; }
-html, body { background: #F2F6F7; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
-@media (prefers-color-scheme: dark) { html, body { background: #0B1014; } }
+html, body { background: var(--dhyey-bg, ${START_BG.emerald.light}); overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+@media (prefers-color-scheme: dark) { html, body { background: var(--dhyey-bg, ${START_BG.emerald.dark}); } }
 body { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-text-size-adjust: 100%; }
 input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; font-size: 16px !important; }
 `;
@@ -22,8 +27,9 @@ input, textarea, [contenteditable] { -webkit-user-select: text; user-select: tex
 /**
  * The HTML shell around every statically rendered page. It carries what a
  * browser needs before the app loads: the iPhone home-screen icon and title,
- * the web-app manifest, and the phone's light or dark background so there is
- * no flash. The app then sets the language and the chosen look (_layout.tsx).
+ * the web-app manifest, and the background of the user's own look (their
+ * palette, light or dark) so there is no flash. The app then sets the
+ * language and the chosen look (_layout.tsx).
  */
 export default function Root({ children }: PropsWithChildren) {
   return (
@@ -33,8 +39,8 @@ export default function Root({ children }: PropsWithChildren) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="description" content="Roz thoda, fit sada. A local-first health companion. Food, sleep, movement and mind, with the AI on your own PC." />
-        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2F6F7" />
-        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B1014" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content={START_BG.emerald.light} />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content={START_BG.emerald.dark} />
         <meta name="color-scheme" content="light dark" />
         {/* Pinned to an iPhone home screen: this icon and name, no Safari chrome around the app, and the normal status bar, not a black band above a light page. */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -45,6 +51,8 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="manifest" href="/manifest.json" />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: APP_CSS }} />
+        {/* After the theme-color tags it updates, before anything paints. */}
+        <script dangerouslySetInnerHTML={{ __html: startScript() }} />
       </head>
       <body>{children}</body>
     </html>

@@ -9,6 +9,7 @@ import { BreakToast } from '../components/BreakToast';
 import { HeaderBack } from '../components/HeaderBack';
 import { paletteOf } from '../core/palette';
 import { pageTitle } from '../core/screenTitle';
+import { readLook, writeLook } from '../core/startLook';
 import { makeT } from '../i18n';
 import { FeedbackProvider } from '../services/feedback';
 import { firebaseEnabled } from '../services/firebase';
@@ -56,12 +57,28 @@ export default function RootLayout() {
   );
 }
 
-/** Picks dark or light from the setting and the phone, and the palette the user chose, applies them before the tree renders, and remounts on change. */
+/** The browser's own storage on the web; null on a phone, in the static render, or where the browser blocks it. */
+function webStorage(): Storage | null {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Picks dark or light from the setting and the phone, and the palette the user chose, applies them before the tree renders, and remounts on change.
+ * The store loads after the first render, so on the web the first frames use the look kept from last time (core/startLook.ts), the one the page's
+ * start script already painted, instead of the default; the store's own choice takes over as soon as it is loaded.
+ */
 function Themed({ children }: { children: React.ReactNode }) {
-  const { state } = useApp();
+  const { state, ready } = useApp();
   const system = useColorScheme();
-  const mode: ThemeMode = state.settings.appearance === 'system' ? (system === 'light' ? 'light' : 'dark') : state.settings.appearance;
-  const palette = paletteOf(state.settings.palette);
+  const [kept] = useState(() => readLook(webStorage()));
+  const appearance = ready || !kept ? state.settings.appearance : kept.appearance;
+  const palette = paletteOf(ready || !kept ? state.settings.palette : kept.palette);
+  const mode: ThemeMode = appearance === 'system' ? (system === 'light' ? 'light' : 'dark') : appearance;
   // Swap the palette before paint, then remount the tree so every component reads the new colours.
   const scale = state.settings.textScale || 1;
   const lang = state.profile.lang;
@@ -83,6 +100,10 @@ function Themed({ children }: { children: React.ReactNode }) {
       SystemUI.setBackgroundColorAsync(C.bg).catch(() => {});
     }
   }, [mode, palette, scale]);
+  // Keep the two choices for the next time the page opens (only once the store has spoken: before that, the settings are the defaults).
+  useEffect(() => {
+    if (ready) writeLook(webStorage(), { appearance, palette });
+  }, [ready, appearance, palette]);
   // The page's language follows the profile, so screen readers and the browser read Marathi and Hindi as such.
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') document.documentElement.lang = lang;

@@ -37,7 +37,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F2F6F7",
+          "backgroundColor": "#F3F7F6",
           "image": "./assets/images/android-icon-foreground.png",
           "imageWidth": 192,
           "dark": {
@@ -49,7 +49,7 @@
       [
         "expo-notifications",
         {
-          "color": "#12A57F",
+          "color": "#0C8263",
           "defaultChannel": "sobat"
         }
       ],
@@ -75,7 +75,7 @@
       "reactCompiler": true
     },
     "description": "Roz thoda, fit sada. Local-first health companion: calories, food photos, sleep, joint-safe fitness and gentle reminders. Runs on Android and Windows, uses your own Ollama for AI.",
-    "primaryColor": "#12A57F",
+    "primaryColor": "#0C8263",
     "extra": {
       "firebase": {
         "apiKey": "AIzaSyB3Q628mgS6-s_vSOsmAEEsNmu9gJXwBGs",
