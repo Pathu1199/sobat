@@ -278,6 +278,36 @@ doneDate: ISODate;
 so an older app keeps working. A tick on the app re-uploads the schedule
 through `usePushSync`, which already re-sends when the payload changes.
 
+### The day checklist: "Day so far"
+
+Varad asked (2026-10-31) for an iPhone notification that shows, as a
+checklist, what is done and what is missed. One notification, at times the
+user chooses:
+
+- **Times:** `settings.reminders.checklistTimes: string[]`, default
+  `['20:30']`, up to three, edited in Settings → Reminders. The switch is
+  `settings.reminders.checklist`, on by default.
+- **Body:** built by a pure `dayChecklist(input)` in `src/core/checklist.ts`
+  from the viewed day's menu, meals, skips, water, walk minutes and Abhyas
+  items. Lines, in this order, each item marked ✓ (done) or ○ (not yet):
+  1. Meals: `✓ Breakfast · ✓ Lunch · ○ Dinner` (slot names from the
+     pattern; a skipped slot shows as ✓ with "skipped").
+  2. Abhyas: `✓ Yoga 20 min · ○ English reading 12/30 min · ○ Coding`.
+  3. Water and walk: `○ Water, 2 bottles left · ✓ Walk 30 min`.
+  The title is `Dhyey · Day so far`. Lines that have nothing to say are
+  left out. If every item is done, nothing is sent.
+- **Phone (Android):** scheduled through `plannedReminders` with kind
+  `'checklist'` for the next `PLAN_DAYS` days; the body is recomputed on
+  every reconcile, so it is current as of the last open.
+- **Web and iPhone, through the relay:** `PushSchedule` v2 gains
+  `checklist: { times: string[]; title: string; body: string; date: ISODate }`.
+  The body is today's text at upload time; the relay sends it at each time
+  on `date` only (a stale body is never sent on a later day). Every tick in
+  the app re-uploads the schedule through `usePushSync`, so the text is as
+  fresh as the last time the app was open.
+- **Tap:** opens Today.
+- **Not sent** in quiet hours or on an off day.
+
 ### Not in this spec
 
 - Tiles per Abhyas item on Today (the card is the Today presence; tiles
@@ -305,6 +335,8 @@ through `usePushSync`, which already re-sends when the payload changes.
   - `buildPushSchedule` v2 and the relay's `dueAt` with `abhyas`, `once`,
     `doneToday`, and a `v: 1` schedule.
   - `bannerState` for every row of the table in Part 1.
+  - `dayChecklist`: marks, order, skipped slots, bottles left, the all-done
+    case returning null, and lines left out when empty.
 - **On screen:** the web preview at 375 px, light and dark, English and
   Marathi at 1.25: the banner's rows, the card with running and done
   items, the item sheet, the tab, Customize with the new tab and card.
@@ -325,7 +357,7 @@ through `usePushSync`, which already re-sends when the payload changes.
 
 ## Files
 
-- **New:** `src/core/abhyas.ts`, `src/core/remindersBanner.ts`,
+- **New:** `src/core/abhyas.ts`, `src/core/remindersBanner.ts`, `src/core/checklist.ts`,
   `src/components/AbhyasCard.tsx`, `src/components/AbhyasItemSheet.tsx`,
   `src/components/RemindersBanner.tsx`, `src/app/(tabs)/abhyas.tsx`, and
   their tests.
