@@ -10,6 +10,7 @@ import { useApp } from '../store/AppProvider';
 import { Card } from '../ui/components';
 import { IconButton } from '../ui/IconButton';
 import { C, F, lh, S } from '../ui/theme';
+import { spokenLine } from '../ui/toastWords';
 
 /** The web app was opened from the Home Screen: Safari's own flag, or the display mode every other browser reports. */
 function standalone(): boolean {
@@ -32,8 +33,9 @@ const GUIDE_LINK = { install: '/guide?s=homescreen', blocked: '/guide?s=notifica
  * they cannot reach it (core/remindersBanner.ts says when): "Turn on
  * reminders" asks for permission right inside the tap, as an iPhone requires,
  * and on the web then switches on reminders while the app is closed; the
- * other lines open the Guide's steps. Its ✕ puts it away on this device until
- * tomorrow. What the device allows is read again whenever the app comes back
+ * other lines open the Guide's steps; a screen reader hears the line and
+ * then what the tap does, in its name, since the web reads no hint. Its ✕
+ * puts it away on this device until tomorrow. What the device allows is read again whenever the app comes back
  * to the front, so a permission given in the phone's settings changes the
  * line or takes it away.
  */
@@ -96,8 +98,7 @@ export function RemindersBanner() {
         <Pressable
           onPress={kind === 'enable' ? enable : () => router.push(GUIDE_LINK[kind])}
           accessibilityRole="button"
-          accessibilityLabel={words}
-          accessibilityHint={t(kind === 'enable' ? 'rem_banner_hint_enable' : 'rem_banner_hint_guide')}
+          accessibilityLabel={spokenLine([words, t(kind === 'enable' ? 'rem_banner_hint_enable' : 'rem_banner_hint_guide')])}
           style={({ pressed }) => ({ flex: 1, minHeight: S.touch, flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, opacity: pressed ? 0.7 : 1 })}>
           <Ionicons name={kind === 'blocked' ? 'notifications-off-outline' : 'notifications-outline'} size={20} color={kind === 'blocked' ? C.amber : C.accentText} />
           <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{words}</Text>

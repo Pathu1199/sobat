@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dayStatus, start, type AbhyasData } from '../abhyas';
-import { abhyasCard, abhyasProgress, comingUp, draftOf, formDraft, movedPlace, newDraft, parseTime, recentDays, repeating, targetText, TARGET_CHOICES, WEEK_ORDER, weekdayRuns, type SheetForm } from '../abhyasView';
+import { abhyasCard, abhyasProgress, abhyasRow, comingUp, draftOf, formDraft, movedPlace, newDraft, parseTime, recentDays, repeating, targetText, TARGET_CHOICES, WEEK_ORDER, weekdayRuns, type SheetForm } from '../abhyasView';
 import type { AbhyasItem, AbhyasSession, AbhyasTick } from '../types';
 
 // Saturday 31 October 2026; the clock is Asia/Kolkata (vitest.config.mts).
@@ -107,6 +107,19 @@ describe("abhyasCard: the card's header and rows for a date", () => {
   it('an item whose target was taken away while its timer runs still offers Stop, with no minutes line', () => {
     const [row] = abhyasCard(data({ items: [yoga], running: start('yoga', at(TODAY, '17:30')) }), TODAY, TODAY, NOW).rows;
     expect(row).toMatchObject({ minutes: null, running: true, timer: 'stop' });
+  });
+
+  it('one row on its own (the tab draws each row by itself, so only the rows read the clock) is the same as in the card, minute by minute', () => {
+    const d = data({ items: [yoga, study, bike], ticks: [tick('yoga', TODAY)], sessions: [session('study', TODAY, 10)], running: start('study', at(TODAY, '17:50')) });
+    for (const now of [NOW, at(TODAY, '18:10'), at(TODAY, '18:11')]) {
+      for (const date of [YESTERDAY, TODAY, TOMORROW]) {
+        const card = abhyasCard(d, date, TODAY, now);
+        expect(card.rows.map((r) => abhyasRow(d, r.item, date, TODAY, now))).toEqual(card.rows);
+      }
+    }
+    // The running timer reaches the target at 18:10: the row is done from then on.
+    expect(abhyasRow(d, study, TODAY, TODAY, at(TODAY, '18:09'))).toMatchObject({ done: false, minutes: { n: 29, of: 30 } });
+    expect(abhyasRow(d, study, TODAY, TODAY, at(TODAY, '18:10'))).toMatchObject({ done: true, minutes: { n: 30, of: 30 }, tick: { checked: true, off: 'timer' } });
   });
 });
 

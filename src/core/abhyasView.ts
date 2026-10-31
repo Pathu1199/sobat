@@ -31,26 +31,29 @@ export type AbhyasRow = {
   timerOff: 'past' | 'future' | null;
 };
 
+/** One item's row on a date. `now` is `useNow()`, so a running timer's minutes move. */
+export function abhyasRow(data: AbhyasData, item: AbhyasItem, date: ISODate, today: ISODate, now: Date): AbhyasRow {
+  const minutes = minutesOn(data.sessions, data.running, item.id, date, now);
+  const timed = typeof item.targetMin === 'number' && item.targetMin > 0;
+  const done = isDone(item, date, data.ticks, minutes);
+  const byTimer = timed && minutes >= (item.targetMin ?? 0);
+  // Its own day's timer, or one from an earlier day not yet closed (closeStale runs within the minute): Stop stays in reach today.
+  const running = data.running?.itemId === item.id && (localDate(data.running.startedAt) === date || date === today);
+  const later = date > today;
+  return {
+    item,
+    done,
+    tick: { checked: done, off: later ? 'future' : byTimer ? 'timer' : null },
+    minutes: timed ? { n: minutes, of: item.targetMin ?? 0 } : null,
+    running,
+    timer: running ? 'stop' : timed && date === today ? 'start' : null,
+    timerOff: running || !timed || date === today ? null : later ? 'future' : 'past',
+  };
+}
+
 /** The card's rows for a date, in the user's order, and "2 of 4 done". `now` is `useNow()`, so a running timer's minutes move. */
 export function abhyasCard(data: AbhyasData, date: ISODate, today: ISODate, now: Date): { rows: AbhyasRow[]; done: number; total: number } {
-  const rows = itemsOn(data.items, date).map((item): AbhyasRow => {
-    const minutes = minutesOn(data.sessions, data.running, item.id, date, now);
-    const timed = typeof item.targetMin === 'number' && item.targetMin > 0;
-    const done = isDone(item, date, data.ticks, minutes);
-    const byTimer = timed && minutes >= (item.targetMin ?? 0);
-    // Its own day's timer, or one from an earlier day not yet closed (closeStale runs within the minute): Stop stays in reach today.
-    const running = data.running?.itemId === item.id && (localDate(data.running.startedAt) === date || date === today);
-    const later = date > today;
-    return {
-      item,
-      done,
-      tick: { checked: done, off: later ? 'future' : byTimer ? 'timer' : null },
-      minutes: timed ? { n: minutes, of: item.targetMin ?? 0 } : null,
-      running,
-      timer: running ? 'stop' : timed && date === today ? 'start' : null,
-      timerOff: running || !timed || date === today ? null : later ? 'future' : 'past',
-    };
-  });
+  const rows = itemsOn(data.items, date).map((item) => abhyasRow(data, item, date, today, now));
   return { rows, done: rows.filter((r) => r.done).length, total: rows.length };
 }
 

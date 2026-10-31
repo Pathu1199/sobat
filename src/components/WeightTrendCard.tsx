@@ -28,7 +28,8 @@ const SPARK_COUNT = 12;
  * the last twelve weigh-ins as a line, and the goal with the date it comes at
  * the target pace, year included. A latest weigh-in more than thirty days old
  * says when it was instead of a change. A tap opens the weight entry, as the
- * Weight tile's does; a screen reader hears the card's words as one button.
+ * Weight tile's does; a screen reader hears the card's words and then what
+ * the tap does as one button's name.
  */
 export function WeightTrendCard() {
   const { state, targets, today } = useApp();
@@ -59,8 +60,9 @@ export function WeightTrendCard() {
         : t('progress_change_none');
 
   const kgWords = trend ? `${oneDecimal(trend.kg)} ${kg}` : t('progress_no_weight');
-  // One full stop between two parts, even where a part ends with its own ("No weigh-in yet.").
-  const label = spokenLine([`${t('progress_trend')}: ${kgWords}`, changeWords, goalWords]);
+  // One full stop between two parts, even where a part ends with its own ("No weigh-in yet."); what the tap does last, in the
+  // name, since the web reads no hint.
+  const label = spokenLine([`${t('progress_trend')}: ${kgWords}`, changeWords, goalWords, t('tile_hint_weight')]);
 
   // The entry is a modal beside the card, not inside it, so it never adds to the card's own spacing.
   return (
@@ -70,7 +72,6 @@ export function WeightTrendCard() {
           onPress={() => setOpen(true)}
           accessibilityRole="button"
           accessibilityLabel={label}
-          accessibilityHint={t('tile_hint_weight')}
           style={({ pressed }) => ({ gap: 12, opacity: pressed ? 0.85 : 1 })}>
           <Row style={{ justifyContent: 'space-between', gap: 8 }}>
             <Micro color={C.textDim}>{t('progress_trend')}</Micro>

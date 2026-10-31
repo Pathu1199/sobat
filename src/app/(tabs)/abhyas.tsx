@@ -4,8 +4,8 @@ import { AccessibilityInfo, Platform, Pressable, Text, View } from 'react-native
 import { AbhyasItemRow } from '../../components/AbhyasItemRow';
 import { AbhyasItemSheet } from '../../components/AbhyasItemSheet';
 import { UndoLine, useUndoable } from '../../components/tiles/UndoLine';
-import { reorder, streak, type DayStatus } from '../../core/abhyas';
-import { abhyasCard, comingUp, movedPlace, recentDays, repeating, weekdayRuns } from '../../core/abhyasView';
+import { itemsOn, reorder, streak, type DayStatus } from '../../core/abhyas';
+import { abhyasCard, abhyasRow, comingUp, movedPlace, recentDays, repeating, weekdayRuns } from '../../core/abhyasView';
 import { formatDayLabel } from '../../core/date';
 import type { AbhyasItem } from '../../core/types';
 import { fill, makeT } from '../../i18n';
@@ -32,26 +32,28 @@ type From = 'today' | 'repeat' | 'coming';
  * "3 of 4 done · 85 min" each, under the streak. The + adds a repeating item,
  * and a removal leaves "Removed … · Undo" where the item was for five
  * seconds. On the bar when chosen in Customize, and always a row on Me.
+ * Only the parts a running timer moves read the clock, each in its own small
+ * component (Today's count, each of Today's rows, the last 14 days and the
+ * streak), as Progress's Abhyas row does, so the tab is not drawn again
+ * every minute.
  */
 export default function AbhyasTab() {
   const app = useApp();
   const fb = useFeedback();
-  const now = useNow();
   const { today } = app;
   const lang = app.state.profile.lang;
   const t = makeT(lang);
-  const { rows, done, total } = abhyasCard(app.abhyas, today, today, now);
+  const todayItems = itemsOn(app.abhyas.items, today);
+  const total = todayItems.length;
   const reps = repeating(app.abhyas.items);
   const coming = comingUp(app.abhyas.items, today);
-  const days = recentDays(app.abhyas, today, now);
-  const run = streak(app.abhyas, today, now);
 
   // The sheet opens on fresh fields each time: a new key per opening, kept while it slides away.
   const [sheet, setSheet] = useState<{ item: AbhyasItem | null; kind: AbhyasItem['kind']; from: From; n: number; open: boolean }>({ item: null, kind: 'repeat', from: 'repeat', n: 0, open: false });
   const openSheet = (item: AbhyasItem | null, kind: AbhyasItem['kind'], from: From) => setSheet((s) => ({ item, kind, from, n: s.n + 1, open: true }));
   const removed = useUndoable<{ item: AbhyasItem; from: From; index: number }>((r) => fill(t('abh_removed'), { name: r.item.name }), t('undo'));
   const held = removed.held;
-  const lists: Record<From, AbhyasItem[]> = { today: rows.map((r) => r.item), repeat: reps, coming };
+  const lists: Record<From, AbhyasItem[]> = { today: todayItems, repeat: reps, coming };
 
   const remove = (item: AbhyasItem) => {
     const list = lists[sheet.from];
@@ -130,11 +132,6 @@ export default function AbhyasTab() {
     };
   };
 
-  const dayText = (d: DayStatus) => {
-    const parts = [d.total > 0 ? fill(t('abh_done_of'), { n: d.done, m: d.total }) : null, d.minutes > 0 ? fill(t('abh_min'), { n: d.minutes }) : null].filter(Boolean);
-    return parts.length > 0 ? parts.join(' · ') : t('abh_none');
-  };
-
   return (
     <Page
       title={t('abhyas')}
@@ -144,13 +141,13 @@ export default function AbhyasTab() {
         </View>
       }>
       <View style={{ gap: 10 }}>
-        <SectionHeader title={t('tab_today')} meta={total > 0 ? fill(t('abh_done_of'), { n: done, m: total }) : undefined} />
+        <TodayHeader />
         <Card>
           {withUndo(
-            rows,
+            todayItems,
             'today',
-            (r) => r.item.id,
-            (r) => <AbhyasItemRow row={r} date={today} onEdit={() => openSheet(r.item, 'once', 'today')} />,
+            (i) => i.id,
+            (item) => <TodayRow item={item} onEdit={() => openSheet(item, 'once', 'today')} />,
           )}
           {total === 0 ? (
             <View style={{ gap: 12 }}>
@@ -215,35 +212,7 @@ export default function AbhyasTab() {
         </View>
       ) : null}
 
-      {days.length > 0 ? (
-        <View style={{ gap: 10 }}>
-          <SectionHeader title={t('abh_last_14')} />
-          <Card>
-            {run > 0 ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Ionicons name="flame-outline" size={18} color={C.accentText} />
-                <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{run === 1 ? t('abh_in_row_one') : fill(t('abh_in_row'), { n: run })}</Text>
-              </View>
-            ) : null}
-            <View>
-              {days.map((d) => {
-                const date = formatDayLabel(d.date, lang);
-                const text = dayText(d);
-                const full = d.total > 0 && d.done === d.total;
-                return (
-                  <View key={d.date} accessible accessibilityLabel={`${date}, ${text}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
-                    <View style={{ width: 18, alignItems: 'center' }}>{full ? <Ionicons name="checkmark-circle" size={16} color={C.accentText} /> : null}</View>
-                    <Text numberOfLines={1} style={{ flex: 1, color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>
-                      {date}
-                    </Text>
-                    <Text style={{ color: d.total > 0 ? C.text : C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{text}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          </Card>
-        </View>
-      ) : null}
+      <LastDays />
 
       <AbhyasItemSheet
         key={sheet.n}
@@ -255,6 +224,68 @@ export default function AbhyasTab() {
         onRemove={remove}
       />
     </Page>
+  );
+}
+
+/** Today's header with "2 of 4 done": a running timer that reaches its target moves the count. */
+function TodayHeader() {
+  const app = useApp();
+  const now = useNow();
+  const t = makeT(app.state.profile.lang);
+  const { done, total } = abhyasCard(app.abhyas, app.today, app.today, now);
+  return <SectionHeader title={t('tab_today')} meta={total > 0 ? fill(t('abh_done_of'), { n: done, m: total }) : undefined} />;
+}
+
+/** One of Today's rows, as on the card on Today: a running timer's minutes move here, and nowhere else on the tab. */
+function TodayRow({ item, onEdit }: { item: AbhyasItem; onEdit: () => void }) {
+  const app = useApp();
+  const now = useNow();
+  return <AbhyasItemRow row={abhyasRow(app.abhyas, item, app.today, app.today, now)} date={app.today} onEdit={onEdit} />;
+}
+
+/** The last 14 days under the streak, "3 of 4 done · 85 min" each; nothing before the first item. */
+function LastDays() {
+  const app = useApp();
+  const now = useNow();
+  const lang = app.state.profile.lang;
+  const t = makeT(lang);
+  const days = recentDays(app.abhyas, app.today, now);
+  const run = streak(app.abhyas, app.today, now);
+  if (days.length === 0) return null;
+
+  const dayText = (d: DayStatus) => {
+    const parts = [d.total > 0 ? fill(t('abh_done_of'), { n: d.done, m: d.total }) : null, d.minutes > 0 ? fill(t('abh_min'), { n: d.minutes }) : null].filter(Boolean);
+    return parts.length > 0 ? parts.join(' · ') : t('abh_none');
+  };
+
+  return (
+    <View style={{ gap: 10 }}>
+      <SectionHeader title={t('abh_last_14')} />
+      <Card>
+        {run > 0 ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="flame-outline" size={18} color={C.accentText} />
+            <Text style={{ flex: 1, color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{run === 1 ? t('abh_in_row_one') : fill(t('abh_in_row'), { n: run })}</Text>
+          </View>
+        ) : null}
+        <View>
+          {days.map((d) => {
+            const date = formatDayLabel(d.date, lang);
+            const text = dayText(d);
+            const full = d.total > 0 && d.done === d.total;
+            return (
+              <View key={d.date} accessible accessibilityLabel={`${date}, ${text}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
+                <View style={{ width: 18, alignItems: 'center' }}>{full ? <Ionicons name="checkmark-circle" size={16} color={C.accentText} /> : null}</View>
+                <Text numberOfLines={1} style={{ flex: 1, color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>
+                  {date}
+                </Text>
+                <Text style={{ color: d.total > 0 ? C.text : C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{text}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </Card>
+    </View>
   );
 }
 

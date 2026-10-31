@@ -108,10 +108,10 @@ export default function TodayScreen() {
         <WeekStrip days={days} lang={lang} onSelect={go} onWeek={onWeek} />
         <CaloriesLeft mode={mode} view={view} suggested={suggested} />
       </View>
+      {/* Days in a row under the safe minimum are said plainly, today only; nothing shows otherwise. Above the reminders line, so the note never moves down. */}
+      {mode === 'today' ? <IntakeCard /> : null}
       {/* While reminders cannot reach this device, one line that gets them here (components/RemindersBanner.tsx); nothing otherwise. */}
       {mode === 'today' ? <RemindersBanner /> : null}
-      {/* Days in a row under the safe minimum are said plainly, today only; nothing shows otherwise. */}
-      {mode === 'today' ? <IntakeCard /> : null}
       {/* A day still to come has no night to check in yet, so todayBlocks leaves its Sleep tile out; the day's line shows only while it is switched on. */}
       {withReview(todayBlocks(state.settings.todayCards, mode, state.settings.features.mantra), review).map((b, i) => {
         if (b.kind === 'review') return <DayReview key="review" />;
