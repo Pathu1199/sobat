@@ -43,7 +43,7 @@ Settled here (the brief left them open), each with its reason:
 - **E. A perfect week** of a job is a Monday to Sunday week in which it was due on 3 days or more and was done on every one of them, each due day today or before; finished timers only. *Why:* a job due once or twice a week is "done or not", not a week's effort; finished timers keep a medal from appearing and disappearing while a timer runs.
 - **F. The shield, computed.** One pure rule (`runOf`) over a run's days, oldest first, each `count`, `hold` or `break`, and whether a break may be covered. A break is covered when the run before it has at least one day and no day of the same Monday to Sunday week was covered yet; then it holds (neither counts nor ends the run). A second break in the week ends the run as before. A break with no run before it uses nothing ("a day that would break a streak": with no streak nothing would break). The meal streak never covers a full day with nothing eaten: skipping every meal must never be kept alive by the streak (the safety rule `streakStep` already keeps). Today not settled yet holds, so it never uses the shield before the day is over. Each streak has its own shield. The note says "Shield used this week." while a covered day is in the current week, "Shield ready: …" otherwise, and shows only while there is a streak.
 - **G. A perfect day** is one the meal streak counts (record full, eaten at the safe minimum or more: so never a day of meals all skipped, one eaten under the minimum, an off day or a day to come), with every routine job on it done (none due counts as all done) and the water goal met (a goal of 0 never is). *Why:* the star must never reward under-eating, and it reads the record by the same rule as the streak, so the two never disagree.
-- **H. The daily challenge** is in Part 4. In short: five areas in a fixed turn; the day's number picks one among those the 7 days before it say something about; the target a little past the usual and capped as the table says; with no history, two bottles of water or a ten-minute walk; none on an off day. The count of challenges done is worked out again from the logs (at most 400 days back), so it needs no storage and is the same on every device.
+- **H. The daily challenge** is in Part 4. In short: four areas in a fixed turn (water, walk, a job's start, protein); the day's number picks one among those the 7 days before it say something about; the target a little past the usual and capped as the table says; with no history, two bottles of water or a ten-minute walk; none on an off day. An area the user switched off on Today is not offered. *Why not "log the first meal by a time":* a meal logged from the plan ("Ate as planned", "Ate this") is stamped with its slot's planned time once that has passed (`mealFromLines`), so the challenge would complete itself and inflate `challengesDone`, which feeds the challenge medals. The count of challenges done is worked out again from the logs (at most 400 days back), so it needs no storage and is the same on every device.
 - **I. Where the teacher speaks.** "Every evening line" is the coach on Today from 18:00 (the coach line becomes the teacher's card) and the evening review when no model writes it (praise, the day's numbers, the tip). The morning coach stays the coach. *Why:* those are the two places the app speaks in the evening on screen; the notifications in the evening are "Day so far" (Decision 7) and the review prompt.
 - **J. "Welcome back" and the easier target.** On an evening with nothing done the teacher says "Not yet today, and that's okay." and gives one easier thing for tomorrow (a bottle of water on waking). On the first evening after a day with nothing done (not an off day, not before the user started) the praise opens with "Welcome back." *Why:* the easier target belongs to the day after the quiet one, said the evening before; the welcome belongs to the day the user came back.
 - **K. The best day** is today when its score (meals logged + jobs done + 1 for the water goal) is above 0 and above every earlier day of this Monday to Sunday week that counts (off days and days before the start left out); a tie is not the best, and Monday has no earlier day. Said as "Today was your best day this week: {n} of {m} done.", in the reward ink.
@@ -184,9 +184,9 @@ export function perfectWeeks(data: Omit<AbhyasData, 'running'>, today: ISODate):
 ### The daily challenge: `src/core/challenge.ts` (new)
 
 ```ts
-export type ChallengeKind = 'water' | 'walk' | 'start' | 'protein' | 'logBy';
+export type ChallengeKind = 'water' | 'walk' | 'start' | 'protein';
 export type DailyChallenge = { date: ISODate; kind: ChallengeKind; target: number; usual: number; itemId?: string; name?: string };
-export type ChallengeData = { meals: Meal[]; water: WaterLog[]; activities: ActivityLog[]; abhyas: AbhyasData; bottleMl: number; waterGoalMl: number; proteinTarget: number; offDays: number[] };
+export type ChallengeData = { meals: Meal[]; water: WaterLog[]; activities: ActivityLog[]; abhyas: AbhyasData; bottleMl: number; waterGoalMl: number; proteinTarget: number; offDays: number[]; waterWalk?: boolean; routine?: boolean };
 export function challengeChoices(data: ChallengeData, date: ISODate): DailyChallenge[];
 export function dailyChallenge(data: ChallengeData, date: ISODate): DailyChallenge | null;
 export function challengeProgress(data: ChallengeData, ch: DailyChallenge): { n: number; of: number; done: boolean };
@@ -194,17 +194,18 @@ export function challengesDone(data: ChallengeData, today: ISODate): number;
 export function challengeText(ch: DailyChallenge, t: (key: string) => string): string;
 ```
 
-The usual is read from the 7 days before the date, never the date itself, so the challenge holds all day.
+The usual is read from the 7 days before the date, never the date itself, so the challenge holds all day: logging water, a walk or a meal, or starting a timer, today changes neither the day's challenge nor its choices.
+
+`waterWalk` and `routine` say which areas the user still has: both default to on, `waterWalk: false` offers no water and no walk, `routine: false` offers no job's start. Whoever builds `ChallengeData` reads them from `settings.todayCards`: `waterWalk` is whether the `waterWalk` card is on, `routine` whether the `abhyas` card is on (as `pushSchedule` already reads `waterWalk`). With no area left (both off and no protein gap) the day has no challenge, as on an off day, and `challengesDone` counts none of those days.
 
 | Area (turn order) | Usual | Target | Offered when | Done when |
 |---|---|---|---|---|
-| Water | average ml a day ÷ bottle, rounded | usual + 1 bottle, at least 2, never past the day's goal in bottles | a water goal and a bottle size | whole bottles drunk ≥ target |
-| Walk | average walk minutes a day, rounded | usual + 5, up to the next 5, from 10 to 60 | always | walk minutes ≥ target |
-| A job's start | the first timed job on the day with timer starts on 2 of the 7 days: their average first start | 15 minutes before the usual (to 5 minutes), never earlier than the week's earliest start | such a job | its timer started by the target (a running one counts) |
+| Water | average ml a day ÷ bottle, rounded | usual + 1 bottle, at least 2, never past the day's goal in bottles | a water goal and a bottle size, and the water and walk card on | whole bottles drunk ≥ target |
+| Walk | average walk minutes a day, rounded | usual + 5, up to the next 5, from 10 to 60 | the water and walk card on | walk minutes ≥ target |
+| A job's start | the first timed job on the day with timer starts on 2 of the 7 days: their average first start | 15 minutes before the usual (to 5 minutes), never earlier than the week's earliest start | such a job, and the routine card on | its timer started by the target (a running one counts) |
 | Protein | average grams on days something was eaten | usual + 10 g, up to the next 5, never past the protein target | 3 such days and the usual under the target | grams eaten ≥ target |
-| First meal logged | average time of the first meal the user logged (not one filled in from the plan) | 15 minutes before the usual (to 5), never earlier than the week's earliest | 3 such days | the first such meal at or before the target |
 
-The day's challenge is `choices[daysSince(2026-01-05) mod choices.length]`: the same all day, on every device, a different area most days, and harder as the usual rises (a 30-minute walker is asked 10, 10, 15, 20, 25, 30, then 35 minutes over their first week). With no history the choices are 2 bottles of water and a 10-minute walk. None on an off day. `challengesDone` counts days from the first day anything was logged (at most 400 back) whose challenge was done, on finished timers.
+The day's challenge is `choices[daysSince(2026-01-05) mod choices.length]`: the same all day, on every device, a different area most days, and harder as the usual rises (a 30-minute walker is asked 10, 10, 15, 20, 25, 30, then 35 minutes over their first week). With no history the choices are 2 bottles of water and a 10-minute walk. None on an off day, or with every area switched off. `challengesDone` counts days from the first day anything was logged (at most 400 back) whose challenge was done, on finished timers. A water challenge of one bottle (a goal of one bottle) is worded in the singular, with `chal_water_one` and `chal_water_more_one`.
 
 ### Celebrations: `src/components/Celebration.tsx`, `MedalArt.tsx`
 
@@ -255,13 +256,13 @@ New keys, in all three languages:
 | `chal_title` | Today's challenge | आजचं आव्हान | आज की चुनौती |
 | `chal_water` | Drink {n} bottles of water | {n} बाटल्या पाणी प्या | {n} बोतल पानी पिएँ |
 | `chal_water_more` | Drink {n} bottles of water, {d} more than your usual | {n} बाटल्या पाणी प्या, नेहमीपेक्षा {d} जास्त | {n} बोतल पानी पिएँ, आम दिनों से {d} ज़्यादा |
+| `chal_water_one` | Drink {n} bottle of water | {n} बाटली पाणी प्या | {n} बोतल पानी पिएँ |
+| `chal_water_more_one` | Drink {n} bottle of water, {d} more than your usual | {n} बाटली पाणी प्या, नेहमीपेक्षा {d} जास्त | {n} बोतल पानी पिएँ, आम दिनों से {d} ज़्यादा |
 | `chal_walk` | Walk {n} min | {n} मिनिटे चाला | {n} मिनट टहलें |
 | `chal_walk_more` | Walk {n} min, {d} more than your usual | {n} मिनिटे चाला, नेहमीपेक्षा {d} जास्त | {n} मिनट टहलें, आम दिनों से {d} ज़्यादा |
 | `chal_protein` | Eat {n} g of protein, {d} g more than your usual | {n} ग्रॅम प्रथिने खा, नेहमीपेक्षा {d} ग्रॅम जास्त | {n} ग्राम प्रोटीन खाएँ, आम दिनों से {d} ग्राम ज़्यादा |
 | `chal_start` | Start {name} by {time} | {name} {time} पर्यंत सुरू करा | {name} {time} तक शुरू करें |
 | `chal_start_earlier` | Start {name} by {time}, a little earlier than usual | {name} {time} पर्यंत सुरू करा, नेहमीपेक्षा थोडं लवकर | {name} {time} तक शुरू करें, आम दिनों से थोड़ा पहले |
-| `chal_log_by` | Log your first meal by {time} | पहिलं जेवण {time} पर्यंत नोंदवा | पहला खाना {time} तक दर्ज करें |
-| `chal_log_by_earlier` | Log your first meal by {time}, a little earlier than usual | पहिलं जेवण {time} पर्यंत नोंदवा, नेहमीपेक्षा थोडं लवकर | पहला खाना {time} तक दर्ज करें, आम दिनों से थोड़ा पहले |
 | `chal_progress` | {n} of {m} | {m} पैकी {n} | {m} में से {n} |
 | `chal_done` | Done. Well done! | पूर्ण झालं. छान! | हो गया. बहुत बढ़िया! |
 | `chal_done_title` | Challenge done | आव्हान पूर्ण | चुनौती पूरी |
@@ -356,7 +357,7 @@ Retired with the old game (no screen reads them): `celebrate_title`, `celebrate_
   - Sizes: `scaledSizes` (48 / 22 / 16 / 13 and their scaled values), `TITLE_WEIGHT`, the bar's numbers, `barHeight` at every text size with room for matras (64 at 1.25), five places on 320 points; the strip's row at the new gutter; tiles square from 375 points.
   - Shield: `runOf` with and without it, a second break in a week, a break with no run, an uncoverable break, Sunday and the next Monday, `shieldNote`; `recordRun` on real records (two covered days, a day of meals all skipped never covered, today not settled); `chapterStreaks` with `covered`, a chapter's window; `streakRun` for the routine.
   - Perfect: `perfectDay` (hold, break, a job not done, water short, no goal); `perfectWeeks` (a missed day, a timed job, two due days, the last day, order, a job added mid-week).
-  - Challenge: no history; off day; each area's target and cap; the turn by day; growing targets and `challengesDone`; `challengeProgress` for counts and times (a running timer, a filled-in meal); words in three languages.
+  - Challenge: no history; off day; each area's target and cap; the turn by day; growing targets and `challengesDone`; `challengeProgress` for counts and start times (a running timer); a day's choices unchanged by logging on the day itself; `challengesDone` ignoring a running timer; the turn with three and four areas and before the epoch; switched-off areas; one bottle in the singular; words in three languages.
   - Medals: each track; kept ids and the old badges; `nextMedals`; `shelf`; the words; `nextWin` (seed, order, the challenge, waiting); `withCelebrated`.
   - Teacher: `dayScore` at 18:00 and at the end of a day; `teacherWords` (praise, each tip, not yet, welcome back, best day, a tie, Marathi and Hindi).
   - "Day so far": the routine line (one job, two), the meal line, under 3 days, a complete day, Marathi; `buildPushSchedule` with the streak and the same fields.
