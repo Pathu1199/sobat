@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { isAbhyasSession } from '../core/abhyas';
 import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../core/breaks';
+import { checklistTimes } from '../core/checklist';
 import { addDays, isIsoDate, mondayOf, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
 import { addSkip, menusFromTemplate, NOT_EDITED, settleAuto, type DayMenu } from '../core/menu';
@@ -185,6 +186,9 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   s.todayCards = normalizeTodayCards(s.todayCards);
   // The weeks marked as looked over are a list of dates; anything else stored there marks none.
   s.reviewedWeeks = Array.isArray(raw.reviewedWeeks) ? raw.reviewedWeeks.filter(isIsoDate) : [];
+  // "Day so far" comes at clock times only, each once, in the day's order, at most three; a list with none left, or none
+  // stored, is the default 20:30 (core/checklist.ts).
+  s.checklistTimes = checklistTimes(raw.checklistTimes);
   return s;
 }
 

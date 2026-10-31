@@ -232,6 +232,16 @@ describe('migrateState', () => {
     expect(once.settings.reviewedWeeks).toEqual([]);
   });
 
+  it('the "Day so far" times load as clock times, each once and in order, at most three; with none left the default 20:30', () => {
+    const once = migrateState(v1);
+    const withTimes = (checklistTimes: unknown) => migrateState({ ...once, settings: { ...once.settings, checklistTimes } }).settings.checklistTimes;
+    expect(withTimes(['21:00', '13:00'])).toEqual(['13:00', '21:00']);
+    expect(withTimes(['21:00', 'x', '25:00', 7, '21:00', '08:15'])).toEqual(['08:15', '21:00']);
+    expect(withTimes(['07:00', '13:00', '18:00', '21:00'])).toEqual(['07:00', '13:00', '18:00']);
+    for (const odd of [undefined, null, '20:30', { 0: '21:00' }, [], ['soon']]) expect(withTimes(odd), JSON.stringify(odd)).toEqual(['20:30']);
+    expect(once.settings.checklistTimes).toEqual(['20:30']);
+  });
+
   it('version 7: the week plan becomes this week\'s menus, date by date, with Sunday at index 0', () => {
     const days = Array.from({ length: 7 }, (_, d) => ({ meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: d + 1 }] }] }));
     const out = migrateState({ version: 6, profile: { ...EMPTY_STATE.profile, onboarded: true }, meals: [], routine: { ...DEFAULT_ROUTINE, enabled: true }, weekPlan: { days } }, NOW);
