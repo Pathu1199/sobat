@@ -394,7 +394,7 @@ export default function CoachScreen() {
                 </View>
               ) : (
                 <View key={m.id} style={{ gap: 10 }}>
-                  <View style={{ maxWidth: '92%', backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, borderRadius: 16, borderBottomLeftRadius: 5, padding: 14, gap: 10 }}>
+                  <View style={{ maxWidth: '92%', backgroundColor: C.card, borderRadius: 16, borderBottomLeftRadius: 5, padding: 14, gap: 10, ...S.shadow }}>
                     <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body) }}>{m.text}</Text>
                     <Row style={{ gap: 14 }}>
                       <Pressable onPress={() => app.rememberText(m.text, 'preference', 'user')} accessibilityRole="button" style={LINK}>
@@ -413,9 +413,8 @@ export default function CoachScreen() {
                           accessibilityRole="button"
                           style={({ pressed }) => ({
                             backgroundColor: C.card,
-                            borderWidth: S.hairline,
-                            borderColor: C.border,
                             borderRadius: S.radiusSm,
+                            ...S.shadow,
                             padding: 13,
                             flexDirection: 'row',
                             alignItems: 'center',

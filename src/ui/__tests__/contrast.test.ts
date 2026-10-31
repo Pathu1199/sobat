@@ -5,7 +5,7 @@ import { PALETTES, type ThemeMode } from '../theme';
 
 const MODES: ThemeMode[] = ['light', 'dark'];
 /** What words sit on. */
-const SURFACES = ['bg', 'card', 'cardAlt'] as const;
+const SURFACES = ['bg', 'pageAlt', 'card', 'cardAlt'] as const;
 /** Every token the app sets words in. */
 const WORDS = ['text', 'textDim', 'textFaint', 'accentText', 'red', 'amber', 'green', 'cyan', 'violet', 'pink'] as const;
 
@@ -36,6 +36,11 @@ describe('palette', () => {
           expect(contrastRatio(P[fg], P[bg]), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
         }
       }
+    });
+
+    it(`${mode}: pageAlt is the page one step lighter, short of a card`, () => {
+      expect(luminance(P.pageAlt)).toBeGreaterThan(luminance(P.bg));
+      expect(luminance(P.pageAlt)).toBeLessThan(luminance(P.card));
     });
 
     it(`${mode}: words on the accent use onAccent at 4.5:1`, () => {

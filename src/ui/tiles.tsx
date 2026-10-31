@@ -3,7 +3,7 @@ import { Animated, Pressable, Text, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useReducedMotion } from './animated';
 import { PressScale } from './PressScale';
-import { C, F, lh, lift, M, MICRO, S } from './theme';
+import { C, F, lh, M, MICRO, S } from './theme';
 
 /** A compact stat for horizontal strips: caption, value, one quiet line. */
 export function Tile({
@@ -32,13 +32,11 @@ export function Tile({
       style={{
         width,
         backgroundColor: C.card,
-        borderWidth: S.hairline,
-        borderColor: C.border,
-        borderRadius: 18,
+        borderRadius: S.radius,
         paddingVertical: 13,
         paddingHorizontal: 13,
         gap: 6,
-        ...lift(1),
+        ...S.shadow,
       }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
         {icon ? (

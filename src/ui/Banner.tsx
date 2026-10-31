@@ -3,16 +3,17 @@ import { View, type ViewStyle } from 'react-native';
 import { C, S } from './theme';
 
 /**
- * A flat panel for the one number a screen is about: a quiet surface on a
- * hairline, with no gradient and nothing drawn behind it. `over` turns it to
- * the soft red of a warning. Use the normal text colours inside.
+ * A flat panel for the one number a screen is about: a quiet surface set into
+ * the sheet or card it sits in, with no outline, no gradient and nothing drawn
+ * behind it. `over` turns it to the soft red of a warning, outlined in red.
+ * Use the normal text colours inside.
  */
 export function Banner({ children, style, over }: { children: React.ReactNode; style?: ViewStyle; over?: boolean }) {
   return (
     <View
       style={[
-        { borderRadius: S.radiusSm, borderWidth: S.hairline, padding: S.padLg, gap: 12 },
-        { backgroundColor: over ? C.redSoft : C.cardAlt, borderColor: over ? C.red : C.border },
+        { borderRadius: S.radiusSm, padding: S.padLg, gap: 12, backgroundColor: over ? C.redSoft : C.cardAlt },
+        over ? { borderWidth: S.hairline, borderColor: C.red } : null,
         style,
       ]}>
       {children}

@@ -12,7 +12,7 @@ import { PALETTES, S } from './theme';
  */
 export const STRIP_DAY_HEIGHT = 60;
 
-/** How far in from the card's edge the strip sits on Today: it takes the rest of the card's padding, so the chosen day's tint never runs into the card's border. */
+/** How far in from the card's edge the strip sits on Today: it takes the rest of the card's padding, so the chosen day's tint never runs into the card's edge. */
 export const STRIP_EDGE = 4;
 
 /** A day's share of the strip's row. */
@@ -21,11 +21,11 @@ export function stripDayWidth(rowWidth: number): number {
 }
 
 /** The strip's own margin on Today: negative, so it reaches over the card's padding to STRIP_EDGE from the card's edge. */
-export const STRIP_MARGIN = STRIP_EDGE - S.padLg;
+export const STRIP_MARGIN = STRIP_EDGE - S.cardPad;
 
-/** The strip's row on Today for a screen this wide: inside the card (less the screen's padding, the card's border and its padding on each side), less the strip's margin. */
+/** The strip's row on Today for a screen this wide: inside the card (less the screen's padding and the card's padding on each side; a card has no outline), less the strip's margin. */
 export function stripRowWidth(screenWidth: number): number {
-  const cardInside = screenWidth - 2 * (S.pad + S.hairline + S.padLg);
+  const cardInside = screenWidth - 2 * (S.pad + S.cardPad);
   return cardInside - 2 * STRIP_MARGIN;
 }
 

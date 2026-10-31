@@ -93,10 +93,9 @@ export default function Welcome() {
                 flexGrow: 1,
                 flexBasis: wide ? '30%' : '100%',
                 backgroundColor: C.card,
-                borderWidth: 1,
-                borderColor: C.border,
                 borderRadius: S.radius,
                 padding: 20,
+                ...S.shadow,
                 gap: 10,
               }}>
               <Ionicons name={f.icon} size={20} color={C.accent} />
@@ -110,9 +109,8 @@ export default function Welcome() {
           style={{
             marginTop: 40,
             backgroundColor: C.cardAlt,
-            borderWidth: 1,
-            borderColor: C.accentDim,
             borderRadius: S.radius,
+            ...S.shadow,
             padding: wide ? 32 : 22,
             flexDirection: wide ? 'row' : 'column',
             alignItems: wide ? 'center' : 'flex-start',

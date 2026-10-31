@@ -1,4 +1,4 @@
-import { lh } from './theme';
+import { lh, S } from './theme';
 
 /**
  * Where the living tiles draw. The words sit in a fixed place at the top of
@@ -25,7 +25,8 @@ export const ART_FIT = 'xMidYMax meet';
 /** The words' margins: from the top, and from both sides. */
 export const TILE_TOP = 14;
 export const TILE_SIDE = 15;
-export const TILE_RADIUS = 22;
+/** A tile's corners: a card's. */
+export const TILE_RADIUS = S.radius;
 /** Space between the name, the number and the short line. */
 export const TILE_LINE_GAP = 2;
 /**

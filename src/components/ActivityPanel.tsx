@@ -10,7 +10,7 @@ import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Bar, Btn, Card, Divider, Micro, Pill, Ring, Row, Small, Toggle } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
-import { C, F, lift, S } from '../ui/theme';
+import { C, F, S } from '../ui/theme';
 
 /**
  * Movement, by the person's own choice. They pick the activities they do;
@@ -88,7 +88,7 @@ export function ActivityPanel() {
             }}
             accessibilityRole="button"
             accessibilityLabel={activityName(a, lang)}
-            style={({ pressed }) => ({ flexBasis: '31%', flexGrow: 1, minHeight: 88, backgroundColor: C.card, borderRadius: 18, borderWidth: S.hairline, borderColor: C.border, padding: 12, gap: 6, alignItems: 'flex-start', opacity: pressed ? 0.75 : 1, ...lift(1) })}>
+            style={({ pressed }) => ({ flexBasis: '31%', flexGrow: 1, minHeight: 88, backgroundColor: C.card, borderRadius: S.radius, padding: 12, gap: 6, alignItems: 'flex-start', opacity: pressed ? 0.75 : 1, ...S.shadow })}>
             <Text style={{ fontSize: 24 }}>{a.icon}</Text>
             <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }} numberOfLines={2}>
               {activityName(a, lang)}
@@ -96,7 +96,7 @@ export function ActivityPanel() {
             <Micro color={C.textFaint}>{`${numberText(kcalBurned(a, 1, 30, state.profile.weightKg))} kcal / 30 ${t('act_min')}`}</Micro>
           </Pressable>
         ))}
-        <Pressable onPress={() => setChoosing(true)} accessibilityRole="button" style={({ pressed }) => ({ flexBasis: '31%', flexGrow: 1, minHeight: 88, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.borderStrong, padding: 12, alignItems: 'center', justifyContent: 'center', gap: 6, opacity: pressed ? 0.7 : 1 })}>
+        <Pressable onPress={() => setChoosing(true)} accessibilityRole="button" style={({ pressed }) => ({ flexBasis: '31%', flexGrow: 1, minHeight: 88, borderRadius: S.radius, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.borderStrong, padding: 12, alignItems: 'center', justifyContent: 'center', gap: 6, opacity: pressed ? 0.7 : 1 })}>
           <Ionicons name="add" size={22} color={C.accent} />
           <Text style={{ color: C.accentText, fontSize: F.small, fontWeight: '500' }}>{t('act_add')}</Text>
         </Pressable>

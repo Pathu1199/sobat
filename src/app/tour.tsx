@@ -70,7 +70,7 @@ export default function TourScreen() {
       </View>
 
       <Animated.View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 22, opacity: fade, maxWidth: 520, alignSelf: 'center', width: '100%' }}>
-        <View style={{ width: 96, height: 96, borderRadius: 28, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 96, height: 96, borderRadius: 28, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center', ...S.shadow }}>
           <Ionicons name={p.icon} size={40} color={tint} />
         </View>
         <Text style={[MICRO, { color: tint }]}>{`${page + 1} / ${PAGES.length}`}</Text>

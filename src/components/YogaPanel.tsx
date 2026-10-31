@@ -12,7 +12,7 @@ import { useFeedback } from '../services/feedback';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Micro, Pill, Row, Small } from '../ui/components';
 import { Sheet } from '../ui/Sheet';
-import { C, F, lh, lift, S } from '../ui/theme';
+import { C, F, lh, S } from '../ui/theme';
 import { useBreakpoint } from '../ui/useBreakpoint';
 
 const CATS = ['all', 'standing', 'seated', 'lying', 'backbend', 'twist', 'balance', 'breath', 'sequence'] as const;
@@ -87,7 +87,7 @@ export function YogaPanel() {
               key={r.id}
               onPress={() => setRoutine(active ? null : r.id)}
               accessibilityRole="button"
-              style={({ pressed }) => ({ width: 150, minHeight: 84, padding: 12, borderRadius: 18, backgroundColor: active ? C.accent : C.card, borderWidth: S.hairline, borderColor: active ? C.accent : C.border, gap: 4, opacity: pressed ? 0.8 : 1, ...lift(1) })}>
+              style={({ pressed }) => ({ width: 150, minHeight: 84, padding: 12, borderRadius: S.radius, backgroundColor: active ? C.accent : C.card, gap: 4, opacity: pressed ? 0.8 : 1, ...S.shadow })}>
               <Text style={{ color: active ? C.onAccent : C.text, fontSize: F.body, fontWeight: '500' }}>{t(`yoga_r_${r.id.replace('-', '_')}`)}</Text>
               <Text style={{ color: active ? C.onAccent : C.textFaint, fontSize: F.small }}>{`${r.minutes} ${t('act_min')} · ${r.asanas.length} ${t('yoga_asanas')}`}</Text>
               {active ? (
@@ -114,7 +114,7 @@ export function YogaPanel() {
             key={a.id}
             onPress={() => { setOpen(a); setStep(0); }}
             accessibilityRole="button"
-            style={({ pressed }) => ({ flexBasis: wide ? '31%' : '47%', flexGrow: 1, backgroundColor: C.card, borderRadius: 18, borderWidth: S.hairline, borderColor: C.border, overflow: 'hidden', opacity: pressed ? 0.8 : 1, ...lift(1) })}>
+            style={({ pressed }) => ({ flexBasis: wide ? '31%' : '47%', flexGrow: 1, backgroundColor: C.card, borderRadius: S.radius, overflow: 'hidden', opacity: pressed ? 0.8 : 1, ...S.shadow })}>
             <View style={{ aspectRatio: 4 / 3, backgroundColor: C.cardAlt }}>
               {YOGA_IMAGES[a.id] ? <Image source={YOGA_IMAGES[a.id]} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={150} /> : <Text style={{ fontSize: 40, textAlign: 'center', marginTop: 28 }}>🧘</Text>}
               {routine ? <View style={{ position: 'absolute', top: 8, left: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: C.onAccent, fontSize: F.small, fontWeight: '500' }}>{i + 1}</Text></View> : null}

@@ -245,7 +245,7 @@ function PlanWeek({ inTab }: { inTab: boolean }) {
         <Pressable
           onPress={() => setGrocery(true)}
           accessibilityRole="button"
-          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, borderRadius: S.radius, backgroundColor: C.card, borderWidth: S.hairline, borderColor: C.border, opacity: pressed ? 0.8 : 1 })}>
+          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, borderRadius: S.radius, backgroundColor: C.card, ...S.shadow, opacity: pressed ? 0.8 : 1 })}>
           <Ionicons name="basket-outline" size={22} color={C.accentText} />
           <View style={{ flex: 1 }}>
             <Text style={strong}>{t('grocery_title')}</Text>

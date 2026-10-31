@@ -351,10 +351,9 @@ function MetricTile({ metric, label, lang, wide }: { metric: Metric; label: stri
         flexGrow: 1,
         flexBasis: wide ? '18%' : '46%',
         backgroundColor: C.card,
-        borderWidth: S.hairline,
-        borderColor: C.border,
         borderRadius: S.radius,
         padding: 16,
+        ...S.shadow,
         gap: 9,
       }}>
       <Micro>{label}</Micro>

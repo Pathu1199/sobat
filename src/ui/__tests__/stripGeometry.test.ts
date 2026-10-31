@@ -13,15 +13,15 @@ describe('the week strip on the narrowest phone', () => {
       // (Within a rounding error: a seventh is not a whole number of points.)
       expect(7 * stripDayWidth(row) - row, `${screen} pt`).toBeLessThanOrEqual(1e-9);
     }
-    // The strip reaches over the card's padding: 320 less the screen's padding (16), the card's border (1) and the strip's edge on each side.
-    expect(stripRowWidth(320)).toBe(320 - 2 * (16 + 1 + STRIP_EDGE));
-    expect(STRIP_EDGE).toBeLessThan(S.padLg);
+    // The strip reaches over the card's padding: 320 less the screen's padding (16) and the strip's edge on each side (a card has no outline).
+    expect(stripRowWidth(320)).toBe(320 - 2 * (16 + STRIP_EDGE));
+    expect(STRIP_EDGE).toBeLessThan(S.cardPad);
   });
 
   it("the strip's margin on Today reaches over the card's padding to its edge, and the row is the card's inside less that margin", () => {
-    expect(STRIP_MARGIN).toBe(STRIP_EDGE - S.padLg);
+    expect(STRIP_MARGIN).toBe(STRIP_EDGE - S.cardPad);
     expect(STRIP_MARGIN).toBeLessThan(0);
-    const cardInside = 375 - 2 * (S.pad + S.hairline + S.padLg);
+    const cardInside = 375 - 2 * (S.pad + S.cardPad);
     expect(stripRowWidth(375)).toBe(cardInside - 2 * STRIP_MARGIN);
   });
 

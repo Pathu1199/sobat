@@ -107,9 +107,11 @@ export default function MindScreen({ embedded }: { embedded?: boolean } = {}) {
           <View
             style={{
               backgroundColor: tool === x.key ? C.accentDim : C.card,
+              // The chosen tool keeps its teal outline; the others have none, only the shadow.
               borderWidth: S.hairline,
-              borderColor: tool === x.key ? C.accent : C.border,
+              borderColor: tool === x.key ? C.accent : 'transparent',
               borderRadius: S.radius,
+              ...S.shadow,
               paddingVertical: 16,
               alignItems: 'center',
               gap: 8,

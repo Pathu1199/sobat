@@ -30,7 +30,7 @@ export function SheetFrame({ open, onClose, maxWidth = 520, tall = false, childr
   // Listens to the keyboard only while open: a closed sheet stays mounted on many screens.
   const keyboardUp = useKeyboardUp(open);
   const { region, onDismiss } = useSheetRegion(open);
-  const radius = S.radius + 4;
+  const radius = S.radiusSheet;
   return (
     <Modal visible={open} transparent animationType={wide ? 'fade' : 'slide'} onRequestClose={onClose} onDismiss={onDismiss}>
       <KeyboardAvoidingView

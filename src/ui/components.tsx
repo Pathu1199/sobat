@@ -48,8 +48,9 @@ export function Card({
     <Animated.View
       style={[
         st.card,
-        flat ? { backgroundColor: 'transparent', borderColor: 'transparent', padding: 0, shadowOpacity: 0, elevation: 0 } : lift(1),
-        tone ? { borderColor: tone } : null,
+        flat ? { backgroundColor: 'transparent', padding: 0 } : S.shadow,
+        // No outline on a card; `tone` draws one in its colour, to mark a card's state (a warning, the session running).
+        tone ? { borderWidth: S.hairline, borderColor: tone } : null,
         rail ? { borderLeftWidth: 4, borderLeftColor: rail } : null,
         style,
         still ? null : { opacity, transform: [{ translateY }] },
@@ -555,7 +556,7 @@ function buildStyles() {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: C.bg },
     screenContent: { padding: S.pad, gap: S.gap, maxWidth: 780, width: '100%', alignSelf: 'center' },
-    card: { backgroundColor: C.card, borderRadius: S.radius, borderWidth: S.hairline, borderColor: C.border, padding: S.padLg, gap: 12 },
+    card: { backgroundColor: C.card, borderRadius: S.radius, padding: S.cardPad, gap: 12 },
     title: { color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' },
     p: { color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '400' },
     small: { color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '400' },
@@ -566,7 +567,7 @@ function buildStyles() {
       minHeight: 48,
       paddingVertical: 12,
       paddingHorizontal: 16,
-      borderRadius: 14,
+      borderRadius: S.radiusSm,
       borderWidth: S.hairline,
       alignItems: 'center',
       justifyContent: 'center',
@@ -576,7 +577,7 @@ function buildStyles() {
     btnText: { fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' },
     btnTextSmall: { fontSize: F.small, lineHeight: lh(F.small) },
     // Words centred, so a single digit sits in the middle of a chip a finger wide.
-    pill: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: 999, borderWidth: S.hairline, alignItems: 'center' },
+    pill: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: S.radiusXs, borderWidth: S.hairline, alignItems: 'center' },
     pillText: { fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' },
     segmented: { flexDirection: 'row', backgroundColor: C.cardAlt, borderRadius: 999, padding: 4 },
     segment: { flex: 1, minHeight: S.touch, paddingVertical: 8, paddingHorizontal: 6, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
@@ -587,7 +588,7 @@ function buildStyles() {
       backgroundColor: C.cardAlt,
       borderWidth: S.hairline,
       borderColor: C.border,
-      borderRadius: 14,
+      borderRadius: S.radiusSm,
       paddingHorizontal: 13,
       paddingVertical: 11,
       color: C.text,

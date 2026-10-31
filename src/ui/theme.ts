@@ -3,10 +3,13 @@
  * moves the whole app at once.
  *
  * A sober health palette: one teal accent for actions, ticks and the current
- * item, soft off-white or deep slate behind, and flat cards on a hairline.
- * Every colour that carries words reads at 4.5:1 or more on the surfaces it
- * sits on (src/ui/__tests__/contrast.test.ts holds the palette to that).
+ * item, soft off-white or deep slate behind, and cards with no outline, lifted
+ * by a soft shadow. Every colour that carries words reads at 4.5:1 or more on
+ * the surfaces it sits on (src/ui/__tests__/contrast.test.ts holds the palette
+ * to that).
  */
+import { Platform, type ViewStyle } from 'react-native';
+
 const listeners = new Set<() => void>();
 
 export type ThemeMode = 'dark' | 'light';
@@ -14,6 +17,8 @@ export type ThemeMode = 'dark' | 'light';
 const DARK = {
   bg: '#0B1014',
   bgAlt: '#0F161B',
+  /** The page one step lighter than bg, short of a card: behind sheets and tiles. */
+  pageAlt: '#0F161B',
   card: '#151D23',
   cardAlt: '#1C262D',
   cardHigh: '#24313A',
@@ -45,6 +50,7 @@ const DARK = {
 
   white: '#FFFFFF',
   scrim: 'rgba(3, 8, 10, 0.72)',
+  /** The colour of every shadow. Black in the dark: a tinted shadow would be lighter than the page and show as a glow. */
   shadow: '#000000',
 };
 
@@ -52,6 +58,7 @@ const DARK = {
 const LIGHT: typeof DARK = {
   bg: '#F2F6F7',
   bgAlt: '#FFFFFF',
+  pageAlt: '#F7FAFA',
   card: '#FFFFFF',
   cardAlt: '#F0F5F4',
   cardHigh: '#E2ECEA',
@@ -81,7 +88,7 @@ const LIGHT: typeof DARK = {
 
   white: '#FFFFFF',
   scrim: 'rgba(14, 27, 31, 0.45)',
-  shadow: '#0E2A2A',
+  shadow: '#10211D',
 };
 
 export const PALETTES: Record<ThemeMode, typeof DARK> = { dark: DARK, light: LIGHT };
@@ -102,6 +109,7 @@ export function applyTheme(mode: ThemeMode): void {
   if (mode === current) return;
   current = mode;
   Object.assign(C, PALETTES[mode]);
+  S.shadow = cardShadow(mode, WEB);
   listeners.forEach((fn) => fn());
 }
 
@@ -111,14 +119,45 @@ export function onThemeChange(fn: () => void): () => void {
 }
 
 
+const WEB = Platform.OS === 'web';
+
+/** "#10211D" and 0.06 as "rgba(16,33,29,0.06)". */
+function rgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const [r, g, b] = [0, 2, 4].map((at) => parseInt(h.slice(at, at + 2), 16));
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/**
+ * The soft shadow a card or a tile takes in place of an outline, for a theme:
+ * faint in daylight, stronger in the dark so it still shows on the deep page.
+ * A phone gets the shadow props (elevation on Android); the web gets a
+ * boxShadow, a tight contact shadow under a wide soft one. Pure.
+ */
+export function cardShadow(mode: ThemeMode, web: boolean): ViewStyle {
+  const color = PALETTES[mode].shadow;
+  const alpha = mode === 'dark' ? 0.3 : 0.06;
+  if (web) return { boxShadow: `0 1px 2px ${rgba(color, alpha)}, 0 8px 24px ${rgba(color, alpha)}` };
+  return { shadowColor: color, shadowOpacity: alpha, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 };
+}
+
 export const S = {
   gap: 12,
   pad: 16,
   padLg: 20,
-  radius: 22,
-  radiusSm: 15,
-  radiusXs: 10,
+  /** Inside a card. */
+  cardPad: 16,
+  /** Corners: cards and tiles. */
+  radius: 20,
+  /** A sheet's top corners (all four where it opens as a centred panel). */
+  radiusSheet: 24,
+  /** Buttons, text boxes and the blocks inside a card. */
+  radiusSm: 14,
+  /** Chips. */
+  radiusXs: 12,
   hairline: 1,
+  /** The shadow under a card or a tile, for the theme in use: applyTheme replaces it, so read it at render. */
+  shadow: cardShadow(current, WEB),
   /** The smallest a control may be under a finger, in points. */
   touch: 44,
   gutter: 16,
@@ -199,7 +238,7 @@ export function scoreColor(value: number | null) {
   return C.red;
 }
 
-/** The lift under a card: soft and wide in daylight, barely there in the dark. */
+/** The lift under something floating (the tab bar, the chosen segment): soft and wide in daylight, barely there in the dark. Cards and tiles take S.shadow. */
 export function lift(level: 1 | 2 = 1) {
   const dark = current === 'dark';
   return {

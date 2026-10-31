@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Animated, Easing, Text, View } from 'react-native';
 import { useReducedMotion } from '../ui/animated';
-import { C, F } from '../ui/theme';
+import { C, F, S } from '../ui/theme';
 
 /**
  * Small moving pictures for a break: something to do with the eyes or the
@@ -28,7 +28,7 @@ export function FollowDot({ width, label }: { width: number; label: string }) {
   const y = tv.interpolate({ inputRange: input, outputRange: input.map((p) => (h / 2 - 14) * Math.sin(4 * Math.PI * p)) });
   return (
     <View style={{ alignItems: 'center', gap: 14 }}>
-      <View style={{ width: w, height: h, borderRadius: 24, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      <View style={{ width: w, height: h, borderRadius: 24, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', ...S.shadow }}>
         <Animated.View style={{ position: 'absolute', width: 22, height: 22, borderRadius: 11, backgroundColor: C.cyan, transform: [{ translateX: x }, { translateY: y }] }}>
           <View style={{ position: 'absolute', left: -9, top: -9, width: 40, height: 40, borderRadius: 20, backgroundColor: C.cyan, opacity: 0.18 }} />
         </Animated.View>

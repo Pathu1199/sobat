@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Platform, Pressable, Text, View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
 import Svg from 'react-native-svg';
-import { C, lh, textScale } from '../../ui/theme';
+import { C, lh, S, textScale } from '../../ui/theme';
 import { ART_FIT, ART_H, ART_W, TILE_LINE_GAP, TILE_RADIUS, TILE_SIDE, TILE_TOP, tileMinHeight, tileType } from '../../ui/tileGeometry';
 import { opensHold, tileRole, type ShownWords } from '../../ui/tileWords';
 
@@ -24,10 +24,10 @@ export function TileArt({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * The one frame every tracker sits in: a square with a 22 radius and a
- * hairline edge, two to a row. The words are pinned to the top, 14 from the
- * top and 15 from the sides, in the same place in every tile: the icon and
- * name, the number with its unit smaller, and one short line. The art has the
+ * The one frame every tracker sits in: a square with a card's corners and
+ * soft shadow and no outline, two to a row. The words are pinned to the top,
+ * 14 from the top and 15 from the sides, in the same place in every tile: the
+ * icon and name, the number with its unit smaller, and one short line. The art has the
  * bottom 42% and never reaches the words; `behind` is the one exception, drawn
  * under the words across the whole tile (the water tank). The tile grows
  * taller than square only when the text size needs the room. Each tracker
@@ -84,9 +84,8 @@ export function LivingTile({
     aspectRatio: 1,
     minHeight: tileMinHeight(scale),
     borderRadius: TILE_RADIUS,
-    borderWidth: 0.5,
-    borderColor: C.border,
     backgroundColor: C.card,
+    ...S.shadow,
     overflow: 'hidden',
     opacity: pressed ? 0.85 : 1,
   });
