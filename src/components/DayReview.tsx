@@ -10,12 +10,15 @@ import { useAI } from '../services/useAI';
 import { useApp } from '../store/AppProvider';
 import { Btn, Card, Micro, P, Row } from '../ui/components';
 import { C } from '../ui/theme';
+import { useTeacherWords } from './TeacherCard';
 
 /**
  * The end-of-day recap, shown on Today in the evening while its reminder is
  * on (`dayReviewShown`). The model writes it from the day's sentences; with no
  * model to ask, the sentences themselves are the recap, in the person's
- * language, at once, with no wait on a model that is not there. Writing it
+ * language, at once, with no wait on a model that is not there, as the kind
+ * teacher says it: what went well first, the day's numbers, then one small
+ * tip for tomorrow. Writing it
  * also stores a one-line day note in memory, which is what lets tomorrow's
  * advice know how today went.
  */
@@ -26,6 +29,7 @@ export function DayReview() {
   const t = makeT(lang);
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState<string | null>(null);
+  const teach = useTeacherWords();
 
   const written = dayReviewWritten(app.state.memory, app.today);
 
@@ -49,9 +53,13 @@ export function DayReview() {
     };
   }
 
-  // The day's own sentences, in the person's language: the recap when there is no model to ask.
+  // The day's own sentences, in the person's language, between the teacher's praise and tip: the recap when there is no model to ask.
+  function plain(): string {
+    return [teach.lead, ...(teach.best ? [teach.best] : []), ...dayReviewLines(dayFacts(), t), teach.tip].join(' ');
+  }
+
   function writePlain() {
-    setText(dayReviewLines(dayFacts(), t).join(' '));
+    setText(plain());
     app.rememberText(summaryLine(), 'episode', 'auto');
   }
 
@@ -116,7 +124,7 @@ export function DayReview() {
       ) : written ? (
         <>
           {/* The day note itself is kept in English for the coach; the person reads the day in their own language. */}
-          <P dim>{dayReviewLines(dayFacts(), t).join(' ')}</P>
+          <P dim>{plain()}</P>
           <Micro>{t('review_saved')}</Micro>
         </>
       ) : busy ? (

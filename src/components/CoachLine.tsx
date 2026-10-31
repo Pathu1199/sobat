@@ -6,16 +6,23 @@ import { useMinute } from '../services/useWorkSchedule';
 import { useApp } from '../store/AppProvider';
 import { C, F, lh, S } from '../ui/theme';
 import { adviceHint, adviceText, useAdviceAction } from './CoachStrip';
+import { EVENING_FROM, TeacherCard } from './TeacherCard';
 import { useCoach } from './useCoach';
 
 /**
  * The coach in one sentence: the one thing that matters now, and the tap that does it. Advice with nothing to do is plain words,
- * not a button. A tap on the water advice adds a bottle and says so, with Undo. Nothing when there is nothing to say.
+ * not a button. A tap on the water advice adds a bottle and says so, with Undo. Nothing when there is nothing to say. From six in
+ * the evening the coach is the kind teacher instead: what went well today and one small tip for tomorrow (`TeacherCard`).
  */
 export function CoachLine() {
+  const minute = useMinute();
+  return minute >= EVENING_FROM ? <TeacherCard /> : <AdviceLine minute={minute} />;
+}
+
+/** The advice of this minute, in one sentence. */
+function AdviceLine({ minute }: { minute: number }) {
   const { state } = useApp();
   const t = makeT(state.profile.lang);
-  const minute = useMinute();
   const advice = useCoach(minute)[0];
   const act = useAdviceAction();
   if (!advice) return null;

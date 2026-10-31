@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { AbhyasCard } from '../../components/AbhyasCard';
 import { CaloriesLeft } from '../../components/CaloriesLeft';
 import { Celebration } from '../../components/Celebration';
+import { ChallengeCard } from '../../components/ChallengeCard';
 import { CoachLine } from '../../components/CoachLine';
 import { DayMenu } from '../../components/DayMenu';
 import { DayReview } from '../../components/DayReview';
@@ -112,6 +113,8 @@ export default function TodayScreen() {
       {mode === 'today' ? <IntakeCard /> : null}
       {/* While reminders cannot reach this device, one line that gets them here (components/RemindersBanner.tsx); nothing otherwise. */}
       {mode === 'today' ? <RemindersBanner /> : null}
+      {/* Today's challenge, one small step from the user's own last week; nothing on an off day. */}
+      {mode === 'today' ? <ChallengeCard /> : null}
       {/* A day still to come has no night to check in yet, so todayBlocks leaves its Sleep tile out; the day's line shows only while it is switched on. */}
       {withReview(todayBlocks(state.settings.todayCards, mode, state.settings.features.mantra), review).map((b, i) => {
         if (b.kind === 'review') return <DayReview key="review" />;
