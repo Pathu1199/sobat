@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeT } from '../../i18n';
+import { perfectWeeks } from '../perfect';
+import type { AbhyasItem, AbhyasTick } from '../types';
 import {
   CHALLENGE_IDS_KEEP_DAYS,
   CHALLENGE_MEDALS,
@@ -8,6 +10,7 @@ import {
   medalFace,
   medalWords,
   MEDALS_SEEDED,
+  namesOfJobs,
   nextMedals,
   nextWin,
   shelf,
@@ -41,7 +44,7 @@ describe('earnedMedals', () => {
     expect(CHALLENGE_MEDALS).toEqual([10, 30, 100]);
     const weeks = [{ itemId: 'yoga', monday: '2026-10-19', name: 'Yoga' }];
     expect(earnedMedals({ ...none, weeks, challengesDone: 31 })).toEqual([
-      { id: 'medal:week:yoga:2026-10-19', track: 'week', n: 1, name: 'Yoga' },
+      { id: 'medal:week:yoga:2026-10-19', track: 'week', n: 1, itemId: 'yoga', monday: '2026-10-19', name: 'Yoga' },
       { id: 'medal:challenges:10', track: 'challenges', n: 10 },
       { id: 'medal:challenges:30', track: 'challenges', n: 30 },
     ]);
@@ -52,6 +55,79 @@ describe('earnedMedals', () => {
     expect(ids({ ...none, celebrated })).toEqual(['medal:meals:21', 'medal:meals:30', 'medal:kg:3', 'medal:kg:5', 'medal:goal']);
     // The badges retired with no medal of their own earn nothing.
     expect(ids({ ...none, celebrated: [MEDALS_SEEDED, 'badge:first_meal', 'badge:water_7', 'level:camp2', 'challenge:2026-10-25'] })).toEqual([]);
+  });
+
+  it('counts a streak, kilo or halfway badge already won as the medal it became, one by one', () => {
+    expect(ids({ ...none, celebrated: [MEDALS_SEEDED, 'badge:streak_7'] })).toEqual(['medal:meals:7']);
+    expect(ids({ ...none, celebrated: [MEDALS_SEEDED, 'badge:kg_1'] })).toEqual(['medal:kg:1']);
+    expect(ids({ ...none, celebrated: [MEDALS_SEEDED, 'badge:halfway'] })).toEqual(['medal:halfway']);
+  });
+
+  it('never loops for ever on a kilo count that is not a number, and stops at 300 kilos', () => {
+    for (const lostKg of [Number.NaN, Infinity, -Infinity]) expect(ids({ ...none, lostKg })).toEqual([]);
+    expect(ids({ ...none, lostKg: Infinity, totalKg: Infinity })).toEqual([]);
+    const huge = ids({ ...none, lostKg: 1e12 });
+    expect(huge.filter((id) => id.startsWith('medal:kg:'))).toHaveLength(300);
+    expect(huge).toContain('medal:kg:300');
+    expect(huge).toContain('medal:goal');
+    // A kilo medal already celebrated stays, beyond the cap too.
+    expect(ids({ ...none, celebrated: [MEDALS_SEEDED, 'medal:kg:301'] })).toEqual(['medal:kg:301']);
+  });
+
+  describe('a perfect week, kept once celebrated', () => {
+    const id = 'medal:week:yoga:2026-10-19';
+    const kept = { ...none, celebrated: [MEDALS_SEEDED, id] };
+
+    it('stays on the shelf after the rule no longer holds, with the job\'s name from its live job', () => {
+      expect(earnedMedals({ ...kept, jobNames: { yoga: 'Yoga' } })).toEqual([{ id, track: 'week', n: 1, itemId: 'yoga', monday: '2026-10-19', name: 'Yoga' }]);
+    });
+
+    it('stays when the job gains a day it was not done on, and when the job is edited', () => {
+      const created = new Date('2026-10-12T06:00:00').toISOString();
+      const yoga: AbhyasItem = { id: 'yoga', name: 'Yoga', icon: 'book-outline', kind: 'repeat', days: [1, 3, 5], times: [], order: 0, createdAt: created };
+      const done = ['2026-10-19', '2026-10-21', '2026-10-23'].map((date): AbhyasTick => ({ id: `yoga@${date}`, itemId: 'yoga', date, at: `${date}T07:00:00.000Z` }));
+      const data = { items: [yoga], ticks: done, sessions: [] };
+      const week = (items: AbhyasItem[]) => perfectWeeks({ ...data, items }, '2026-10-28').map((w) => ({ ...w, name: 'Yoga' }));
+      expect(week([yoga])).toEqual([{ itemId: 'yoga', monday: '2026-10-19', name: 'Yoga' }]);
+      expect(ids({ ...kept, weeks: week([yoga]) })).toEqual([id]);
+      // A day added to the job: that week was not done on it, so the rule drops the week, and the medal stays.
+      const longer = [{ ...yoga, days: [1, 3, 5, 6] }];
+      expect(week(longer)).toEqual([]);
+      expect(ids({ ...kept, weeks: week(longer) })).toEqual([id]);
+      // Without having been celebrated it is gone with the rule.
+      expect(ids({ ...none, weeks: week(longer) })).toEqual([]);
+    });
+
+    it('names a job removed from the list from its archived copy, in the one place of the week, and the medals sort by week', () => {
+      const created = new Date('2026-10-12T06:00:00').toISOString();
+      const old: AbhyasItem = { id: 'yoga', name: 'Morning yoga', icon: 'book-outline', kind: 'repeat', days: [1, 3, 5], times: [], order: 0, createdAt: created, archivedAt: new Date('2026-10-27T09:00:00').toISOString() };
+      const live: AbhyasItem = { ...old, id: 'read', name: 'Reading', order: 1, archivedAt: undefined };
+      const names = namesOfJobs([old, live]);
+      expect(names).toEqual({ yoga: 'Morning yoga', read: 'Reading' });
+      const celebrated = [MEDALS_SEEDED, 'medal:week:read:2026-10-26', id, 'medal:week:yoga:2026-10-12'];
+      const out = earnedMedals({ ...none, celebrated, jobNames: names });
+      expect(out.map((m) => [m.id, m.name, m.itemId, m.monday])).toEqual([
+        ['medal:week:yoga:2026-10-12', 'Morning yoga', 'yoga', '2026-10-12'],
+        ['medal:week:yoga:2026-10-19', 'Morning yoga', 'yoga', '2026-10-19'],
+        ['medal:week:read:2026-10-26', 'Reading', 'read', '2026-10-26'],
+      ]);
+    });
+
+    it('has no name for a job that is gone from the list, and the shelf and the words still work', () => {
+      const out = earnedMedals(kept);
+      expect(out).toEqual([{ id, track: 'week', n: 1, itemId: 'yoga', monday: '2026-10-19' }]);
+      const tiles = shelf(kept);
+      expect(tiles[0]).toEqual({ key: 'week:yoga', track: 'week', n: 1, earned: true, count: 1 });
+      expect(medalWords(out[0], makeT('en')).title).toBe('Perfect week');
+      expect(shelfWords(tiles[0], makeT('en'))).toEqual({ label: 'Perfect week', sub: null });
+    });
+
+    it('takes the name of a week still earned by the rule, whatever the lookup holds, and keeps an item id with a colon in it whole', () => {
+      const weeks = [{ itemId: 'yoga', monday: '2026-10-19', name: 'Yoga' }];
+      expect(earnedMedals({ ...kept, weeks, jobNames: { yoga: 'Old name' } })).toEqual([{ id, track: 'week', n: 1, itemId: 'yoga', monday: '2026-10-19', name: 'Yoga' }]);
+      const odd = earnedMedals({ ...none, celebrated: [MEDALS_SEEDED, 'medal:week:a:b:2026-10-19'], jobNames: { 'a:b': 'Odd' } });
+      expect(odd).toEqual([{ id: 'medal:week:a:b:2026-10-19', track: 'week', n: 1, itemId: 'a:b', monday: '2026-10-19', name: 'Odd' }]);
+    });
   });
 });
 
@@ -95,6 +171,13 @@ describe('shelf', () => {
     expect(tiles.find((x) => x.key === 'medal:kg')).toEqual({ key: 'medal:kg', track: 'kg', n: 2, earned: true });
     expect(tiles.find((x) => x.key === 'week:yoga')).toEqual({ key: 'week:yoga', track: 'week', n: 1, earned: true, name: 'Yoga', count: 2 });
   });
+
+  it('keeps a job\'s kept and current perfect weeks as one place, grouped by the job and not by reading its id', () => {
+    const weeks = [{ itemId: 'a:b', monday: '2026-10-19', name: 'Odd' }];
+    const celebrated = [MEDALS_SEEDED, 'medal:week:a:b:2026-10-12'];
+    const tiles = shelf({ ...none, weeks, celebrated, jobNames: { 'a:b': 'Odd' } });
+    expect(tiles.filter((x) => x.track === 'week')).toEqual([{ key: 'week:a:b', track: 'week', n: 1, earned: true, name: 'Odd', count: 2 }]);
+  });
 });
 
 describe('the words', () => {
@@ -103,6 +186,10 @@ describe('the words', () => {
   it('names a medal and says what it took', () => {
     expect(medalWords({ track: 'routine', n: 21 }, t)).toEqual({ title: '21 days of your routine in a row', line: 'Showing up, day after day. This is how a routine becomes who you are.' });
     expect(medalWords({ track: 'week', n: 1, name: 'Yoga' }, t).title).toBe('Perfect week: Yoga');
+    expect(medalWords({ track: 'week', n: 1 }, t).title).toBe('Perfect week');
+    expect(medalWords({ track: 'week', n: 1, name: 'योग' }, makeT('hi')).title).toBe('शानदार हफ़्ता: योग');
+    expect(medalWords({ track: 'week', n: 1 }, makeT('hi')).title).toBe('शानदार हफ़्ता');
+    expect(medalWords({ track: 'week', n: 1 }, makeT('mr')).title).toBe('परिपूर्ण आठवडा');
     expect(medalWords({ track: 'goal', n: 1 }, t).title).toBe('Goal reached');
     expect(medalWords({ track: 'challenges', n: 10 }, makeT('mr')).title).toBe('10 आव्हानं पूर्ण');
   });
@@ -134,6 +221,44 @@ describe('nextWin', () => {
     expect(nextWin({ medals, challengeDone: true, today: TODAY, celebrated: [...celebrated, 'medal:meals:7'] }).next).toEqual({ id: 'challenge:day:2026-10-31', kind: 'challenge', date: TODAY });
     expect(nextWin({ medals, challengeDone: true, today: TODAY, celebrated: [...celebrated, 'medal:meals:7', 'challenge:day:2026-10-31'] }).next).toBeNull();
     expect(nextWin({ medals, challengeDone: true, today: TODAY, celebrated, waiting: true })).toEqual({ seed: null, next: null });
+  });
+
+  describe('a perfect week that turns up late', () => {
+    const MONDAY = '2026-10-26';
+    const seeded = [MEDALS_SEEDED];
+    const weeksOf = (mondays: string[]) => mondays.map((monday) => ({ itemId: 'yoga', monday, name: 'Yoga' }));
+    const weekId = (monday: string) => `medal:week:yoga:${monday}`;
+
+    it('is marked seen and never celebrated when its week ended more than seven days ago, however many come at once', () => {
+      const old = ['2026-09-07', '2026-09-14', '2026-10-05', '2026-10-12'];
+      const weekMedals = earnedMedals({ ...none, weeks: weeksOf(old) });
+      const first = nextWin({ medals: weekMedals, challengeDone: false, today: MONDAY, celebrated: seeded });
+      expect(first.next).toBeNull();
+      expect(first.seed).toEqual(old.map(weekId));
+      // Marked, nothing is left to say or to mark.
+      expect(nextWin({ medals: weekMedals, challengeDone: false, today: MONDAY, celebrated: [...seeded, ...first.seed!] })).toEqual({ seed: null, next: null });
+      // It is marked even while something else is open on screen: marking says nothing.
+      expect(nextWin({ medals: weekMedals, challengeDone: false, today: MONDAY, celebrated: seeded, waiting: true })).toEqual({ seed: old.map(weekId), next: null });
+    });
+
+    it('is celebrated once when its week ended yesterday, or seven days ago exactly, and the old ones beside it are only marked', () => {
+      const weekMedals = earnedMedals({ ...none, weeks: weeksOf(['2026-09-07', '2026-10-19']) });
+      const first = nextWin({ medals: weekMedals, challengeDone: false, today: MONDAY, celebrated: seeded });
+      expect(first.seed).toEqual([weekId('2026-09-07')]);
+      expect(first.next).toEqual({ id: weekId('2026-10-19'), kind: 'medal', medal: weekMedals[1] });
+      const after = [...seeded, ...first.seed!, weekId('2026-10-19')];
+      expect(nextWin({ medals: weekMedals, challengeDone: false, today: MONDAY, celebrated: after })).toEqual({ seed: null, next: null });
+      // The week of the 12th ended on Sunday the 18th: seven days before the 25th, still celebrated; the day after it is not.
+      const twelfth = earnedMedals({ ...none, weeks: weeksOf(['2026-10-12']) });
+      expect(nextWin({ medals: twelfth, challengeDone: false, today: '2026-10-25', celebrated: seeded })).toEqual({ seed: null, next: { id: weekId('2026-10-12'), kind: 'medal', medal: twelfth[0] } });
+      expect(nextWin({ medals: twelfth, challengeDone: false, today: '2026-10-26', celebrated: seeded })).toEqual({ seed: [weekId('2026-10-12')], next: null });
+    });
+
+    it('does not mark a week already celebrated again, and leaves the first run to the one seed', () => {
+      const old = earnedMedals({ ...none, weeks: weeksOf(['2026-09-07']) });
+      expect(nextWin({ medals: old, challengeDone: false, today: MONDAY, celebrated: [...seeded, weekId('2026-09-07')] })).toEqual({ seed: null, next: null });
+      expect(nextWin({ medals: old, challengeDone: false, today: MONDAY, celebrated: null })).toEqual({ seed: [MEDALS_SEEDED, weekId('2026-09-07')], next: null });
+    });
   });
 });
 

@@ -11,7 +11,9 @@ import { fill } from '../i18n';
  * routine (3, 7, 21, 30, 66 and 100, each streak with its shield), each kilo
  * lost from the very first start, halfway to the goal, the goal reached, a
  * perfect week of a routine job, and challenges done (10, 30 and 100). The
- * old streak and kilo badges a user won count as the medals they became.
+ * old streak and kilo badges a user won count as the medals they became. A
+ * perfect week is kept once celebrated like the rest: editing the job later,
+ * with a day added or more minutes asked, never takes it off the shelf.
  * Pure.
  */
 export type MedalTrack = 'meals' | 'routine' | 'kg' | 'halfway' | 'goal' | 'week' | 'challenges';
@@ -21,8 +23,11 @@ export const CHALLENGE_MEDALS = [10, 30, 100] as const;
 /** The tracks in the order the shelf and the celebrations take them. */
 export const TRACKS: readonly MedalTrack[] = ['meals', 'routine', 'kg', 'halfway', 'goal', 'week', 'challenges'];
 
-/** A medal: its id (what `celebrated` keeps), its track, its number (days, kilos, challenges; 1 for the rest), and for a perfect week the job's name. */
-export type Medal = { id: string; track: MedalTrack; n: number; name?: string };
+/**
+ * A medal: its id (what `celebrated` keeps), its track, its number (days, kilos, challenges; 1 for the rest), and for a
+ * perfect week the job (`itemId`), the Monday of the week, and the job's name when it is known.
+ */
+export type Medal = { id: string; track: MedalTrack; n: number; name?: string; itemId?: string; monday?: ISODate };
 
 export type MedalInput = {
   /** The meal record's streak now and its best run over the whole journey, both with the shield. */
@@ -32,8 +37,10 @@ export type MedalInput = {
   /** Kilos lost from the very first start to the weight shown, and from that start to the goal: 0 or less is no loss to aim for, and no kilo medals. */
   lostKg: number;
   totalKg: number;
-  /** Perfect weeks of routine jobs (`perfectWeeks`), each with its job's name. */
+  /** Perfect weeks of routine jobs that hold now (`perfectWeeks`), each with its job's name. */
   weeks: { itemId: string; monday: ISODate; name: string }[];
+  /** The name of every job on the list by id, removed ones too (`namesOfJobs`): a perfect week kept after its job changed is named from it. */
+  jobNames?: Readonly<Record<string, string>>;
   /** Challenges done (`challengesDone`). */
   challengesDone: number;
   celebrated: readonly string[] | null | undefined;
@@ -51,6 +58,32 @@ const LEGACY: Record<string, string> = {
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
+/** The most kilo medals one can have: a number past it is a damaged file, and no reason to loop on. */
+const MAX_KG_MEDALS = 300;
+
+/** A kilo count as a finite number: one that is not a number (damaged data) is no kilos at all. */
+const finite = (n: number) => (Number.isFinite(n) ? n : 0);
+
+/** The name of every job in the list by its id, a removed (archived) job's too, for `MedalInput.jobNames`. */
+export function namesOfJobs(items: readonly { id: string; name: string }[]): Record<string, string> {
+  return Object.fromEntries(items.map((i) => [i.id, i.name]));
+}
+
+const WEEK_ID = /^medal:week:(.+):(\d{4}-\d{2}-\d{2})$/;
+
+/** The perfect weeks to show: those that hold now, then every one celebrated whether or not its job's days or minutes still make it one, oldest week first. */
+function weekMedals(input: MedalInput, kept: ReadonlySet<string>): Medal[] {
+  const weeks: { itemId: string; monday: ISODate; name: string | undefined }[] = input.weeks.map((w) => ({ ...w, name: w.name || input.jobNames?.[w.itemId] }));
+  const have = new Set(weeks.map((w) => `medal:week:${w.itemId}:${w.monday}`));
+  for (const id of kept) {
+    const found = WEEK_ID.exec(id);
+    if (found && !have.has(id)) weeks.push({ itemId: found[1], monday: found[2], name: input.jobNames?.[found[1]] });
+  }
+  // Array.sort is stable: the weeks of one Monday stay in the user's order, those that still hold first.
+  weeks.sort((a, b) => (a.monday < b.monday ? -1 : a.monday > b.monday ? 1 : 0));
+  return weeks.map((w) => ({ id: `medal:week:${w.itemId}:${w.monday}`, track: 'week', n: 1, itemId: w.itemId, monday: w.monday, ...(w.name ? { name: w.name } : {}) }));
+}
+
 /** Every medal earned, in the shelf's order: by rule now, or kept because it was celebrated (as itself or as the badge it was). */
 export function earnedMedals(input: MedalInput): Medal[] {
   const kept = new Set(input.celebrated ?? []);
@@ -61,14 +94,15 @@ export function earnedMedals(input: MedalInput): Medal[] {
   };
   steps('meals', STREAK_MEDALS, Math.max(input.meals.now, input.meals.best));
   steps('routine', STREAK_MEDALS, input.routine ? Math.max(input.routine.now, input.routine.best) : 0);
+  const [lostKg, totalKg] = [finite(input.lostKg), finite(input.totalKg)];
   const kilos = new Set<number>();
-  if (input.totalKg > 0) for (let k = 1; k <= Math.floor(input.lostKg + 1e-9); k++) kilos.add(k);
+  if (totalKg > 0) for (let k = 1; k <= Math.min(Math.floor(lostKg + 1e-9), MAX_KG_MEDALS); k++) kilos.add(k);
   for (const id of Object.keys(LEGACY)) if (id.startsWith('medal:kg:') && has(id)) kilos.add(Number(id.slice(9)));
   for (const id of kept) if (/^medal:kg:\d+$/.test(id)) kilos.add(Number(id.slice(9)));
   for (const k of [...kilos].sort((a, b) => a - b)) out.push({ id: `medal:kg:${k}`, track: 'kg', n: k });
-  if ((input.totalKg > 0 && input.lostKg >= input.totalKg / 2) || has('medal:halfway')) out.push({ id: 'medal:halfway', track: 'halfway', n: 1 });
-  if ((input.totalKg > 0 && input.lostKg >= input.totalKg) || has('medal:goal')) out.push({ id: 'medal:goal', track: 'goal', n: 1 });
-  for (const w of input.weeks) out.push({ id: `medal:week:${w.itemId}:${w.monday}`, track: 'week', n: 1, name: w.name });
+  if ((totalKg > 0 && lostKg >= totalKg / 2) || has('medal:halfway')) out.push({ id: 'medal:halfway', track: 'halfway', n: 1 });
+  if ((totalKg > 0 && lostKg >= totalKg) || has('medal:goal')) out.push({ id: 'medal:goal', track: 'goal', n: 1 });
+  out.push(...weekMedals(input, kept));
   steps('challenges', CHALLENGE_MEDALS, input.challengesDone);
   return out;
 }
@@ -86,12 +120,13 @@ export function nextMedals(input: MedalInput, earned: readonly Medal[]): NextMed
   };
   step('meals', STREAK_MEDALS, input.meals.now);
   if (input.routine) step('routine', STREAK_MEDALS, input.routine.now);
-  if (input.totalKg > 0) {
+  const [lostKg, totalKg] = [finite(input.lostKg), finite(input.totalKg)];
+  if (totalKg > 0) {
     const top = earned.filter((m) => m.track === 'kg').reduce((a, m) => Math.max(a, m.n), 0);
     const k = top + 1;
-    if (k <= Math.ceil(input.totalKg)) out.push({ id: `medal:kg:${k}`, track: 'kg', n: k, toGo: Math.max(0.1, round1(k - input.lostKg)) });
-    if (!ids.has('medal:halfway')) out.push({ id: 'medal:halfway', track: 'halfway', n: 1, toGo: Math.max(0.1, round1(input.totalKg / 2 - input.lostKg)) });
-    if (!ids.has('medal:goal')) out.push({ id: 'medal:goal', track: 'goal', n: 1, toGo: Math.max(0.1, round1(input.totalKg - input.lostKg)) });
+    if (k <= Math.ceil(totalKg)) out.push({ id: `medal:kg:${k}`, track: 'kg', n: k, toGo: Math.max(0.1, round1(k - lostKg)) });
+    if (!ids.has('medal:halfway')) out.push({ id: 'medal:halfway', track: 'halfway', n: 1, toGo: Math.max(0.1, round1(totalKg / 2 - lostKg)) });
+    if (!ids.has('medal:goal')) out.push({ id: 'medal:goal', track: 'goal', n: 1, toGo: Math.max(0.1, round1(totalKg - lostKg)) });
   }
   step('challenges', CHALLENGE_MEDALS, input.challengesDone);
   return out;
@@ -107,10 +142,11 @@ export function shelf(input: MedalInput): ShelfTile[] {
   for (const m of earned) {
     if (m.track === 'kg') continue;
     if (m.track === 'week') {
-      const id = m.id.split(':')[2];
-      const same = tiles.find((x) => x.track === 'week' && x.key === `week:${id}`);
-      if (same) same.count = (same.count ?? 1) + 1;
-      else tiles.push({ key: `week:${id}`, track: 'week', n: 1, earned: true, name: m.name, count: 1 });
+      const same = tiles.find((x) => x.track === 'week' && x.key === `week:${m.itemId}`);
+      if (same) {
+        same.count = (same.count ?? 1) + 1;
+        same.name ??= m.name;
+      } else tiles.push({ key: `week:${m.itemId}`, track: 'week', n: 1, earned: true, ...(m.name ? { name: m.name } : {}), count: 1 });
       continue;
     }
     tiles.push({ key: m.id, track: m.track, n: m.n, earned: true });
@@ -136,7 +172,9 @@ export function medalWords(m: Pick<Medal, 'track' | 'n' | 'name'>, t: (key: stri
     m.track === 'meals' || m.track === 'routine' || m.track === 'kg' || m.track === 'challenges'
       ? fill(t(`medal_${m.track}_title`), { n: m.n })
       : m.track === 'week'
-        ? fill(t('medal_week'), { name: m.name ?? '' })
+        ? m.name
+          ? fill(t('medal_week'), { name: m.name })
+          : t('medal_week_any')
         : t(`medal_${m.track}`);
   const line = t(m.track === 'meals' || m.track === 'routine' ? 'medal_sub_streak' : `medal_sub_${m.track}`);
   return { title, line };
@@ -161,20 +199,30 @@ export function challengeWinId(date: ISODate): string {
 
 export type Win = { id: string; kind: 'medal'; medal: Medal } | { id: string; kind: 'challenge'; date: ISODate };
 
+/** A perfect week whose Sunday is more than this many days back is no news: it turns up when a job's edit makes an old week hold again. */
+export const WEEK_NEWS_DAYS = 7;
+
 /**
  * Which win to celebrate next: a medal earned, then today's challenge done,
  * each once. The first time this runs with medals (no `MEDALS_SEEDED` in the
  * ids yet, a new user or one coming from the badges) everything already
  * earned is marked seen, the challenge too, rather than celebrated in a
- * flood. While `waiting` (the add sheet open, a toast or a line with Undo on
- * screen) nothing is celebrated yet.
+ * flood. Later, a perfect week not seen yet whose last day was more than
+ * `WEEK_NEWS_DAYS` ago (a job edit brought old weeks back, perhaps many) is
+ * marked seen the same way and never celebrated: it comes back in `seed` and
+ * is left out of `next`, whether or not something is `waiting`, as marking
+ * says nothing. While `waiting` (the add sheet open, a toast or a line with
+ * Undo on screen) nothing is celebrated yet.
  */
 export function nextWin(input: { medals: readonly Medal[]; challengeDone: boolean; today: ISODate; celebrated: readonly string[] | null | undefined; waiting?: boolean }): { seed: string[] | null; next: Win | null } {
   const wins: Win[] = [...input.medals.map((medal) => ({ id: medal.id, kind: 'medal' as const, medal })), ...(input.challengeDone ? [{ id: challengeWinId(input.today), kind: 'challenge' as const, date: input.today }] : [])];
   if (!input.celebrated?.includes(MEDALS_SEEDED)) return { seed: [MEDALS_SEEDED, ...wins.map((w) => w.id)], next: null };
-  if (input.waiting) return { seed: null, next: null };
   const seen = new Set(input.celebrated);
-  return { seed: null, next: wins.find((w) => !seen.has(w.id)) ?? null };
+  const from = addDays(input.today, -WEEK_NEWS_DAYS);
+  const old = new Set(wins.filter((w) => w.kind === 'medal' && w.medal.track === 'week' && w.medal.monday !== undefined && addDays(w.medal.monday, 6) < from && !seen.has(w.id)).map((w) => w.id));
+  const seed = old.size > 0 ? [...old] : null;
+  if (input.waiting) return { seed, next: null };
+  return { seed, next: wins.find((w) => !seen.has(w.id) && !old.has(w.id)) ?? null };
 }
 
 /** How long a day's challenge stays among the celebrated ids: a fortnight, so the list never grows by one a day for good. */

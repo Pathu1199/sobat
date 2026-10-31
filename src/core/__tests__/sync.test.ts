@@ -250,6 +250,57 @@ describe('three-way merge of single values', () => {
   });
 });
 
+describe('the celebrated ids', () => {
+  const withIds = (celebrated: string[] | null) => cloudOf(used([], { celebrated }));
+  const idsOf = (c: CloudState) => c.celebrated;
+
+  it('two devices each celebrating a different medal since the base both keep both, wherever the merge runs, and agree on the file', () => {
+    const base = withIds(['medals:seeded', 'medal:meals:3']);
+    const phone = withIds(['medals:seeded', 'medal:meals:3', 'medal:meals:7']);
+    const pc = withIds(['medals:seeded', 'medal:meals:3', 'medal:kg:1']);
+    const onPhone = merge3(base, phone, pc);
+    const onPc = merge3(base, pc, phone);
+    for (const out of [onPhone, onPc]) expect([...(idsOf(out) ?? [])].sort()).toEqual(['medal:kg:1', 'medal:meals:3', 'medal:meals:7', 'medals:seeded']);
+    // The same file from either side, so the next round writes nothing back and forth.
+    expect(sameCloud(onPhone, onPc)).toBe(true);
+    expect(sameCloud(merge3(onPhone, onPhone, onPc), onPc)).toBe(true);
+  });
+
+  it('a device pruning the old days\' challenges while the other adds a medal keeps the medal', () => {
+    const base = withIds(['medals:seeded', 'challenge:day:2026-10-01', 'challenge:day:2026-10-02', 'medal:meals:3']);
+    const pruned = withIds(['medals:seeded', 'medal:meals:3']);
+    const added = withIds(['medals:seeded', 'challenge:day:2026-10-01', 'challenge:day:2026-10-02', 'medal:meals:3', 'medal:meals:7']);
+    for (const out of [merge3(base, pruned, added), merge3(base, added, pruned)]) {
+      expect(idsOf(out)).toContain('medal:meals:7');
+      expect(idsOf(out)).toContain('medal:meals:3');
+      expect(idsOf(out)).toContain('medals:seeded');
+    }
+    // A challenge id that both sides pruned stays pruned.
+    const both = merge3(base, pruned, withIds(['medals:seeded', 'medal:meals:3', 'medal:kg:1']));
+    expect(idsOf(both)?.filter((id) => id.startsWith('challenge:'))).toEqual([]);
+  });
+
+  it('is the union with no base too, each id once', () => {
+    const out = merge3(null, withIds(['medals:seeded', 'medal:meals:3']), withIds(['medals:seeded', 'badge:streak_7']));
+    expect(idsOf(out)).toEqual(['badge:streak_7', 'medal:meals:3', 'medals:seeded']);
+  });
+
+  it('stays null while neither device has been seeded, and takes the seeded side\'s ids as soon as one is', () => {
+    const base = withIds(null);
+    expect(idsOf(merge3(base, withIds(null), withIds(null)))).toBeNull();
+    expect(idsOf(merge3(base, withIds(null), withIds(['medals:seeded'])))).toEqual(['medals:seeded']);
+    expect(idsOf(merge3(base, withIds(['medals:seeded', 'medal:meals:3']), withIds(null)))).toEqual(['medals:seeded', 'medal:meals:3']);
+    const old = { ...withIds(['medals:seeded']), celebrated: undefined } as unknown as CloudState;
+    expect(idsOf(merge3(base, withIds(['medals:seeded']), old))).toEqual(['medals:seeded']);
+  });
+
+  it('writes nothing back for the same ids in another order', () => {
+    const a = withIds(['medals:seeded', 'medal:meals:3', 'medal:kg:1']);
+    const b = withIds(['medal:kg:1', 'medals:seeded', 'medal:meals:3']);
+    expect(sameCloud(merge3(a, a, b), merge3(b, b, a))).toBe(true);
+  });
+});
+
 describe('the day the store moved to this version', () => {
   const P = '2026-10-24';
   const P3 = '2026-10-27';

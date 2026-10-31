@@ -81,7 +81,7 @@ export const COLLECTIONS: {
 
 /**
  * Everything else in the file: one value each, merged whole, but for the profile and the settings, merged field by field
- * (`BY_FIELD`), and the Abhyas timer, by its own rule (`mergeRunning`).
+ * (`BY_FIELD`), the Abhyas timer, by its own rule (`mergeRunning`), and the celebrated ids, as one set (`mergeCelebrated`).
  */
 export const SINGLETONS = ['version', 'profile', 'settings', 'breakSettings', 'routine', 'schedule', 'weekPlan', 'celebrated', 'groceryTicks', 'abhyasRunning'] as const;
 
@@ -104,6 +104,19 @@ function pick<T>(b: unknown, l: T, r: T): T {
   if (stable(l) !== bv) return l;
   if (stable(r) !== bv) return r;
   return l;
+}
+
+/**
+ * The celebrated ids of both sides as one set, so a medal celebrated on the phone and another on the PC both stay on both,
+ * and a device that pruned old challenge ids never takes a medal the other added. Nothing but that pruning ever takes an id
+ * out, so no base is needed, and an id both sides dropped stays dropped; one pruned on a single device comes back with the
+ * other's copy, which the next prune there takes out again. In sorted order, whichever side is this device: in each side's
+ * own order the two devices would merge to two different files, and every round would write the other's order back. Null
+ * means "never seeded": kept while neither side has an array, and gone as soon as one side has been seeded.
+ */
+function mergeCelebrated(l: string[] | null | undefined, r: string[] | null | undefined): string[] | null | undefined {
+  if (!Array.isArray(l) || !Array.isArray(r)) return Array.isArray(l) ? l : Array.isArray(r) ? r : l ?? r;
+  return stable(l) === stable(r) ? l : [...new Set([...l, ...r])].sort();
 }
 
 /** Each field picked on its own against the base (`pick`), the `nested` ones key by key; a field taken out on one side stays out. */
@@ -353,6 +366,10 @@ export function merge3(base: CloudState | null, local: CloudState, remote: Cloud
     }
     if (key === 'abhyasRunning') {
       Object.assign(out, mergeRunning(b, local, remote, out.abhyasSessions as AnyRecord[]));
+      continue;
+    }
+    if (key === 'celebrated') {
+      out.celebrated = mergeCelebrated(local.celebrated, remote.celebrated);
       continue;
     }
     const lv = local[key];
