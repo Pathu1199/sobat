@@ -114,6 +114,28 @@ const en: GuideSection[] = [
       'Settings → Export data gives you the same file to keep anywhere; on the web, Import data brings it onto another device.',
     ],
   },
+  {
+    id: 'homescreen',
+    icon: 'phone-portrait-outline',
+    title: 'Add to Home Screen',
+    lines: [
+      'An iPhone or iPad shows reminders only when the app is opened from the Home Screen, on iOS 16.4 or newer.',
+      'Open the app in Safari, tap Share, then Add to Home Screen, then Add.',
+      'Open Dhyey from its new icon, tap Turn on reminders at the top of Today, then tap Allow.',
+      'To check, tap Send a test in Settings → Reminders, then go to the Home Screen; it arrives within a minute.',
+    ],
+  },
+  {
+    id: 'notifications',
+    icon: 'notifications-off-outline',
+    title: 'Allow notifications',
+    lines: [
+      "On an iPhone or iPad: open the phone's Settings → Notifications → Dhyey, and switch on Allow Notifications.",
+      "On Android: open the phone's Settings → Apps → Dhyey → Notifications, and switch them on.",
+      'In a browser on a computer: click the icon left of the address, and set Notifications to Allow.',
+      'Then come back to the app. If Turn on reminders shows at the top of Today, tap it.',
+    ],
+  },
 ];
 
 const mr: GuideSection[] = [
@@ -223,6 +245,28 @@ const mr: GuideSection[] = [
       'सेटिंग → डेटा बाहेर काढा हीच फाइल कुठेही ठेवायला देते; वेबवर डेटा आत घ्या ती दुसऱ्या डिव्हाइसवर आणते.',
     ],
   },
+  {
+    id: 'homescreen',
+    icon: 'phone-portrait-outline',
+    title: 'होम स्क्रीनवर जोडा',
+    lines: [
+      'आयफोन किंवा आयपॅडवर आठवणी अ‍ॅप होम स्क्रीनवरून उघडलं तरच येतात, आयओएस 16.4 किंवा नवीन असेल तर.',
+      'सफारीमध्ये अ‍ॅप उघडा, शेअर दाबा, मग "अ‍ॅड टू होम स्क्रीन", मग "अ‍ॅड".',
+      'नव्या आयकॉनवरून ध्येय उघडा, आजच्या पानावर वरती "आठवणी चालू करा" दाबा, मग परवानगी द्या.',
+      'तपासायचं असेल तर सेटिंग → आठवणी इथे "चाचणी पाठवा" दाबा, मग होम स्क्रीनवर जा; एका मिनिटात सूचना येईल.',
+    ],
+  },
+  {
+    id: 'notifications',
+    icon: 'notifications-off-outline',
+    title: 'सूचनांना परवानगी',
+    lines: [
+      'आयफोन किंवा आयपॅडवर: फोनची सेटिंग्ज → नोटिफिकेशन्स → ध्येय उघडा, आणि "अलाऊ नोटिफिकेशन्स" चालू करा.',
+      'अँड्रॉइडवर: फोनची सेटिंग्ज → अ‍ॅप्स → ध्येय → नोटिफिकेशन्स उघडा, आणि त्या चालू करा.',
+      'संगणकावरच्या ब्राउझरमध्ये: पत्त्याच्या डावीकडचा आयकॉन दाबा, आणि सूचनांना परवानगी द्या.',
+      'मग अ‍ॅपवर परत या. आजच्या पानावर वरती "आठवणी चालू करा" दिसलं तर ते दाबा.',
+    ],
+  },
 ];
 
 const hi: GuideSection[] = [
@@ -330,6 +374,28 @@ const hi: GuideSection[] = [
       'आपकी प्रविष्टियाँ इसी डिवाइस पर रहती हैं, और सिंक चालू हो तो ऐप बनाने वाले की गूगल ड्राइव में एक फ़ाइल में. उसे सिर्फ़ आप और ऐप बनाने वाला खोल सकते हैं.',
       'जहाँ इसकी व्यवस्था हो, वहाँ सेटिंग → अभी बैकअप लें आपकी अपनी गूगल ड्राइव में एक प्रति रखता है. हर हफ़्ते, वज़न के बाद बैकअप लें.',
       'सेटिंग → डेटा निर्यात वही फ़ाइल कहीं भी रखने देता है; वेब पर डेटा आयात करें उसे दूसरे डिवाइस पर लाता है.',
+    ],
+  },
+  {
+    id: 'homescreen',
+    icon: 'phone-portrait-outline',
+    title: 'होम स्क्रीन पर जोड़ें',
+    lines: [
+      'आईफ़ोन या आईपैड पर याद दिलाना तभी आता है जब ऐप होम स्क्रीन से खोला जाए, आईओएस 16.4 या नए पर.',
+      'सफ़ारी में ऐप खोलें, शेयर दबाएँ, फिर "ऐड टू होम स्क्रीन", फिर "ऐड".',
+      'नए आइकॉन से ध्येय खोलें, आज के पन्ने पर ऊपर "याद दिलाना चालू करें" दबाएँ, फिर अनुमति दें.',
+      'जाँचने के लिए सेटिंग → याद दिलाना में "परीक्षण भेजें" दबाएँ, फिर होम स्क्रीन पर जाएँ; एक मिनट में सूचना आएगी.',
+    ],
+  },
+  {
+    id: 'notifications',
+    icon: 'notifications-off-outline',
+    title: 'सूचनाओं की अनुमति',
+    lines: [
+      'आईफ़ोन या आईपैड पर: फ़ोन की सेटिंग्स → नोटिफ़िकेशन्स → ध्येय खोलें, और "अलाउ नोटिफ़िकेशन्स" चालू करें.',
+      'एंड्रॉयड पर: फ़ोन की सेटिंग्स → ऐप्स → ध्येय → नोटिफ़िकेशन्स खोलें, और उन्हें चालू करें.',
+      'कंप्यूटर के ब्राउज़र में: पते के बाईं ओर का आइकॉन दबाएँ, और सूचनाओं की अनुमति दें.',
+      'फिर ऐप पर लौटें. आज के पन्ने पर ऊपर "याद दिलाना चालू करें" दिखे तो उसे दबाएँ.',
     ],
   },
 ];

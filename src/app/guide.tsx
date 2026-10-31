@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { GUIDE } from '../data/guide';
@@ -9,13 +9,21 @@ import { Btn, Card, Divider, Screen, Small } from '../ui/components';
 import { Logo } from '../ui/Logo';
 import { C, F, lh } from '../ui/theme';
 
-/** The coach's standing advice, one fold per topic. The first is open so the page is never a wall of headings. */
+/**
+ * The coach's standing advice, one fold per topic. The first is open so the
+ * page is never a wall of headings. A link that names a topic (?s=, from the
+ * reminders line on Today) puts that one first and open, so its steps are on
+ * screen without a scroll.
+ */
 export default function GuideScreen() {
   const { state } = useApp();
   const lang = state.profile.lang;
   const t = makeT(lang);
-  const sections = GUIDE[lang] ?? GUIDE.en;
+  const all = GUIDE[lang] ?? GUIDE.en;
   const router = useRouter();
+  const { s } = useLocalSearchParams<{ s?: string | string[] }>();
+  const linked = all.find((x) => x.id === s);
+  const sections = linked ? [linked, ...all.filter((x) => x !== linked)] : all;
   const [open, setOpen] = useState<string>(sections[0]?.id ?? '');
 
   return (

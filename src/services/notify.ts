@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { gateStep, type GateState, type NotifyGate } from '../core/nudge';
 import { tapKey } from '../core/reminders';
+import type { NotificationState } from '../core/remindersBanner';
 
 /**
  * Notifications differ per platform, so everything else in the app talks to
@@ -39,6 +40,23 @@ function loadNative(): NativeModule | null {
 export function webPermission(): NotificationPermission | 'unsupported' {
   if (Platform.OS !== 'web' || typeof Notification === 'undefined') return 'unsupported';
   return Notification.permission;
+}
+
+/**
+ * Whether this device may show notifications: 'default' while it was never
+ * asked or may still ask, 'denied' once only the phone's or the browser's own
+ * settings can allow them, 'unsupported' where there is no way at all.
+ */
+export async function notificationState(): Promise<NotificationState> {
+  if (Platform.OS === 'web') return webPermission();
+  const n = loadNative();
+  if (!n) return 'unsupported';
+  try {
+    const p = await n.getPermissionsAsync();
+    return p.granted ? 'granted' : p.canAskAgain ? 'default' : 'denied';
+  } catch {
+    return 'unsupported';
+  }
 }
 
 /**

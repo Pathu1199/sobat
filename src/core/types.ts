@@ -86,6 +86,8 @@ export type Settings = {
   textScale: number;
   /** Web only: reminders through the relay while the app is closed. */
   pushRelay: boolean;
+  /** The day the user put away the reminders line on Today, on this device; it comes back the next day. */
+  remindersBannerHiddenOn?: ISODate;
   /** Weekday to weigh in, 0 = Sunday. */
   weighDay: number;
   /** Weekdays (Date.getDay(), 0 = Sunday) the person takes off: nothing is tracked or judged. */

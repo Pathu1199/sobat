@@ -45,6 +45,19 @@ describe('the tour and the Guide describe the app as it is', () => {
     for (const lang of ['mr', 'hi'] as const) expect(office(lang), lang).toMatch(/20/);
   });
 
+  it('has the steps the reminders line on Today opens: adding the app to the Home Screen, and allowing notifications on an iPhone and on Android', () => {
+    const steps = (lang: 'en' | 'mr' | 'hi', id: string) => GUIDE[lang].find((s) => s.id === id)?.lines.join(' ') ?? '';
+    expect(steps('en', 'homescreen')).toMatch(/Share.*Add to Home Screen/);
+    expect(steps('en', 'homescreen')).toContain('Turn on reminders');
+    expect(steps('en', 'notifications')).toMatch(/Settings → Notifications → Dhyey/);
+    expect(steps('en', 'notifications')).toMatch(/Android/);
+    for (const lang of ['mr', 'hi'] as const) {
+      // The line's own words, so the step names what the user sees on Today.
+      expect(steps(lang, 'homescreen'), lang).toContain(t(lang, 'rem_banner_enable'));
+      expect(steps(lang, 'notifications'), lang).toContain('ध्येय');
+    }
+  });
+
   it('has every Guide topic in all three languages, in the same order', () => {
     expect(GUIDE.mr.map((s) => s.id)).toEqual(GUIDE.en.map((s) => s.id));
     expect(GUIDE.hi.map((s) => s.id)).toEqual(GUIDE.en.map((s) => s.id));

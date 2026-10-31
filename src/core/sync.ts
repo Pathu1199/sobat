@@ -19,7 +19,7 @@ import type { AbhyasRunning, AbhyasSession, AppState, Settings } from './types';
  */
 
 /** Settings that describe this machine, not the person: never synced. */
-export const DEVICE_SETTINGS = ['ollamaUrl', 'ollamaFallbackUrl', 'textModel', 'visionModel', 'appearance', 'textScale', 'pushRelay', 'driveBackupAt'] as const;
+export const DEVICE_SETTINGS = ['ollamaUrl', 'ollamaFallbackUrl', 'textModel', 'visionModel', 'appearance', 'textScale', 'pushRelay', 'driveBackupAt', 'remindersBannerHiddenOn'] as const;
 type DeviceKey = (typeof DEVICE_SETTINGS)[number];
 
 /** Per-device caches that have no business in the account. */

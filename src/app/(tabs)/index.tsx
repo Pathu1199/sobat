@@ -9,6 +9,7 @@ import { DayReview } from '../../components/DayReview';
 import { IntakeCard } from '../../components/IntakeCard';
 import { MantraCard } from '../../components/MantraCard';
 import { MealSheet } from '../../components/MealSheet';
+import { RemindersBanner } from '../../components/RemindersBanner';
 import { StepsCard } from '../../components/StepsCard';
 import { StreakPill } from '../../components/StreakPill';
 import { SleepTile } from '../../components/tiles/SleepTile';
@@ -39,12 +40,13 @@ import { Page } from '../../ui/TopBar';
  * Today: the calories left and the day's menu to tick off. The header is the
  * day looked at, small, over a greeting with the user's first name, and the
  * streak at the right. The week strip under it picks the day (?date=, none
- * for today); the strip and the number sit on the page, not in a card. Under
- * the number come the cards the user keeps on, in their order: by default the
- * menu, one coach line and the Water and Walk tiles. A past day is filled in,
- * a future day is planned, in the same place; nothing here logs into a date
- * after today. In the evening the day's review follows, while its reminder is
- * on.
+ * for today); the strip and the number sit on the page, not in a card. Today,
+ * while reminders cannot reach this device, one line under them says how to
+ * get them. Under the number come the cards the user keeps on, in their
+ * order: by default the menu, one coach line and the Water and Walk tiles. A
+ * past day is filled in, a future day is planned, in the same place; nothing
+ * here logs into a date after today. In the evening the day's review follows,
+ * while its reminder is on.
  */
 export default function TodayScreen() {
   const app = useApp();
@@ -105,6 +107,8 @@ export default function TodayScreen() {
         <WeekStrip days={days} lang={lang} onSelect={go} onWeek={onWeek} />
         <CaloriesLeft mode={mode} view={view} suggested={suggested} />
       </View>
+      {/* While reminders cannot reach this device, one line that gets them here (components/RemindersBanner.tsx); nothing otherwise. */}
+      {mode === 'today' ? <RemindersBanner /> : null}
       {/* Days in a row under the safe minimum are said plainly, today only; nothing shows otherwise. */}
       {mode === 'today' ? <IntakeCard /> : null}
       {/* A day still to come has no night to check in yet, so todayBlocks leaves its Sleep tile out; the day's line shows only while it is switched on. */}

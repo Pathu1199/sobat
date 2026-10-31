@@ -55,6 +55,17 @@ describe('forCloud / applyCloud', () => {
   });
 });
 
+describe('the reminders line put away on Today', () => {
+  it('stays put away on this device only: never uploaded, and kept through a landing whatever the file holds', () => {
+    const local = used([], { settings: { ...EMPTY_STATE.settings, remindersBannerHiddenOn: '2026-10-31' } });
+    expect(cloudOf(local).settings).not.toHaveProperty('remindersBannerHiddenOn');
+    const remote = cloudOf(used([]));
+    expect(applyCloud(local, remote).settings.remindersBannerHiddenOn).toBe('2026-10-31');
+    const other = { ...remote, settings: { ...remote.settings, remindersBannerHiddenOn: '2026-10-30' } } as CloudState;
+    expect(applyCloud(local, other).settings.remindersBannerHiddenOn).toBe('2026-10-31');
+  });
+});
+
 describe('the days this device was opened on', () => {
   it('stay on this device: never uploaded, and kept through a landing whatever the file holds', () => {
     const local = used([], { openedDates: ['2026-10-26', '2026-10-27'] });
