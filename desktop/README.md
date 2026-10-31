@@ -1,4 +1,4 @@
-# Sobat for Windows
+# Dhyey for Windows
 
 The desktop app is a thin [Tauri 2](https://tauri.app) shell around the same
 React Native Web build that runs in the browser. Tauri only adds what a browser
@@ -24,7 +24,7 @@ On the PC, from the repository root in PowerShell:
 ```
 
 That checks your tools, builds the app, and produces an installer at
-`desktop\src-tauri\target\release\bundle\nsis\Sobat_<version>_x64-setup.exe`.
+`desktop\src-tauri\target\release\bundle\nsis\Dhyey_<version>_x64-setup.exe`.
 Double-click it. It installs for your user only, so Windows will not ask for an
 administrator password.
 

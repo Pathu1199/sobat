@@ -1,6 +1,6 @@
-# Sobat
+# Dhyey
 
-**सोबत** — Marathi for *company*, *being with you*.
+**ध्येय** — Marathi for *company*, *being with you*.
 
 A health companion that tracks what you eat, how you sleep, how you move and
 how you feel, then turns that into a small number of concrete things to do
@@ -26,7 +26,7 @@ is what the Windows desktop shell loads.
 Every push to `main` is tested, built and deployed by GitHub Actions; the
 website and the APK are always the latest `main`.
 
-> Sobat is not a doctor or a counsellor. Get your blood pressure, sugar and
+> Dhyey is not a doctor or a counsellor. Get your blood pressure, sugar and
 > thyroid checked before starting hard exercise, and talk to a real person when
 > things feel heavy.
 
@@ -190,7 +190,7 @@ Plainly, because it is health data:
 - **You need an account** (email and password, or Google) to use the app.
 - **Your logs — meals, weight, sleep, mood and what you write — are stored as
   one JSON file in the app maker's personal Google Drive**, in a folder called
-  `Sobat`. This is what lets the same account work on your phone and your PC.
+  `Dhyey`. This is what lets the same account work on your phone and your PC.
 - **The app maker can open that file.** The relay that writes it also lets the
   app maker list accounts, block one, or delete one. Nobody else can reach
   your file: the relay checks your sign-in on every request and serves you only

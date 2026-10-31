@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissions the Sobat shell needs.",
+  "description": "Permissions the Dhyey shell needs.",
   "windows": ["main"],
   "permissions": [
     "core:default",

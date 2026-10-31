@@ -37,7 +37,7 @@ export function titleKeyFor(pathname: string): string | null {
   return TITLES[path] ?? null;
 }
 
-/** "Today · Sobat"; just "Sobat" where no page is named. */
+/** "Today · Dhyey"; just "Dhyey" where no page is named. */
 export function pageTitle(pathname: string, word: (key: string) => string): string {
   const key = titleKeyFor(pathname);
   return key ? `${word(key)} · ${word('app_name')}` : word('app_name');

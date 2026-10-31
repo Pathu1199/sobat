@@ -34,7 +34,7 @@ const UNSTARTED_CLOCKS: BreakClocks = { micro: 0, long: 0, posture: 0, blink: 0 
  * builds a context from the store and the platform, asks the rules what is due,
  * and reacts. All the judgement lives in src/core/breaks.ts.
  *
- * Breaks are for the person using Sobat here: the settings and the log are
+ * Breaks are for the person using Dhyey here: the settings and the log are
  * theirs. A device that is signed out or reset, or whose store and session are
  * not known yet, runs no clock, so nothing takes the screen, notifies, or
  * writes a break into data that is not theirs. Nor does one with eye-care

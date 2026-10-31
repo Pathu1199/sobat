@@ -51,7 +51,7 @@ export const ACTIVITIES: Activity[] = [
   { id: 'elliptical', name_en: 'Elliptical / cross trainer', name_mr: 'क्रॉस ट्रेनर', name_hi: 'क्रॉस ट्रेनर', category: 'gym', icon: '🎿', met: [4.0, 5.0, 9.0], impact: 'low', note: 'moderate 5.0 · vigorous 9.0' },
   { id: 'treadmill', name_en: 'Treadmill', name_mr: 'ट्रेडमिल', name_hi: 'ट्रेडमिल', category: 'gym', icon: '🏃‍♂️', met: [3.8, 4.8, 8.5], impact: 'high', approx: true },
   { id: 'skipping', name_en: 'Skipping rope', name_mr: 'दोरीउड्या', name_hi: 'रस्सी कूदना', category: 'gym', icon: '🪢', met: [8.0, 9.0, 11.0], impact: 'high', note: '120 jumps/min 9.0 · general 11.0' },
-  { id: 'session', name_en: 'Sobat session (joint-safe)', name_mr: 'सोबत सेशन', name_hi: 'सोबत सेशन', category: 'gym', icon: '✅', met: [3.0, 3.8, 5.0], impact: 'low', approx: true },
+  { id: 'session', name_en: 'Dhyey session (joint-safe)', name_mr: 'ध्येय सेशन', name_hi: 'ध्येय सेशन', category: 'gym', icon: '✅', met: [3.0, 3.8, 5.0], impact: 'low', approx: true },
   // Sports
   { id: 'cricket', name_en: 'Cricket', name_mr: 'क्रिकेट', name_hi: 'क्रिकेट', category: 'sport', icon: '🏏', met: [3.5, 4.8, 6.0], impact: 'high', note: 'batting, bowling, fielding 4.8' },
   { id: 'badminton', name_en: 'Badminton', name_mr: 'बॅडमिंटन', name_hi: 'बैडमिंटन', category: 'sport', icon: '🏸', met: [4.5, 5.5, 7.0], impact: 'high', note: 'social 5.5 · competitive 7.0' },

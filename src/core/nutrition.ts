@@ -18,10 +18,10 @@ export function ageFrom(birthYear: number, now: Date = new Date()): number {
   return Math.max(1, now.getFullYear() - birthYear);
 }
 
-/** The ages Sobat plans a deficit for. Outside them the target is maintenance. */
+/** The ages Dhyey plans a deficit for. Outside them the target is maintenance. */
 export const ADULT_AGE = { min: 18, max: 100 };
 
-/** The birth year as typed at onboarding: four digits, giving an age Sobat plans for. */
+/** The birth year as typed at onboarding: four digits, giving an age Dhyey plans for. */
 export function isAdultBirthYear(text: string, now: Date = new Date()): boolean {
   const t = text.trim();
   if (!/^[0-9]{4}$/.test(t)) return false;

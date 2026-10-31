@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Sobat",
+    "name": "Dhyey",
     "slug": "sobat",
     "version": "0.2.0",
     "orientation": "portrait",
@@ -56,15 +56,15 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Sobat needs your photos to read the food in a meal picture.",
-          "cameraPermission": "Sobat needs the camera to read the food on your plate.",
+          "photosPermission": "Dhyey needs your photos to read the food in a meal picture.",
+          "cameraPermission": "Dhyey needs the camera to read the food on your plate.",
           "microphonePermission": false
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Sobat uses the camera to read a barcode or the food on your plate."
+          "cameraPermission": "Dhyey uses the camera to read a barcode or the food on your plate."
         }
       ],
       "./plugins/withReleaseSigning.js",

@@ -12,10 +12,10 @@ describe('page titles', () => {
   });
 
   it('puts the page before the app name, and the app name alone where no page is named', () => {
-    const words: Record<string, string> = { tab_me: 'Me', app_name: 'Sobat' };
+    const words: Record<string, string> = { tab_me: 'Me', app_name: 'Dhyey' };
     const word = (k: string) => words[k] ?? k;
-    expect(pageTitle('/me', word)).toBe('Me · Sobat');
-    expect(pageTitle('/welcome', word)).toBe('Sobat');
+    expect(pageTitle('/me', word)).toBe('Me · Dhyey');
+    expect(pageTitle('/welcome', word)).toBe('Dhyey');
   });
 
   it('every page title is a word the English list has, never the raw key', () => {

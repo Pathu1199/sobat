@@ -189,8 +189,8 @@ export type GuardWords = { food: string; medical: string };
 
 export function guardWordsEn(kcalFloor: number): GuardWords {
   return {
-    food: `Sobat will not suggest skipping meals, fasting, or eating under ${kcalFloor} kcal a day. Keep to today's plan: eat your meals, protein first. If you keep a religious fast, break it with a proper meal, and ask a doctor first if you have diabetes or take medicines.`,
-    medical: 'Sobat cannot tell what a symptom or a report means. If something about your health worries you, please show it to a doctor.',
+    food: `Dhyey will not suggest skipping meals, fasting, or eating under ${kcalFloor} kcal a day. Keep to today's plan: eat your meals, protein first. If you keep a religious fast, break it with a proper meal, and ask a doctor first if you have diabetes or take medicines.`,
+    medical: 'Dhyey cannot tell what a symptom or a report means. If something about your health worries you, please show it to a doctor.',
   };
 }
 

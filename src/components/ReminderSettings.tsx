@@ -9,7 +9,7 @@ import { C } from '../ui/theme';
 /**
  * Settings → Reminders: one switch for each reminder the app sends on its
  * own, in the order they come in a day and a week (core/reminders.ts). Only
- * the meal-time prompt starts on. On the web, where only Sobat open can show
+ * the meal-time prompt starts on. On the web, where only Dhyey open can show
  * them, a note says which come there.
  */
 export function ReminderSettings() {

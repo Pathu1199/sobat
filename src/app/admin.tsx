@@ -31,7 +31,7 @@ function confirm(message: string, onYes: () => void) {
  * Every account, for the admin only: who signed in, when, from where, how
  * much they have stored, and the switches to block or wipe. The list comes
  * from the relay's directory; the files themselves sit in the admin's own
- * Google Drive, in the Sobat folder.
+ * Google Drive, in the Dhyey folder.
  */
 export default function Admin() {
   const { state } = useApp();

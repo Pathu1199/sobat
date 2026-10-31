@@ -1,4 +1,4 @@
-# Sobat — full setup, start to finish
+# Dhyey — full setup, start to finish
 
 One file, in order. Work top to bottom and everything will be in place: the
 Windows app, the AI, and the phone.
@@ -115,7 +115,7 @@ an old window, or Rust did not install.
 
 ## Part 3 — Install and open up Ollama
 
-Sobat works fine without this. Logging, calorie targets, budgets, decisions,
+Dhyey works fine without this. Logging, calorie targets, budgets, decisions,
 reminders, the food database and the fitness plan are all plain code on the
 device. Ollama only adds chat, the daily tip, the day review, the weekly
 report, and reading food photos.
@@ -239,7 +239,7 @@ x64 runs on both, because ARM64 Windows emulates it.
 The script prints the path when it finishes. It is:
 
 ```
-C:\dev\sobat\desktop\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\Sobat_0.1.0_x64-setup.exe
+C:\dev\sobat\desktop\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\Dhyey_0.1.0_x64-setup.exe
 ```
 
 To open that folder:
@@ -266,7 +266,7 @@ What you get is a normal Windows program, not a browser tab:
 
 ## Part 6 — Connect the app to Ollama
 
-Open Sobat → **Settings** → the **Ollama** section.
+Open Dhyey → **Settings** → the **Ollama** section.
 
 | Field | What to put |
 | --- | --- |
@@ -304,7 +304,7 @@ source — allow it, then install.
 The same file is at `dist-apk/Sobat-0.2.0-arm64.apk` in the project if you
 would rather copy it over USB.
 
-It is signed with Sobat's own release key, so later versions install straight
+It is signed with Dhyey's own release key, so later versions install straight
 over it and keep your data. The 0.1.0 builds were signed with the shared debug
 key; if one of those is on the phone, **export your data first** (Settings →
 Export), uninstall it, install this one, then import.
@@ -313,7 +313,7 @@ Export), uninstall it, install this one, then import.
 
 The phone and the PC must be on **the same Wi-Fi**.
 
-Open Sobat → **Settings** → **Ollama**.
+Open Dhyey → **Settings** → **Ollama**.
 
 | Field | What to put |
 | --- | --- |
@@ -325,7 +325,7 @@ Open Sobat → **Settings** → **Ollama**.
 Press **Test connection**. Same `Connected · 2 models` result, and the badge
 becomes **AI: PC**.
 
-> Your router may give the PC a different IP after a reboot. If Sobat suddenly
+> Your router may give the PC a different IP after a reboot. If Dhyey suddenly
 > says offline, run `ipconfig` again and update the address — or give the PC a
 > DHCP reservation in your router settings so it never changes.
 
@@ -347,7 +347,7 @@ Put that machine name in the phone's **Fallback (Tailscale)** field:
 http://varad-pc:11434
 ```
 
-Sobat tries **Ollama address** first and falls back to this. At home it uses
+Dhyey tries **Ollama address** first and falls back to this. At home it uses
 the fast local network; away from home it goes over Tailscale automatically.
 The badge reads **AI: PC remote** when the fallback is in use.
 
@@ -592,7 +592,7 @@ builds a debug-signed APK, which still runs but cannot update a release one.
 
 | Thing | Where |
 | --- | --- |
-| Windows installer | `desktop\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\Sobat_0.1.0_x64-setup.exe` |
+| Windows installer | `desktop\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\Dhyey_0.1.0_x64-setup.exe` |
 | Phone APK | <https://github.com/Pathu1199/sobat/releases/latest/download/sobat.apk>, or `dist-apk\Sobat-0.2.0-arm64.apk` |
 | Web build the shell loads | `dist\` |
 | Ollama API | `http://127.0.0.1:11434` on the PC, `http://<pc-ip>:11434` from the phone |
@@ -608,11 +608,11 @@ or **Vision model**. The vision one must be multimodal, or photos will fail.
 ollama pull qwen3:4b
 ```
 
-Smaller is faster and worse. Sobat never lets the model do arithmetic, so a
+Smaller is faster and worse. Dhyey never lets the model do arithmetic, so a
 weaker model costs you nicer wording, not wrong calories.
 
 ---
 
-> Sobat is not a doctor or a counsellor. Get your blood pressure, sugar and
+> Dhyey is not a doctor or a counsellor. Get your blood pressure, sugar and
 > thyroid checked before starting hard exercise, and talk to a real person when
 > things feel heavy.

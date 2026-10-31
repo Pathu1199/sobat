@@ -39,7 +39,7 @@ export default function Root({ children }: PropsWithChildren) {
         {/* Pinned to an iPhone home screen: this icon and name, no Safari chrome around the app, and the normal status bar, not a black band above a light page. */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="Sobat" />
+        <meta name="apple-mobile-web-app-title" content="Dhyey" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="manifest" href="/manifest.json" />

@@ -1,73 +1,52 @@
-"""Draws the Sobat mark and writes every icon size the app needs.
+"""Draws the Dhyey mark and writes every icon size the app needs.
 
-The mark is two discs on a tilted bar: two together (सोबत means company), a
-dumbbell, and two eyes looking up. Colours come from src/ui/theme.ts and the geometry
+The mark is three rising steps and a dot at the foot of them: a small step
+every day ("roz thoda, fit sada"), with the dot as the person about to
+climb. One colour, flat, so the same drawing serves as the Android icon,
+the web and iPhone icons, the splash and the desktop icon. The geometry
 matches src/ui/Logo.tsx. Run with: python3 scripts/make-logo.py
 """
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 
-BG = (0x0F, 0x16, 0x1B)          # C.bgAlt
-ACCENT = (0x2D, 0xD4, 0xA3)      # C.accent
-CYAN = (0x38, 0xC6, 0xE8)        # C.cyan
+TEAL = (0x1D, 0x9E, 0x75)        # the app's accent in light mode
 WHITE = (255, 255, 255)
 SS = 4                           # supersample for smooth edges
 
-# Geometry in a unit square, so every size is the same picture.
-A, B, R = (0.31, 0.61), (0.69, 0.39), 0.17
-BAR_W = 0.11
-EYE_OFF, EYE_R = (0.05, -0.05), 0.042
+# Geometry in a 100-unit square, so every size is the same picture.
+STEPS = [(18, 78), (36, 78), (36, 60), (54, 60), (54, 42), (72, 42), (72, 24)]
+STROKE = 9
+DOT, DOT_R = (76, 76), 8
 
 
-def gradient(size, bottom_left, top_right):
-    """Diagonal gradient, bottom-left to top-right, matching the SVG."""
-    img = Image.new('RGB', (size, size))
-    px = img.load()
-    for y in range(size):
-        for x in range(size):
-            t = (x + (size - 1 - y)) / max(1, 2 * (size - 1))
-            px[x, y] = tuple(round(bottom_left[i] + (top_right[i] - bottom_left[i]) * t) for i in range(3))
-    return img
-
-
-def mark(size, scale=1.0, colour=None, shift=(0, 0), eyes=True):
-    """The two discs and bar on a transparent square. `scale` shrinks it for icon safe zones."""
+def mark(size, scale=1.0, colour=WHITE):
+    """The steps and the dot on a transparent square. `scale` shrinks it for icon safe zones."""
     s = size * SS
     layer = Image.new('L', (s, s), 0)
     d = ImageDraw.Draw(layer)
 
     def pt(p):
-        return ((p[0] - 0.5) * scale + 0.5 + shift[0]) * s, ((p[1] - 0.5) * scale + 0.5 + shift[1]) * s
+        return ((p[0] - 50) * scale + 50) / 100 * s, ((p[1] - 50) * scale + 50) / 100 * s
 
-    ax, ay = pt(A)
-    bx, by = pt(B)
-    r = R * scale * s
-    w = BAR_W * scale * s
-    d.line([(ax, ay), (bx, by)], fill=255, width=int(w))
-    for cx, cy in ((ax, ay), (bx, by)):
-        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=255)
-        if eyes:
-            ex, ey = cx + EYE_OFF[0] * scale * s, cy + EYE_OFF[1] * scale * s
-            er = EYE_R * scale * s
-            d.ellipse([ex - er, ey - er, ex + er, ey + er], fill=0)
+    w = STROKE * scale / 100 * s
+    pts = [pt(p) for p in STEPS]
+    d.line(pts, fill=255, width=int(round(w)), joint='curve')
+    # Round caps: a disc at each end of the path.
+    for cx, cy in (pts[0], pts[-1]):
+        d.ellipse([cx - w / 2, cy - w / 2, cx + w / 2, cy + w / 2], fill=255)
+    dx, dy = pt(DOT)
+    r = DOT_R * scale / 100 * s
+    d.ellipse([dx - r, dy - r, dx + r, dy + r], fill=255)
 
     alpha = layer.resize((size, size), Image.LANCZOS)
-    fill = Image.new('RGB', (size, size), colour) if colour else gradient(size, ACCENT, CYAN)
     out = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    out.paste(fill, (0, 0), alpha)
+    out.paste(Image.new('RGB', (size, size), colour), (0, 0), alpha)
     return out
 
 
-def tile(size):
-    """Full-bleed icon: dark background with a soft glow behind the mark."""
-    bg = Image.new('RGB', (size, size), BG)
-    glow = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    g = ImageDraw.Draw(glow)
-    gr = int(size * 0.42)
-    g.ellipse([size * 0.5 - gr, size * 0.52 - gr, size * 0.5 + gr, size * 0.52 + gr], fill=ACCENT + (70,))
-    glow = glow.filter(ImageFilter.GaussianBlur(size * 0.16))
-    bg.paste(glow, (0, 0), glow)
-    out = bg.convert('RGBA')
-    out.alpha_composite(mark(size, scale=0.8))
+def tile(size, scale=0.84):
+    """Full-bleed icon: teal square, white mark. The OS rounds the corners itself."""
+    out = Image.new('RGBA', (size, size), TEAL + (255,))
+    out.alpha_composite(mark(size, scale=scale))
     return out
 
 
@@ -76,12 +55,14 @@ big = tile(1024)
 big.save(out + 'icon.png')
 big.resize((48, 48), Image.LANCZOS).save(out + 'favicon.png')
 # Android adaptive: the OS masks the outer third, so the mark sits in the middle 66%.
-mark(512, scale=0.54).save(out + 'android-icon-foreground.png')
-Image.new('RGBA', (512, 512), BG + (255,)).save(out + 'android-icon-background.png')
-mark(512, scale=0.54, colour=WHITE).save(out + 'android-icon-monochrome.png')
+mark(512, scale=0.56).save(out + 'android-icon-foreground.png')
+Image.new('RGBA', (512, 512), TEAL + (255,)).save(out + 'android-icon-background.png')
+mark(512, scale=0.56, colour=WHITE).save(out + 'android-icon-monochrome.png')
 mark(512, scale=0.86, colour=WHITE).save(out + 'splash-icon.png')
 # iPhone home-screen icon and PWA manifest icons, served from public/.
 big.resize((180, 180), Image.LANCZOS).save('public/apple-touch-icon.png')
 big.resize((192, 192), Image.LANCZOS).save('public/icon-192.png')
 big.resize((512, 512), Image.LANCZOS).save('public/icon-512.png')
+# The Windows shell's icon.
+big.save('desktop/src-tauri/icons/icon.png')
 print('wrote icons')

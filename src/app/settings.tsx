@@ -229,7 +229,7 @@ export default function SettingsScreen() {
         <SectionHeader title={t('reminders')} icon={<Ionicons name="notifications-outline" size={13} color={C.textFaint} />} />
         <ReminderSettings />
         <Card>
-          {/* One switch for everything that speaks up while Sobat is open: the nudges, water among them, the coach's tips, and the relay's water. */}
+          {/* One switch for everything that speaks up while Dhyey is open: the nudges, water among them, the coach's tips, and the relay's water. */}
           <Toggle title={t('rem_nudges')} desc={t(push ? 'rem_nudges_desc' : 'rem_nudges_desc_open')} on={s.nudgesEnabled} onToggle={() => app.setSettings({ nudgesEnabled: !s.nudgesEnabled })} />
           <Micro>{t('nudge_every')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
@@ -439,7 +439,7 @@ export default function SettingsScreen() {
         <Card>
           <Row style={{ gap: 12 }}>
             <View style={{ flex: 1, gap: 3 }}>
-              <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{version ? `Sobat ${version}` : 'Sobat'}</Text>
+              <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{version ? `Dhyey ${version}` : 'Dhyey'}</Text>
               <Small>{t('made_by')}</Small>
             </View>
           </Row>

@@ -1,11 +1,11 @@
-# Builds the Sobat Windows installer.
+# Builds the Dhyey Windows installer.
 #
 # Run this on the PC, from the repository root, in PowerShell:
 #
 #     .\desktop\build-windows.ps1
 #
 # It produces an installer you can double-click, at
-#     desktop\src-tauri\target\release\bundle\nsis\Sobat_<version>_x64-setup.exe
+#     desktop\src-tauri\target\release\bundle\nsis\Dhyey_<version>_x64-setup.exe
 #
 # The installer needs no administrator rights: it installs for the current
 # user only. Nothing is uploaded and nothing phones home.
@@ -83,7 +83,7 @@ Write-Host ""
 if ($installer) {
   Write-Host "Done." -ForegroundColor Green
   Write-Host "Installer: $($installer.FullName)"
-  Write-Host "Double-click it to install Sobat. It will start with Windows and sit in the tray."
+  Write-Host "Double-click it to install Dhyey. It will start with Windows and sit in the tray."
 } else {
   Write-Host "The build finished but no installer was found under $bundle." -ForegroundColor Yellow
   Write-Host "Look further up this output for the first error."

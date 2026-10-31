@@ -222,7 +222,7 @@ fn main() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![get_idle_seconds, foreground_state])
         .setup(|app| {
-            let open = MenuItem::with_id(app, "open", "Open Sobat", true, None::<&str>)?;
+            let open = MenuItem::with_id(app, "open", "Open Dhyey", true, None::<&str>)?;
             let take = MenuItem::with_id(app, "take", "Take a break now", true, None::<&str>)?;
             let pause = MenuItem::with_id(app, "pause", "Pause breaks for an hour", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
@@ -231,7 +231,7 @@ fn main() {
             TrayIconBuilder::with_id("sobat-tray")
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
-                .tooltip("Sobat")
+                .tooltip("Dhyey")
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "open" => {
                         if let Some(w) = app.get_webview_window("main") {
@@ -285,5 +285,5 @@ fn main() {
             }
         })
         .run(tauri::generate_context!())
-        .expect("failed to start Sobat");
+        .expect("failed to start Dhyey");
 }

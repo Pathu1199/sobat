@@ -1,34 +1,23 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import Svg, { Circle, Defs, Line, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { C, F } from './theme';
 
 /**
- * The Sobat mark: two discs on a tilted bar. Two together (सोबत means
- * company), a dumbbell, and two eyes looking up, all at once. Drawn as vectors so it is
+ * The Dhyey mark: three rising steps and a dot at the foot of them, a small
+ * step every day with the person about to climb. Drawn as vectors so it is
  * sharp at any size; the PNG icons in assets/images are made from the same
  * geometry by scripts/make-logo.py.
  */
 export function Logo({ size = 28, mono }: { size?: number; mono?: boolean }) {
-  // Geometry in a 100-unit square, matching the script. The bar rises
-  // left to right, so the mark reads as progress rather than a plain "oo".
-  const a = { cx: 31, cy: 61, r: 17 };
-  const b = { cx: 69, cy: 39, r: 17 };
-  const fill = mono ? C.white : 'url(#fitoo-grad)';
+  // A 100-unit square, matching the script: a teal tile with the white mark,
+  // or, in mono, the mark alone in the accent colour on whatever is behind it.
+  const ink = mono ? C.accent : C.white;
   return (
-    <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="Sobat">
-      <Defs>
-        <LinearGradient id="fitoo-grad" x1="0" y1="1" x2="1" y2="0">
-          <Stop offset="0" stopColor={C.accent} />
-          <Stop offset="1" stopColor={C.cyan} />
-        </LinearGradient>
-      </Defs>
-      <Line x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy} stroke={fill} strokeWidth={11} strokeLinecap="round" />
-      <Circle cx={a.cx} cy={a.cy} r={a.r} fill={fill} />
-      <Circle cx={b.cx} cy={b.cy} r={b.r} fill={fill} />
-      {/* A highlight in each disc: the eyes, and the sheen on a weight plate. */}
-      <Circle cx={a.cx + 5} cy={a.cy - 5} r={4.2} fill={C.bg} opacity={0.9} />
-      <Circle cx={b.cx + 5} cy={b.cy - 5} r={4.2} fill={C.bg} opacity={0.9} />
+    <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="Dhyey">
+      {mono ? null : <Rect width={100} height={100} rx={22} fill={C.accent} />}
+      <Path d="M18 78 H36 V60 H54 V42 H72 V24" fill="none" stroke={ink} strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" />
+      <Circle cx={76} cy={76} r={8} fill={ink} />
     </Svg>
   );
 }
@@ -40,7 +29,7 @@ export function Wordmark({ size = 22, alt }: { size?: number; alt?: string }) {
       <Logo size={size + 8} />
       <View>
         <Text style={{ color: C.text, fontSize: size, fontWeight: '500' }}>
-          Sobat
+          Dhyey
         </Text>
         {alt ? <Text style={{ color: C.textFaint, fontSize: F.small, fontWeight: '500' }}>{alt}</Text> : null}
       </View>

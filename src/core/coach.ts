@@ -170,7 +170,7 @@ export const MEAL_TIME_ADVICE: readonly string[] = ['coach_meal_due', 'coach_mea
 
 /**
  * The one piece of advice the coach says out loud now, or null. Only to the
- * person using Sobat here: never on a device that is signed out or reset, or
+ * person using Dhyey here: never on a device that is signed out or reset, or
  * whose store and session are not known yet, never with nudges off or in quiet
  * hours, never a call to eat at a meal's time (`MEAL_TIME_ADVICE`), and never
  * anything already said today (`said`) or with nothing to do.

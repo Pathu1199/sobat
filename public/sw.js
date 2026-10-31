@@ -1,4 +1,4 @@
-/* Sobat service worker: shows notifications for the pinned web app (iOS only
+/* Dhyey service worker: shows notifications for the pinned web app (iOS only
    displays them through a registration) and keeps the app's own files cached,
    so the pinned app opens at once and works on a weak connection.
    Bundles, fonts and images are served from the cache and refreshed behind;
@@ -54,9 +54,9 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: 'Sobat', body: event.data ? event.data.text() : '' };
+    data = { title: 'Dhyey', body: event.data ? event.data.text() : '' };
   }
-  const title = data.title || 'Sobat';
+  const title = data.title || 'Dhyey';
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || '',
