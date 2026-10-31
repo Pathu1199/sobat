@@ -234,28 +234,34 @@ describe('challengeText', () => {
     expect(challengeText({ date: TODAY, kind: 'start', target: 20 * 60 + 35, usual: 20 * 60 + 53, itemId: 'code', name: 'Coding' }, t)).toBe('Start Coding by 20:35, a little earlier than usual');
   });
 
+  it('says the step plainly on a first day, with no "more than your usual" when there is no usual yet', () => {
+    expect(challengeText({ date: TODAY, kind: 'walk', target: 10, usual: 0 }, t)).toBe('Walk 10 min');
+    expect(challengeText({ date: TODAY, kind: 'water', target: 2, usual: 0 }, t)).toBe('Drink 2 bottles of water');
+    expect(challengeText({ date: TODAY, kind: 'water', target: 1, usual: 0 }, t)).toBe('Drink 1 bottle of water');
+  });
+
   it('says one bottle in the singular, in every language, and several in the plural', () => {
     const one = { date: TODAY, kind: 'water' as const, target: 1, usual: 1 };
     const oneMore = { ...one, usual: 0 };
     const two = { ...one, target: 2, usual: 2 };
-    const twoMore = { ...two, usual: 0 };
+    const twoMore = { ...two, usual: 1 };
     expect([one, oneMore, two, twoMore].map((c) => challengeText(c, t))).toEqual([
       'Drink 1 bottle of water',
-      'Drink 1 bottle of water, 1 more than your usual',
+      'Drink 1 bottle of water',
       'Drink 2 bottles of water',
-      'Drink 2 bottles of water, 2 more than your usual',
+      'Drink 2 bottles of water, 1 more than your usual',
     ]);
     expect([one, oneMore, two, twoMore].map((c) => challengeText(c, makeT('mr')))).toEqual([
       '1 बाटली पाणी प्या',
-      '1 बाटली पाणी प्या, नेहमीपेक्षा 1 जास्त',
+      '1 बाटली पाणी प्या',
       '2 बाटल्या पाणी प्या',
-      '2 बाटल्या पाणी प्या, नेहमीपेक्षा 2 जास्त',
+      '2 बाटल्या पाणी प्या, नेहमीपेक्षा 1 जास्त',
     ]);
     expect([one, oneMore, two, twoMore].map((c) => challengeText(c, makeT('hi')))).toEqual([
       '1 बोतल पानी पिएँ',
-      '1 बोतल पानी पिएँ, आम दिनों से 1 ज़्यादा',
+      '1 बोतल पानी पिएँ',
       '2 बोतल पानी पिएँ',
-      '2 बोतल पानी पिएँ, आम दिनों से 2 ज़्यादा',
+      '2 बोतल पानी पिएँ, आम दिनों से 1 ज़्यादा',
     ]);
   });
 

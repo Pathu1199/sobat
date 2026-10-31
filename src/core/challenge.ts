@@ -214,13 +214,14 @@ export function clockOf(minute: number): string {
 export function challengeText(ch: DailyChallenge, t: (key: string) => string): string {
   switch (ch.kind) {
     case 'water': {
-      // One bottle is a singular word in Marathi and English, so it has its own line.
-      const more = ch.target > ch.usual;
+      // One bottle is a singular word in Marathi and English, so it has its own line. With no usual yet
+      // (a first day), the step is said plainly: "1 more than your usual" would compare with nothing.
+      const more = ch.usual > 0 && ch.target > ch.usual;
       const key = ch.target === 1 ? (more ? 'chal_water_more_one' : 'chal_water_one') : more ? 'chal_water_more' : 'chal_water';
       return fill(t(key), { n: ch.target, d: ch.target - ch.usual });
     }
     case 'walk':
-      return fill(t(ch.target > ch.usual ? 'chal_walk_more' : 'chal_walk'), { n: ch.target, d: ch.target - ch.usual });
+      return fill(t(ch.usual > 0 && ch.target > ch.usual ? 'chal_walk_more' : 'chal_walk'), { n: ch.target, d: ch.target - ch.usual });
     case 'protein':
       return fill(t('chal_protein'), { n: ch.target, d: ch.target - ch.usual });
     case 'start':
