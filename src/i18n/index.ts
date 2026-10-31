@@ -1039,6 +1039,8 @@ const en: Dict = {
   shield_ready: "Shield ready: one rest day this week won't break your streak.",
   shield_used: 'Shield used this week.',
   perfect_day: 'Perfect day',
+  celebrate_keep_going: 'Keep going',
+  celebrate_see_medals: 'See my medals',
 };
 
 const mr: Dict = {
@@ -2080,6 +2082,8 @@ const mr: Dict = {
   shield_ready: 'ढाल तयार: या आठवड्यात एक दिवस विश्रांती घेतली तरी मालिका तुटणार नाही.',
   shield_used: 'या आठवड्याची ढाल वापरली.',
   perfect_day: 'सोनेरी दिवस',
+  celebrate_keep_going: 'असंच चालू ठेवा',
+  celebrate_see_medals: 'माझी पदकं पाहा',
 };
 
 const hi: Dict = {
@@ -3120,6 +3124,8 @@ const hi: Dict = {
   shield_ready: 'ढाल तैयार: इस हफ़्ते एक दिन आराम से भी सिलसिला नहीं टूटेगा.',
   shield_used: 'इस हफ़्ते की ढाल लग चुकी.',
   perfect_day: 'सुनहरा दिन',
+  celebrate_keep_going: 'ऐसे ही चलते रहें',
+  celebrate_see_medals: 'मेरे पदक देखें',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
