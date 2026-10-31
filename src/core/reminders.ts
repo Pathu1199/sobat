@@ -126,20 +126,47 @@ export type ReminderInput = {
 export const PENDING_LIMIT = 64;
 
 /**
- * What fits under the phone's cap, in the order they matter: the meal-time
- * prompts and the other planned reminders first (the soonest of them, as
- * `plannedReminders` sorts them), then the office day's weekly blocks, then
- * the daily reminders; the long breaks get what is left (`dailyReminders`
- * with `room`). `planned` is how many of the planned list to hold, `office`
- * how many of the office day's, `daily` the room for the daily ones. More
- * than 64 planned is unlikely (three days of meal-time prompts, Abhyas times
- * and "Day so far", and a few morning lines, stay under it for a usual list),
- * but the cap holds if it comes: the soonest are kept.
+ * What fits under the phone's cap, in the order they matter: the planned
+ * reminders first, then the office day's weekly blocks, then the daily
+ * reminders; the long breaks get what is left (`dailyReminders` with
+ * `room`). `planned` is how many of the planned list to hold, `office` how
+ * many of the office day's, `daily` the room for the daily ones. The planned
+ * list here is the one without the Abhyas times (`fitPending`): three days of
+ * meal-time prompts, "Day so far" and a few morning lines stay far under 64,
+ * but the cap would hold if they did not.
  */
 export function pendingFit(planned: number, office: number, limit = PENDING_LIMIT): { planned: number; office: number; daily: number } {
   const kept = Math.min(planned, limit);
   const work = Math.min(office, limit - kept);
   return { planned: kept, office: work, daily: Math.max(0, limit - kept - work) };
+}
+
+/** Where each planned kind stands when room is short: the meal-time prompts, then "Day so far", then the morning lines and plan-the-week; Abhyas last. */
+const PRIORITY: Record<string, number> = { slot: 0, checklist: 1, abhyas: 3 };
+const priorityOf = (r: Reminder) => PRIORITY[r.data.kind] ?? 2;
+
+/** The planned list in the order it claims room under the cap (`PRIORITY`), each kind soonest first. Pure: the list given is left as it was. */
+export function byPriority(list: Reminder[]): Reminder[] {
+  return [...list].sort((a, b) => priorityOf(a) - priorityOf(b) || a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+}
+
+/**
+ * The planned reminders the phone holds, the office day's count and the room
+ * for the daily list, under the cap. Everything planned but Abhyas comes
+ * first, the meal-time prompts and "Day so far" before the rest
+ * (`byPriority`); then the office day; then the fixed daily ones (`fixed`,
+ * as `fixedDaily` counts them) keep their room; the Abhyas times, which have
+ * no bound of their own (items × three times × three days), fill what is
+ * left, the soonest first, and the long breaks get what remains after them.
+ */
+export function fitPending(input: { planned: Reminder[]; office: number; fixed: number }, limit = PENDING_LIMIT): { planned: Reminder[]; office: number; daily: number } {
+  const ranked = byPriority(input.planned);
+  const own = ranked.filter((r) => r.data.kind === 'abhyas');
+  const rest = ranked.filter((r) => r.data.kind !== 'abhyas');
+  const fit = pendingFit(rest.length, input.office, limit);
+  const fixed = Math.min(Math.max(0, input.fixed), fit.daily);
+  const abhyas = Math.min(own.length, fit.daily - fixed);
+  return { planned: [...rest.slice(0, fit.planned), ...own.slice(0, abhyas)], office: fit.office, daily: fit.daily - abhyas };
 }
 
 /** Days planned ahead, today included: a week and a day, so a report worked out on a Monday after its moment is next Monday's. */
@@ -148,7 +175,8 @@ const PLAN_DAYS = 8;
 export const SLOT_DAYS = 3;
 /**
  * Days of Abhyas reminders and "Day so far", today included, for the same reasons: a list of four items at two
- * times each would be 64 over a week, the whole cap, and leave no room for the office day or the daily ones.
+ * times each would be 64 over a week, the whole cap. A longer list still has no bound, so the Abhyas times come
+ * last under the cap (`fitPending`).
  */
 export const OWN_DAYS = SLOT_DAYS;
 /** `minutesOn` reads the clock only for a running timer, and the planned list counts none. */
@@ -288,12 +316,12 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
     }
 
     // "Day so far" at each of its times, as the day stands at this open; never on an off day or the day setup was finished.
-    const text = input.checklist && k < OWN_DAYS && !off && date !== input.onboardedOn ? input.checklist.texts[date] : null;
-    if (input.checklist && text) {
-      for (const time of cleanTimes(input.checklist.times)) {
+    const checklist = input.checklist && k < OWN_DAYS && !off && date !== input.onboardedOn ? { times: input.checklist.times, text: input.checklist.texts[date] } : null;
+    if (checklist?.text) {
+      for (const time of cleanTimes(checklist.times)) {
         const at = toMinutes(time);
         if (quiet(at) || !ahead(k, at)) continue;
-        out.push({ id: `checklist:${time}:${date}`, date, time, title: text.title, body: text.body, data: { kind: 'checklist', date } });
+        out.push({ id: `checklist:${time}:${date}`, date, time, title: checklist.text.title, body: checklist.text.body, data: { kind: 'checklist', date } });
       }
     }
   }
@@ -396,7 +424,6 @@ export function weeklyReport(input: {
 export function tapRoute(data: Record<string, unknown>, today: ISODate): string {
   const date = isIsoDate(data.date) ? data.date : null;
   if (data.kind === 'slot' || data.kind === 'fill') return date && date !== today ? `/?date=${date}` : '/';
-  if (data.kind === 'abhyas' || data.kind === 'checklist') return '/';
   if (data.kind === 'planweek') return date ? `/plan?date=${date}` : '/plan';
   if (data.kind === 'report') return '/progress';
   if (data.kind === 'sleep') return '/sleep';
@@ -684,6 +711,20 @@ export async function syncReminders(input: {
 /** The daily reminders this device should hold. Anything registered and not in here is to be cancelled. */
 export function dailyReminders(input: DailyInput): DailyReminder[] {
   if (!input.active) return [];
+  const room = Math.max(0, input.room ?? Infinity);
+  const fixed = fixedDaily(input).slice(0, room);
+  return [...fixed, ...longBreaks(input).slice(0, room - fixed.length)];
+}
+
+/**
+ * The daily reminders at a fixed time, each by its own switch, in the day's
+ * order: the morning check-in, the day's line, water and the evening review.
+ * None on a device signed out or reset, and none whose hour is in quiet hours.
+ * They come before the long breaks under the cap, and before the Abhyas times
+ * (`fitPending`).
+ */
+export function fixedDaily(input: Pick<DailyInput, 'active' | 'sleepCheckin' | 'water' | 'dayReview' | 'quietStartHour' | 'quietEndHour' | 'mantra' | 't'>): DailyReminder[] {
+  if (!input.active) return [];
   const { t } = input;
   const out: DailyReminder[] = [];
   // Morning check-in, while last night is still fresh.
@@ -694,10 +735,8 @@ export function dailyReminders(input: DailyInput): DailyReminder[] {
   if (input.water) out.push({ id: DAILY_IDS.water, hour: 15, minute: 0, title: t('add_water'), body: t('act_drink_water'), data: { kind: 'water' } });
   // The day recap, just before things wind down.
   if (input.dayReview) out.push({ id: DAILY_IDS.review, hour: 21, minute: 30, title: t('day_review'), body: t('write_review'), data: { kind: 'review' } });
-  const room = Math.max(0, input.room ?? Infinity);
   // A fixed one whose hour falls in quiet hours is dropped: the night is the person's.
-  const fixed = out.filter((r) => !inQuietHours(r.hour, input.quietStartHour, input.quietEndHour)).slice(0, room);
-  return [...fixed, ...longBreaks(input).slice(0, room - fixed.length)];
+  return out.filter((r) => !inQuietHours(r.hour, input.quietStartHour, input.quietEndHour));
 }
 
 /**

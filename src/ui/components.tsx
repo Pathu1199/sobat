@@ -254,6 +254,8 @@ export function Field({
   multiline,
   autoFocus,
   accessibilityLabel,
+  onBlur,
+  onSubmitEditing,
 }: {
   label?: string;
   value: string;
@@ -264,6 +266,9 @@ export function Field({
   autoFocus?: boolean;
   /** For a box without a visible label. */
   accessibilityLabel?: string;
+  /** For a box that saves what was typed once the user leaves it or presses the keyboard's return key. */
+  onBlur?: () => void;
+  onSubmitEditing?: () => void;
 }) {
   return (
     <View style={{ gap: 7, flex: 1 }}>
@@ -277,6 +282,8 @@ export function Field({
         multiline={multiline}
         autoFocus={autoFocus}
         accessibilityLabel={accessibilityLabel ?? label ?? placeholder}
+        onBlur={onBlur}
+        onSubmitEditing={onSubmitEditing}
         style={[st.input, multiline && { minHeight: 78, textAlignVertical: 'top' }]}
       />
     </View>

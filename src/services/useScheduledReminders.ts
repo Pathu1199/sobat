@@ -7,11 +7,12 @@ import { settledSlotIds, slotStates } from '../core/pattern';
 import type { DayRecordState } from '../core/record';
 import {
   dailyReminders,
+  fitPending,
+  fixedDaily,
   lastLogDate,
   MORNING_HOUR,
   officeReminders,
   OWN_DAYS,
-  pendingFit,
   PLANNED_PREFIX,
   plannedReminders,
   SLOT_DAYS,
@@ -111,10 +112,12 @@ export function useReminderGate(): { known: boolean; active: boolean } {
  * list changes; the meal-time prompts and the other planned ones are
  * reconciled against what the OS still holds, so a logged slot's prompt is
  * cancelled and a quiet week stays covered. All of them stay under the
- * phone's cap of 64 pending notifications (`pendingFit`): the planned ones
- * first, then the office day, the long breaks cut to what is left; one run at
- * a time takes every list to the phone, every cancel before any add
- * (`reminderOps`), so the count never passes the cap on the way. A device
+ * phone's cap of 64 pending notifications (`fitPending`): the planned ones
+ * first, the meal-time prompts above all, then the office day, then the fixed
+ * daily ones; the Abhyas times get what is left and the long breaks what
+ * remains after them. One run at a time takes every list to the phone, every
+ * cancel before any add (`reminderOps`), so the count never passes the cap on
+ * the way. A device
  * signed out or reset also has what is on its tray taken off, so a later
  * person's tap never acts on it. The web and the PC keep their in-app prompts
  * instead (useWorkSchedule).
@@ -280,10 +283,16 @@ export function useScheduledReminders() {
     checklistJson,
     storedTimes,
   ]);
-  // Under the phone's cap: the soonest planned ones, then the office day, then room for the daily ones.
-  const fit = pendingFit(wanted.length, office.length);
+  // The fixed daily ones (check-in, the day's line, water, review), counted so they keep their room before the Abhyas times.
+  const fixedCount = useMemo(
+    () => fixedDaily({ active, sleepCheckin, water, dayReview, quietStartHour, quietEndHour, mantra: mantraText, t: makeT(lang) }).length,
+    [active, sleepCheckin, water, dayReview, quietStartHour, quietEndHour, mantraText, lang],
+  );
+  // Under the phone's cap (`fitPending`): the meal-time prompts, "Day so far" and the rest planned, then the office day,
+  // then the fixed daily ones; the Abhyas times get what is left, soonest first, and the long breaks what remains.
+  const fit = useMemo(() => fitPending({ planned: wanted, office: office.length, fixed: fixedCount }), [wanted, office.length, fixedCount]);
   // By value: the list is worked out again every minute, and only a real change is taken to the OS.
-  const wantedJson = JSON.stringify(wanted.slice(0, fit.planned));
+  const wantedJson = JSON.stringify(fit.planned);
   const officeJson = JSON.stringify(office.slice(0, fit.office));
   const room = fit.daily;
 

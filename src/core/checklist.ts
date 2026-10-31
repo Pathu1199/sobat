@@ -23,10 +23,19 @@ export const DEFAULT_CHECKLIST_TIMES: readonly string[] = ['20:30'];
  * `settings.checklistTimes` as the app reads it: clock times, each once, in
  * the day's order, at most three, as an item's times are kept (`cleanTimes`).
  * Anything that is not a list, as on a store from before the setting existed,
- * has the default; an empty list stays empty.
+ * and a list with no clock time left in it, has the default: the switch, not
+ * an empty list, is what turns "Day so far" off.
  */
 export function checklistTimes(v: unknown): string[] {
-  return Array.isArray(v) ? cleanTimes(v) : [...DEFAULT_CHECKLIST_TIMES];
+  const times = cleanTimes(v);
+  return times.length > 0 ? times : [...DEFAULT_CHECKLIST_TIMES];
+}
+
+/** The times with the one at `index` changed to `text`, kept as `checklistTimes` keeps them; null while `text` is not a clock time, or changes nothing. */
+export function withTimeAt(times: unknown, index: number, text: string): string[] | null {
+  const now = checklistTimes(times);
+  if (index < 0 || index >= now.length || now[index] === text || cleanTimes([text]).length === 0) return null;
+  return checklistTimes(now.map((t, i) => (i === index ? text : t)));
 }
 
 /** The times the Settings row offers next, in this order: the first one not on the list yet. */

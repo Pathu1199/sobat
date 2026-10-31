@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import { MAX_TIMES } from '../core/abhyas';
-import { checklistTimes, withChecklistTime } from '../core/checklist';
+import { checklistTimes, withChecklistTime, withTimeAt } from '../core/checklist';
 import { REMINDER_ROWS } from '../core/reminders';
 import { isValidTime } from '../core/schedule';
 import { fill, makeT } from '../i18n';
@@ -45,12 +45,16 @@ function ChecklistTimes() {
     <View style={{ gap: 8, paddingTop: 6, paddingBottom: 6 }}>
       <Micro>{t('rem_checklist_times')}</Micro>
       {times.map((time, i) => (
-        // Keyed by the time too: a saved time may move in the day's order, and its box starts again from what was saved.
+        // Keyed by place, so a box keeps its focus while the user types; what was typed is saved when they leave it.
         <TimeRow
-          key={`${i}-${time}`}
+          key={i}
           time={time}
           label={fill(t('rem_checklist_time'), { n: i + 1 })}
-          onChange={(v) => save(times.map((x, j) => (j === i ? v : x)))}
+          onCommit={(text) => {
+            const next = withTimeAt(times, i, text);
+            if (next) save(next);
+            return next !== null || text === time;
+          }}
           onRemove={times.length > 1 ? () => save(times.filter((_, j) => j !== i)) : undefined}
         />
       ))}
@@ -59,23 +63,24 @@ function ChecklistTimes() {
   );
 }
 
-/** One time: a box that saves only a valid time, with the 24-hour hint while it holds anything else, and a remove button a finger wide. */
-function TimeRow({ time, label, onChange, onRemove }: { time: string; label: string; onChange: (v: string) => void; onRemove?: () => void }) {
+/**
+ * One time: what is typed stays in the box until the user leaves it or
+ * presses return, and is saved then if it is a 24-hour time; anything else
+ * stays, with the hint under it. The saved times then show in the day's
+ * order. A remove button a finger wide sits beside it.
+ */
+function TimeRow({ time, label, onCommit, onRemove }: { time: string; label: string; onCommit: (text: string) => boolean; onRemove?: () => void }) {
   const app = useApp();
   const t = makeT(app.state.profile.lang);
-  const [text, setText] = useState(time);
+  // What the user is typing; null shows the saved time.
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft !== null && onCommit(draft)) setDraft(null);
+  };
   return (
     <View style={{ gap: 6 }}>
       <Row style={{ gap: 8 }}>
-        <Field
-          value={text}
-          placeholder="20:30"
-          accessibilityLabel={label}
-          onChangeText={(v) => {
-            setText(v);
-            if (isValidTime(v) && v !== time) onChange(v);
-          }}
-        />
+        <Field value={draft ?? time} placeholder="20:30" accessibilityLabel={label} onChangeText={setDraft} onBlur={commit} onSubmitEditing={commit} />
         {onRemove ? (
           <Pressable
             onPress={onRemove}
@@ -86,7 +91,7 @@ function TimeRow({ time, label, onChange, onRemove }: { time: string; label: str
           </Pressable>
         ) : null}
       </Row>
-      {!isValidTime(text) ? <Micro color={C.amber}>{t('sched_time_hint')}</Micro> : null}
+      {draft !== null && !isValidTime(draft) ? <Micro color={C.amber}>{t('sched_time_hint')}</Micro> : null}
     </View>
   );
 }

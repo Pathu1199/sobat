@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checklistTimes, dayChecklist, DEFAULT_CHECKLIST_TIMES, withChecklistTime, type ChecklistInput } from '../checklist';
+import { checklistTimes, dayChecklist, DEFAULT_CHECKLIST_TIMES, withChecklistTime, withTimeAt, type ChecklistInput } from '../checklist';
 import type { DayMenu } from '../menu';
 import { skipId } from '../menu';
 import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
@@ -146,17 +146,33 @@ describe('checklistTimes: when "Day so far" comes', () => {
     for (const odd of [undefined, null, '20:30', 7, { a: 1 }, false]) expect(checklistTimes(odd), String(odd)).toEqual(['20:30']);
   });
 
-  it('keeps clock times only, each once, in the day\'s order, at most three; an empty list stays empty', () => {
+  it('keeps clock times only, each once, in the day\'s order, at most three', () => {
     expect(checklistTimes(['21:00', '08:15', '21:00', '25:00', 'x', 7, '9:00'])).toEqual(['08:15', '21:00']);
     expect(checklistTimes(['23:00', '20:30', '13:00', '07:00'])).toEqual(['07:00', '13:00', '20:30']);
-    expect(checklistTimes([])).toEqual([]);
+  });
+
+  it('a list with no clock time left in it has the default, as no list does: the switch, not an empty list, turns it off', () => {
+    expect(checklistTimes([7, 'x'])).toEqual(['20:30']);
+    expect(checklistTimes(['25:00', '9:00', null])).toEqual(['20:30']);
+    expect(checklistTimes([])).toEqual(['20:30']);
   });
 
   it('adds one time at a time, the first free of 13:00, 18:00, 20:30, 09:00, and no more than three', () => {
-    expect(withChecklistTime([])).toEqual(['13:00']);
     expect(withChecklistTime(['20:30'])).toEqual(['13:00', '20:30']);
     expect(withChecklistTime(['13:00', '20:30'])).toEqual(['13:00', '18:00', '20:30']);
     expect(withChecklistTime(['13:00', '18:00', '20:30'])).toEqual(['13:00', '18:00', '20:30']);
     expect(withChecklistTime(undefined)).toEqual(['13:00', '20:30']);
+    expect(withChecklistTime(['08:00'])).toEqual(['08:00', '13:00']);
+  });
+
+  it('changes one time when what was typed is a clock time and differs, kept in the day\'s order and once each; nothing for anything else', () => {
+    expect(withTimeAt(['13:00', '20:30'], 1, '10:30')).toEqual(['10:30', '13:00']);
+    expect(withTimeAt(['13:00', '20:30'], 0, '21:15')).toEqual(['20:30', '21:15']);
+    // The same time as another one leaves one of them.
+    expect(withTimeAt(['13:00', '20:30'], 0, '20:30')).toEqual(['20:30']);
+    // Half typed, not a time, unchanged, or a place that is not there: nothing to save.
+    for (const text of ['1', '10:3', '7:15', '25:00', 'ab:cd', '']) expect(withTimeAt(['13:00', '20:30'], 0, text), text).toBeNull();
+    expect(withTimeAt(['13:00', '20:30'], 0, '13:00')).toBeNull();
+    expect(withTimeAt(['13:00', '20:30'], 2, '10:30')).toBeNull();
   });
 });

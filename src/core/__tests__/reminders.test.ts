@@ -7,6 +7,7 @@ import type { DayRecord, DayRecordState } from '../record';
 import {
   DAILY_IDS,
   LONG_BREAK_ID,
+  byPriority,
   dailyReminders,
   lastLogDate,
   missedDays,
@@ -26,6 +27,8 @@ import {
   reportText,
   slotPlans,
   firstTap,
+  fitPending,
+  fixedDaily,
   tapKey,
   tapPlan,
   tapPlanAt,
@@ -785,6 +788,60 @@ describe('the phone\'s cap on pending notifications', () => {
     expect(r.slice(4).map((x) => x.id)).toEqual(full.filter(isLong).slice(0, 6).map((x) => x.id));
     expect(dailyReminders({ ...day, breaks: often, room: 2 }).map((x) => x.id)).toEqual(['sobat-sleep-checkin', 'sobat-mantra']);
     expect(dailyReminders({ ...day, breaks: often, room: 0 })).toEqual([]);
+  });
+
+  it('orders the planned list by what matters: the meal-time prompts, "Day so far", the morning lines, then the Abhyas times, each soonest first', () => {
+    const r = (id: string, kind: string, date: string, time: string) => ({ id, date, time, title: id, body: '', data: { kind, date } });
+    const list = [r('a2', 'abhyas', '2026-10-13', '07:00'), r('a1', 'abhyas', '2026-10-12', '21:00'), r('f', 'fill', '2026-10-13', '09:00'), r('c', 'checklist', '2026-10-13', '20:30'), r('s2', 'slot', '2026-10-13', '13:00'), r('s1', 'slot', '2026-10-12', '19:30')];
+    expect(byPriority(list).map((x) => x.id)).toEqual(['s1', 's2', 'c', 'f', 'a1', 'a2']);
+    // The list given is left as it was.
+    expect(list[0].id).toBe('a2');
+  });
+
+  it('counts the fixed daily ones each by its switch, none in quiet hours, and none on a device signed out', () => {
+    expect(fixedDaily(day).map((r) => r.id)).toEqual(['sobat-sleep-checkin', 'sobat-mantra', 'sobat-water', 'sobat-day-review']);
+    expect(fixedDaily({ ...day, water: false, mantra: '' }).map((r) => r.id)).toEqual(['sobat-sleep-checkin', 'sobat-day-review']);
+    // Quiet from 21:00 to 08:00: the check-in at 7:30 and the review at 21:30 stay quiet.
+    expect(fixedDaily({ ...day, quietStartHour: 21, quietEndHour: 8 }).map((r) => r.id)).toEqual(['sobat-mantra', 'sobat-water']);
+    expect(fixedDaily({ ...day, active: false })).toEqual([]);
+  });
+
+  it('a long Abhyas list never pushes out a meal-time prompt, "Day so far", the office day or the fixed daily ones: Abhyas gets what is left, soonest first, and the long breaks after it', () => {
+    const many = Array.from({ length: 12 }, (_, i): AbhyasItem => ({ id: `job${i}`, name: `Job ${i}`, icon: 'book-outline', kind: 'repeat', days: [0, 1, 2, 3, 4, 5, 6], times: ['08:00', '12:00', '17:00'], order: i, createdAt: '2026-10-01T08:00:00.000Z' }));
+    const text = { title: 'Dhyey · Day so far', body: '○ Lunch' };
+    const planned = plannedReminders({ ...base, nowMinutes: 0, abhyas: { items: many, ticks: [], sessions: [] }, checklist: { times: ['20:30'], texts: { '2026-10-12': text, '2026-10-13': text, '2026-10-14': text } } });
+    const kind = (k: string) => (r: { data: Record<string, string> }) => r.data.kind === k;
+    const own = planned.filter(kind('abhyas'));
+    expect(own).toHaveLength(12 * 3 * 3);
+    expect(planned.length).toBeGreaterThan(PENDING_LIMIT);
+
+    const office = 10;
+    const fit = fitPending({ planned, office, fixed: fixedDaily(day).length });
+    // Every meal-time prompt and "Day so far" of the days planned is held, and the office day whole.
+    expect(fit.planned.filter(kind('slot')).map((r) => r.id)).toEqual(planned.filter(kind('slot')).map((r) => r.id));
+    expect(fit.planned.filter(kind('slot'))).toHaveLength(3 * 3);
+    expect(fit.planned.filter(kind('checklist'))).toHaveLength(3);
+    expect(fit.office).toBe(office);
+    // The fixed daily ones keep their room; the long breaks, every fifteen minutes, get none once Abhyas has taken the rest.
+    const daily = dailyReminders({ ...day, breaks: often, room: fit.daily });
+    expect(daily.filter((r) => !isLong(r))).toHaveLength(4);
+    expect(daily.filter(isLong)).toEqual([]);
+    // The lines after days away are held too: everything but Abhyas comes first.
+    const rest = planned.filter((r) => r.data.kind !== 'abhyas');
+    expect(fit.planned.filter((r) => r.data.kind !== 'abhyas')).toHaveLength(rest.length);
+    // Abhyas fills what is left, the soonest first.
+    const held = fit.planned.filter(kind('abhyas'));
+    expect(held.length).toBe(PENDING_LIMIT - rest.length - office - 4);
+    expect(held.length).toBeGreaterThan(0);
+    expect(held.map((r) => r.id)).toEqual(own.slice(0, held.length).map((r) => r.id));
+    expect(fit.planned.length + fit.office + daily.length).toBe(PENDING_LIMIT);
+  });
+
+  it('with room to spare holds every planned one, Abhyas included, and leaves the rest to the daily ones', () => {
+    const planned = plannedReminders({ ...base, abhyas: { items: [{ id: 'yoga', name: 'Yoga', icon: 'book-outline', kind: 'repeat', days: [0, 1, 2, 3, 4, 5, 6], times: ['18:00'], order: 0, createdAt: '2026-10-01T08:00:00.000Z' }], ticks: [], sessions: [] } });
+    const fit = fitPending({ planned, office: 6, fixed: 4 });
+    expect([...fit.planned].sort((a, b) => a.id.localeCompare(b.id))).toEqual([...planned].sort((a, b) => a.id.localeCompare(b.id)));
+    expect(fit).toMatchObject({ office: 6, daily: PENDING_LIMIT - planned.length - 6 });
   });
 
   it('never goes over 64 in all: a busy week of meal prompts, the office day and breaks every fifteen minutes', () => {
