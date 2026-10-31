@@ -9,7 +9,7 @@ import type { DayRecord, DayRecordState } from './record';
 import { slotLabel, type Routine } from './routine';
 import { orderedBlocks, toMinutes, type WorkSchedule } from './schedule';
 import { shownWeight, signedKg } from './tileText';
-import type { AppState, FoodItem, ISODate, Lang, Meal, Settings, SlotSkip, WeightLog } from './types';
+import type { AbhyasItem, AppState, FoodItem, ISODate, Lang, Meal, Settings, SlotSkip, WeightLog } from './types';
 import { isOffDay } from './week';
 import { plannedKcal as linesKcal } from './weekPlan';
 import { fill, numberText } from '../i18n';
@@ -237,6 +237,15 @@ export function slotPlans(menu: DayMenu, foods: FoodItem[]): Record<string, numb
   return out;
 }
 
+/**
+ * What an Abhyas reminder says, on the phone and through the relay alike (`pushSchedule.ts`): the item's name, and
+ * "12 of 30 min today" for an item with a minutes target or "Today's list" for one without.
+ */
+export function abhyasWords(item: Pick<AbhyasItem, 'name' | 'targetMin'>, minutes: number, t: (key: string) => string): { title: string; body: string } {
+  const target = typeof item.targetMin === 'number' && item.targetMin > 0 ? item.targetMin : null;
+  return { title: item.name || t('rem_abhyas'), body: target ? fill(t('rem_abhyas_min'), { n: minutes, m: target }) : t('rem_abhyas_list') };
+}
+
 export function plannedReminders(input: ReminderInput): Reminder[] {
   const days = input.days ?? PLAN_DAYS;
   const out: Reminder[] = [];
@@ -305,12 +314,11 @@ export function plannedReminders(input: ReminderInput): Reminder[] {
       for (const item of itemsOn(abhyas.items, date)) {
         const minutes = minutesOn(abhyas.sessions, null, item.id, date, NO_TIMER_CLOCK);
         if (isDone(item, date, abhyas.ticks, minutes)) continue;
-        const target = typeof item.targetMin === 'number' && item.targetMin > 0 ? item.targetMin : null;
-        const body = target ? fill(input.t('rem_abhyas_min'), { n: minutes, m: target }) : input.t('rem_abhyas_list');
+        const { title, body } = abhyasWords(item, minutes, input.t);
         for (const time of cleanTimes(item.times)) {
           const at = toMinutes(time);
           if (quiet(at) || !ahead(k, at)) continue;
-          out.push({ id: `abhyas:${item.id}:${time}:${date}`, date, time, title: item.name || input.t('rem_abhyas'), body, data: { kind: 'abhyas', itemId: item.id, date } });
+          out.push({ id: `abhyas:${item.id}:${time}:${date}`, date, time, title, body, data: { kind: 'abhyas', itemId: item.id, date } });
         }
       }
     }

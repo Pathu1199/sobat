@@ -5,6 +5,7 @@ import type { DayMenu } from '../menu';
 import { skipId } from '../menu';
 import type { DayRecord, DayRecordState } from '../record';
 import {
+  abhyasWords,
   DAILY_IDS,
   LONG_BREAK_ID,
   byPriority,
@@ -299,6 +300,19 @@ describe('plannedReminders: plan next week and the weekly report', () => {
   it('a report worked out on a Monday after nine is planned for next Monday, a week ahead', () => {
     const r = plannedReminders({ ...quiet, today: '2026-10-12', nowMinutes: 10 * 60, report: { monday: '2026-10-19', text: 'rem_report_ready' } });
     expect(r.map((x) => [x.id, x.time])).toEqual([['report:2026-10-19', '09:00']]);
+  });
+});
+
+describe('abhyasWords', () => {
+  const item = (p: Partial<AbhyasItem> = {}): AbhyasItem => ({ id: 'i', name: 'Reading', icon: 'book-outline', kind: 'repeat', days: [1], times: ['07:00'], order: 0, createdAt: '2026-10-01T08:00:00.000Z', ...p });
+  const t = (k: string) => (k === 'rem_abhyas_min' ? '{n} of {m} min today' : k);
+
+  it("says the item's name, and the minutes so far for one with a target or that it is on today's list for one without", () => {
+    expect(abhyasWords(item({ targetMin: 30 }), 12, t)).toEqual({ title: 'Reading', body: '12 of 30 min today' });
+    expect(abhyasWords(item(), 12, t)).toEqual({ title: 'Reading', body: 'rem_abhyas_list' });
+    expect(abhyasWords(item({ targetMin: 0 }), 0, t).body).toBe('rem_abhyas_list');
+    // An item with no name is called Abhyas.
+    expect(abhyasWords(item({ name: '' }), 0, t).title).toBe('rem_abhyas');
   });
 });
 

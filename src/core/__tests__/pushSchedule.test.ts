@@ -4,7 +4,8 @@ import { MAX_TIMES } from '../abhyas';
 import { makeT } from '../../i18n';
 import { EMPTY_STATE } from '../../store/defaults';
 import type { DayMenu } from '../menu';
-import { buildPushSchedule, PUSH_LIMITS, pushStep } from '../pushSchedule';
+import { buildPushSchedule, clip, PUSH_LIMITS, pushStep } from '../pushSchedule';
+import { abhyasWords } from '../reminders';
 import type { AbhyasItem, AbhyasSession, AbhyasTick, AppState, Meal } from '../types';
 
 describe('pushStep', () => {
@@ -28,6 +29,52 @@ describe('pushStep', () => {
     expect(pushStep({ ...here, relayOn: false, active: false })).toBe('none');
     expect(pushStep({ ...here, configured: false, active: false })).toBe('none');
     expect(pushStep({ ...here, relayOn: false })).toBe('none');
+  });
+});
+
+describe('clip', () => {
+  const x = (n: number) => 'x'.repeat(n);
+  // A cut on a whole letter as the reader sees it: a vowel sign stays with its letter, a conjunct whole, an emoji whole.
+  const cases: [string, string][] = [
+    [`${x(78)}कि abc`, `${x(78)}…`],
+    [`${x(77)}क्ष abc`, `${x(77)}…`],
+    [`${x(76)}कि abc`, `${x(76)}कि…`],
+    [`${x(78)}👨‍👩‍👧abc`, `${x(78)}…`],
+    [`${x(76)}👨‍👩‍👧abc`, `${x(76)}…`],
+    [`${x(77)}👍🏽abc`, `${x(77)}…`],
+    [`${x(78)}😀abc`, `${x(78)}…`],
+    [`${x(77)}1️⃣ x abc`, `${x(77)}…`],
+  ];
+  const joinsBack = /^[\p{M}\u200C\u200D\u{1F3FB}-\u{1F3FF}]/u;
+  const loneHalf = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+  const words = ['अभ्यासक्रम ', 'क्षत्रिय ', 'पढ़ाई ', 'श्री ', 'x', ' ', '👨‍👩‍👧', '👍🏽', '😀', '्', 'ि', '\u200D', 'é'];
+  let seed = 7;
+  const pick = () => words[(seed = (seed * 1103515245 + 12345) % 2147483648) % words.length];
+
+  const check = () => {
+    for (const [text, cut] of cases) expect(clip(text, PUSH_LIMITS.text), text).toBe(cut);
+    expect(clip('Short', PUSH_LIMITS.text)).toBe('Short');
+    for (let k = 0; k < 300; k++) {
+      const text = Array.from({ length: 60 }, pick).join('');
+      const out = clip(text, PUSH_LIMITS.text);
+      if (text.length <= PUSH_LIMITS.text) continue;
+      const kept = out.slice(0, -1);
+      expect(out.endsWith('…') && out.length <= PUSH_LIMITS.text && text.startsWith(kept), text).toBe(true);
+      // Nothing that belongs to the last letter kept is left behind, and no letter ends on a joiner or a virama.
+      expect((kept.length > 0 && joinsBack.test(text.slice(kept.length))) || /[\s\u200D\u094D]$/.test(kept) || loneHalf.test(kept), text).toBe(false);
+    }
+  };
+
+  it('cuts on a whole letter, never inside one, in Marathi and Hindi and with emoji', check);
+
+  it('cuts on a whole letter where the system has no grapheme segmenter', () => {
+    const segmenter = Intl.Segmenter;
+    Reflect.set(Intl, 'Segmenter', undefined);
+    try {
+      check();
+    } finally {
+      Reflect.set(Intl, 'Segmenter', segmenter);
+    }
   });
 });
 
@@ -185,6 +232,12 @@ describe('buildPushSchedule: Abhyas and the day so far (version 2)', () => {
     expect(validSchedule(JSON.parse(JSON.stringify(s)))).toBe(true);
     // Under the request size the relay takes.
     expect(new TextEncoder().encode(JSON.stringify(s)).length).toBeLessThan(64 * 1024);
+  });
+
+  it('says what the phone says for each item', () => {
+    const s = build({ ...state, abhyasSessions: [session('yoga', 12), session('bank', 10)] });
+    expect(s.abhyas[1]).toMatchObject({ title: abhyasWords(yoga, 0, en).title, body: abhyasWords(yoga, 0, en).body, bodyToday: abhyasWords(yoga, 12, en).body });
+    expect(s.once[0]).toMatchObject(abhyasWords(bank, 10, en));
   });
 
   it("matches the relay's limits, the reminder times an item may have among them", () => {

@@ -7,11 +7,11 @@ import type { DayMenu } from './menu';
 import { planFrom } from './plan';
 import { orderedBlocks, type WorkSchedule } from './schedule';
 import { slotLabel, slotTime, SLOT_GRACE_MIN, type Routine } from './routine';
+import { abhyasWords } from './reminders';
 import { isOffDay } from './week';
 import { MANTRAS } from '../data/mantras';
 import { dailyTargets } from './nutrition';
 import type { AbhyasItem, AppState, ISODate, Lang } from './types';
-import { fill } from '../i18n';
 
 /**
  * Everything the relay needs to send reminders while the app is closed, and
@@ -71,10 +71,35 @@ export type PushSchedule = {
  */
 export const PUSH_LIMITS = { rows: 30, id: 64, text: 80, checklist: 800, times: MAX_TIMES } as const;
 
-/** The text cut to `max` characters with an ellipsis, on a whole character, never half of an emoji. */
-function clip(text: string, max: number): string {
+// What joins onto the character before it (a mark: a vowel sign, a virama, a variation selector; the joiners; a skin
+// tone; an emoji tag), and what joins the next character onto itself (the joiner, and the virama of Devanagari and the
+// scripts beside it, which makes a conjunct such as क्ष).
+const JOINS_BACK = /^[\p{M}\u200C\u200D\u{1F3FB}-\u{1F3FF}\u{E0020}-\u{E007F}]/u;
+const JOINS_ON = /^[\u200D\u094D\u09CD\u0A4D\u0ACD\u0B4D\u0BCD\u0C4D\u0CCD\u0D4D]$/;
+const HIGH = /^[\uD800-\uDBFF]$/;
+const LOW = /^[\uDC00-\uDFFF]$/;
+
+/**
+ * The text cut to at most `max` UTF-16 units, the relay's measure, with an ellipsis, on a whole letter as the reader
+ * sees it: never half of an emoji, a Devanagari letter without its vowel sign, or a conjunct after its virama. With
+ * `Intl.Segmenter`, which current browsers have (the relay is used on the web only) and an older one may not, the cut
+ * falls between graphemes; without it, or where it does not keep conjuncts whole yet, the cut backs off to the start
+ * of the letter it fell in, and past any space before it.
+ */
+export function clip(text: string, max: number): string {
   if (text.length <= max) return text;
-  return `${text.slice(0, max - 1).replace(/[\uD800-\uDBFF]$/, '').trimEnd()}…`;
+  let cut = max - 1;
+  const Segmenter = typeof Intl === 'undefined' ? undefined : Intl.Segmenter;
+  if (typeof Segmenter === 'function') {
+    cut = 0;
+    for (const { segment } of new Segmenter(undefined, { granularity: 'grapheme' }).segment(text)) {
+      if (cut + segment.length > max - 1) break;
+      cut += segment.length;
+    }
+  } else if (HIGH.test(text[cut - 1])) cut -= 1;
+  const back = () => (cut >= 2 && LOW.test(text[cut - 1]) && HIGH.test(text[cut - 2]) ? 2 : 1);
+  while (cut > 0 && (/\s/.test(text[cut - 1]) || JOINS_ON.test(text[cut - 1]) || JOINS_BACK.test(text.slice(cut, cut + 2)))) cut -= back();
+  return `${text.slice(0, cut)}…`;
 }
 
 // Finished sessions only: the running timer would change the words every minute it runs. Its minutes count once it stops.
@@ -83,18 +108,14 @@ const NO_TIMER_CLOCK = new Date(0);
 /**
  * The Abhyas part, while its reminders are on: the repeating items in the user's order, the one-offs from today
  * on that are not done yet, and the repeating items done today. An item removed, or with no reminder time, has
- * none. The words are the phone's: "12 of 30 min today" for an item with a minutes target, "Today's list" for one
- * without.
+ * none. The words are the phone's (`abhyasWords`), cut to what the relay takes.
  */
 function abhyasPart(state: AppState, today: ISODate, t: (k: string) => string): Pick<PushSchedule, 'abhyas' | 'once' | 'doneToday' | 'doneDate'> {
   if (!state.settings.reminders.abhyas) return { abhyas: [], once: [], doneToday: [], doneDate: today };
   const { abhyasTicks: ticks, abhyasSessions: sessions } = state;
   const minutes = (item: AbhyasItem, date: ISODate) => minutesOn(sessions, null, item.id, date, NO_TIMER_CLOCK);
-  const words = (item: AbhyasItem, n: number) => {
-    const target = typeof item.targetMin === 'number' && item.targetMin > 0 ? item.targetMin : null;
-    return clip(target ? fill(t('rem_abhyas_min'), { n, m: target }) : t('rem_abhyas_list'), PUSH_LIMITS.text);
-  };
-  const title = (item: AbhyasItem) => clip(item.name || t('rem_abhyas'), PUSH_LIMITS.text);
+  const words = (item: AbhyasItem, n: number) => clip(abhyasWords(item, n, t).body, PUSH_LIMITS.text);
+  const title = (item: AbhyasItem) => clip(abhyasWords(item, 0, t).title, PUSH_LIMITS.text);
   const live = state.abhyasItems.filter((i) => !i.archivedAt && cleanTimes(i.times).length > 0);
   // Each item's place in the user's list, as Today shows it (`itemsOn`).
   const place = new Map([...live].sort((a, b) => a.order - b.order).map((i, n) => [i.id, n]));
