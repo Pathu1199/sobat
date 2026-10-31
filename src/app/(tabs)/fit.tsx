@@ -213,6 +213,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
           <>
             {weekCard}
             {history}
+            <Small color={C.textFaint}>{t('medical_note')}</Small>
           </>
         </Cols>
       </Page>
@@ -227,6 +228,7 @@ export default function FitScreen({ embedded }: { embedded?: boolean } = {}) {
       {moves}
       {weekCard}
       {history}
+      <Small color={C.textFaint}>{t('medical_note')}</Small>
     </Page>
   );
 }

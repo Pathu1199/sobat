@@ -72,11 +72,6 @@ export function meRows(tabs: unknown): MeRow[] {
   return rows;
 }
 
-/** The first word of the user's name, for Me's header; null when they gave none. */
-export function firstName(name: string): string | null {
-  return name.trim().split(/\s+/)[0] || null;
-}
-
 /**
  * The line under the name on Me: the goal weight and the pace, "Goal 80 kg ·
  * 0.5 a week", in the user's language. The pace keeps its second place, as

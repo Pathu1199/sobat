@@ -4,7 +4,8 @@ import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { makeT } from '../../i18n';
-import { addSlot, barItems, extraItem, firstName, goalLine, hrefOf, meRows, routeAt, viewedDate } from '../bar';
+import { addSlot, barItems, extraItem, goalLine, hrefOf, meRows, routeAt, viewedDate } from '../bar';
+import { firstName } from '../todayLayout';
 import { TAB_IDS } from '../tabs';
 
 /** The screens expo-router can open: the files under src/app and under src/app/(tabs), by name without the extension. */
