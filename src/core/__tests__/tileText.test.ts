@@ -261,19 +261,19 @@ describe('streak', () => {
     expect(recordStreak({ ...base, meals: toYesterday })).toBe(6);
   });
 
-  it('the streak and the best run look back over one window, so a 75-day run reads 75 days and is the best', () => {
+  it('the streak and the best run look back over one window, so a 105-day run reads 105 days and is the best', () => {
     const routine: Routine = { ...DEFAULT_ROUTINE, enabled: true, slots: [{ id: 'lunch', type: 'lunch', time: '13:00', label_en: 'lunch', label_mr: '', label_hi: '', options: [[]], withBhaji: false, share: 100 }] };
     const menuOn = (date: string): DayMenu => ({ date, editedAt: '', meals: [{ id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] }] });
     const run = (days: number): Meal[] =>
       Array.from({ length: days }, (_, i) => addDays('2026-10-27', -i)).map((date) => ({ id: date, at: new Date(`${date}T13:00:00`).toISOString(), date, type: 'lunch', slotId: 'lunch', items: [], kcal: 1300, protein: 9 }));
     const base = { today: '2026-10-27', menuOn, routine, skips: [], offDays: [] as number[], floor: KCAL_FLOOR.female };
-    expect(STREAK_LOOKBACK_DAYS).toBe(90);
-    expect(recordStreak({ ...base, meals: run(75) })).toBe(75);
-    expect(bestStreak({ ...base, meals: run(75) })).toBe(75);
-    expect(streakWords(recordStreak({ ...base, meals: run(75) }), bestStreak({ ...base, meals: run(75) })).line).toEqual({ key: 'tile_best', params: { n: 75 } });
+    expect(STREAK_LOOKBACK_DAYS).toBe(120);
+    expect(recordStreak({ ...base, meals: run(105) })).toBe(105);
+    expect(bestStreak({ ...base, meals: run(105) })).toBe(105);
+    expect(streakWords(recordStreak({ ...base, meals: run(105) }), bestStreak({ ...base, meals: run(105) })).line).toEqual({ key: 'tile_best', params: { n: 105 } });
     // A longer run reads the window in both, never one number for the streak and another for the best.
-    expect(recordStreak({ ...base, meals: run(120) })).toBe(STREAK_LOOKBACK_DAYS);
-    expect(bestStreak({ ...base, meals: run(120) })).toBe(STREAK_LOOKBACK_DAYS);
+    expect(recordStreak({ ...base, meals: run(150) })).toBe(STREAK_LOOKBACK_DAYS);
+    expect(bestStreak({ ...base, meals: run(150) })).toBe(STREAK_LOOKBACK_DAYS);
   });
 });
 

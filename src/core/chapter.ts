@@ -1,6 +1,6 @@
 import { daysBetween, isIsoDate } from './date';
 import type { DayMenu } from './menu';
-import { recordStreak, STREAK_LOOKBACK_DAYS } from './record';
+import { recordRun, recordStreak, STREAK_LOOKBACK_DAYS } from './record';
 import type { Routine } from './routine';
 import { bestStreak, shownWeight } from './tileText';
 import type { ISODate, Meal, Profile, SlotSkip, WeightLog } from './types';
@@ -47,17 +47,20 @@ export type ChapterStreaks = {
   days: number;
   /** The best run in the same window: the streak tile's "Best". */
   best: number;
-  /** The same two over the whole journey (the streak's own window), a chapter or not: the points and the streak badges count these. */
+  /** The same two over the whole journey (the streak's own window), a chapter or not: the streak medals count these. */
   lifetimeDays: number;
   lifetimeBest: number;
+  /** With the shield: the days it covered in the chapter's window, for the note beside the streak (`shieldNote`). */
+  covered?: ISODate[];
 };
 
 /**
  * The streak and the best run twice over: from the chapter's first day, as
- * the streak tile shows them, and over the whole journey, which the points and
- * the streak badges count, so a new chapter takes none of them away. Both by
- * the record's one rule (`recordStreak`, `bestStreak`). Each date's menu is
- * read once for all four.
+ * the streak tile shows them, and over the whole journey, which the streak
+ * medals count, so a new chapter takes none of them away. Both by the
+ * record's one rule (`recordStreak`, `bestStreak`), and with `shield` both
+ * with the streak shield (`recordRun`), which then also says the days it
+ * covered in the chapter's window. Each date's menu is read once for all four.
  */
 export function chapterStreaks(input: {
   today: ISODate;
@@ -68,6 +71,7 @@ export function chapterStreaks(input: {
   floor: number;
   menuOn: (date: ISODate) => DayMenu | null;
   chapterStart?: ISODate;
+  shield?: boolean;
 }): ChapterStreaks {
   const menus = new Map<ISODate, DayMenu | null>();
   const menuOn = (date: ISODate) => {
@@ -76,6 +80,11 @@ export function chapterStreaks(input: {
   };
   const record = { today: input.today, routine: input.routine, meals: input.meals, skips: input.skips, offDays: input.offDays, floor: input.floor, menuOn };
   const window = chapterDays(input.chapterStart, input.today, STREAK_LOOKBACK_DAYS);
+  if (input.shield) {
+    const lifetime = recordRun({ ...record, shield: true });
+    const shown = window === STREAK_LOOKBACK_DAYS ? lifetime : recordRun({ ...record, days: window, shield: true });
+    return { days: shown.days, best: shown.best, lifetimeDays: lifetime.days, lifetimeBest: lifetime.best, covered: shown.covered };
+  }
   const lifetimeDays = recordStreak({ ...record, limit: STREAK_LOOKBACK_DAYS });
   const lifetimeBest = bestStreak({ ...record, days: STREAK_LOOKBACK_DAYS });
   if (window === STREAK_LOOKBACK_DAYS) return { days: lifetimeDays, best: lifetimeBest, lifetimeDays, lifetimeBest };

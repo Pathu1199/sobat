@@ -313,7 +313,7 @@ function isSkipKey(a: unknown): a is { date: string; key: string } {
   return isRecord(a) && typeof a.date === 'string' && typeof a.key === 'string' && a.key.startsWith(SKIP_PREFIX);
 }
 
-/** How long the app keeps a lived day's menu it kept as it showed, in days: longer than the streak looks back (90). */
+/** How long the app keeps a lived day's menu it kept as it showed, in days: as long as the streak looks back (`STREAK_LOOKBACK_DAYS`, 120) at least. */
 export const LIVED_MENU_KEEP_DAYS = 120;
 
 /**

@@ -2,6 +2,7 @@ import { addDays, weekDates } from './date';
 import { menuSlots, skippedOn, type DayMenu } from './menu';
 import { pattern, slotOf, type SlotPoint } from './pattern';
 import type { Routine } from './routine';
+import { runOf, type Run, type RunDay } from './shield';
 import type { ISODate, Meal, SlotSkip } from './types';
 import { isOffDay } from './week';
 
@@ -62,8 +63,12 @@ export function weekRecord(input: RecordBase & { monday: ISODate; menuOn: (date:
 /** What one day does to a run of days: adds to it, leaves it as it was, or ends it. */
 export type StreakStep = 'count' | 'hold' | 'break';
 
-/** How far back the streak and the best run on the streak tile look, in days: one window, so they never disagree. */
-export const STREAK_LOOKBACK_DAYS = 90;
+/**
+ * How far back the streak and the best run on the streak tile look, in days: one window, so they never disagree. Past the
+ * 100-day medal; no longer than the app keeps a lived day's menu (`LIVED_MENU_KEEP_DAYS`), so every day in it is judged on
+ * the menu it showed.
+ */
+export const STREAK_LOOKBACK_DAYS = 120;
 
 /** A day eaten under this many kcal ate nothing: warm water, black tea or coffee, and no meal. */
 export const NOTHING_EATEN_KCAL = 50;
@@ -104,6 +109,38 @@ export function eatenKcal(meals: Meal[]): number {
   return meals.reduce((a, m) => a + m.kcal, 0);
 }
 
+type RecordRunInput = RecordBase & { menuOn: (date: ISODate) => DayMenu | null; floor: number };
+
+/**
+ * The record's days as a run reads them, oldest first, the last `days` up to
+ * today: each by the streak's rule (`streakStep`). A today not settled yet
+ * holds, so it never ends the run and in the morning the streak is
+ * yesterday's; a today already full with nothing eaten ends it at once. A day
+ * that ends a run may be covered by the shield unless it was full with
+ * nothing eaten: skipping every meal is never kept alive by the streak.
+ */
+function recordDays(input: RecordRunInput & { days: number }): RunDay[] {
+  const byDate = mealsByDate(input.meals);
+  const out: RunDay[] = [];
+  for (let i = input.days - 1; i >= 0; i--) {
+    const date = addDays(input.today, -i);
+    const meals = byDate.get(date) ?? [];
+    const state = dayRecord({ ...input, meals, date, menu: input.menuOn(date) }).state;
+    const step = streakStep(state, meals, input.floor);
+    out.push({ date, step: i === 0 && step === 'break' && state !== 'full' ? 'hold' : step, coverable: state !== 'full' });
+  }
+  return out;
+}
+
+/**
+ * The record's run over the last `days` (the streak's window unless told):
+ * the streak, the best run and, with `shield`, the days the streak shield
+ * covered (core/shield.ts). `floor` is the person's safe minimum.
+ */
+export function recordRun(input: RecordRunInput & { days?: number; shield?: boolean }): Run {
+  return runOf(recordDays({ ...input, days: input.days ?? STREAK_LOOKBACK_DAYS }), input.shield ?? false);
+}
+
 /**
  * Days in a row that count (`streakStep`), back from today. Today counts once
  * it is full, but a today not settled yet never breaks the run, so in the
@@ -111,16 +148,6 @@ export function eatenKcal(meals: Meal[]): number {
  * eaten ends the run at once. `floor` is the person's safe minimum. Looks
  * back at most `limit` days, the streak window unless told.
  */
-export function recordStreak(input: RecordBase & { menuOn: (date: ISODate) => DayMenu | null; floor: number; limit?: number }): number {
-  const byDate = mealsByDate(input.meals);
-  let n = 0;
-  for (let i = 0; i < (input.limit ?? STREAK_LOOKBACK_DAYS); i++) {
-    const date = addDays(input.today, -i);
-    const meals = byDate.get(date) ?? [];
-    const state = dayRecord({ ...input, meals, date, menu: input.menuOn(date) }).state;
-    const step = streakStep(state, meals, input.floor);
-    if (step === 'count') n++;
-    else if (step === 'break' && (i > 0 || state === 'full')) break;
-  }
-  return n;
+export function recordStreak(input: RecordRunInput & { limit?: number }): number {
+  return recordRun({ ...input, days: input.limit }).days;
 }

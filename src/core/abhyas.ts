@@ -1,5 +1,7 @@
 import { addDays, isIsoDate, localDate, toISODate } from './date';
+import type { StreakStep } from './record';
 import { weekdayOf } from './routine';
+import { runOf, type Run, type RunDay } from './shield';
 import type { AbhyasItem, AbhyasRunning, AbhyasSession, AbhyasTick, AppState, ISODate } from './types';
 
 /**
@@ -188,25 +190,32 @@ export function firstDate(items: AbhyasItem[]): ISODate | null {
 }
 
 /**
- * Days in a row, back from today, on which every item on the day was done.
- * Today counts once all its items are done, the running timer's minutes
- * included, and never breaks the run before then, so in the morning the
- * streak is yesterday's. A day with no items neither breaks it nor counts.
- * Looks back no further than the first item.
+ * The list's run, from the first item's day to today: days on which every
+ * item on the day was done count, a day with no items neither counts nor
+ * breaks it, and a day with an item not done ends it. Today counts once all
+ * its items are done, the running timer's minutes included, and never ends
+ * the run before then, so in the morning the streak is yesterday's. With
+ * `shield`, the streak shield covers the first such day of each week
+ * (core/shield.ts), and the run says which days it covered.
  */
-export function streak(data: AbhyasData, today: ISODate, now: Date): number {
+export function streakRun(data: AbhyasData, today: ISODate, now: Date, shield = false): Run {
   const first = firstDate(data.items);
-  if (!first) return 0;
-  const ticks = byDate(data.ticks);
-  const sessions = byDate(data.sessions);
-  let n = 0;
-  for (let date = today; date >= first; date = addDays(date, -1)) {
-    const s = statusIn(data, date, ticks.get(date) ?? [], sessions.get(date) ?? [], now);
-    if (s.total === 0) continue;
-    if (s.done === s.total) n++;
-    else if (date !== today) break;
+  const days: RunDay[] = [];
+  if (first) {
+    const ticks = byDate(data.ticks);
+    const sessions = byDate(data.sessions);
+    for (let date = first; date <= today; date = addDays(date, 1)) {
+      const s = statusIn(data, date, ticks.get(date) ?? [], sessions.get(date) ?? [], now);
+      const step: StreakStep = s.total === 0 || (s.done < s.total && date === today) ? 'hold' : s.done === s.total ? 'count' : 'break';
+      days.push({ date, step, coverable: true });
+    }
   }
-  return n;
+  return runOf(days, shield);
+}
+
+/** Days in a row, back from today, on which every item on the day was done (`streakRun`, without the shield). */
+export function streak(data: AbhyasData, today: ISODate, now: Date): number {
+  return streakRun(data, today, now).days;
 }
 
 /**
