@@ -76,6 +76,12 @@ describe('afterRun', () => {
     expect(afterRun(0, true)).toBe('delete');
   });
 
+  it('writes the run time once for a phone that has none yet, though nothing was sent', () => {
+    expect(afterRun(0, false, true)).toBe('save');
+    expect(afterRun(0, false, false)).toBe('leave');
+    expect(afterRun(0, true, true)).toBe('delete');
+  });
+
   it('leaves nothing behind when a run is skipped: the next run still finds what fell due since', () => {
     // A run at 13:40 found nothing and wrote nothing, so lastRunMs is still 13:35; the 13:45 run looks back to it.
     const at = (hhmm: string) => Date.parse(`2026-10-28T${hhmm}:00+05:30`);

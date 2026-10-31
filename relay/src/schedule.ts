@@ -202,13 +202,15 @@ export function dueBetween(s: PushSchedule, fromMs: number, toMs: number, capMin
 }
 
 /**
- * What a cron run does with a phone's entry afterwards: drop it when the push
- * service says the address is gone, save the run time when something was
- * sent, and otherwise leave it as it is. KV allows few writes a day on the
- * free plan, so a quiet run writes nothing; the next run still sees the
- * minutes since, and `dueBetween` caps how far back it looks.
+ * What a cron run does with a phone afterwards: drop it when the push service
+ * says the address is gone, save the run time when something was sent or when
+ * the phone has none saved yet (`firstRun`, once), and otherwise leave it as
+ * it is. KV allows few writes a day on the free plan, so a quiet run writes
+ * nothing; the next run still sees the minutes since, and `dueBetween` caps
+ * how far back it looks. The first run's time is kept so the window does not
+ * start again at each upload until something is sent.
  */
-export function afterRun(sent: number, gone: boolean): 'delete' | 'save' | 'leave' {
+export function afterRun(sent: number, gone: boolean, firstRun = false): 'delete' | 'save' | 'leave' {
   if (gone) return 'delete';
-  return sent > 0 ? 'save' : 'leave';
+  return sent > 0 || firstRun ? 'save' : 'leave';
 }

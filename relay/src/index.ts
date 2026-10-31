@@ -4,12 +4,13 @@ import { handleData, type DataEnv } from './data';
 import { afterRun, dueBetween, validSchedule, type PushSchedule } from './schedule';
 
 /**
- * Sobat's relay: one Worker, two jobs.
+ * Dhyey's relay (the `sobat-relay` Worker): one Worker, two jobs.
  *
  * Reminders — it stores, per phone, the push address Apple or Google issued
  * and the reminder times the app uploaded, and every five minutes it sends
  * what is due. Only times and the words to show travel, "Day so far" among
- * them; see `schedule.ts`.
+ * them; see `schedule.ts`. The time of a phone's last run that sent something
+ * has a key of its own (`runKey`), apart from the phone's entry.
  *
  * Account data — it keeps each signed-in person's logs as one file in the
  * app maker's Google Drive, and is the only thing that can reach that
@@ -34,9 +35,23 @@ export interface Env {
   GOOGLE_REFRESH_TOKEN?: string;
 }
 
-type Record_ = { sub: PushSubscription; schedule: PushSchedule; updatedAt: number; lastRunMs: number };
+/** A phone's entry, written by its uploads only. `lastRunMs` is in an entry an older relay wrote, which kept the run time there. */
+type Record_ = { sub: PushSubscription; schedule: PushSchedule; updatedAt: number; lastRunMs?: number };
 
 const MAX_BODY = 64 * 1024;
+
+/** Forgotten phones fall out by themselves after 60 days without a sync; a run time, 60 days after its last run that sent something. */
+const TTL = 60 * 86400;
+
+/**
+ * The key for a phone's last run time, written by the cron run alone. An
+ * upload never writes it: a KV read can be a minute old, and an upload that
+ * carried an old run time back would have the next run send the last
+ * reminders again. The cron never writes the entry: an upload made while it
+ * was sending would be undone, and a ticked item would keep reminding.
+ */
+const RUN = 'run:';
+const runKey = (key: string) => RUN + key;
 
 function cors(env: Env, req: Request): HeadersInit {
   const origin = req.headers.get('Origin') ?? '';
@@ -133,23 +148,22 @@ export default {
     if (url.pathname === '/subscribe') {
       if (!validSubscription(body.subscription) || !validSchedule(body.schedule)) return json({ error: 'bad subscription or schedule' }, 400, h);
       const key = await keyFor(body.subscription.endpoint);
-      const prev = (await env.SUBS.get<Record_>(key, 'json')) ?? null;
-      const rec: Record_ = { sub: body.subscription, schedule: body.schedule, updatedAt: Date.now(), lastRunMs: prev?.lastRunMs ?? Date.now() };
-      // Forgotten phones fall out by themselves after 60 days without a sync.
-      await env.SUBS.put(key, JSON.stringify(rec), { expirationTtl: 60 * 86400 });
+      const rec: Record_ = { sub: body.subscription, schedule: body.schedule, updatedAt: Date.now() };
+      await env.SUBS.put(key, JSON.stringify(rec), { expirationTtl: TTL });
       return json({ ok: true }, 200, h);
     }
 
     if (url.pathname === '/unsubscribe') {
       if (typeof body.endpoint !== 'string') return json({ error: 'endpoint' }, 400, h);
-      await env.SUBS.delete(await keyFor(body.endpoint));
+      const key = await keyFor(body.endpoint);
+      await Promise.all([env.SUBS.delete(key), env.SUBS.delete(runKey(key))]);
       return json({ ok: true }, 200, h);
     }
 
     if (url.pathname === '/test') {
       if (!validSubscription(body.subscription)) return json({ error: 'bad subscription' }, 400, h);
       const lang = typeof body.schedule === 'object' && body.schedule && 'lang' in body.schedule ? String((body.schedule as { lang: string }).lang) : 'en';
-      const text = lang === 'mr' ? ['सोबत चालू आहे', 'अ‍ॅप बंद असतानाही आठवणी अशा येतील.'] : lang === 'hi' ? ['सोबत चल रहा है', 'ऐप बंद होने पर भी याद दिलाने वाले संदेश ऐसे आएँगे.'] : ['Sobat is working', 'Reminders will arrive like this even with the app closed.'];
+      const text = lang === 'mr' ? ['ध्येय चालू आहे', 'अ‍ॅप बंद असतानाही आठवणी अशा येतील.'] : lang === 'hi' ? ['ध्येय चल रहा है', 'ऐप बंद होने पर भी याद दिलाने वाले संदेश ऐसे आएँगे.'] : ['Dhyey is working', 'Reminders will arrive like this even with the app closed.'];
       const r = await send(env, body.subscription, text[0], text[1], '/', 'sobat-test');
       return json({ ok: r === 'ok', result: r }, r === 'ok' ? 200 : 502, h);
     }
@@ -163,23 +177,30 @@ export default {
     do {
       const page = await env.SUBS.list({ cursor, limit: 100 });
       cursor = page.list_complete ? undefined : page.cursor;
-      for (const { name } of page.keys) {
-        ctx.waitUntil(
-          (async () => {
-            const rec = await env.SUBS.get<Record_>(name, 'json');
-            if (!rec) return;
-            const due = dueBetween(rec.schedule, rec.lastRunMs, now);
-            let gone = false;
-            for (const r of due) {
-              const res = await send(env, rec.sub, r.title, r.body, r.url, r.key);
-              if (res === 'gone') gone = true;
-            }
-            const next = afterRun(due.length, gone);
-            if (next === 'delete') await env.SUBS.delete(name);
-            else if (next === 'save') await env.SUBS.put(name, JSON.stringify({ ...rec, lastRunMs: now }), { expirationTtl: 60 * 86400 });
-          })(),
-        );
-      }
+      for (const { name } of page.keys) if (!name.startsWith(RUN)) ctx.waitUntil(runPhone(env, name, now));
     } while (cursor);
   },
 };
+
+/**
+ * One phone's share of a cron run: what fell due since its last run goes out.
+ * It reads the entry and the run time, and writes only the run time.
+ */
+async function runPhone(env: Env, name: string, now: number): Promise<void> {
+  const [rec, ran] = await Promise.all([env.SUBS.get<Record_>(name, 'json'), env.SUBS.get(runKey(name))]);
+  if (!rec) return;
+  const last = ran === null ? NaN : Number(ran);
+  const firstRun = !Number.isFinite(last);
+  // With no run time of its own yet, an entry an older relay wrote goes on from the one in it, and a new phone from
+  // its upload; this run then writes one, so the next upload does not move the start.
+  const since = firstRun ? (rec.lastRunMs ?? rec.updatedAt) : last;
+  const due = dueBetween(rec.schedule, since, now);
+  let gone = false;
+  for (const r of due) {
+    const res = await send(env, rec.sub, r.title, r.body, r.url, r.key);
+    if (res === 'gone') gone = true;
+  }
+  const next = afterRun(due.length, gone, firstRun);
+  if (next === 'delete') await Promise.all([env.SUBS.delete(name), env.SUBS.delete(runKey(name))]);
+  else if (next === 'save') await env.SUBS.put(runKey(name), String(now), { expirationTtl: TTL });
+}
