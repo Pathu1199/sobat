@@ -5,8 +5,8 @@ import type { PushSchedule } from '../core/pushSchedule';
 /**
  * Background reminders for the web app: the browser's push subscription plus
  * the reminder schedule go to Dhyey's small relay, which sends what is due
- * while the app is closed. Only times, labels and the push address travel;
- * see core/pushSchedule.ts for exactly what.
+ * while the app is closed. Only times, the words to show and the push
+ * address travel; see core/pushSchedule.ts for exactly what.
  */
 
 type PushConfig = { relayUrl?: string; vapidPublicKey?: string };

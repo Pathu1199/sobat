@@ -1,23 +1,35 @@
+import { cleanDays, cleanTimes, isDone, minutesOn } from './abhyas';
 import { breaksAsSwitched } from './breaks';
-import { addDays } from './date';
+import { checklistTimes, dayChecklist } from './checklist';
+import { addDays, isIsoDate } from './date';
 import { pickMantra } from './mantra';
+import type { DayMenu } from './menu';
 import { planFrom } from './plan';
 import { orderedBlocks, type WorkSchedule } from './schedule';
 import { slotLabel, slotTime, SLOT_GRACE_MIN, type Routine } from './routine';
+import { isOffDay } from './week';
 import { MANTRAS } from '../data/mantras';
 import { dailyTargets } from './nutrition';
-import type { AppState, ISODate, Lang } from './types';
+import type { AbhyasItem, AppState, ISODate, Lang } from './types';
+import { fill } from '../i18n';
 
 /**
  * Everything the relay needs to send reminders while the app is closed, and
- * nothing more: times, labels in the person's language, and the next week of
- * mantras. No food, weight, mood or sleep ever leaves the device. It follows
- * the same switches as the app: no short breaks while eye-care breaks are
- * off, no day's line while it is off, and water and the weigh day only while
- * the nudges are on.
+ * nothing more: times, labels in the person's language, the next week of
+ * mantras, the user's Abhyas items with their times, and "Day so far" as
+ * today stands. No food, weight, mood or sleep ever leaves the device: the day
+ * so far names the meals eaten or not, never what was in them. It follows the
+ * same switches as the app: no short breaks while eye-care breaks are off, no
+ * day's line while it is off, water and the weigh day only while the nudges
+ * are on, and Abhyas and "Day so far" by their own reminder switches. Nothing
+ * in it goes by the time of day, only the date, so it changes when the day,
+ * the logs or the settings do, never minute by minute: the running timer
+ * stays out.
+ * Version 2 adds the Abhyas and "Day so far" parts; the relay still takes a
+ * version 1 schedule from an older app.
  */
 export type PushSchedule = {
-  v: 1;
+  v: 2;
   tz: string;
   lang: Lang;
   days: number[];
@@ -36,7 +48,101 @@ export type PushSchedule = {
   quiet: { from: number; to: number };
   /** The weigh day, once a week at a quarter to eight, before the day's line at eight. */
   weigh: { weekday: number; title: string; body: string } | null;
+  /**
+   * Abhyas items that repeat: a reminder at each of `times` on each of `days`, off days too, as on the phone. `body`
+   * is what it says on a day with nothing counted yet; `bodyToday`, there when minutes were counted on `doneDate` and
+   * the item is not done yet, says them on that day.
+   */
+  abhyas: { id: string; days: number[]; times: string[]; title: string; body: string; bodyToday?: string }[];
+  /** One-off Abhyas items still to do, from today on: one row for each reminder time, soonest first. */
+  once: { date: ISODate; time: string; title: string; body: string }[];
+  /** Repeating items already done on `doneDate`: the relay skips them that day only. */
+  doneToday: string[];
+  doneDate: ISODate;
+  /** "Day so far" as `date` stood at upload, at each of `times` on that date only; null while it is off or has nothing to say. */
+  checklist: { times: string[]; title: string; body: string; date: ISODate } | null;
 };
+
+/**
+ * What the relay takes in the Abhyas and "Day so far" parts (relay/src/schedule.ts, `LIMITS`). A schedule over
+ * them is refused whole, and every reminder with it, so the app keeps under them: the first rows, and the words cut.
+ */
+export const PUSH_LIMITS = { rows: 30, id: 64, text: 80, checklist: 800 } as const;
+
+/** The text cut to `max` characters with an ellipsis, on a whole character, never half of an emoji. */
+function clip(text: string, max: number): string {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1).replace(/[\uD800-\uDBFF]$/, '').trimEnd()}…`;
+}
+
+// Finished sessions only: the running timer would change the words every minute it runs. Its minutes count once it stops.
+const NO_TIMER_CLOCK = new Date(0);
+
+/**
+ * The Abhyas part, while its reminders are on: the repeating items in the user's order, the one-offs from today
+ * on that are not done yet, and the repeating items done today. An item removed, or with no reminder time, has
+ * none. The words are the phone's: "12 of 30 min today" for an item with a minutes target, "Today's list" for one
+ * without.
+ */
+function abhyasPart(state: AppState, today: ISODate, t: (k: string) => string): Pick<PushSchedule, 'abhyas' | 'once' | 'doneToday' | 'doneDate'> {
+  if (!state.settings.reminders.abhyas) return { abhyas: [], once: [], doneToday: [], doneDate: today };
+  const { abhyasTicks: ticks, abhyasSessions: sessions } = state;
+  const minutes = (item: AbhyasItem, date: ISODate) => minutesOn(sessions, null, item.id, date, NO_TIMER_CLOCK);
+  const words = (item: AbhyasItem, n: number) => {
+    const target = typeof item.targetMin === 'number' && item.targetMin > 0 ? item.targetMin : null;
+    return clip(target ? fill(t('rem_abhyas_min'), { n, m: target }) : t('rem_abhyas_list'), PUSH_LIMITS.text);
+  };
+  const title = (item: AbhyasItem) => clip(item.name || t('rem_abhyas'), PUSH_LIMITS.text);
+  const live = state.abhyasItems.filter((i) => !i.archivedAt && cleanTimes(i.times).length > 0);
+
+  const repeating = live
+    .filter((i) => i.kind !== 'once' && i.id.length > 0 && i.id.length <= PUSH_LIMITS.id && cleanDays(i.days).length > 0)
+    .sort((a, b) => a.order - b.order)
+    .slice(0, PUSH_LIMITS.rows);
+  const doneToday = repeating.filter((i) => isDone(i, today, ticks, minutes(i, today))).map((i) => i.id);
+  const abhyas = repeating.map((i) => {
+    const n = minutes(i, today);
+    const row = { id: i.id, days: cleanDays(i.days), times: cleanTimes(i.times), title: title(i), body: words(i, 0) };
+    return n > 0 && !doneToday.includes(i.id) ? { ...row, bodyToday: words(i, n) } : row;
+  });
+
+  const once = live
+    .filter((i): i is AbhyasItem & { date: ISODate } => i.kind === 'once' && isIsoDate(i.date) && i.date >= today)
+    .filter((i) => !isDone(i, i.date, ticks, minutes(i, i.date)))
+    .flatMap((i) => cleanTimes(i.times).map((time) => ({ date: i.date, time, title: title(i), body: words(i, minutes(i, i.date)) })))
+    .sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)))
+    .slice(0, PUSH_LIMITS.rows);
+
+  return { abhyas, once, doneToday, doneDate: today };
+}
+
+/**
+ * "Day so far" for today as it stands, at its times, while it is switched on: none on the day setup was finished
+ * or on an off day, as on the phone, and none when everything is done. `menu` is today's, as Today shows it.
+ */
+function checklistPart(state: AppState, today: ISODate, t: (k: string) => string, menu: DayMenu | null): PushSchedule['checklist'] {
+  const s = state.settings;
+  if (!s.reminders.checklist || today === state.profile.onboardedOn || isOffDay(s.offDays, today)) return null;
+  const text = dayChecklist({
+    date: today,
+    routine: state.routine,
+    menu,
+    meals: state.meals,
+    skips: state.slotSkips,
+    abhyas: { items: state.abhyasItems, ticks: state.abhyasTicks, sessions: state.abhyasSessions, running: null },
+    now: new Date(`${today}T12:00:00`),
+    water: state.water,
+    activities: state.activities ?? [],
+    waterGoalMl: s.waterGoalMl,
+    bottleMl: s.bottleMl,
+    walkGoalMin: s.walkGoalMin,
+    waterWalk: s.todayCards.some((c) => c.id === 'waterWalk' && c.on),
+    lang: state.profile.lang,
+    t,
+  });
+  if (!text) return null;
+  return { times: checklistTimes(s.checklistTimes), title: clip(text.title, PUSH_LIMITS.text), body: clip(text.body, PUSH_LIMITS.checklist), date: today };
+}
 
 function addMinutes(hhmm: string, mins: number): string {
   const [h, m] = hhmm.split(':').map(Number);
@@ -44,7 +150,8 @@ function addMinutes(hhmm: string, mins: number): string {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
-export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string) => string, tz: string): PushSchedule {
+/** The schedule for the relay as of `today`; `menu` is today's menu as Today shows it, for "Day so far" (null lists every meal). */
+export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string) => string, tz: string, menu: DayMenu | null = null): PushSchedule {
   const lang = state.profile.lang;
   const sched: WorkSchedule = state.schedule;
   const routine: Routine = state.routine;
@@ -64,7 +171,7 @@ export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string
   }).filter((x): x is { date: ISODate; title: string; text: string } => x !== null);
 
   return {
-    v: 1,
+    v: 2,
     tz,
     lang,
     days: sched.enabled ? sched.days : [],
@@ -89,6 +196,8 @@ export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string
     quiet: { from: state.settings.quietStartHour, to: state.settings.quietEndHour },
     // The weigh day is a nudge, as water is: it goes out only while the nudges are switched on.
     weigh: state.settings.nudgesEnabled ? { weekday: state.settings.weighDay ?? 1, title: t('weigh_q'), body: t('weigh_hint') } : null,
+    ...abhyasPart(state, today, t),
+    checklist: checklistPart(state, today, t, menu),
   };
 }
 

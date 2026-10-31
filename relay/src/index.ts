@@ -1,14 +1,15 @@
 import { buildPushPayload, type PushSubscription, type VapidKeys } from '@block65/webcrypto-web-push';
 import { makeVerifier, type Verify } from './auth';
 import { handleData, type DataEnv } from './data';
-import { afterRun, dueBetween, type PushSchedule } from './schedule';
+import { afterRun, dueBetween, validSchedule, type PushSchedule } from './schedule';
 
 /**
  * Sobat's relay: one Worker, two jobs.
  *
  * Reminders — it stores, per phone, the push address Apple or Google issued
  * and the reminder times the app uploaded, and every five minutes it sends
- * what is due. Only times and labels travel; see `schedule.ts`.
+ * what is due. Only times and the words to show travel, "Day so far" among
+ * them; see `schedule.ts`.
  *
  * Account data — it keeps each signed-in person's logs as one file in the
  * app maker's Google Drive, and is the only thing that can reach that
@@ -67,12 +68,6 @@ function validSubscription(s: unknown): s is PushSubscription {
   if (typeof s !== 'object' || s === null) return false;
   const o = s as { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
   return typeof o.endpoint === 'string' && /^https:\/\//.test(o.endpoint) && typeof o.keys?.p256dh === 'string' && typeof o.keys?.auth === 'string';
-}
-
-function validSchedule(s: unknown): s is PushSchedule {
-  if (typeof s !== 'object' || s === null) return false;
-  const o = s as Partial<PushSchedule>;
-  return o.v === 1 && typeof o.tz === 'string' && Array.isArray(o.days) && Array.isArray(o.blocks) && Array.isArray(o.slots) && Array.isArray(o.mantras) && typeof o.quiet === 'object';
 }
 
 async function send(env: Env, sub: PushSubscription, title: string, body: string, url: string, tag: string): Promise<'ok' | 'gone' | 'fail'> {

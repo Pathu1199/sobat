@@ -238,7 +238,7 @@ export function cleanTimes(times: unknown): string[] {
 }
 
 /** Weekdays 0 to 6, each once, in order. */
-function cleanDays(days: number[]): number[] {
+export function cleanDays(days: number[]): number[] {
   return [...new Set(days)].filter((d) => Number.isInteger(d) && d >= 0 && d <= 6).sort((a, b) => a - b);
 }
 

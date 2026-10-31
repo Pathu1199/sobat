@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LIMITS, validSchedule } from '../../../relay/src/schedule';
+import { makeT } from '../../i18n';
 import { EMPTY_STATE } from '../../store/defaults';
-import { buildPushSchedule, pushStep } from '../pushSchedule';
-import type { AppState } from '../types';
+import type { DayMenu } from '../menu';
+import { buildPushSchedule, PUSH_LIMITS, pushStep } from '../pushSchedule';
+import type { AbhyasItem, AbhyasSession, AbhyasTick, AppState, Meal } from '../types';
 
 describe('pushStep', () => {
   const here = { configured: true, relayOn: true, known: true, active: true, payload: '{"v":1}', lastSent: '' };
@@ -87,5 +90,172 @@ describe('buildPushSchedule: the parts of the app switched on in Settings', () =
     expect(build(nudges(false)).weigh).toBeNull();
     expect(build(nudges(false)).water).toBeNull();
     expect(build(nudges(true)).weigh).toEqual({ weekday: 3, title: 'weigh_q', body: 'weigh_hint' });
+  });
+});
+
+describe('buildPushSchedule: Abhyas and the day so far (version 2)', () => {
+  // Set up on Monday 12 October 2026; today is Tuesday the 13th. Sunday is the free day, as it starts.
+  const TODAY = '2026-10-13';
+  const item = (id: string, name: string, p: Partial<AbhyasItem> = {}): AbhyasItem => ({ id, name, icon: 'book-outline', kind: 'repeat', days: [1, 2, 3, 4, 5], times: ['18:00'], order: 0, createdAt: '2026-10-01T08:00:00.000Z', ...p });
+  const tick = (itemId: string, date = TODAY): AbhyasTick => ({ id: `${itemId}@${date}`, itemId, date, at: `${date}T09:00:00.000Z` });
+  const session = (itemId: string, minutes: number, date = TODAY): AbhyasSession => ({ id: `${itemId}@${date}`, itemId, date, startedAt: `${date}T06:00:00.000Z`, endedAt: `${date}T07:00:00.000Z`, minutes });
+  const meal = (slotId: string, date = TODAY): Meal => ({ id: `${slotId}@${date}`, at: `${date}T08:00:00.000Z`, date, type: 'breakfast', slotId, items: [], kcal: 300, protein: 10 });
+
+  const coding = item('coding', 'Coding', { days: [2], times: ['20:00'], order: 0 });
+  const yoga = item('yoga', 'Yoga', { days: [5, 1, 2, 2], times: ['18:00', '07:30'], targetMin: 20, order: 1 });
+  const bank = item('bank', 'Bank', { kind: 'once', days: [], date: TODAY, times: ['11:00'], targetMin: 30, order: 2 });
+  const bike = item('bike', 'Fix the bike', { kind: 'once', days: [], date: '2026-10-14', times: ['10:00', '09:00'], order: 3 });
+  const items: AbhyasItem[] = [
+    yoga,
+    coding,
+    bank,
+    bike,
+    // None of these remind: no time, removed, a day gone by, and a one-off already done on its day.
+    item('silent', 'Silent', { times: [], order: 4 }),
+    item('gone', 'Gone', { archivedAt: '2026-10-10T08:00:00.000Z', order: 5 }),
+    item('past', 'Past', { kind: 'once', days: [], date: '2026-10-10', times: ['10:00'], order: 6 }),
+    item('donelater', 'Done ahead', { kind: 'once', days: [], date: '2026-10-15', times: ['10:00'], order: 7 }),
+  ];
+  const state: AppState = {
+    ...EMPTY_STATE,
+    profile: { ...EMPTY_STATE.profile, onboarded: true, onboardedOn: '2026-10-12' },
+    abhyasItems: items,
+    abhyasTicks: [tick('donelater', '2026-10-15')],
+  };
+  const en = makeT('en');
+  const build = (s: AppState, today = TODAY) => buildPushSchedule(s, today, en, 'Asia/Kolkata');
+  const withSettings = (s: AppState, p: Partial<AppState['settings']>): AppState => ({ ...s, settings: { ...s.settings, ...p } });
+
+  it('is version 2', () => {
+    expect(build(state).v).toBe(2);
+  });
+
+  it('sends each repeating item in the user\'s order with its weekdays and times, and the words for a fresh day', () => {
+    expect(build(state).abhyas).toEqual([
+      { id: 'coding', days: [2], times: ['20:00'], title: 'Coding', body: "Today's list" },
+      { id: 'yoga', days: [1, 2, 5], times: ['07:30', '18:00'], title: 'Yoga', body: '0 of 20 min today' },
+    ]);
+  });
+
+  it('sends each one-off from today on that is not done yet, one row a time, soonest first', () => {
+    expect(build(state).once).toEqual([
+      { date: TODAY, time: '11:00', title: 'Bank', body: '0 of 30 min today' },
+      { date: '2026-10-14', time: '09:00', title: 'Fix the bike', body: "Today's list" },
+      { date: '2026-10-14', time: '10:00', title: 'Fix the bike', body: "Today's list" },
+    ]);
+    // Ticked on its day, a one-off is gone.
+    expect(build({ ...state, abhyasTicks: [...state.abhyasTicks, tick('bike', '2026-10-14')] }).once.map((o) => o.title)).toEqual(['Bank']);
+  });
+
+  it("says the minutes counted today on today's words, and on a one-off's", () => {
+    const s = build({ ...state, abhyasSessions: [session('yoga', 12), session('bank', 10), session('yoga', 15, '2026-10-12')] });
+    expect(s.abhyas[1]).toMatchObject({ body: '0 of 20 min today', bodyToday: '12 of 20 min today' });
+    expect(s.abhyas[0].bodyToday).toBeUndefined();
+    expect(s.once[0].body).toBe('10 of 30 min today');
+  });
+
+  it('names the items done today, by a tick or by the minutes target, for today only', () => {
+    expect(build(state)).toMatchObject({ doneToday: [], doneDate: TODAY });
+    const done = build({ ...state, abhyasTicks: [tick('coding')], abhyasSessions: [session('yoga', 20)] });
+    expect(done).toMatchObject({ doneToday: ['coding', 'yoga'], doneDate: TODAY });
+    // Done, so it says no minutes for today.
+    expect(done.abhyas[1].bodyToday).toBeUndefined();
+    // Yesterday's tick does not count.
+    expect(build({ ...state, abhyasTicks: [tick('coding', '2026-10-12')] }).doneToday).toEqual([]);
+  });
+
+  it('sends no Abhyas while its reminders are off', () => {
+    const off = withSettings(state, { reminders: { ...state.settings.reminders, abhyas: false } });
+    expect(build(off)).toMatchObject({ abhyas: [], once: [], doneToday: [], doneDate: TODAY });
+  });
+
+  it('keeps to what the relay takes: the first rows, and long words cut', () => {
+    const many: AppState = {
+      ...state,
+      abhyasItems: Array.from({ length: 40 }, (_, i) => item(`r${i}`, `${'Long name '.repeat(20)}${i}`, { order: 40 - i, times: ['06:00', '12:00', '18:00'] }))
+        .concat(Array.from({ length: 40 }, (_, i) => item(`o${i}`, `One-off ${i}`, { kind: 'once', days: [], date: '2026-10-20', times: ['06:00', '12:00', '18:00'], order: 100 + i }))),
+    };
+    const s = build(many);
+    expect(s.abhyas).toHaveLength(PUSH_LIMITS.rows);
+    // The user's order: the last one made has the first place.
+    expect(s.abhyas[0].id).toBe('r39');
+    expect(s.abhyas.every((a) => a.title.length <= PUSH_LIMITS.text && a.title.endsWith('…'))).toBe(true);
+    expect(s.once).toHaveLength(PUSH_LIMITS.rows);
+    expect(validSchedule(JSON.parse(JSON.stringify(s)))).toBe(true);
+    // Under the request size the relay takes.
+    expect(new TextEncoder().encode(JSON.stringify(s)).length).toBeLessThan(64 * 1024);
+  });
+
+  it("matches the relay's limits", () => {
+    expect(PUSH_LIMITS).toEqual({ rows: LIMITS.rows, id: LIMITS.id, text: LIMITS.text, checklist: LIMITS.checklist });
+  });
+
+  it('is a schedule the relay takes, in every language', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const s: AppState = { ...state, profile: { ...state.profile, lang }, abhyasSessions: [session('yoga', 12)] };
+      expect(validSchedule(JSON.parse(JSON.stringify(buildPushSchedule(s, TODAY, makeT(lang), 'Asia/Kolkata')))), lang).toBe(true);
+    }
+  });
+
+  it('sends the day so far as today stands, at its times, for today', () => {
+    const s = build({ ...state, meals: [meal('breakfast')], abhyasTicks: [tick('coding')] });
+    expect(s.checklist).toMatchObject({ times: ['20:30'], title: 'Dhyey · Day so far', date: TODAY });
+    const lines = s.checklist!.body.split('\n');
+    expect(lines[0]).toMatch(/^✓ Breakfast · ○ Lunch/);
+    // Every item on today is on the list, one with no reminder time too.
+    expect(lines[1]).toBe('✓ Coding · ○ Yoga 0/20 min · ○ Bank 0/30 min · ○ Silent');
+    // Its times as Settings keeps them.
+    expect(build(withSettings(state, { checklistTimes: ['21:00', 'x', '13:00'] })).checklist!.times).toEqual(['13:00', '21:00']);
+  });
+
+  it('says what the day so far says on the phone, from the same menu', () => {
+    const menu: DayMenu = {
+      date: TODAY,
+      editedAt: '',
+      meals: [
+        { id: 'breakfast', type: 'breakfast', time: '09:00', lines: [] },
+        { id: 'lunch', type: 'lunch', time: '13:00', lines: [{ foodId: 'chapati', unit: 'piece', qty: 2 }] },
+      ],
+    };
+    // Breakfast planned empty and not eaten is left off, as the phone leaves it.
+    expect(buildPushSchedule(state, TODAY, en, 'Asia/Kolkata', menu).checklist!.body.split('\n')[0]).toBe('○ Lunch');
+  });
+
+  it('sends no day so far while it is off, on the day setup was finished, on a free day, or with everything done', () => {
+    expect(build(withSettings(state, { reminders: { ...state.settings.reminders, checklist: false } })).checklist).toBeNull();
+    expect(build(state, '2026-10-12').checklist).toBeNull();
+    // Sunday 18 October is the free day.
+    expect(build(state, '2026-10-18').checklist).toBeNull();
+    expect(build(withSettings(state, { offDays: [] }), '2026-10-18').checklist).not.toBeNull();
+    const allDone: AppState = {
+      ...withSettings(state, { waterGoalMl: 0, walkGoalMin: 0 }),
+      abhyasItems: [],
+      meals: ['breakfast', 'lunch', 'snack', 'dinner'].map((id) => meal(id)),
+    };
+    expect(build(allDone).checklist).toBeNull();
+  });
+
+  it('changes with a tick, a meal or a stopped timer, so the app sends it again, and not with the running timer or the time of day', () => {
+    const json = (s: AppState) => JSON.stringify(build(s));
+    const base = json(state);
+    expect(json({ ...state, abhyasTicks: [...state.abhyasTicks, tick('coding')] })).not.toBe(base);
+    expect(json({ ...state, meals: [meal('breakfast')] })).not.toBe(base);
+    expect(json({ ...state, abhyasSessions: [session('yoga', 5)] })).not.toBe(base);
+    expect(json({ ...state, abhyasRunning: { itemId: 'yoga', startedAt: `${TODAY}T05:00:00.000Z` } })).toBe(base);
+  });
+
+  describe('at any time of the day', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('builds the same schedule morning and evening', () => {
+      const s: AppState = { ...state, abhyasSessions: [session('yoga', 12)], abhyasRunning: { itemId: 'yoga', startedAt: `${TODAY}T05:00:00.000Z` } };
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(`${TODAY}T07:00:00`));
+      const morning = JSON.stringify(build(s));
+      vi.setSystemTime(new Date(`${TODAY}T21:45:00`));
+      expect(JSON.stringify(build(s))).toBe(morning);
+    });
   });
 });

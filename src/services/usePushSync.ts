@@ -10,14 +10,18 @@ let chain: Promise<void> = Promise.resolve();
 
 /**
  * Keeps the relay's copy of the schedule current: whenever the times change,
- * the language changes, or a new day begins (fresh mantras), the app uploads
- * again. Debounced, and only while background reminders are switched on.
- * A device that is signed out or reset has its copy removed and its browser
- * subscription dropped, so the relay sends it nothing until someone is back.
+ * the language changes, a new day begins (fresh mantras), or the day moves on
+ * (a tick, a stopped timer, a meal, a skip, a bottle or a walk changes which
+ * Abhyas items are done and what "Day so far" says), the app uploads again.
+ * The schedule reads the date, never the clock, so it is not sent again every
+ * minute; the running timer is left out for the same reason. Debounced, and
+ * only while background reminders are switched on. A device that is signed
+ * out or reset has its copy removed and its browser subscription dropped, so
+ * the relay sends it nothing until someone is back.
  */
 export function usePushSync() {
   const app = useApp();
-  const { state, today } = app;
+  const { state, today, menuOn } = app;
   const configured = pushConfigured();
   const relayOn = state.settings.pushRelay;
   const { known, active } = useReminderGate();
@@ -26,7 +30,8 @@ export function usePushSync() {
   const removals = useRef(0);
 
   const tz = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Asia/Kolkata';
-  const payload = configured && relayOn && active ? JSON.stringify(buildPushSchedule(state, today, makeT(state.profile.lang), tz)) : '';
+  // Compared by value below: a render that builds the same schedule sends nothing.
+  const payload = configured && relayOn && active ? JSON.stringify(buildPushSchedule(state, today, makeT(state.profile.lang), tz, menuOn(today))) : '';
 
   useEffect(() => {
     const step = pushStep({ configured, relayOn, known, active, payload, lastSent: lastSent.current });
