@@ -306,7 +306,7 @@ export const S = {
   pad: 16,
   padLg: 20,
   /** Inside a card. */
-  cardPad: 16,
+  cardPad: 18,
   /** Corners: cards and tiles. */
   radius: 20,
   /** A sheet's top corners (all four where it opens as a centred panel). */
@@ -320,7 +320,8 @@ export const S = {
   shadow: cardShadow(current, WEB),
   /** The smallest a control may be under a finger, in points. */
   touch: 44,
-  gutter: 16,
+  /** The screen's side margin on a phone, from the edge to the cards. */
+  gutter: 20,
   gutterWide: 24,
   maxWide: 1360,
 };
@@ -331,11 +332,12 @@ export const M = { fast: 180, base: 320, slow: 600 };
 /**
  * The four type sizes at scale 1: the one big number a screen is about, titles,
  * body text, and small text (labels and captions use it too). Two weights go
- * with them, '400' for reading and '500' for names, numbers and buttons.
+ * with them, '400' for reading and '500' for names, numbers and buttons, and a
+ * third, `TITLE_WEIGHT`, only for a screen's title and its big number.
  */
 const F_BASE = {
-  number: 44,
-  title: 20,
+  number: 48,
+  title: 22,
   body: 16,
   small: 13,
 };
@@ -373,6 +375,9 @@ export function applyTextScale(scale: number): void {
   MICRO.lineHeight = lh(F.small);
   listeners.forEach((fn) => fn());
 }
+
+/** The weight of a screen's title and of the one big number a screen is about; everything else is '400' or '500'. */
+export const TITLE_WEIGHT = '600' as const;
 
 /** The small label over a section or beside a stat: normal case, no letter spacing, quiet. */
 export const MICRO = {

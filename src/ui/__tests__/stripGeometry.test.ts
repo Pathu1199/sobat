@@ -13,8 +13,8 @@ describe('the week strip on the narrowest phone', () => {
       // (Within a rounding error: a seventh is not a whole number of points.)
       expect(7 * stripDayWidth(row) - row, `${screen} pt`).toBeLessThanOrEqual(1e-9);
     }
-    // The strip sits on the page, not in a card: 320 less the screen's padding (16) on each side.
-    expect(stripRowWidth(320)).toBe(320 - 2 * 16);
+    // The strip sits on the page, not in a card: 320 less the screen's side margin (20) on each side.
+    expect(stripRowWidth(320)).toBe(320 - 2 * 20);
   });
 
   it("the calendar on Progress reaches over its card's padding to STRIP_EDGE from the card's edge", () => {

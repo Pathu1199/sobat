@@ -563,7 +563,7 @@ export function Empty({ text }: { text: string }) {
 function buildStyles() {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: C.bg },
-    screenContent: { padding: S.pad, gap: S.cardGap, maxWidth: 780, width: '100%', alignSelf: 'center' },
+    screenContent: { paddingHorizontal: S.gutter, paddingVertical: S.pad, gap: S.cardGap, maxWidth: 780, width: '100%', alignSelf: 'center' },
     card: { backgroundColor: C.card, borderRadius: S.radius, padding: S.cardPad, gap: 12 },
     title: { color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' },
     p: { color: C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '400' },

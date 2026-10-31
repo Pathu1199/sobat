@@ -133,7 +133,7 @@ function WeekJump({ by, label, onWeek }: { by: -1 | 1; label: string; onWeek: (b
         { position: 'absolute', zIndex: 1 },
         focused
           ? { ...at(0), top: (STRIP_DAY_HEIGHT - S.touch) / 2, width: S.touch, height: S.touch, borderRadius: S.touch / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: C.card, ...S.shadow }
-          : { ...at(-S.pad), top: 0, width: S.pad, height: STRIP_DAY_HEIGHT },
+          : { ...at(-S.gutter), top: 0, width: S.gutter, height: STRIP_DAY_HEIGHT },
       ]}>
       {focused ? <Ionicons name={by < 0 ? 'chevron-back' : 'chevron-forward'} size={22} color={C.textDim} /> : null}
     </Pressable>

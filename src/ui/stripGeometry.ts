@@ -32,9 +32,9 @@ export function stripDayWidth(rowWidth: number): number {
 /** The calendar's own margin on Progress: negative, so its rows reach over the card's padding to STRIP_EDGE from the card's edge. */
 export const STRIP_MARGIN = STRIP_EDGE - S.cardPad;
 
-/** The strip's row on Today for a screen this wide: the page less the screen's padding on each side. */
+/** The strip's row on Today for a screen this wide: the page less the screen's side margin on each side. */
 export function stripRowWidth(screenWidth: number): number {
-  return screenWidth - 2 * S.pad;
+  return screenWidth - 2 * S.gutter;
 }
 
 type Token = keyof (typeof PALETTES)['light'];

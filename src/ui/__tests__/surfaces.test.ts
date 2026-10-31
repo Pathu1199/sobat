@@ -92,9 +92,9 @@ describe('corners', () => {
     expect(S.radiusXs).toBe(12);
   });
 
-  it('16 inside a card, the same as the screen’s side gutter', () => {
-    expect(S.cardPad).toBe(16);
-    expect(S.cardPad).toBe(S.pad);
+  it('18 inside a card, 20 from the screen’s edge on a phone', () => {
+    expect(S.cardPad).toBe(18);
+    expect(S.gutter).toBe(20);
   });
 
   it('16 between the cards of a page; two tiles side by side keep their 12', () => {

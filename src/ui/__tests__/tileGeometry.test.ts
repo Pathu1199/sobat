@@ -42,14 +42,20 @@ describe('tile type and height', () => {
     for (const s of TEXT_SCALES) expect(TILE_TOP + tileTextHeight(s)).toBeLessThanOrEqual((1 - ART_SHARE) * tileMinHeight(s));
   });
 
-  it('stays square two to a row on a 360 and a 375 point phone at text scale 1, with the words clear of the art', () => {
-    for (const screen of [360, 375]) {
-      // Two tiles between the 16 point gutters, with the row's gap between them.
+  it('stays square two to a row on a 375 and a 390 point phone at text scale 1, with the words clear of the art', () => {
+    for (const screen of [375, 390]) {
+      // Two tiles between the 20 point gutters, with the row's gap between them.
       const w = (screen - 2 * S.gutter - S.gap) / 2;
       expect(w, `${screen}`).toBeGreaterThanOrEqual(tileMinHeight(1));
       // A square tile that wide: the art has its bottom 42%, and the words end above it.
       expect(TILE_TOP + tileTextHeight(1), `${screen}`).toBeLessThan((1 - ART_SHARE) * w);
     }
+  });
+
+  it('on a 360 point phone is at most 3 points taller than wide, the words still clear of the art', () => {
+    const w = (360 - 2 * S.gutter - S.gap) / 2;
+    expect(tileMinHeight(1) - w).toBeLessThanOrEqual(3);
+    expect(TILE_TOP + tileTextHeight(1)).toBeLessThan((1 - ART_SHARE) * w);
   });
 });
 
