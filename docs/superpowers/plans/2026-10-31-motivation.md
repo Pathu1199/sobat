@@ -2153,6 +2153,8 @@ EOF
 
 ### Task 5: Today's challenge
 
+> **Superseded in part (2026-10-31, commit `fdeaf74`):** the first-meal (`logBy`) area was removed after review; four areas remain (water, walk, a job's start time, protein), and `ChallengeData` gained `waterWalk` and `routine` switches. The code below is the original; the branch has the fixed version.
+
 Decision 6 in pure code. Five areas in a fixed turn order (water, walk, a timed job's start, protein, the first meal logged by a time); a day's challenge is one of those the seven days before it say something about, picked by the day's number so it is new every day and the same all day on every device. Targets are a little past the user's usual and capped (see the spec's table); with no history it is two bottles or a ten-minute walk. The count of challenges done is worked out again from the logs (finished timers only), so it needs no storage and is the same on every device.
 
 **Files:**
@@ -6443,8 +6445,20 @@ export function useChallengeData(): ChallengeData {
   const { state, targets, abhyas } = useApp();
   const { meals, water, activities, settings } = state;
   return useMemo(
-    () => ({ meals, water, activities: activities ?? [], abhyas, bottleMl: settings.bottleMl, waterGoalMl: settings.waterGoalMl, proteinTarget: targets.proteinG, offDays: settings.offDays ?? [] }),
-    [meals, water, activities, abhyas, settings.bottleMl, settings.waterGoalMl, settings.offDays, targets.proteinG],
+    () => ({
+      meals,
+      water,
+      activities: activities ?? [],
+      abhyas,
+      bottleMl: settings.bottleMl,
+      waterGoalMl: settings.waterGoalMl,
+      proteinTarget: targets.proteinG,
+      offDays: settings.offDays ?? [],
+      // An area the user switched off on Today gets no challenge (fdeaf74).
+      waterWalk: settings.todayCards.some((c) => c.id === 'waterWalk' && c.on),
+      routine: settings.todayCards.some((c) => c.id === 'abhyas' && c.on),
+    }),
+    [meals, water, activities, abhyas, settings.bottleMl, settings.waterGoalMl, settings.offDays, settings.todayCards, targets.proteinG],
   );
 }
 
@@ -7286,8 +7300,20 @@ export function useChallengeData(): ChallengeData {
   const { state, targets, abhyas } = useApp();
   const { meals, water, activities, settings } = state;
   return useMemo(
-    () => ({ meals, water, activities: activities ?? [], abhyas, bottleMl: settings.bottleMl, waterGoalMl: settings.waterGoalMl, proteinTarget: targets.proteinG, offDays: settings.offDays ?? [] }),
-    [meals, water, activities, abhyas, settings.bottleMl, settings.waterGoalMl, settings.offDays, targets.proteinG],
+    () => ({
+      meals,
+      water,
+      activities: activities ?? [],
+      abhyas,
+      bottleMl: settings.bottleMl,
+      waterGoalMl: settings.waterGoalMl,
+      proteinTarget: targets.proteinG,
+      offDays: settings.offDays ?? [],
+      // An area the user switched off on Today gets no challenge (fdeaf74).
+      waterWalk: settings.todayCards.some((c) => c.id === 'waterWalk' && c.on),
+      routine: settings.todayCards.some((c) => c.id === 'abhyas' && c.on),
+    }),
+    [meals, water, activities, abhyas, settings.bottleMl, settings.waterGoalMl, settings.offDays, settings.todayCards, targets.proteinG],
   );
 }
 
