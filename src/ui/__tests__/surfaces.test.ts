@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { PALETTE_IDS } from '../../core/palette';
 import { luminance } from '../contrast';
-import { applyTheme, cardShadow, PALETTES, S } from '../theme';
+import { applyTheme, C, cardShadow, PALETTE_SETS, PALETTES, paletteNow, S, themeMode } from '../theme';
 import { TILE_RADIUS } from '../tileGeometry';
 
 describe('cardShadow', () => {
@@ -39,15 +40,21 @@ describe('cardShadow', () => {
     }
   });
 
-  it('is darker than the page it falls on in both themes, so it reads as a shadow and never as a glow', () => {
-    for (const mode of ['light', 'dark'] as const) {
-      expect(luminance(PALETTES[mode].shadow), mode).toBeLessThan(luminance(PALETTES[mode].bg));
+  it('is darker than the page it falls on in every palette and both themes, so it reads as a shadow and never as a glow', () => {
+    for (const id of PALETTE_IDS) {
+      for (const mode of ['light', 'dark'] as const) {
+        expect(luminance(PALETTE_SETS[id][mode].shadow), `${id} ${mode}`).toBeLessThan(luminance(PALETTE_SETS[id][mode].bg));
+      }
     }
+  });
+
+  it("takes a palette's own shadow colour when one is named", () => {
+    expect(cardShadow('light', false, 'saffron')).toMatchObject({ shadowColor: PALETTE_SETS.saffron.light.shadow });
   });
 });
 
 describe('S.shadow', () => {
-  afterEach(() => applyTheme('dark'));
+  afterEach(() => applyTheme('dark', 'emerald'));
 
   it('follows the theme: applyTheme swaps it with the palette', () => {
     // Vitest runs as a phone (react-native is stubbed with Platform.OS 'ios').
@@ -56,6 +63,23 @@ describe('S.shadow', () => {
     expect(S.shadow).toEqual(cardShadow('light', false));
     applyTheme('dark');
     expect(S.shadow).toEqual(cardShadow('dark', false));
+  });
+});
+
+describe('applyTheme', () => {
+  afterEach(() => applyTheme('dark', 'emerald'));
+
+  it('swaps the live colours for the palette and mode asked for, and keeps the palette when only the mode changes', () => {
+    applyTheme('light', 'indigo');
+    expect(themeMode()).toBe('light');
+    expect(paletteNow()).toBe('indigo');
+    expect(C.accent).toBe(PALETTE_SETS.indigo.light.accent);
+    expect(S.shadow).toEqual(cardShadow('light', false, 'indigo'));
+    applyTheme('dark');
+    expect(paletteNow()).toBe('indigo');
+    expect(C.bg).toBe(PALETTE_SETS.indigo.dark.bg);
+    applyTheme('dark', 'emerald');
+    expect(C).toEqual(PALETTES.dark);
   });
 });
 

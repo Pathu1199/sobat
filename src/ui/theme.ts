@@ -2,18 +2,51 @@
  * Design tokens. Everything visual comes from here, so a change to the palette
  * moves the whole app at once.
  *
- * A sober health palette: one teal accent for actions, ticks and the current
- * item, soft off-white or deep slate behind, and cards with no outline, lifted
- * by a soft shadow. Every colour that carries words reads at 4.5:1 or more on
- * the surfaces it sits on (src/ui/__tests__/contrast.test.ts holds the palette
- * to that).
+ * Three palettes the user picks from (core/palette.ts), each in light and
+ * dark: one action colour for buttons, ticks and the current item, a soft
+ * tint behind the top of every tab, a page and flat cards lifted by a soft
+ * shadow, and a reward colour (gold, amber or saffron) used only where
+ * something was earned: medals, the shield note, stars, celebrations and the
+ * best-day line. Every colour that carries words reads at 4.5:1 or more on the
+ * surfaces it sits on, in every palette and both modes
+ * (src/ui/__tests__/contrast.test.ts holds them to that).
  */
 import { Platform, type ViewStyle } from 'react-native';
+import { DEFAULT_PALETTE, type PaletteId } from '../core/palette';
 
 const listeners = new Set<() => void>();
 
 export type ThemeMode = 'dark' | 'light';
 
+/** The status colours in daylight, the same in every palette: each holds 4.5:1 on every page, card and tint of the three. */
+const STATUS_LIGHT = {
+  cyan: '#066E8A',
+  cyanSoft: '#CDEEF6',
+  violet: '#6E52E6',
+  violetSoft: '#E6E0FD',
+  green: '#0F7646',
+  amber: '#8A5E07',
+  amberSoft: '#FBEBC6',
+  red: '#BF2A40',
+  redSoft: '#FBDDE2',
+  pink: '#B92B6E',
+};
+
+/** The status colours in the dark, the same in every palette. */
+const STATUS_DARK: typeof STATUS_LIGHT = {
+  cyan: '#38C6E8',
+  cyanSoft: '#14566A',
+  violet: '#A48BFF',
+  violetSoft: '#463A86',
+  green: '#3BD68B',
+  amber: '#F5B941',
+  amberSoft: '#5A3C0E',
+  red: '#F2677A',
+  redSoft: '#401922',
+  pink: '#F06AA7',
+};
+
+/** Emerald and gold in the dark: every palette has these tokens, in this order. */
 const DARK = {
   bg: '#0B1014',
   bgAlt: '#0F161B',
@@ -34,19 +67,19 @@ const DARK = {
   accentDim: '#10302A',
   /** The accent when it is the colour of words: links, the selected segment, a soft button's label. */
   accentText: '#2DD4A3',
-  /** Dark ink for words and icons on an accent fill. White on this teal is 1.9:1; this is 10:1. */
+  /** Ink for words and icons on an accent fill: dark on the bright accents of the dark mode, white on the deep ones of daylight. */
   onAccent: '#0B1014',
 
-  cyan: '#38C6E8',
-  cyanSoft: '#14566A',
-  violet: '#A48BFF',
-  violetSoft: '#463A86',
-  green: '#3BD68B',
-  amber: '#F5B941',
-  amberSoft: '#5A3C0E',
-  red: '#F2677A',
-  redSoft: '#401922',
-  pink: '#F06AA7',
+  /** The soft band behind the top of every tab: words on it hold 4.5:1 as on the page. */
+  tint: '#0E1C19',
+  /** The reward metal: a medal's ring, a sparkle. Never words, and never the only mark of anything. */
+  gold: '#E2B654',
+  /** The fill of a reward surface: the shield note, a perfect day, the celebration's page. */
+  goldSoft: '#3A2E14',
+  /** Words and marks on a reward surface (a star, a medal's number): 4.5:1 on goldSoft and on every page and card colour. */
+  goldInk: '#F3D99A',
+
+  ...STATUS_DARK,
 
   white: '#FFFFFF',
   scrim: 'rgba(3, 8, 10, 0.72)',
@@ -54,62 +87,187 @@ const DARK = {
   shadow: '#000000',
 };
 
-/** The same roles in daylight: paper-white panels, ink text, the status colours a shade deeper so their words hold 4.5:1 on white. */
-const LIGHT: typeof DARK = {
-  bg: '#F2F6F7',
+export type Palette = typeof DARK;
+
+/**
+ * Emerald and gold in daylight. The action colour is the chosen #0E8A6A one
+ * shade deeper, #0C8263, so white words on a button hold 4.5:1 (4.8; the
+ * lighter shade gave 4.3); teal words are deeper still.
+ */
+const LIGHT: Palette = {
+  bg: '#F3F7F6',
   bgAlt: '#FFFFFF',
-  pageAlt: '#F7FAFA',
+  pageAlt: '#F8FBFA',
   card: '#FFFFFF',
-  cardAlt: '#F0F5F4',
-  cardHigh: '#E2ECEA',
-  border: '#E3EBEA',
-  borderStrong: '#C8D6D4',
-
-  text: '#0E1B1F',
-  textDim: '#45575D',
-  textFaint: '#627075',
-
-  accent: '#12A57F',
-  accentSoft: '#CFF1E6',
-  accentDim: '#E7F7F2',
-  accentText: '#0D755A',
-  onAccent: '#0E1B1F',
-
-  cyan: '#087794',
-  cyanSoft: '#CDEEF6',
-  violet: '#6E52E6',
-  violetSoft: '#E6E0FD',
-  green: '#117E4A',
-  amber: '#8A5E07',
-  amberSoft: '#FBEBC6',
-  red: '#BF2A40',
-  redSoft: '#FBDDE2',
-  pink: '#C82F78',
-
+  cardAlt: '#EEF4F2',
+  cardHigh: '#E0EBE7',
+  border: '#E2E9E7',
+  borderStrong: '#C6D5D1',
+  text: '#14201D',
+  textDim: '#43534F',
+  textFaint: '#5D6C68',
+  accent: '#0C8263',
+  accentSoft: '#E2F3EC',
+  accentDim: '#EEF8F4',
+  accentText: '#0A6B52',
+  onAccent: '#FFFFFF',
+  tint: '#E9F4F0',
+  gold: '#B98A2C',
+  goldSoft: '#F6EEDC',
+  goldInk: '#654A0F',
+  ...STATUS_LIGHT,
   white: '#FFFFFF',
-  scrim: 'rgba(14, 27, 31, 0.45)',
+  scrim: 'rgba(20, 32, 29, 0.45)',
   shadow: '#10211D',
 };
 
-export const PALETTES: Record<ThemeMode, typeof DARK> = { dark: DARK, light: LIGHT };
+/** Indigo and amber in daylight: a modern, focused look. */
+const INDIGO_LIGHT: Palette = {
+  bg: '#F4F5FB',
+  bgAlt: '#FFFFFF',
+  pageAlt: '#F9FAFD',
+  card: '#FFFFFF',
+  cardAlt: '#EEEFF8',
+  cardHigh: '#E1E3F2',
+  border: '#E3E5F2',
+  borderStrong: '#C9CCE3',
+  text: '#171A2E',
+  textDim: '#474B66',
+  textFaint: '#5F637E',
+  accent: '#4B4FD6',
+  accentSoft: '#E8E9FB',
+  accentDim: '#F1F1FD',
+  accentText: '#3E42C4',
+  onAccent: '#FFFFFF',
+  tint: '#ECEDFB',
+  gold: '#C2852A',
+  goldSoft: '#F8EEDD',
+  goldInk: '#6B450C',
+  ...STATUS_LIGHT,
+  white: '#FFFFFF',
+  scrim: 'rgba(23, 26, 46, 0.45)',
+  shadow: '#171A2E',
+};
+
+/** Indigo and amber in the dark. */
+const INDIGO_DARK: Palette = {
+  bg: '#0D0F1A',
+  bgAlt: '#11131F',
+  pageAlt: '#11131F',
+  card: '#171A2B',
+  cardAlt: '#1E2236',
+  cardHigh: '#282C44',
+  border: '#242840',
+  borderStrong: '#343956',
+  text: '#EEF0FA',
+  textDim: '#A9ADC6',
+  textFaint: '#8589A6',
+  accent: '#8E91F7',
+  accentSoft: '#2D2F6B',
+  accentDim: '#1D1F45',
+  accentText: '#A5A8FA',
+  onAccent: '#0D0F1A',
+  tint: '#151830',
+  gold: '#E8B25E',
+  goldSoft: '#3A2C12',
+  goldInk: '#F5D9A3',
+  ...STATUS_DARK,
+  white: '#FFFFFF',
+  scrim: 'rgba(5, 6, 14, 0.72)',
+  shadow: '#000000',
+};
+
+/** Forest and saffron in daylight: deep green actions on a warm ivory page, saffron rewards. */
+const SAFFRON_LIGHT: Palette = {
+  bg: '#F8F5EF',
+  bgAlt: '#FFFFFF',
+  pageAlt: '#FBF9F5',
+  card: '#FFFFFF',
+  cardAlt: '#F3EEE5',
+  cardHigh: '#E9E1D3',
+  border: '#ECE4D7',
+  borderStrong: '#D6CCBB',
+  text: '#1E1A14',
+  textDim: '#504A3F',
+  textFaint: '#6A6254',
+  accent: '#0F6B52',
+  accentSoft: '#E2EFE8',
+  accentDim: '#EEF6F2',
+  accentText: '#0F6B52',
+  onAccent: '#FFFFFF',
+  tint: '#FBEEDB',
+  gold: '#D9822B',
+  goldSoft: '#FBEBD8',
+  goldInk: '#6E3B08',
+  ...STATUS_LIGHT,
+  white: '#FFFFFF',
+  scrim: 'rgba(30, 26, 20, 0.45)',
+  shadow: '#1E1A14',
+};
+
+/** Forest and saffron in the dark. */
+const SAFFRON_DARK: Palette = {
+  bg: '#12100B',
+  bgAlt: '#17140F',
+  pageAlt: '#17140F',
+  card: '#1E1A14',
+  cardAlt: '#26211A',
+  cardHigh: '#302A21',
+  border: '#2D271E',
+  borderStrong: '#3F372B',
+  text: '#F6F1E8',
+  textDim: '#B8AE9E',
+  textFaint: '#958B7B',
+  accent: '#3CC79A',
+  accentSoft: '#15453A',
+  accentDim: '#10302A',
+  accentText: '#4FD1A6',
+  onAccent: '#12100B',
+  tint: '#231B10',
+  gold: '#F0A24F',
+  goldSoft: '#3D2810',
+  goldInk: '#F8D2A6',
+  ...STATUS_DARK,
+  white: '#FFFFFF',
+  scrim: 'rgba(8, 6, 3, 0.72)',
+  shadow: '#000000',
+};
+
+/** Every palette in both modes. */
+export const PALETTE_SETS: Record<PaletteId, Record<ThemeMode, Palette>> = {
+  emerald: { dark: DARK, light: LIGHT },
+  indigo: { dark: INDIGO_DARK, light: INDIGO_LIGHT },
+  saffron: { dark: SAFFRON_DARK, light: SAFFRON_LIGHT },
+};
+
+/** The default palette, emerald and gold, in both modes: what a pure helper or a test reads when no palette is named. */
+export const PALETTES: Record<ThemeMode, Palette> = PALETTE_SETS.emerald;
 
 /**
  * The live palette. Every component reads from this object at render, so a
  * switch is an Object.assign plus a remount of the tree (ThemeProvider does
  * that); modules that bake colours into a StyleSheet subscribe to rebuild.
  */
-export const C: typeof DARK = { ...DARK };
+export const C: Palette = { ...DARK };
 let current: ThemeMode = 'dark';
+let currentPalette: PaletteId = DEFAULT_PALETTE;
 
 export function themeMode(): ThemeMode {
   return current;
 }
 
-export function applyTheme(mode: ThemeMode): void {
-  if (mode === current) return;
+/** The palette in use. */
+export function paletteNow(): PaletteId {
+  return currentPalette;
+}
+
+/** Light or dark, in a palette (the one in use unless named). */
+export function applyTheme(mode: ThemeMode, palette: PaletteId = currentPalette): void {
+  if (mode === current && palette === currentPalette) return;
   current = mode;
-  Object.assign(C, PALETTES[mode]);
-  S.shadow = cardShadow(mode, WEB);
+  currentPalette = palette;
+  Object.assign(C, PALETTE_SETS[palette][mode]);
+  S.shadow = cardShadow(mode, WEB, palette);
   listeners.forEach((fn) => fn());
 }
 
@@ -129,13 +287,13 @@ function rgba(hex: string, alpha: number): string {
 }
 
 /**
- * The soft shadow a card or a tile takes in place of an outline, for a theme:
- * faint in daylight, stronger in the dark so it still shows on the deep page.
+ * The soft shadow a card or a tile takes in place of an outline, for a theme
+ * and a palette (the default unless named): faint in daylight, stronger in the dark so it still shows on the deep page.
  * A phone gets the shadow props (elevation on Android); the web gets a
  * boxShadow, a tight contact shadow under a wide soft one. Pure.
  */
-export function cardShadow(mode: ThemeMode, web: boolean): ViewStyle {
-  const color = PALETTES[mode].shadow;
+export function cardShadow(mode: ThemeMode, web: boolean, palette: PaletteId = DEFAULT_PALETTE): ViewStyle {
+  const color = PALETTE_SETS[palette][mode].shadow;
   const alpha = mode === 'dark' ? 0.3 : 0.06;
   if (web) return { boxShadow: `0 1px 2px ${rgba(color, alpha)}, 0 8px 24px ${rgba(color, alpha)}` };
   return { shadowColor: color, shadowOpacity: alpha, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 };
@@ -224,7 +382,10 @@ export const MICRO = {
 };
 
 /** A one-line warning note on a page (Today's low-intake note): dark amber words on soft amber, never red, 4.5:1 in both themes (the contrast test holds it). */
-export const AMBER_NOTE = { fill: 'amberSoft', words: 'amber' } as const satisfies Record<string, keyof typeof DARK>;
+export const AMBER_NOTE = { fill: 'amberSoft', words: 'amber' } as const satisfies Record<string, keyof Palette>;
+
+/** A reward note (the shield note, the best-day line, a perfect day): reward ink on the reward fill, 4.5:1 in every palette and mode (the contrast test holds it). */
+export const GOLD_NOTE = { fill: 'goldSoft', words: 'goldInk' } as const satisfies Record<string, keyof Palette>;
 
 export function severityColor(s: 'good' | 'watch' | 'act') {
   return s === 'good' ? C.accent : s === 'watch' ? C.amber : C.red;
