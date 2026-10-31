@@ -10,19 +10,19 @@ crons = ["*/5 * * * *"]
 # Push subscriptions and their reminder times, one entry per phone.
 [[kv_namespaces]]
 binding = "SUBS"
-id = "REPLACE_WITH_KV_ID"
+id = "9a3eeeb092244694b1499980e3ea155d"
 
 # The account directory: one small entry per signed-in person (who, when last
 # seen, blocked or not). The data itself is in Google Drive, not here.
 # Create with: npx wrangler kv namespace create USERS
 [[kv_namespaces]]
 binding = "USERS"
-id = "REPLACE_WITH_USERS_KV_ID"
+id = "e9393c02e43e47628588870ebae8694d"
 
 [vars]
 VAPID_SUBJECT = "mailto:design3@varadautomation.com"
 VAPID_PUBLIC_KEY = "BCwCri232dn5dL8BgxWj2BeTE5v-N7GSpEX1TgKns8nzwk3zPpN4Z0XWKK_U4Qx0EIRdUVt3849xMbefS9LcjMA"
-ALLOWED_ORIGINS = "https://sobat-a56c7.web.app,http://localhost:8082"
+ALLOWED_ORIGINS = "https://sobat-a56c7.web.app,https://sobat-a56c7.firebaseapp.com,http://tauri.localhost,http://localhost:8082"
 # Only this account may list, block or delete other accounts. Must match the app's ADMIN_EMAIL.
 ADMIN_EMAIL = "shindeprathmesh999@gmail.com"
 # The Firebase web API key (public by design); used to ask Firebase who a token belongs to.

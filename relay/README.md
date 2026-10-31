@@ -52,6 +52,15 @@ npx wrangler secret put VAPID_PRIVATE_KEY          # from ~/.sobat/vapid.json
    ```
 
    It prints a link; open it, approve, and it prints a refresh token.
+
+   Or let it store everything for you, so the token never shows on screen
+   (it asks for the client id and secret):
+
+   ```bash
+   node scripts/connect-drive.mjs --save
+   ```
+
+   With `--save` you can skip step 3.
 3. Store all three as secrets:
 
    ```bash
