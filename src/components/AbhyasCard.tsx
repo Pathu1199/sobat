@@ -17,9 +17,9 @@ import { UndoLine, useUndoable } from './tiles/UndoLine';
 
 /**
  * The Abhyas card on Today: the user's own list for the viewed date,
- * "Abhyas · 2 of 4 done" over one row per item in their order (core/abhyasView.ts
+ * "Routine · 2 of 4 done" over one row per item in their order (core/abhyasView.ts
  * decides what each row shows and offers; `AbhyasItemRow` draws it, the same
- * on the Abhyas tab). A row is a tick box, the name, and for an item with a
+ * on the Routine tab). A row is a tick box, the name, and for an item with a
  * minutes target "12 of 30 min" and Start or Stop at the right; the running
  * item's row has a small moving dot, still when the phone asks for less
  * motion, and a done row is greyed with its tick filled. The + adds a

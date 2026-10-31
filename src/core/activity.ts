@@ -1,5 +1,5 @@
 import { ACTIVITIES, activityById, type Activity } from '../data/activities';
-import { lastNDates, loggedAt } from './date';
+import { loggedAt } from './date';
 import type { ActivityLog, ISODate } from './types';
 
 /**
@@ -89,12 +89,6 @@ export function weekActivity(logs: ActivityLog[], today: ISODate, weekStartDay =
     activeDays: new Set(week.map((l) => l.date)).size,
     byActivity: [...by.entries()].map(([id, v]) => ({ id, ...v })).sort((a, b) => b.minutes - a.minutes),
   };
-}
-
-/** Days with any activity in the last n days, for streaks and badges. */
-export function activeDates(logs: ActivityLog[], today: ISODate, n = 365): Set<ISODate> {
-  const window = new Set(lastNDates(n, today));
-  return new Set(logs.filter((l) => window.has(l.date)).map((l) => l.date));
 }
 
 /** Activities that suit the body: high-impact ones hidden when a knee, back or heart flag is set. */

@@ -28,7 +28,7 @@ const en: GuideSection[] = [
       'Log everything, including the tea, the biscuit and the taste while cooking. Half-logged days look better than they were.',
       "Today's menu holds each meal of your eating pattern. Ate it as it says? Tap Ate as planned. For anything else, tap ➕ and search by name, take a photo or scan the barcode.",
       'Check the portion. A katori is 150 g; a chapati 40 g. Change the quantity if yours is bigger.',
-      'Missed a day? Tap it on the week strip at the top of Today and fill it in. An honest late entry beats a blank.',
+      'A day not logged yet? Tap it on the week strip at the top of Today and fill it in. An honest late entry beats a blank.',
     ],
   },
   {
@@ -45,12 +45,12 @@ const en: GuideSection[] = [
   {
     id: 'cheat',
     icon: 'pizza-outline',
-    title: 'The cheat meal',
+    title: 'The treat meal',
     lines: [
       'One meal a week, not a day. Pick it in advance, enjoy it fully, log it.',
       'Eat normally before and after. No skipping lunch to make room, no fasting the next day.',
       'If the scale is up the next morning, that is salt and water. It settles in two days.',
-      'Better: make the cheat meal the one social meal of the week, so it never feels like a loss.',
+      'Better: make the treat meal the one social meal of the week, so it never feels like a loss.',
     ],
   },
   {
@@ -90,7 +90,7 @@ const en: GuideSection[] = [
     lines: [
       'The morning walk is the base. Twenty to thirty minutes, every day, the same time.',
       'Move, in Me → Body, gives a short joint-safe session sized to how you slept. Red days are stretching and breathing, never nothing.',
-      'Miss three days and the plan gets easier, not louder. Start again from wherever it says.',
+      'Away for three days? The plan gets easier, not louder. Start again from wherever it says.',
     ],
   },
   {
@@ -159,7 +159,7 @@ const mr: GuideSection[] = [
       'सगळे नोंदवा, चहा, बिस्किट आणि शिजवताना घेतलेली चवसुद्धा. अर्धवट नोंदवलेले दिवस खरे असतात त्यापेक्षा चांगले दिसतात.',
       'आजच्या मेन्यूत तुमच्या खाण्याच्या पद्धतीतलं प्रत्येक जेवण आहे. लिहिल्याप्रमाणे खाल्लं? "ठरवल्याप्रमाणे खाल्लं" दाबा. बाकी काहीही असेल तर ➕ दाबा आणि नावाने शोधा, फोटो काढा किंवा बारकोड वाचा.',
       'प्रमाण तपासा. एक वाटी 150 ग्रॅ; एक चपाती 40 ग्रॅ. तुमची मोठी असेल तर संख्या बदला.',
-      'एखादा दिवस राहिला? आजच्या पानाच्या वरच्या आठवड्याच्या पट्टीत तो दिवस दाबा आणि भरा. उशिरा पण खरी नोंद रिकाम्यापेक्षा बरी.',
+      'एखादा दिवस अजून नोंदवायचा आहे? आजच्या पानाच्या वरच्या आठवड्याच्या पट्टीत तो दिवस दाबा आणि भरा. उशिरा पण खरी नोंद रिकाम्यापेक्षा बरी.',
     ],
   },
   {
@@ -176,12 +176,12 @@ const mr: GuideSection[] = [
   {
     id: 'cheat',
     icon: 'pizza-outline',
-    title: 'चीट मील',
+    title: 'ट्रीट मील',
     lines: [
       'आठवड्यातून एक जेवण, एक दिवस नाही. आधी ठरवा, मनापासून खा, नोंदवा.',
       'आधी आणि नंतर नेहमीसारखे खा. जागा करण्यासाठी जेवण टाळू नका, दुसऱ्या दिवशी उपास नको.',
       'दुसऱ्या सकाळी काटा वर असेल तर ते मीठ आणि पाणी. दोन दिवसांत खाली येते.',
-      'उत्तम: आठवड्यातले एक माणसांबरोबरचे जेवण हेच चीट मील करा, म्हणजे कधीच काही गमावल्यासारखे वाटत नाही.',
+      'उत्तम: आठवड्यातले एक माणसांबरोबरचे जेवण हेच ट्रीट मील करा, म्हणजे कधीच काही गमावल्यासारखे वाटत नाही.',
     ],
   },
   {
@@ -221,7 +221,7 @@ const mr: GuideSection[] = [
     lines: [
       'सकाळचा फेरफटका हा पाया. वीस ते तीस मिनिटे, रोज, त्याच वेळी.',
       'मी → शरीर मधली हालचाल झोपेनुसार लहान, सांध्यांना सुरक्षित सराव देते. लाल दिवस म्हणजे ताणणे आणि श्वास, कधीच काहीच नाही असे नाही.',
-      'तीन दिवस चुकले की नियोजन सोपे होते, कठोर नाही. जिथे सांगते तिथून पुन्हा सुरू करा.',
+      'तीन दिवस दूर गेलात की नियोजन सोपे होते, कठोर नाही. जिथे सांगते तिथून पुन्हा सुरू करा.',
     ],
   },
   {
@@ -290,7 +290,7 @@ const hi: GuideSection[] = [
       'सब दर्ज करें, चाय, बिस्कुट और पकाते समय चखा हुआ भी. आधे दर्ज दिन जितने थे उससे बेहतर दिखते हैं.',
       'आज के मेन्यू में आपके खाने के पैटर्न का हर खाना है. जैसा लिखा है वैसा खाया? "प्लान के मुताबिक़ खाया" दबाएँ. बाकी कुछ भी हो तो ➕ दबाएँ और नाम से खोजें, फ़ोटो लें या बारकोड पढ़ें.',
       'मात्रा जाँचें. एक कटोरी 150 ग्राम; एक रोटी 40 ग्राम. आपकी बड़ी हो तो संख्या बदलें.',
-      'कोई दिन छूट गया? आज वाले पन्ने के ऊपर की हफ़्ते की पट्टी में वह दिन दबाएँ और भरें. देर से पर सच्ची प्रविष्टि खाली से बेहतर है.',
+      'कोई दिन अभी दर्ज नहीं हुआ? आज वाले पन्ने के ऊपर की हफ़्ते की पट्टी में वह दिन दबाएँ और भरें. देर से पर सच्ची प्रविष्टि खाली से बेहतर है.',
     ],
   },
   {
@@ -307,12 +307,12 @@ const hi: GuideSection[] = [
   {
     id: 'cheat',
     icon: 'pizza-outline',
-    title: 'चीट मील',
+    title: 'ट्रीट मील',
     lines: [
       'हफ़्ते में एक खाना, एक दिन नहीं. पहले से तय करें, जी भरकर खाएँ, दर्ज करें.',
       'पहले और बाद में सामान्य खाएँ. जगह बनाने के लिए लंच न छोड़ें, अगले दिन उपवास नहीं.',
       'अगली सुबह तराज़ू ऊपर हो तो वह नमक और पानी है. दो दिन में बैठ जाता है.',
-      'बेहतर: हफ़्ते का एक लोगों के साथ का खाना ही चीट मील बनाएँ, ताकि कभी कुछ खोने जैसा न लगे.',
+      'बेहतर: हफ़्ते का एक लोगों के साथ का खाना ही ट्रीट मील बनाएँ, ताकि कभी कुछ खोने जैसा न लगे.',
     ],
   },
   {
@@ -352,7 +352,7 @@ const hi: GuideSection[] = [
     lines: [
       'सुबह की सैर आधार है. बीस से तीस मिनट, रोज़, उसी समय.',
       'मैं → शरीर में हलचल नींद के हिसाब से छोटा, जोड़ों के लिए सुरक्षित सत्र देता है. लाल दिन खिंचाव और साँस हैं, कभी कुछ नहीं नहीं.',
-      'तीन दिन छूटें तो योजना आसान होती है, सख़्त नहीं. जहाँ कहे वहीं से फिर शुरू करें.',
+      'तीन दिन दूर रहें तो योजना आसान होती है, सख़्त नहीं. जहाँ कहे वहीं से फिर शुरू करें.',
     ],
   },
   {

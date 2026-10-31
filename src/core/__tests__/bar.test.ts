@@ -31,7 +31,7 @@ describe('barItems', () => {
   it('offers Abhyas as a tab with the book icon and its name', () => {
     expect(barItems(['progress', 'abhyas']).map((i) => i.key)).toEqual(['today', 'progress', 'add', 'abhyas', 'me']);
     expect(extraItem('abhyas')).toEqual({ key: 'abhyas', route: 'abhyas', icon: 'book-outline', labelKey: 'abhyas' });
-    expect(makeT('mr')(extraItem('abhyas').labelKey)).toBe('अभ्यास');
+    expect(makeT('mr')(extraItem('abhyas').labelKey)).toBe('दिनक्रम');
   });
 
   it('the bar a new user starts with is balanced, two tabs each side of ➕: Today · Abhyas · ➕ · Progress · Me', () => {

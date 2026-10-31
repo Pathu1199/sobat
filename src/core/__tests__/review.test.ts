@@ -83,7 +83,7 @@ describe('dayReviewLines', () => {
 
   it('leaves out what did not happen, and says when nobody moved', () => {
     const quiet = dayReviewLines({ ...day, movedMin: null, sleep: null, mood: { score: 3 }, screenMin: 0, streakDays: 1 }, makeT('en'));
-    expect(quiet).toEqual(['Ate 1,714 of 1,900 kcal, protein 72 of 90 g.', 'Water 2,500 of 3,000 ml.', 'No workout today.', 'Mood 3 out of 5.']);
+    expect(quiet).toEqual(['Ate 1,714 of 1,900 kcal, protein 72 of 90 g.', 'Water 2,500 of 3,000 ml.', 'A rest day from workouts.', 'Mood 3 out of 5.']);
   });
 
   it('is said in Marathi and Hindi too, for a day with no model to write it, in plain words with every number filled in', () => {

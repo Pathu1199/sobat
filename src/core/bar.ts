@@ -28,7 +28,7 @@ const EXTRA: Record<TabId, BarItem> = {
   abhyas: { key: 'abhyas', route: 'abhyas', icon: 'book-outline', labelKey: 'abhyas' },
 };
 
-/** Today, the extras, Me, with ➕ inserted in the middle: Today · ➕ · Progress · Me by default. */
+/** Today, the extras, Me, with ➕ inserted in the middle: Today · Routine · ➕ · Progress · Me by default (Routine is the tab id `abhyas`). */
 export function barItems(tabs: unknown): BarItem[] {
   const around = [TODAY, ...normalizeTabs(tabs).map((id) => EXTRA[id]), ME];
   const middle = Math.floor(around.length / 2);

@@ -261,7 +261,7 @@ describe('plannedReminders: fill in yesterday', () => {
   });
 
   it('asks to look at yesterday, not that meals are missing: the meals the app fills in from the plan may have completed it by nine', () => {
-    expect(makeT('en')('rem_fill_body')).toBe('Take a look at yesterday: confirm what was filled in from the plan and add anything missing.');
+    expect(makeT('en')('rem_fill_body')).toBe('Take a look at yesterday: confirm what was filled in from the plan and add anything not logged yet.');
     for (const lang of ['mr', 'hi'] as const) {
       const words = makeT(lang)('rem_fill_body');
       expect(words, lang).not.toBe(makeT('en')('rem_fill_body'));

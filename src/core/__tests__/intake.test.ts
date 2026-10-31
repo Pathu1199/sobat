@@ -13,7 +13,7 @@ const partial = () => ({ state: 'partial' as const });
 const base = { today: '2026-10-12', target: 1600, floor: 1500, offDays: [] as number[], recordOn: partial };
 
 describe('lowIntake', () => {
-  it('averages the last three counted days and speaks when they sit below the line', () => {
+  it('averages the last three counted days and speaks when they sit under the safe minimum', () => {
     const meals = [...day('2026-10-11', 1200), ...day('2026-10-10', 1100), ...day('2026-10-09', 1300), ...day('2026-10-08', 2000)];
     expect(lowIntake({ ...base, meals })).toEqual({ avg: 1200, limit: 1500, days: 3 });
   });
@@ -70,9 +70,9 @@ describe('lowIntake', () => {
 describe('intakeNote', () => {
   it("says the average and the way out in one line, in each language, the number written as the app writes numbers", () => {
     const intake = { avg: 1395, limit: 1500, days: 3 };
-    expect(intakeNote(intake, 'en')).toBe("Last 3 days averaged 1,395 kcal, below the line. Eat today's plan in full.");
-    expect(intakeNote(intake, 'mr')).toBe('गेल्या 3 दिवसांत सरासरी 1,395 kcal, रेषेखाली. आजचं नियोजन पूर्ण खा.');
-    expect(intakeNote(intake, 'hi')).toBe('पिछले 3 दिनों में औसत 1,395 kcal, रेखा से नीचे. आज का प्लान पूरा खाएँ.');
+    expect(intakeNote(intake, 'en')).toBe("Last 3 days averaged 1,395 kcal, under your safe minimum. Eat today's plan in full.");
+    expect(intakeNote(intake, 'mr')).toBe('गेल्या 3 दिवसांत सरासरी 1,395 kcal, सुरक्षित किमानपेक्षा कमी. आजचं नियोजन पूर्ण खा.');
+    expect(intakeNote(intake, 'hi')).toBe('पिछले 3 दिनों में औसत 1,395 kcal, सुरक्षित न्यूनतम से कम. आज का प्लान पूरा खाएँ.');
   });
 
   it('says nothing when intake is not low', () => {

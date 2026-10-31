@@ -142,8 +142,8 @@ function Progress() {
 }
 
 /**
- * "Abhyas" over "18 of 21 this week · 5-day streak", a tap to the Abhyas
- * page; nothing while the list is empty. On its own, so the minute clock a
+ * "Routine" over "18 of 21 this week · 5-day streak", a tap to the Routine
+ * page (the route stays /abhyas); nothing while the list is empty. On its own, so the minute clock a
  * running timer needs re-renders this row and not the whole page.
  */
 function AbhyasWeek() {
