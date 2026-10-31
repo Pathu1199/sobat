@@ -1,5 +1,6 @@
 import type { BreakLog, BreakSettings } from './breaks';
 import type { MemoryItem } from './memory';
+import type { PaletteId } from './palette';
 import type { QueuedPhoto } from './queue';
 import type { PlanLine, Routine, SpendLog } from './routine';
 import type { WorkSchedule } from './schedule';
@@ -89,6 +90,8 @@ export type Settings = {
   diet: Diet;
   /** Follow the phone, or force light or dark. */
   appearance: 'system' | 'light' | 'dark';
+  /** The colours, one of the three palettes (core/palette.ts); the same on every device, as the person chose it. */
+  palette: PaletteId;
   /** Multiplier on every type size; 1 is the design size. */
   textScale: number;
   /** Web only: reminders through the relay while the app is closed. */

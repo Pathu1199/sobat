@@ -210,6 +210,15 @@ describe('three-way merge of single values', () => {
     }
   });
 
+  it('the palette is the person’s, not the machine’s: chosen on the phone, it reaches the PC, and a later choice on the PC wins there', () => {
+    const b = cloudOf(used([]));
+    const phone = cloudOf(used([], { settings: { ...EMPTY_STATE.settings, palette: 'indigo' } }));
+    expect(cloudOf(used([], { settings: { ...EMPTY_STATE.settings, palette: 'indigo' } })).settings.palette).toBe('indigo');
+    expect(merge3(b, cloudOf(used([])), phone).settings.palette).toBe('indigo');
+    const pc = cloudOf(used([], { settings: { ...EMPTY_STATE.settings, palette: 'saffron' } }));
+    expect(merge3(phone, pc, phone).settings.palette).toBe('saffron');
+  });
+
   it('two devices switching different reminders, or different parts of the app, both keep their switch, wherever the merge runs', () => {
     const s = EMPTY_STATE.settings;
     const b = cloudOf(used([]));

@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import foodsJson from '../data/foods.json';
 import { DEFAULT_BREAK_SETTINGS } from '../core/breaks';
 import { DEFAULT_CHECKLIST_TIMES } from '../core/checklist';
+import { DEFAULT_PALETTE } from '../core/palette';
 import { NEUTRAL_ROUTINE } from '../core/routine';
 import { DEFAULT_SCHEDULE } from '../core/schedule';
 import { DEFAULT_TABS, DEFAULT_TODAY_CARDS } from '../core/tabs';
@@ -76,6 +77,7 @@ export const DEFAULT_SETTINGS: Settings = {
   // Most of the people this is built for are vegetarian; the setting is one tap away.
   diet: 'veg',
   appearance: 'system',
+  palette: DEFAULT_PALETTE,
   textScale: 1,
   pushRelay: false,
   weighDay: 0,

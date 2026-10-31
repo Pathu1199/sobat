@@ -5,6 +5,7 @@ import { checklistTimes } from '../core/checklist';
 import { addDays, isIsoDate, mondayOf, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
 import { addSkip, menusFromTemplate, NOT_EDITED, settleAuto, type DayMenu } from '../core/menu';
+import { paletteOf } from '../core/palette';
 import { slotShare } from '../core/pattern';
 import { canPlace, DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
 import { forCloud, stable, type CloudState } from '../core/sync';
@@ -189,6 +190,8 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   // "Day so far" comes at clock times only, each once, in the day's order, at most three; a list with none left, or none
   // stored, is the default 21:30 (core/checklist.ts).
   s.checklistTimes = checklistTimes(raw.checklistTimes);
+  // One of the three palettes; none stored yet (a store from before them), or one this build does not know, is emerald.
+  s.palette = paletteOf(raw.palette);
   return s;
 }
 

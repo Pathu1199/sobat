@@ -1167,3 +1167,16 @@ describe('a new chapter in the profile', () => {
     expect(migrateState({ ...v1, version: 7, profile: { ...v1.profile, chapterStart: '2026-02-30', firstStartWeightKg: -4 } }, NOW).profile).not.toHaveProperty('chapterStart');
   });
 });
+
+describe('the palette', () => {
+  it('a store from before the palettes starts on emerald and gold, and a choice made is kept', () => {
+    expect(migrateState(v1, NOW).settings.palette).toBe('emerald');
+    const s = migrateState({ ...v1, version: 8, settings: { ...v1.settings, palette: 'saffron' } }, NOW);
+    expect(s.settings.palette).toBe('saffron');
+    expect(migrateState(s, NOW)).toEqual(s);
+  });
+
+  it('a palette this build does not know, from sync or a damaged file, reads as emerald and gold', () => {
+    for (const palette of ['rose', 7, null]) expect(migrateState({ ...v1, version: 8, settings: { ...v1.settings, palette } }, NOW).settings.palette, String(palette)).toBe('emerald');
+  });
+});

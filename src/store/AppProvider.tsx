@@ -15,6 +15,7 @@ import { addActive, minutesOn, pruneUsage } from '../core/usage';
 import { dequeue, enqueue, markFailed, type QueuedPhoto } from '../core/queue';
 import { slotStates } from '../core/pattern';
 import { chapterStreaks } from '../core/chapter';
+import { withCelebrated } from '../core/medals';
 import {
   addMenuLine,
   alignMenus,
@@ -84,8 +85,10 @@ type Ctx = {
   bestStreakDays: number;
   /** The streak over the whole journey, a new chapter or not (still within the streak's own window): only the points and the streak badges count it. */
   lifetimeStreakDays: number;
-  /** The best run over the whole journey, by the same rule: only the streak badges count it. */
+  /** The best run over the whole journey, by the same rule: only the streak medals count it. */
   lifetimeBestStreakDays: number;
+  /** The days the streak shield covered in the streak's window, for its note (`shieldNote`). Every streak here is worked out with the shield. */
+  streakCovered: ISODate[];
   setProfile: (p: Partial<Profile>) => void;
   setSettings: (s: Partial<Settings>) => void;
   addMeal: (m: Meal) => void;
@@ -379,10 +382,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         floor: fit.floor,
         menuOn,
         chapterStart: state.profile.chapterStart,
+        shield: true,
       }),
     [today, state.routine, state.meals, state.slotSkips, state.settings.offDays, fit.floor, menuOn, state.profile.chapterStart],
   );
   const { days: streakDays, best: bestStreakDays, lifetimeDays: lifetimeStreakDays, lifetimeBest: lifetimeBestStreakDays } = streaks;
+  const streakCovered = useMemo(() => streaks.covered ?? [], [streaks]);
 
   // Planned meals fill themselves 90 minutes after their slot, today is noted as a day the app was open, and an Abhyas timer
   // left running stops where it stops by itself (three hours, or midnight after its day): checked once the store is loaded,
@@ -449,6 +454,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       bestStreakDays,
       lifetimeStreakDays,
       lifetimeBestStreakDays,
+      streakCovered,
       tipToday: tipRecord?.text ?? null,
       screenMinutesToday,
       stepsToday: state.steps.find((x) => x.date === today)?.count ?? 0,
@@ -637,7 +643,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       removeActivity: (id) => update((s) => ({ ...s, activities: (s.activities ?? []).filter((x) => x.id !== id) })),
       burnedToday,
       toggleGrocery: (week, foodId) => update((s) => ({ ...s, groceryTicks: toggleTick(s.groceryTicks, week, foodId, groceryThisWeek(today)) })),
-      markCelebrated: (ids) => update((s) => ({ ...s, celebrated: Array.from(new Set([...(s.celebrated ?? []), ...ids])) })),
+      // A day's challenge is kept among the celebrated ids for a fortnight, so the list never grows by one a day for good.
+      markCelebrated: (ids) => update((s) => ({ ...s, celebrated: withCelebrated(s.celebrated, ids, today) })),
       abhyas,
       addAbhyasItem: (draft) => {
         // Refused at the tap, so the sheet knows nothing was saved.
@@ -700,7 +707,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       storageError,
       exportJSON: () => JSON.stringify(state, null, 2),
     };
-  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, menuOn, streakDays, bestStreakDays, lifetimeStreakDays, lifetimeBestStreakDays, patternMealsLeft, weekPlan, abhyas]);
+  }, [state, ready, today, hour, update, storageError, saveCloudBase, readNow, switchAccount, planFoods, fit, menuOn, streakDays, bestStreakDays, lifetimeStreakDays, lifetimeBestStreakDays, streakCovered, patternMealsLeft, weekPlan, abhyas]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }
