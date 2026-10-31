@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { formatMonthYear } from '../core/date';
+import { perfectDates } from '../core/perfect';
 import { monthMarks, monthSteps, shiftMonth } from '../core/progress';
 import { stripDayLabel, stripSince } from '../core/weekStrip';
 import { makeT } from '../i18n';
@@ -43,6 +44,8 @@ export function RecordCalendar() {
   const since = stripSince(state.profile, state.meals, today);
   const steps = monthSteps(month, today, since);
   const weeks = useMemo(() => monthMarks(month, recordOn, today, since), [month, recordOn, today, since]);
+  // The days of the month with a star: perfect days from the day the user started, the way the dots start.
+  const perfect = useMemo(() => perfectDates(weeks.flatMap((w) => w.flatMap((d) => (d ? [d.date] : []))), since, perfectOn), [weeks, since, perfectOn]);
 
   return (
     <Card>
@@ -66,7 +69,7 @@ export function RecordCalendar() {
           <View key={`${month}-${i}`} style={{ flexDirection: 'row' }}>
             {week.map((d, j) => {
               if (!d) return <View key={`blank-${j}`} style={{ flex: 1 }} />;
-              const gold = perfectOn(d.date);
+              const gold = perfect.has(d.date);
               const label = stripDayLabel({ ...d, isToday: d.date === today }, lang);
               return (
                 <Pressable

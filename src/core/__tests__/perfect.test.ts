@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addDays } from '../date';
-import { perfectDay, perfectWeeks, PERFECT_WEEK_MIN_DAYS } from '../perfect';
+import { perfectDates, perfectDay, perfectWeeks, PERFECT_WEEK_MIN_DAYS } from '../perfect';
 import type { AbhyasItem, AbhyasSession, AbhyasTick } from '../types';
 
 const at = (date: string, hhmm: string) => new Date(`${date}T${hhmm}:00`);
@@ -29,6 +29,28 @@ describe('perfectDay', () => {
     expect(perfectDay({ ...day, jobs: { done: 2, total: 3 } })).toBe(false);
     expect(perfectDay({ ...day, waterMl: 2500 })).toBe(false);
     expect(perfectDay({ ...day, waterMl: 0, waterGoalMl: 0 })).toBe(false);
+  });
+});
+
+describe('perfectDates', () => {
+  const always = () => true;
+
+  it('stars perfect days from the day the user started, and none before it, however perfect the numbers say they were', () => {
+    const days = ['2026-10-18', '2026-10-19', '2026-10-20', '2026-10-21'];
+    expect([...perfectDates(days, '2026-10-20', always)]).toEqual(['2026-10-20', '2026-10-21']);
+    // The day they started is the first one that can shine.
+    expect(perfectDates(['2026-10-20'], '2026-10-20', always).has('2026-10-20')).toBe(true);
+    expect(perfectDates(['2026-10-19'], '2026-10-20', always).size).toBe(0);
+  });
+
+  it('asks about a day only when it can be starred, and stars only the days that are perfect', () => {
+    const asked: string[] = [];
+    const out = perfectDates(['2026-10-19', '2026-10-20', '2026-10-21'], '2026-10-20', (d) => {
+      asked.push(d);
+      return d === '2026-10-21';
+    });
+    expect([...out]).toEqual(['2026-10-21']);
+    expect(asked).toEqual(['2026-10-20', '2026-10-21']);
   });
 });
 
@@ -74,5 +96,49 @@ describe('perfectWeeks', () => {
   it('a job added on Thursday is due from Thursday, so Thursday to Sunday done is a perfect week', () => {
     const late = item('late', { createdAt: at('2026-10-22', '06:00').toISOString() });
     expect(perfectWeeks({ items: [late], ticks: WEEK.slice(3).map((d) => tick('late', d)), sessions: [] }, SUNDAY)).toEqual([{ itemId: 'late', monday: '2026-10-19' }]);
+  });
+
+  it('is earned on the last day a Monday, Wednesday and Friday job is due: not on the Thursday before, not while Friday is still to come', () => {
+    const mwf = item('mwf', { days: [1, 3, 5] });
+    const ticks = ['2026-10-19', '2026-10-21', '2026-10-23'].map((d) => tick('mwf', d));
+    // Friday 23 October is the last due day: earned that day, and the week stays earned on every day after it.
+    expect(perfectWeeks({ items: [mwf], ticks, sessions: [] }, '2026-10-23')).toEqual([{ itemId: 'mwf', monday: '2026-10-19' }]);
+    expect(perfectWeeks({ items: [mwf], ticks, sessions: [] }, '2026-10-25')).toEqual([{ itemId: 'mwf', monday: '2026-10-19' }]);
+    // Thursday: Friday has not come, so the week is not decided; Wednesday likewise.
+    expect(perfectWeeks({ items: [mwf], ticks, sessions: [] }, '2026-10-22')).toEqual([]);
+    expect(perfectWeeks({ items: [mwf], ticks, sessions: [] }, '2026-10-21')).toEqual([]);
+    // Friday itself not done: no week.
+    expect(perfectWeeks({ items: [mwf], ticks: ticks.slice(0, 2), sessions: [] }, '2026-10-25')).toEqual([]);
+  });
+
+  describe('a job removed before its week ends earns no medal for it', () => {
+    const removedOn = (date: string, extra: Partial<AbhyasItem> = {}) => item('yoga', { archivedAt: at(date, '09:00').toISOString(), ...extra });
+    const ticks = WEEK.map((d) => tick('yoga', d));
+
+    it('a daily job removed on the Thursday, the Saturday or the Sunday: its days before were done, and there is no medal', () => {
+      for (const gone of ['2026-10-22', '2026-10-24', SUNDAY]) {
+        expect(perfectWeeks({ items: [removedOn(gone)], ticks, sessions: [] }, '2026-10-28'), gone).toEqual([]);
+      }
+    });
+
+    it('a Monday, Wednesday and Friday job removed on the Saturday after its three days were done: no medal either', () => {
+      const mwf = removedOn('2026-10-24', { days: [1, 3, 5] });
+      expect(perfectWeeks({ items: [mwf], ticks: ['2026-10-19', '2026-10-21', '2026-10-23'].map((d) => tick('yoga', d)), sessions: [] }, '2026-10-28')).toEqual([]);
+    });
+
+    it('removed on the Monday after, the week was whole: it stands', () => {
+      expect(perfectWeeks({ items: [removedOn('2026-10-26')], ticks, sessions: [] }, '2026-10-28')).toEqual([{ itemId: 'yoga', monday: '2026-10-19' }]);
+    });
+
+    it('does not take back an earlier week of a job removed later, and a removal that cannot be read earns none', () => {
+      const two = [...WEEK, ...WEEK.map((d) => addDays(d, 7))].map((d) => tick('yoga', d));
+      expect(perfectWeeks({ items: [removedOn('2026-10-29')], ticks: two, sessions: [] }, '2026-11-01')).toEqual([{ itemId: 'yoga', monday: '2026-10-19' }]);
+      expect(perfectWeeks({ items: [item('yoga', { archivedAt: 'not a date' })], ticks, sessions: [] }, '2026-10-28')).toEqual([]);
+    });
+  });
+
+  it('a one-off job is due on one day only, so it never makes a week', () => {
+    const once = item('once', { kind: 'once', date: '2026-10-20' });
+    expect(perfectWeeks({ items: [once], ticks: [tick('once', '2026-10-20')], sessions: [] }, '2026-10-28')).toEqual([]);
   });
 });

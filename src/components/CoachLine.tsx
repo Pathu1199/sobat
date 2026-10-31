@@ -1,22 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { teacherOn } from '../core/teacher';
 import { makeT } from '../i18n';
 import { useMinute } from '../services/useWorkSchedule';
 import { useApp } from '../store/AppProvider';
 import { C, F, lh, S } from '../ui/theme';
 import { adviceHint, adviceText, useAdviceAction } from './CoachStrip';
-import { EVENING_FROM, TeacherCard } from './TeacherCard';
+import { TeacherCard } from './TeacherCard';
 import { useCoach } from './useCoach';
 
 /**
  * The coach in one sentence: the one thing that matters now, and the tap that does it. Advice with nothing to do is plain words,
  * not a button. A tap on the water advice adds a bottle and says so, with Undo. Nothing when there is nothing to say. From six in
- * the evening the coach is the kind teacher instead: what went well today and one small tip for tomorrow (`TeacherCard`).
+ * the evening the coach is the kind teacher instead: what went well today and one small tip for tomorrow (`TeacherCard`); a free day stays quiet.
  */
 export function CoachLine() {
   const minute = useMinute();
-  return minute >= EVENING_FROM ? <TeacherCard /> : <AdviceLine minute={minute} />;
+  const { state, today } = useApp();
+  return teacherOn(minute, today, state.settings.offDays) ? <TeacherCard /> : <AdviceLine minute={minute} />;
 }
 
 /** The advice of this minute, in one sentence. */

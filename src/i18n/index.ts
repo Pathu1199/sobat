@@ -999,6 +999,8 @@ const en: Dict = {
   perfect_day: 'Perfect day',
   celebrate_keep_going: 'Keep going',
   celebrate_see_medals: 'See my medals',
+  shelf_earned: 'earned',
+  shelf_not_yet: 'not yet',
 };
 
 const mr: Dict = {
@@ -2000,6 +2002,8 @@ const mr: Dict = {
   perfect_day: 'सोनेरी दिवस',
   celebrate_keep_going: 'असंच चालू ठेवा',
   celebrate_see_medals: 'माझी पदकं पाहा',
+  shelf_earned: 'मिळालं',
+  shelf_not_yet: 'अजून नाही',
 };
 
 const hi: Dict = {
@@ -3000,6 +3004,8 @@ const hi: Dict = {
   perfect_day: 'सुनहरा दिन',
   celebrate_keep_going: 'ऐसे ही चलते रहें',
   celebrate_see_medals: 'मेरे पदक देखें',
+  shelf_earned: 'मिला',
+  shelf_not_yet: 'अभी नहीं',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };

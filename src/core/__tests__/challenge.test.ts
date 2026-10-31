@@ -72,7 +72,8 @@ describe('the turn of areas', () => {
     return {
       ...base,
       meals: days.map((d) => meal(d, '13:00', 50)),
-      abhyas: { ...base.abhyas, items: withJob ? [code] : [], sessions: days.map((d) => session(d, '21:00')) },
+      // The job was on the list a month before the first of these days, so it is on the list on every one of them.
+      abhyas: { ...base.abhyas, items: withJob ? [{ ...code, createdAt: at(addDays(date, -40), '06:00').toISOString() }] : [], sessions: days.map((d) => session(d, '21:00')) },
     };
   };
   const kinds = (data: ChallengeData, from: string, n: number) => Array.from({ length: n }, (_, i) => dailyChallenge(data, addDays(from, i))?.kind);
@@ -94,6 +95,8 @@ describe('the turn of areas', () => {
       const from = '2025-12-25';
       const data = around(from, withJob);
       const list = challengeChoices(data, from).map((c) => c.kind);
+      // Four areas with a job on the list (water, walk, its start, protein), three without: a real four before the day the turn counts from.
+      expect(list).toHaveLength(withJob ? 4 : 3);
       const picked = kinds(data, from, list.length * 2);
       expect(picked.every((k) => k !== undefined && list.includes(k))).toBe(true);
       expect(new Set(picked.slice(0, list.length)).size).toBe(list.length);
@@ -144,6 +147,10 @@ describe('areas the user switched off', () => {
   it('a meal logged from the plan is stamped with its slot’s time and offers no challenge of its own', () => {
     const planned = WEEK.map((d) => ({ ...meal(d, '09:00', 120), source: 'plan' as const }));
     expect(kinds({ ...base, meals: planned })).toEqual(['water', 'walk']);
+    // The same week of meals typed by hand at the same times offers the same: when a meal was logged is no area at all.
+    expect(kinds({ ...base, meals: WEEK.map((d) => meal(d, '09:00', 120)) })).toEqual(kinds({ ...base, meals: planned }));
+    // And the week's choices do not move with the minute a plan-logged meal carries.
+    expect(kinds({ ...base, meals: WEEK.map((d) => ({ ...meal(d, '23:30', 120), source: 'plan' as const })) })).toEqual(['water', 'walk']);
   });
 });
 

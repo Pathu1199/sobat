@@ -1,7 +1,9 @@
 import { isDone, itemsOn, minutesOn, type AbhyasData } from './abhyas';
+import { addDays, mondayOf } from './date';
 import { skippedOn } from './menu';
 import { slotStates } from './pattern';
 import type { Routine } from './routine';
+import { isOffDay } from './week';
 import { walkMinutesOn, waterMlOn } from './tileText';
 import type { ActivityLog, ISODate, Meal, SlotSkip, WaterLog } from './types';
 import { fill } from '../i18n';
@@ -12,8 +14,8 @@ import { fill } from '../i18n';
  * small tip for tomorrow. A day with nothing done yet is "not yet", never
  * missed or failed, with one easier thing for tomorrow; the first evening
  * after such a day opens with "Welcome back". When today did the most of the
- * week so far (meals logged, routine jobs done and the water goal), it says
- * so. Pure.
+ * week so far (meals logged, routine jobs done and the water goal) and did at
+ * least half of what the day held, it says so. Pure.
  */
 export type DayScore = {
   /** Meals logged of the pattern's meals due so far (a skipped one is neither). */
@@ -51,6 +53,24 @@ export function dayScore(input: {
   };
 }
 
+/** From this minute of the day the coach on Today is the evening teacher. */
+export const EVENING_FROM = 18 * 60;
+
+/** Whether the coach on Today is the teacher now: from six in the evening, and never on a free day, which stays quiet as the morning coach does. */
+export function teacherOn(minute: number, today: ISODate, offDays: number[] | undefined): boolean {
+  return minute >= EVENING_FROM && !isOffDay(offDays, today);
+}
+
+/**
+ * This week's days before today that count, Monday on, oldest first, each read by `score` as the day ended: the days the best-day line
+ * compares today with. Not a day before `since` (the day the user started: nothing to miss before it) nor an off day. Monday has none.
+ */
+export function weekScores(input: { today: ISODate; since: ISODate; offDays: number[] | undefined; score: (date: ISODate) => DayScore }): DayScore[] {
+  const out: DayScore[] = [];
+  for (let d = mondayOf(input.today); d < input.today; d = addDays(d, 1)) if (d >= input.since && !isOffDay(input.offDays, d)) out.push(input.score(d));
+  return out;
+}
+
 const waterMet = (d: DayScore) => d.water.goal > 0 && d.water.ml >= d.water.goal;
 
 /** What a day did, to compare days: meals logged, jobs done, and one for the water goal met. */
@@ -83,7 +103,9 @@ export function teacherWords(input: { today: DayScore; yesterday: DayScore | nul
   const praise = parts.length > 0 ? fill(t('teach_lead'), { parts: parts.join(', ') }) : t('teach_lead_small');
   const lead = input.yesterday && nothingDone(input.yesterday) ? `${t('teach_welcome')} ${praise}` : praise;
   const score = scoreOf(d);
-  const best = input.earlier.length > 0 && score > 0 && input.earlier.every((e) => scoreOf(e) < score) ? fill(t('teach_best'), { n: score, m: d.meals.of + d.jobs.of + (d.water.goal > 0 ? 1 : 0) }) : null;
+  const possible = d.meals.of + d.jobs.of + (d.water.goal > 0 ? 1 : 0);
+  // Said only when today did the most of the week so far and at least half of what it held: "1 of 6" after a quiet week reads hollow.
+  const best = input.earlier.length > 0 && score > 0 && score * 2 >= possible && input.earlier.every((e) => scoreOf(e) < score) ? fill(t('teach_best'), { n: score, m: possible }) : null;
   const tip =
     d.jobs.next !== null
       ? fill(t('teach_tip_job'), { name: d.jobs.next })

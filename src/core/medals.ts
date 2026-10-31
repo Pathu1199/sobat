@@ -46,6 +46,40 @@ export type MedalInput = {
   celebrated: readonly string[] | null | undefined;
 };
 
+/**
+ * What the medals read, put together from the store's numbers. The meal medals take the streak over the whole journey (a new
+ * chapter does not take them back), the kilos run from the very first start (`firstStartWeightKg`, else the start the plan shows) to the
+ * weight shown and to the goal, and the routine medals count only while the list holds a job that is not removed: with every job
+ * archived there is no routine to have a streak of, and the medals already celebrated stay as they are.
+ */
+export function medalInput(a: {
+  lifetimeStreak: { now: number; best: number };
+  routine: { now: number; best: number };
+  /** The jobs on the list, removed ones included. */
+  jobs: readonly { archivedAt?: string }[];
+  firstStartWeightKg: number | undefined;
+  /** The start weight the plan shows, for a user with no very first start kept. */
+  planStartKg: number;
+  currentKg: number;
+  goalWeightKg: number;
+  weeks: MedalInput['weeks'];
+  jobNames: MedalInput['jobNames'];
+  challengesDone: number;
+  celebrated: MedalInput['celebrated'];
+}): MedalInput {
+  const firstStart = a.firstStartWeightKg ?? a.planStartKg;
+  return {
+    meals: a.lifetimeStreak,
+    routine: a.jobs.some((j) => !j.archivedAt) ? a.routine : null,
+    lostKg: round1(firstStart - a.currentKg),
+    totalKg: round1(firstStart - a.goalWeightKg),
+    weeks: a.weeks,
+    jobNames: a.jobNames,
+    challengesDone: a.challengesDone,
+    celebrated: a.celebrated,
+  };
+}
+
 /** The badge each medal was before medals, so a badge already won is the medal won. */
 const LEGACY: Record<string, string> = {
   'medal:meals:7': 'badge:streak_7',
@@ -180,13 +214,31 @@ export function medalWords(m: Pick<Medal, 'track' | 'n' | 'name'>, t: (key: stri
   return { title, line };
 }
 
+/** The words of a shelf tile under its name: its track for a streak, how far a medal still to earn is, and how many perfect weeks of a job. */
+function shelfParts(tile: ShelfTile, t: (key: string) => string): string[] {
+  const streak = tile.track === 'meals' || tile.track === 'routine';
+  const toGo = tile.toGo === undefined ? null : fill(t(tile.track === 'kg' || tile.track === 'halfway' || tile.track === 'goal' ? 'medal_to_go_kg' : 'medal_to_go'), { n: tile.toGo });
+  return [streak ? t(`medal_track_${tile.track}`) : null, toGo, tile.count && tile.count > 1 ? `×${tile.count}` : null].filter((x): x is string => x !== null);
+}
+
+/** A shelf tile's name: "21 days", "Halfway to your goal", "Perfect week: Yoga". */
+function shelfLabel(tile: ShelfTile, t: (key: string) => string): string {
+  const streak = tile.track === 'meals' || tile.track === 'routine';
+  return streak ? fill(t('medal_streak_days'), { n: tile.n }) : tile.track === 'kg' || tile.track === 'challenges' ? fill(t(`medal_${tile.track}_title`), { n: tile.n }) : medalWords(tile, t).title;
+}
+
 /** A shelf tile's words: its name ("21 days", "Halfway to your goal") and, under it, its track for a streak and how far a medal still to earn is. */
 export function shelfWords(tile: ShelfTile, t: (key: string) => string): { label: string; sub: string | null } {
-  const streak = tile.track === 'meals' || tile.track === 'routine';
-  const label = streak ? fill(t('medal_streak_days'), { n: tile.n }) : tile.track === 'kg' || tile.track === 'challenges' ? fill(t(`medal_${tile.track}_title`), { n: tile.n }) : medalWords(tile, t).title;
-  const toGo = tile.toGo === undefined ? null : fill(t(tile.track === 'kg' || tile.track === 'halfway' || tile.track === 'goal' ? 'medal_to_go_kg' : 'medal_to_go'), { n: tile.toGo });
-  const parts = [streak ? t(`medal_track_${tile.track}`) : null, toGo, tile.count && tile.count > 1 ? `×${tile.count}` : null].filter((x): x is string => x !== null);
-  return { label, sub: parts.length > 0 ? parts.join(' · ') : null };
+  const parts = shelfParts(tile, t);
+  return { label: shelfLabel(tile, t), sub: parts.length > 0 ? parts.join(' · ') : null };
+}
+
+/**
+ * A shelf tile as a screen reader says it: its name, what is under it, and whether the medal is earned or not yet, separated by commas
+ * (the dot between the parts on screen is not spoken as a word, and a faded medal must not sound the same as one won).
+ */
+export function shelfSpoken(tile: ShelfTile, t: (key: string) => string): string {
+  return [shelfLabel(tile, t), ...shelfParts(tile, t), t(tile.earned ? 'shelf_earned' : 'shelf_not_yet')].join(', ');
 }
 
 /** Marks the store's celebrated ids as seeded for medals: until it is there, every medal already earned is marked seen at once, with no celebration. */

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { migrateState, upgradeFile } from '../../store/migrate';
+import { LIVED_MENU_KEEP_DAYS, migrateState, upgradeFile } from '../../store/migrate';
+import { STREAK_LOOKBACK_DAYS } from '../record';
 import { allFoods, EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { allowance, pattern } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE } from '../routine';
@@ -1178,5 +1179,11 @@ describe('the palette', () => {
 
   it('a palette this build does not know, from sync or a damaged file, reads as emerald and gold', () => {
     for (const palette of ['rose', 7, null]) expect(migrateState({ ...v1, version: 8, settings: { ...v1.settings, palette } }, NOW).settings.palette, String(palette)).toBe('emerald');
+  });
+});
+
+describe('how long a lived day\'s menu is kept', () => {
+  it('is no shorter than the streak looks back, so every day the streak judges is judged on the menu it showed', () => {
+    expect(LIVED_MENU_KEEP_DAYS).toBeGreaterThanOrEqual(STREAK_LOOKBACK_DAYS);
   });
 });

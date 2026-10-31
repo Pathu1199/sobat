@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Text, View } from 'react-native';
-import { medalFace, shelf, shelfWords } from '../core/medals';
+import { medalFace, shelf, shelfSpoken, shelfWords } from '../core/medals';
 import { fill, makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { Card } from '../ui/components';
@@ -12,7 +12,8 @@ import { useMedals } from './useRewards';
  * The trophy shelf on Progress: every medal earned (the kilos as the highest
  * one, a job's perfect weeks as one with how many), then the next medal of
  * each track, faded, with how far it is ("9 to go"). Three to a row; each
- * place is read as one line.
+ * place is read as one line, with commas between its parts and "earned" or
+ * "not yet" at the end.
  */
 export function TrophyShelf() {
   const app = useApp();
@@ -28,7 +29,7 @@ export function TrophyShelf() {
         {tiles.map((tile) => {
           const w = shelfWords(tile, t);
           return (
-            <View key={tile.key} accessible accessibilityLabel={[w.label, w.sub].filter(Boolean).join(', ')} style={{ width: '33.33%', alignItems: 'center', gap: 4, paddingHorizontal: 2 }}>
+            <View key={tile.key} accessible accessibilityLabel={shelfSpoken(tile, t)} style={{ width: '33.33%', alignItems: 'center', gap: 4, paddingHorizontal: 2 }}>
               <MedalArt size={56} face={medalFace(tile.track, tile.n)} faded={!tile.earned} />
               <Text style={{ color: C.text, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500', textAlign: 'center' }}>{w.label}</Text>
               {w.sub ? <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small), textAlign: 'center' }}>{w.sub}</Text> : null}

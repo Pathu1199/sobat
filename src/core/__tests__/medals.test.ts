@@ -9,11 +9,13 @@ import {
   earnedMedals,
   medalFace,
   medalWords,
+  medalInput,
   MEDALS_SEEDED,
   namesOfJobs,
   nextMedals,
   nextWin,
   shelf,
+  shelfSpoken,
   shelfWords,
   STREAK_MEDALS,
   withCelebrated,
@@ -131,6 +133,55 @@ describe('earnedMedals', () => {
   });
 });
 
+describe('medalInput', () => {
+  const base = {
+    lifetimeStreak: { now: 4, best: 9 },
+    routine: { now: 2, best: 5 },
+    jobs: [{}],
+    firstStartWeightKg: undefined,
+    planStartKg: 90,
+    currentKg: 86.04,
+    goalWeightKg: 80,
+    weeks: [],
+    jobNames: {},
+    challengesDone: 12,
+    celebrated: [MEDALS_SEEDED],
+  };
+
+  it('counts the meal medals on the streak over the whole journey, not a new chapter’s', () => {
+    expect(medalInput(base).meals).toEqual({ now: 4, best: 9 });
+    expect(medalInput({ ...base, lifetimeStreak: { now: 1, best: 21 } }).meals).toEqual({ now: 1, best: 21 });
+  });
+
+  it('runs the kilos from the very first start when one is kept, else from the start the plan shows, to the weight shown and to the goal', () => {
+    // The plan shows a chapter's start (90); the very first start was 98.7.
+    expect(medalInput({ ...base, firstStartWeightKg: 98.7 })).toMatchObject({ lostKg: 12.7, totalKg: 18.7 });
+    expect(medalInput(base)).toMatchObject({ lostKg: 4, totalKg: 10 });
+    expect(medalInput({ ...base, firstStartWeightKg: 98.7 }).lostKg).toBeGreaterThan(medalInput(base).lostKg);
+  });
+
+  it('gives the routine medals a streak only while the list holds a job that is not removed', () => {
+    expect(medalInput(base).routine).toEqual({ now: 2, best: 5 });
+    expect(medalInput({ ...base, jobs: [{ archivedAt: '2026-10-20T04:00:00.000Z' }, {}] }).routine).toEqual({ now: 2, best: 5 });
+    expect(medalInput({ ...base, jobs: [{ archivedAt: '2026-10-20T04:00:00.000Z' }] }).routine).toBeNull();
+    expect(medalInput({ ...base, jobs: [] }).routine).toBeNull();
+  });
+
+  it('earns no routine medal by rule with every job removed, and keeps one already celebrated', () => {
+    const removed = [{ archivedAt: '2026-10-20T04:00:00.000Z' }];
+    const strong = { ...base, routine: { now: 30, best: 30 }, jobs: removed };
+    expect(earnedMedals(medalInput(strong)).map((m) => m.track)).not.toContain('routine');
+    const kept = medalInput({ ...strong, celebrated: [MEDALS_SEEDED, 'medal:routine:7'] });
+    expect(earnedMedals(kept).filter((m) => m.track === 'routine').map((m) => m.id)).toEqual(['medal:routine:7']);
+  });
+
+  it('passes the weeks, the names, the challenges and the celebrated ids through as they are', () => {
+    const weeks = [{ itemId: 'yoga', monday: '2026-10-19', name: 'Yoga' }];
+    const out = medalInput({ ...base, weeks, jobNames: { yoga: 'Yoga' }, celebrated: null });
+    expect(out).toMatchObject({ weeks, jobNames: { yoga: 'Yoga' }, challengesDone: 12, celebrated: null });
+  });
+});
+
 describe('nextMedals', () => {
   it("gives each track's next medal with how far it is: days from the streak now, kilos to one decimal, challenges", () => {
     const input = { ...none, meals: { now: 5, best: 8 }, routine: { now: 2, best: 2 }, lostKg: 3.6, challengesDone: 4 };
@@ -202,6 +253,17 @@ describe('the words', () => {
     expect(shelfWords({ key: 'k', track: 'kg', n: 4, earned: true }, makeT('hi'))).toEqual({ label: '4 किलो कम', sub: null });
   });
 
+  it('says a shelf place to a screen reader with commas and whether it is earned or not yet, in every language', () => {
+    expect(shelfSpoken({ key: 'k', track: 'meals', n: 7, earned: true }, t)).toBe('7 days, Meals, earned');
+    expect(shelfSpoken({ key: 'k', track: 'routine', n: 30, earned: false, toGo: 9 }, t)).toBe('30 days, Routine, 9 to go, not yet');
+    expect(shelfSpoken({ key: 'k', track: 'halfway', n: 1, earned: false, toGo: 1.4 }, t)).toBe('Halfway to your goal, 1.4 kg to go, not yet');
+    expect(shelfSpoken({ key: 'k', track: 'week', n: 1, earned: true, name: 'Yoga', count: 3 }, t)).toBe('Perfect week: Yoga, ×3, earned');
+    expect(shelfSpoken({ key: 'k', track: 'kg', n: 4, earned: true }, makeT('hi'))).toBe('4 किलो कम, मिला');
+    expect(shelfSpoken({ key: 'k', track: 'kg', n: 5, earned: false, toGo: 1 }, makeT('mr'))).toBe('5 किलो कमी, अजून 1 किलो, अजून नाही');
+    // No dot between the parts: the dot on screen is not a word.
+    for (const lang of ['en', 'mr', 'hi'] as const) expect(shelfSpoken({ key: 'k', track: 'routine', n: 30, earned: false, toGo: 9 }, makeT(lang))).not.toContain('·');
+  });
+
   it('puts a number, ½, ★ or ✓ on the face', () => {
     expect([medalFace('meals', 21), medalFace('halfway', 1), medalFace('goal', 1), medalFace('week', 1), medalFace('kg', 3)]).toEqual(['21', '½', '★', '✓', '3']);
   });
@@ -213,6 +275,12 @@ describe('nextWin', () => {
   it('the first time, or coming from the badges, marks everything already earned seen and celebrates nothing', () => {
     expect(nextWin({ medals, challengeDone: true, today: TODAY, celebrated: null })).toEqual({ seed: [MEDALS_SEEDED, 'medal:meals:3', 'medal:meals:7', challengeWinId(TODAY)], next: null });
     expect(nextWin({ medals, challengeDone: false, today: TODAY, celebrated: ['badge:first_meal', 'level:camp1'] }).seed).toEqual([MEDALS_SEEDED, 'medal:meals:3', 'medal:meals:7']);
+  });
+
+  it('seeds the first run even while the add sheet or an Undo is open: marking says nothing, so only the celebrating waits', () => {
+    const waiting = nextWin({ medals, challengeDone: true, today: TODAY, celebrated: null, waiting: true });
+    expect(waiting).toEqual({ seed: [MEDALS_SEEDED, 'medal:meals:3', 'medal:meals:7', challengeWinId(TODAY)], next: null });
+    expect(nextWin({ medals, challengeDone: true, today: TODAY, celebrated: null }).seed).toEqual(waiting.seed);
   });
 
   it('then celebrates each medal once, smallest first, then the day’s challenge, and waits while something is open', () => {

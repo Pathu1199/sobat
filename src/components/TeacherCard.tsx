@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
 import { Text, View } from 'react-native';
-import { addDays, atMinute, mondayOf } from '../core/date';
-import { dayScore, teacherWords } from '../core/teacher';
+import { addDays, atMinute } from '../core/date';
+import { dayScore, teacherWords, weekScores } from '../core/teacher';
 import type { ISODate } from '../core/types';
 import { isOffDay } from '../core/week';
 import { stripSince } from '../core/weekStrip';
@@ -11,9 +11,7 @@ import { useMinute } from '../services/useWorkSchedule';
 import { useApp } from '../store/AppProvider';
 import { Card } from '../ui/components';
 import { C, F, lh, S } from '../ui/theme';
-
-/** From this minute of the day the coach on Today is the evening teacher. */
-export const EVENING_FROM = 18 * 60;
+import { spokenLine } from '../ui/toastWords';
 
 /**
  * The kind teacher's words for this evening (core/teacher.ts): today as it
@@ -25,17 +23,24 @@ export function useTeacherWords() {
   const minute = useMinute();
   const { state, today, abhyas } = app;
   const { routine, meals, slotSkips, water, activities, settings, profile } = state;
-  return useMemo(() => {
+  // The days before today are read once, not every minute: they are over, so only the logs can change them.
+  const past = useMemo(() => {
     const since = stripSince(profile, meals, today);
-    const counts = (date: ISODate) => date >= since && !isOffDay(settings.offDays, date);
-    const now = atMinute(today, minute);
-    const score = (date: ISODate, nowMinutes: number) =>
+    const over = atMinute(today, 0);
+    const score = (date: ISODate, nowMinutes: number, now: Date) =>
       dayScore({ date, routine, meals, skips: slotSkips, nowMinutes, abhyas, now, water, activities: activities ?? [], waterGoalMl: settings.waterGoalMl, walkGoalMin: settings.walkGoalMin });
-    const earlier: ReturnType<typeof score>[] = [];
-    for (let d = mondayOf(today); d < today; d = addDays(d, 1)) if (counts(d)) earlier.push(score(d, 1440));
     const yesterday = addDays(today, -1);
-    return teacherWords({ today: score(today, minute), yesterday: counts(yesterday) ? score(yesterday, 1440) : null, earlier }, makeT(profile.lang));
-  }, [profile, meals, today, minute, routine, slotSkips, abhyas, water, activities, settings.offDays, settings.waterGoalMl, settings.walkGoalMin]);
+    return {
+      score,
+      earlier: weekScores({ today, since, offDays: settings.offDays, score: (date) => score(date, 1440, over) }),
+      yesterday: yesterday >= since && !isOffDay(settings.offDays, yesterday) ? score(yesterday, 1440, over) : null,
+    };
+  }, [profile, meals, today, routine, slotSkips, abhyas, water, activities, settings.offDays, settings.waterGoalMl, settings.walkGoalMin]);
+  // Today as it stands at this minute, with the days before as they were.
+  return useMemo(
+    () => teacherWords({ today: past.score(today, minute, atMinute(today, minute)), yesterday: past.yesterday, earlier: past.earlier }, makeT(profile.lang)),
+    [past, today, minute, profile.lang],
+  );
 }
 
 /**
@@ -49,7 +54,7 @@ export function TeacherCard() {
   const w = useTeacherWords();
   return (
     <Card still>
-      <View accessible accessibilityLabel={[t('teach_title'), w.lead, w.best, w.tip].filter(Boolean).join('. ')} style={{ gap: 8 }}>
+      <View accessible accessibilityRole="text" accessibilityLabel={spokenLine([t('teach_title'), w.lead, w.best, w.tip])} style={{ gap: 8 }}>
         <Text style={{ color: C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{t('teach_title')}</Text>
         <Text style={{ color: C.text, fontSize: F.body, lineHeight: lh(F.body) }}>{w.lead}</Text>
         {w.best ? (

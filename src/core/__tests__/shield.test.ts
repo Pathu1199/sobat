@@ -4,9 +4,10 @@ import { chapterStreaks } from '../chapter';
 import { addDays } from '../date';
 import { addSkip, type DayMenu } from '../menu';
 import { KCAL_FLOOR } from '../nutrition';
-import { recordRun, recordStreak, type StreakStep } from '../record';
+import { recordRun, recordStreak, STREAK_LOOKBACK_DAYS, type StreakStep } from '../record';
 import { DEFAULT_ROUTINE, type Routine } from '../routine';
 import { runOf, shieldNote, type RunDay } from '../shield';
+import { bestStreak } from '../tileText';
 import type { AbhyasItem, AbhyasTick, Meal, SlotSkip } from '../types';
 
 // Monday 19 October 2026 to Sunday 1 November: two whole weeks.
@@ -46,6 +47,17 @@ describe('runOf with the shield', () => {
     expect(runOf(days(steps), true)).toEqual({ days: 7, best: 7, covered: ['2026-10-25', '2026-10-26'] });
   });
 
+  it('weeks run across a month end and a year end: two breaks in the week of 28 December, one on each side of New Year, are in one week; the Monday after has a shield of its own', () => {
+    const run = (from: string, steps: StreakStep[]): RunDay[] => steps.map((step, i) => ({ date: addDays(from, i), step, coverable: true }));
+    // Monday 28 December 2026 to Sunday 3 January 2027, then Monday the 4th: counts, a break on Wednesday the 30th (covered),
+    // counts, a break on Saturday 2 January (ends the run: same week), then Sunday counts; Monday 4th breaks and is covered.
+    const year = runOf(run('2026-12-28', ['count', 'count', 'break', 'count', 'count', 'break', 'count', 'break', 'count']), true);
+    expect(year).toEqual({ days: 2, best: 4, covered: ['2026-12-30', '2027-01-04'] });
+    // Monday 26 October to Sunday 1 November: a break on the 29th (covered) and one on 1 November, across the month end, are one week.
+    const month = runOf(run('2026-10-26', ['count', 'count', 'count', 'break', 'count', 'count', 'break']), true);
+    expect(month).toEqual({ days: 0, best: 5, covered: ['2026-10-29'] });
+  });
+
   it('is the same run as without the shield when nothing breaks', () => {
     const steps: StreakStep[] = ['count', 'hold', 'count', 'count'];
     expect(runOf(days(steps), true)).toEqual(runOf(days(steps), false));
@@ -74,8 +86,25 @@ describe("the record's streak with the shield", () => {
     expect(recordRun(base).days).toBe(recordStreak(base));
   });
 
-  it('with it, the day with lunch not logged in each week holds the run: ten days, two of them covered', () => {
+  it('with it, the day with lunch not logged in each week holds the run: of the ten days eight count and two are covered', () => {
     expect(recordRun({ ...base, shield: true })).toEqual({ days: 8, best: 8, covered: ['2026-10-22', '2026-10-26'] });
+  });
+
+  it('without the shield, the best run is the record\'s best streak over the same window', () => {
+    expect(recordRun(base).best).toBe(bestStreak({ ...base, days: STREAK_LOOKBACK_DAYS }));
+    expect(recordRun({ ...base, days: 5 }).best).toBe(bestStreak({ ...base, days: 5 }));
+  });
+
+  it('an off day under the shield holds the run and does not use the shield: the week\'s one rest day is still there for a real gap', () => {
+    // Thursdays are free days: 22 October holds, never counted nor covered; only Monday the 26th is covered.
+    expect(recordRun({ ...base, offDays: [4], shield: true })).toEqual({ days: 8, best: 8, covered: ['2026-10-26'] });
+  });
+
+  it('a today already full with nothing eaten ends the run at once, whatever shield is left in the week', () => {
+    const drink = { ...ate(TODAY), kcal: 30 };
+    const todayDrinkOnly = { ...base, meals: [...base.meals.filter((m) => m.date !== TODAY), drink] };
+    // 28 October is Wednesday: the week's shield is unspent, yet a full day eaten at nothing is never covered.
+    expect(recordRun({ ...todayDrinkOnly, shield: true })).toEqual({ days: 0, best: 7, covered: ['2026-10-22', '2026-10-26'] });
   });
 
   it('never covers a day of meals all skipped: skipping is never kept alive by the streak', () => {

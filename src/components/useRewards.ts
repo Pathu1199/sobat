@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { streakRun } from '../core/abhyas';
 import { challengeProgress, challengesDone, dailyChallenge, type ChallengeData } from '../core/challenge';
-import { earnedMedals, namesOfJobs, type MedalInput } from '../core/medals';
+import { earnedMedals, medalInput, namesOfJobs } from '../core/medals';
 import { perfectWeeks } from '../core/perfect';
 import { useApp } from '../store/AppProvider';
 import { useGame } from './useGame';
@@ -38,8 +38,6 @@ export function useTodayChallenge() {
   }, [data, today]);
 }
 
-const round1 = (n: number) => Math.round(n * 10) / 10;
-
 /**
  * Everything the medals read, from the store, and the medals earned: both
  * streaks over the whole journey with the shield (the routine's on finished
@@ -57,18 +55,20 @@ export function useMedals() {
   const routine = useMemo(() => streakRun({ items, ticks, sessions, running: null }, today, new Date(0), true), [items, ticks, sessions, today]);
   const weeks = useMemo(() => perfectWeeks({ items, ticks, sessions }, today).map((w) => ({ ...w, name: items.find((i) => i.id === w.itemId)?.name ?? '' })), [items, ticks, sessions, today]);
   return useMemo(() => {
-    const firstStart = profile.firstStartWeightKg ?? g.plan.startKg;
-    const input: MedalInput = {
-      meals: { now: lifetimeStreakDays, best: lifetimeBestStreakDays },
-      routine: items.length > 0 ? { now: routine.days, best: routine.best } : null,
-      lostKg: round1(firstStart - g.plan.currentKg),
-      totalKg: round1(firstStart - profile.goalWeightKg),
+    const input = medalInput({
+      lifetimeStreak: { now: lifetimeStreakDays, best: lifetimeBestStreakDays },
+      routine: { now: routine.days, best: routine.best },
+      jobs: items,
+      firstStartWeightKg: profile.firstStartWeightKg,
+      planStartKg: g.plan.startKg,
+      currentKg: g.plan.currentKg,
+      goalWeightKg: profile.goalWeightKg,
       weeks,
-      challengesDone: done,
-      celebrated,
       // Names for kept perfect-week medals, removed jobs included (98383c1).
       jobNames: namesOfJobs(items),
-    };
+      challengesDone: done,
+      celebrated,
+    });
     return { input, medals: earnedMedals(input) };
   }, [profile.firstStartWeightKg, profile.goalWeightKg, g.plan.startKg, g.plan.currentKg, lifetimeStreakDays, lifetimeBestStreakDays, items, routine, weeks, done, celebrated]);
 }

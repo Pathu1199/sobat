@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayStatus, start, type AbhyasData } from '../abhyas';
+import { dayStatus, start, streakRun, type AbhyasData } from '../abhyas';
 import { abhyasCard, abhyasProgress, abhyasRow, comingUp, draftOf, formDraft, movedPlace, newDraft, parseTime, recentDays, repeating, targetText, TARGET_CHOICES, WEEK_ORDER, weekdayRuns, type SheetForm } from '../abhyasView';
 import type { AbhyasItem, AbhyasSession, AbhyasTick } from '../types';
 
@@ -257,6 +257,17 @@ describe('the Abhyas tab', () => {
       const dentist = item('dentist', { kind: 'once', days: [], date: '2026-11-02' });
       // Yoga was done Thursday to Saturday, not on Sunday: the shield of that week covers Sunday, so the streak is still 3.
       expect(abhyasProgress(data({ items: [yoga, dentist, bike], ticks: ['2026-10-29', YESTERDAY, TODAY].map((d) => tick('yoga', d)) }), '2026-11-02', at('2026-11-02', '09:00'))).toEqual({ done: 0, total: 2, streak: 3 });
+    });
+
+    it("the streak holds with the shield over the one day not done in a week, and a second day not done in the same week ends it", () => {
+      // Mon 26 to Sat 31, yoga every day. Wednesday the 28th not done: the week's shield covers it, so the streak is five (3 without it).
+      const week = ['2026-10-26', '2026-10-27', '2026-10-29', YESTERDAY, TODAY];
+      const one = data({ items: [item('yoga')], ticks: week.map((d) => tick('yoga', d)) });
+      expect(abhyasProgress(one, TODAY, NOW)?.streak).toBe(5);
+      expect(streakRun(one, TODAY, NOW).days).toBe(3);
+      // Friday not done as well: the shield is spent on Wednesday, so Friday ends the run and only Saturday counts.
+      const two = data({ items: [item('yoga')], ticks: week.filter((d) => d !== YESTERDAY).map((d) => tick('yoga', d)) });
+      expect(abhyasProgress(two, TODAY, NOW)?.streak).toBe(1);
     });
 
     it('the running timer counts once it reaches the target', () => {
