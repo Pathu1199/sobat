@@ -329,8 +329,11 @@ checklist, what is done and what is missed. One notification, at times the
 user chooses:
 
 - **Times:** `settings.reminders.checklistTimes: string[]`, default
-  `['20:30']`, up to three, edited in Settings → Reminders. The switch is
-  `settings.reminders.checklist`, on by default.
+  `['21:30']`, up to three, edited in Settings → Reminders. The switch is
+  `settings.reminders.checklist`, on by default. (21:30, not 20:30: at 20:30
+  the default dinner's own prompt comes and dinner would be listed as not
+  done while it is still being eaten; 21:30 is still before the default
+  quiet hours at 22:00. A time already stored is kept.)
 - **Body:** built by a pure `dayChecklist(input)` in `src/core/checklist.ts`
   from the viewed day's menu, meals, skips, water, walk minutes and Abhyas
   items. Lines, in this order, each item marked ✓ (done) or ○ (not yet):
@@ -339,7 +342,10 @@ user chooses:
   2. Abhyas: `✓ Yoga 20 min · ○ English reading 12/30 min · ○ Coding`.
   3. Water and walk: `○ Water, 2 bottles left · ✓ Walk 30 min`.
   The title is `Dhyey · Day so far`. Lines that have nothing to say are
-  left out. If every item is done, nothing is sent.
+  left out. If every item is done, nothing is sent. A meal slot not done
+  or skipped whose window is still open at the last of the day's times
+  (not due yet, or within its 45 minutes) is left out rather than marked
+  ○: it is not late at any of them.
 - **Phone (Android):** scheduled through `plannedReminders` with kind
   `'checklist'` for the next `PLAN_DAYS` days; the body is recomputed on
   every reconcile, so it is current as of the last open.

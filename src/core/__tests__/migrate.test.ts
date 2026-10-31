@@ -3,6 +3,7 @@ import { migrateState, upgradeFile } from '../../store/migrate';
 import { allFoods, EMPTY_STATE, STATE_VERSION } from '../../store/defaults';
 import { allowance, pattern } from '../pattern';
 import { DEFAULT_ROUTINE, DEFAULT_SLOTS, NEUTRAL_ROUTINE } from '../routine';
+import { bannerState } from '../remindersBanner';
 import { DEFAULT_TODAY_CARDS } from '../tabs';
 import foodsJson from '../../data/foods.json';
 import { weekDates } from '../date';
@@ -208,7 +209,7 @@ describe('migrateState', () => {
     expect(s.settings.features).toEqual({ breaks: false, mantra: false, autoPlates: false });
     expect(s.settings.reminders).toEqual({ mealPrompt: true, abhyas: true, checklist: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false });
     // "Day so far" comes at its default time on a store from before it existed.
-    expect(s.settings.checklistTimes).toEqual(['20:30']);
+    expect(s.settings.checklistTimes).toEqual(['21:30']);
     expect(s.settings.todayCards.filter((c) => c.on).map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk', 'abhyas']);
   });
 
@@ -232,14 +233,16 @@ describe('migrateState', () => {
     expect(once.settings.reviewedWeeks).toEqual([]);
   });
 
-  it('the "Day so far" times load as clock times, each once and in order, at most three; with none left the default 20:30', () => {
+  it('the "Day so far" times load as clock times, each once and in order, at most three; with none left the default 21:30', () => {
     const once = migrateState(v1);
     const withTimes = (checklistTimes: unknown) => migrateState({ ...once, settings: { ...once.settings, checklistTimes } }).settings.checklistTimes;
     expect(withTimes(['21:00', '13:00'])).toEqual(['13:00', '21:00']);
     expect(withTimes(['21:00', 'x', '25:00', 7, '21:00', '08:15'])).toEqual(['08:15', '21:00']);
     expect(withTimes(['07:00', '13:00', '18:00', '21:00'])).toEqual(['07:00', '13:00', '18:00']);
-    for (const odd of [undefined, null, '20:30', { 0: '21:00' }, [], ['soon']]) expect(withTimes(odd), JSON.stringify(odd)).toEqual(['20:30']);
-    expect(once.settings.checklistTimes).toEqual(['20:30']);
+    for (const odd of [undefined, null, '20:30', { 0: '21:00' }, [], ['soon']]) expect(withTimes(odd), JSON.stringify(odd)).toEqual(['21:30']);
+    expect(once.settings.checklistTimes).toEqual(['21:30']);
+    // A time the user chose, the old default included, stays.
+    expect(withTimes(['20:30'])).toEqual(['20:30']);
   });
 
   it('version 7: the week plan becomes this week\'s menus, date by date, with Sunday at index 0', () => {
@@ -1014,10 +1017,37 @@ describe("version 8: the user's own list (Abhyas)", () => {
     expect(s.breaks.map((b) => b.id)).toEqual(['b1', 'b2']);
   });
 
-  it('switches the Abhyas reminders on for an older store, and keeps every other switch it had', () => {
+  it('switches the Abhyas reminders and "Day so far" on for an older store with a reminder on, and keeps every other switch it had', () => {
     const s = migrateState(v7, NOW);
-    expect(s.settings.reminders).toMatchObject({ mealPrompt: true, fillYesterday: true, abhyas: true });
-    expect(migrateState({ ...v7, settings: { ...v7.settings, reminders: { mealPrompt: false, abhyas: false } } }, NOW).settings.reminders).toMatchObject({ mealPrompt: false, abhyas: true });
+    expect(s.settings.reminders).toMatchObject({ mealPrompt: true, fillYesterday: true, abhyas: true, checklist: true });
+    // Any one switch on is enough, the meal-time prompt or another.
+    const on = (reminders: Record<string, unknown>) => migrateState({ ...v7, settings: { ...v7.settings, reminders } }, NOW).settings.reminders;
+    expect(on({ mealPrompt: true })).toMatchObject({ abhyas: true, checklist: true });
+    expect(on({ mealPrompt: false, water: true })).toMatchObject({ mealPrompt: false, water: true, abhyas: true, checklist: true });
+  });
+
+  it('leaves both off for an older store whose reminders were every one switched off, so the update starts none and the banner stays away', () => {
+    const allOff = { mealPrompt: false, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false };
+    const s = migrateState({ ...v7, settings: { ...v7.settings, reminders: allOff } }, NOW);
+    expect(s.settings.reminders).toEqual({ ...allOff, abhyas: false, checklist: false });
+    const banner = { platform: 'web', appleMobile: true, standalone: true, permission: 'default' as const, pushConfigured: true, pushRelay: false, today: '2026-10-28' };
+    expect(bannerState({ ...banner, reminders: s.settings.reminders })).toBeNull();
+    // A second load keeps them off, and a choice made after the update stays.
+    expect(migrateState(s, NOW)).toEqual(s);
+    const chosen = migrateState({ ...s, settings: { ...s.settings, reminders: { ...s.settings.reminders, abhyas: true } } }, NOW);
+    expect(chosen.settings.reminders).toMatchObject({ abhyas: true, checklist: false });
+    // Only a switch stored on counts, not the default a missing one takes; one stored as anything but true reads off.
+    expect(migrateState({ ...v7, settings: { ...v7.settings, reminders: { mealPrompt: false, abhyas: false } } }, NOW).settings.reminders).toMatchObject({ abhyas: false, checklist: false });
+    expect(migrateState({ ...v7, settings: { ...v7.settings, reminders: { ...allOff, water: 'yes' } } }, NOW).settings.reminders).toMatchObject({ abhyas: false, checklist: false });
+    // From before the switches existed, the app's reminders switch off keeps the meal-time prompt off, and these two with it.
+    const older = migrateState({ ...v1, version: 6, settings: { ...v1.settings, nudgesEnabled: false } }, NOW).settings.reminders;
+    expect(Object.values(older).every((v) => v === false)).toBe(true);
+    expect(migrateState({ ...v1, version: 6 }, NOW).settings.reminders).toMatchObject({ mealPrompt: true, abhyas: true, checklist: true });
+  });
+
+  it('a new user starts with the defaults: the meal-time prompt, Abhyas and "Day so far" on', () => {
+    expect(migrateState({ version: STATE_VERSION, profile: { ...EMPTY_STATE.profile } }, NOW).settings.reminders).toEqual(EMPTY_STATE.settings.reminders);
+    expect(EMPTY_STATE.settings.reminders).toMatchObject({ mealPrompt: true, abhyas: true, checklist: true });
   });
 
   it('puts the Abhyas card on Today, switched on, right after water and walk, wherever the user moved those and whatever else they switched', () => {

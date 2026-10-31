@@ -261,7 +261,7 @@ describe('buildPushSchedule: Abhyas and the day so far (version 2)', () => {
 
   it('sends the day so far as today stands, at its times, for today', () => {
     const s = build({ ...state, meals: [meal('breakfast')], abhyasTicks: [tick('coding')] });
-    expect(s.checklist).toMatchObject({ times: ['20:30'], title: 'Dhyey · Day so far', date: TODAY });
+    expect(s.checklist).toMatchObject({ times: ['21:30'], title: 'Dhyey · Day so far', date: TODAY });
     const lines = s.checklist!.body.split('\n');
     expect(lines[0]).toMatch(/^✓ Breakfast · ○ Lunch/);
     // Every item on today is on the list, one with no reminder time too.

@@ -408,6 +408,15 @@ describe('plannedReminders: "Day so far"', () => {
     expect(plannedReminders({ ...quiet, checklist: { ...checklist, times: [] } })).toEqual([]);
   });
 
+  it('at the default time and the default quiet hours, it comes: after the default dinner\'s prompt, before quiet hours begin', () => {
+    const { checklistTimes: times, quietStartHour, quietEndHour } = DEFAULT_SETTINGS;
+    const r = plannedReminders({ ...base, quietStartHour, quietEndHour, checklist: { times, texts } });
+    expect(r.filter((x) => x.data.kind === 'checklist').map((x) => x.id)).toEqual(['checklist:21:30:2026-10-12', 'checklist:21:30:2026-10-13']);
+    // Never at the same minute as a meal-time prompt.
+    const slotTimes = new Set(r.filter((x) => x.data.kind === 'slot').map((x) => `${x.date} ${x.time}`));
+    expect(r.filter((x) => x.data.kind === 'checklist').some((x) => slotTimes.has(`${x.date} ${x.time}`))).toBe(false);
+  });
+
   it('reads its times as kept: clock times only, each once', () => {
     expect(plannedReminders({ ...quiet, checklist: { times: ['20:30', '20:30', '9:00', 'x'], texts } }).map((x) => x.id)).toEqual(['checklist:20:30:2026-10-12', 'checklist:20:30:2026-10-13']);
   });
@@ -877,7 +886,7 @@ describe('Settings: a switch for every reminder', () => {
     expect(Object.entries(DEFAULT_SETTINGS.reminders).filter(([, on]) => on).map(([k]) => k)).toEqual(['mealPrompt', 'abhyas', 'checklist']);
     // Every switch is a switch; the day so far's times sit beside them.
     expect(Object.values(DEFAULT_SETTINGS.reminders).every((v) => typeof v === 'boolean')).toBe(true);
-    expect(DEFAULT_SETTINGS.checklistTimes).toEqual(['20:30']);
+    expect(DEFAULT_SETTINGS.checklistTimes).toEqual(['21:30']);
     expect(Object.values(DEFAULT_SETTINGS.features)).toEqual([false, false, false]);
   });
 

@@ -80,7 +80,7 @@ function TimeRow({ time, label, onCommit, onRemove }: { time: string; label: str
   return (
     <View style={{ gap: 6 }}>
       <Row style={{ gap: 8 }}>
-        <Field value={draft ?? time} placeholder="20:30" accessibilityLabel={label} onChangeText={setDraft} onBlur={commit} onSubmitEditing={commit} />
+        <Field value={draft ?? time} placeholder="21:30" accessibilityLabel={label} onChangeText={setDraft} onBlur={commit} onSubmitEditing={commit} />
         {onRemove ? (
           <Pressable
             onPress={onRemove}

@@ -2,6 +2,7 @@ import { cleanTimes, isDone, itemsOn, MAX_TIMES, minutesOn, type AbhyasData } fr
 import { skippedOn, type DayMenu } from './menu';
 import { slotStates } from './pattern';
 import { slotLabel, type Routine } from './routine';
+import { toMinutes } from './schedule';
 import { walkMinutesOn, waterMlOn } from './tileText';
 import { walkTile, waterTile } from './tiles';
 import type { ActivityLog, ISODate, Lang, Meal, SlotSkip, WaterLog } from './types';
@@ -16,8 +17,8 @@ import { fill } from '../i18n';
  * (`plannedReminders`) and works it out again on every reconcile.
  */
 
-/** When "Day so far" comes unless the user picks other times. */
-export const DEFAULT_CHECKLIST_TIMES: readonly string[] = ['20:30'];
+/** When "Day so far" comes unless the user picks other times: after the default dinner (20:30) has had its prompt and its window has closed, before the default quiet hours (22:00). */
+export const DEFAULT_CHECKLIST_TIMES: readonly string[] = ['21:30'];
 
 /**
  * `settings.checklistTimes` as the app reads it: clock times, each once, in
@@ -38,8 +39,8 @@ export function withTimeAt(times: unknown, index: number, text: string): string[
   return checklistTimes(now.map((t, i) => (i === index ? text : t)));
 }
 
-/** The times the Settings row offers next, in this order: the first one not on the list yet. */
-const ADD_CHOICES = ['13:00', '18:00', '20:30', '09:00'];
+/** The times the Settings row offers next, in this order: the first one not on the list yet. Not 20:30, when the default dinner's prompt comes. */
+const ADD_CHOICES = ['13:00', '18:00', '21:30', '09:00'];
 
 /** The times with one more, the first of `ADD_CHOICES` not already there, in the day's order; the same times when three are set, as for an Abhyas item. */
 export function withChecklistTime(times: unknown): string[] {
@@ -65,6 +66,12 @@ export type ChecklistInput = {
   walkGoalMin: number;
   /** Whether the water-and-walk line is on the list: the user keeps that card on Today. */
   waterWalk: boolean;
+  /**
+   * The day's "Day so far" times. A meal slot not done or skipped whose window is still open at the last of them, or not
+   * open yet, is left out: it is not late at that time, nor at any earlier one, and the same words go out at each. Missing,
+   * every slot is listed.
+   */
+  times?: readonly string[];
   lang: Lang;
   t: (key: string) => string;
 };
@@ -73,15 +80,20 @@ type Mark = { done: boolean; text: string };
 
 const line = (marks: Mark[]) => marks.map((m) => `${m.done ? '✓' : '○'} ${m.text}`).join(' · ');
 
-/** Each slot of the pattern in the day's order: eaten (a meal the app filled in counts), skipped, or still to log when the menu plans something in it. */
+/**
+ * Each slot of the pattern in the day's order: eaten (a meal the app filled in counts), skipped, or still to log when the
+ * menu plans something in it and, with times given, it is late by the last of them.
+ */
 function mealMarks(input: ChecklistInput): Mark[] {
   const meals = input.meals.filter((m) => m.date === input.date);
-  const states = slotStates({ routine: input.routine, target: 0, meals, nowMinutes: 0, skippedSlots: skippedOn(input.skips, input.date) });
+  const last = cleanTimes(input.times ?? []).at(-1);
+  const states = slotStates({ routine: input.routine, target: 0, meals, nowMinutes: last ? toMinutes(last) : 0, skippedSlots: skippedOn(input.skips, input.date) });
   const out: Mark[] = [];
   for (const s of states) {
     const name = slotLabel(s.slot.slot, input.lang);
     if (s.status === 'done') out.push({ done: true, text: name });
     else if (s.status === 'skipped') out.push({ done: true, text: fill(input.t('rem_checklist_skipped'), { slot: name }) });
+    else if (last && s.status !== 'missed') continue;
     else if (!input.menu || (input.menu.meals.find((m) => m.id === s.slot.id)?.lines.length ?? 0) > 0) out.push({ done: false, text: name });
   }
   return out;

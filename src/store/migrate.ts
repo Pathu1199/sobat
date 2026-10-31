@@ -187,7 +187,7 @@ function upgradeAppSettings(old: unknown): AppState['settings'] {
   // The weeks marked as looked over are a list of dates; anything else stored there marks none.
   s.reviewedWeeks = Array.isArray(raw.reviewedWeeks) ? raw.reviewedWeeks.filter(isIsoDate) : [];
   // "Day so far" comes at clock times only, each once, in the day's order, at most three; a list with none left, or none
-  // stored, is the default 20:30 (core/checklist.ts).
+  // stored, is the default 21:30 (core/checklist.ts).
   s.checklistTimes = checklistTimes(raw.checklistTimes);
   return s;
 }
@@ -277,6 +277,17 @@ function readRunning(v: unknown): AbhyasRunning | null {
   return isRecord(v) && typeof v.itemId === 'string' && typeof v.startedAt === 'string' ? (v as AbhyasRunning) : null;
 }
 
+/**
+ * Version 8: whether the two reminders it adds, Abhyas and "Day so far", start on: when any reminder switch was stored on,
+ * the meal-time prompt as it was set from the old reminders switch included. A user who had switched every one off keeps
+ * every one off, so the update starts no reminders for them and the banner, which shows only while a switch is on, stays
+ * away. Only a switch stored on counts, never the default a missing one takes.
+ */
+function anyReminderStoredOn(reminders: AppState['settings']['reminders'], rawSettings: unknown): boolean {
+  const stored = isRecord(rawSettings) && isSwitches(rawSettings.reminders) ? rawSettings.reminders : {};
+  return Object.entries(reminders).some(([key, on]) => on && (key === 'mealPrompt' || stored[key] === true));
+}
+
 /** Version 8: the Abhyas card on Today, switched on, right after the water and walk tiles (always in a cleaned list). */
 function withAbhyasCard(cards: AppState['settings']['todayCards']): AppState['settings']['todayCards'] {
   const rest = cards.filter((c) => c.id !== 'abhyas');
@@ -330,10 +341,12 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
   // Version 7: the old reminders are off unless switched on again, each with its own switch; the hourly in-app nudges too.
   // After upgradeAppSettings, which read the stored switch to set the meal-time prompt: that choice is already made.
   if (fromVersion < 7) settings.nudgesEnabled = false;
-  // Version 8: the user's own list (Abhyas) arrives with its reminders on and its card on Today. A store at version 8 or later
-  // keeps both as the user set them, the card off or moved included.
+  // Version 8: the user's own list (Abhyas) arrives with its card on Today, and its reminders and "Day so far" on unless every
+  // reminder was off. A store at version 8 or later keeps all three as the user set them, the card off or moved included.
   if (fromVersion < 8) {
-    settings.reminders.abhyas = true;
+    const on = anyReminderStoredOn(settings.reminders, raw.settings);
+    settings.reminders.abhyas = on;
+    settings.reminders.checklist = on;
     settings.todayCards = withAbhyasCard(settings.todayCards);
   }
   const profile = { ...EMPTY_STATE.profile, ...(raw.profile as object) } as AppState['profile'];

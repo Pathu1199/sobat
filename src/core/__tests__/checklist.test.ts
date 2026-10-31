@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { checklistTimes, dayChecklist, DEFAULT_CHECKLIST_TIMES, withChecklistTime, withTimeAt, type ChecklistInput } from '../checklist';
 import type { DayMenu } from '../menu';
 import { skipId } from '../menu';
-import { DEFAULT_ROUTINE, type Routine, type RoutineSlot } from '../routine';
+import { DEFAULT_ROUTINE, NEUTRAL_ROUTINE, type Routine, type RoutineSlot } from '../routine';
 import type { AbhyasItem, AbhyasSession, AbhyasTick, ActivityLog, Meal, WaterLog } from '../types';
 import { makeT } from '../../i18n';
 
@@ -140,10 +140,43 @@ describe('dayChecklist: the day so far, as a checklist', () => {
   });
 });
 
+describe('dayChecklist at its times: a meal not late yet is left out', () => {
+  const noWalk = { ...base, waterWalk: false };
+
+  it('leaves out a slot whose window is still open at the last of the times, or not open yet: it is not late at any of them', () => {
+    // Breakfast (08:30) is past its window at 13:00; lunch (13:00) is within it; dinner (19:30) is still to come.
+    expect(dayChecklist({ ...noWalk, times: ['13:00'] })?.body).toBe('○ Breakfast');
+    // Dinner is within its window until 20:15, and late from the minute after.
+    expect(dayChecklist({ ...noWalk, times: ['20:00'] })?.body).toBe('○ Breakfast · ○ Lunch');
+    expect(dayChecklist({ ...noWalk, times: ['20:15'] })?.body).toBe('○ Breakfast · ○ Lunch');
+    expect(dayChecklist({ ...noWalk, times: ['20:16'] })?.body).toBe('○ Breakfast · ○ Lunch · ○ Dinner');
+    // Every time of the day gets the same words, worked out at the last one, so dinner shows at 13:00 too when 21:30 is on the list.
+    expect(dayChecklist({ ...noWalk, times: ['13:00', '21:30'] })?.body).toBe('○ Breakfast · ○ Lunch · ○ Dinner');
+    // Without times, every slot is listed, as before.
+    expect(dayChecklist(noWalk)?.body).toBe('○ Breakfast · ○ Lunch · ○ Dinner');
+  });
+
+  it('still shows a slot done or skipped while its window is open, and sends nothing when only open slots are left', () => {
+    expect(dayChecklist({ ...noWalk, times: ['13:00'], meals: [meal('lunch')] })?.body).toBe('○ Breakfast · ✓ Lunch');
+    expect(dayChecklist({ ...noWalk, times: ['13:00'], skips: [{ id: skipId(DAY, 'dinner'), date: DAY, slotId: 'dinner' }] })?.body).toBe('○ Breakfast · ✓ Dinner skipped');
+    expect(dayChecklist({ ...noWalk, times: ['13:00'], meals: [meal('morning')] })).toBeNull();
+    // Water and the walk are not meals: they stay on the list.
+    expect(dayChecklist({ ...base, times: ['13:00'], meals: [meal('morning')] })?.body).toBe('✓ Breakfast\n○ Water, 6 bottles left · ○ Walk, 30 min left');
+  });
+
+  it('at the default time, the four meals of a new user are all late, dinner included: the default does not land inside dinner\'s window', () => {
+    const r = dayChecklist({ ...noWalk, routine: NEUTRAL_ROUTINE, times: DEFAULT_CHECKLIST_TIMES });
+    expect(r?.body.split(' · ')).toHaveLength(NEUTRAL_ROUTINE.slots.length);
+    expect(r?.body).toContain('○ Dinner');
+  });
+});
+
 describe('checklistTimes: when "Day so far" comes', () => {
-  it('is 20:30 by default, and on a store that has no list or something else there', () => {
-    expect(DEFAULT_CHECKLIST_TIMES).toEqual(['20:30']);
-    for (const odd of [undefined, null, '20:30', 7, { a: 1 }, false]) expect(checklistTimes(odd), String(odd)).toEqual(['20:30']);
+  it('is 21:30 by default, an hour after the default dinner and after its prompt, and on a store that has no list or something else there', () => {
+    expect(DEFAULT_CHECKLIST_TIMES).toEqual(['21:30']);
+    for (const odd of [undefined, null, '20:30', 7, { a: 1 }, false]) expect(checklistTimes(odd), String(odd)).toEqual(['21:30']);
+    // A list the user chose stays as it is, the old default included.
+    expect(checklistTimes(['20:30'])).toEqual(['20:30']);
   });
 
   it('keeps clock times only, each once, in the day\'s order, at most three', () => {
@@ -152,17 +185,20 @@ describe('checklistTimes: when "Day so far" comes', () => {
   });
 
   it('a list with no clock time left in it has the default, as no list does: the switch, not an empty list, turns it off', () => {
-    expect(checklistTimes([7, 'x'])).toEqual(['20:30']);
-    expect(checklistTimes(['25:00', '9:00', null])).toEqual(['20:30']);
-    expect(checklistTimes([])).toEqual(['20:30']);
+    expect(checklistTimes([7, 'x'])).toEqual(['21:30']);
+    expect(checklistTimes(['25:00', '9:00', null])).toEqual(['21:30']);
+    expect(checklistTimes([])).toEqual(['21:30']);
   });
 
-  it('adds one time at a time, the first free of 13:00, 18:00, 20:30, 09:00, and no more than three', () => {
-    expect(withChecklistTime(['20:30'])).toEqual(['13:00', '20:30']);
-    expect(withChecklistTime(['13:00', '20:30'])).toEqual(['13:00', '18:00', '20:30']);
-    expect(withChecklistTime(['13:00', '18:00', '20:30'])).toEqual(['13:00', '18:00', '20:30']);
-    expect(withChecklistTime(undefined)).toEqual(['13:00', '20:30']);
+  it('adds one time at a time, the first free of 13:00, 18:00, 21:30, 09:00, and no more than three', () => {
+    expect(withChecklistTime(['21:30'])).toEqual(['13:00', '21:30']);
+    expect(withChecklistTime(['13:00', '21:30'])).toEqual(['13:00', '18:00', '21:30']);
+    expect(withChecklistTime(['13:00', '18:00', '21:30'])).toEqual(['13:00', '18:00', '21:30']);
+    expect(withChecklistTime(undefined)).toEqual(['13:00', '21:30']);
     expect(withChecklistTime(['08:00'])).toEqual(['08:00', '13:00']);
+    // Never the default dinner's time, when its prompt comes.
+    expect(withChecklistTime(['13:00', '18:00'])).toEqual(['13:00', '18:00', '21:30']);
+    expect(withChecklistTime(['13:00', '20:30'])).toEqual(['13:00', '18:00', '20:30']);
   });
 
   it('changes one time when what was typed is a clock time and differs, kept in the day\'s order and once each; nothing for anything else', () => {
