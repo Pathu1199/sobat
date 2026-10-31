@@ -126,8 +126,13 @@ describe('gameView', () => {
     celebrated: [],
     settings: { waterGoalMl: 3000, weighDay: 0, offDays: [] },
   };
-  const view = (p: Profile) => gameView({ state: { ...state, profile: p }, targets, today: TODAY, streakDays: 3, bestStreakDays: 3, lifetime: { streakDays: 3, bestStreakDays: 3 } });
+  const view = (p: Profile, abhyasDone = 0) => gameView({ state: { ...state, profile: p }, targets, today: TODAY, streakDays: 3, bestStreakDays: 3, lifetime: { streakDays: 3, bestStreakDays: 3 }, abhyasDone });
   const chapter = { ...profile, ...newChapter(profile, weights.filter((w) => w.date <= '2026-10-25'), '2026-10-26') };
+
+  it('counts the Abhyas items done over the whole journey, as it counts meals, so a new chapter takes none of their points away', () => {
+    expect(view(profile, 2).points - view(profile).points).toBe(2 * 15);
+    expect(view(chapter, 2).points).toBe(view(profile, 2).points);
+  });
 
   it('counts Lost, To go and the climb from the chapter\'s start, at the weight Progress shows', () => {
     const shown = shownWeight(weights, TODAY)!.kg;
@@ -192,7 +197,7 @@ describe('the streak at a new chapter', () => {
   const state = { profile, weights: [{ date: '2026-10-27', kg: 84.5 }], meals, water: [], sleep: [], steps: [], workouts: [], celebrated: [], settings: { waterGoalMl: 3000, weighDay: 0, offDays: [] } };
   const game = (p: Profile) => {
     const s = chapterStreaks({ ...record, chapterStart: p.chapterStart });
-    return { s, g: gameView({ state: { ...state, profile: p }, targets, today: TODAY, streakDays: s.days, bestStreakDays: s.best, lifetime: { streakDays: s.lifetimeDays, bestStreakDays: s.lifetimeBest } }) };
+    return { s, g: gameView({ state: { ...state, profile: p }, targets, today: TODAY, streakDays: s.days, bestStreakDays: s.best, lifetime: { streakDays: s.lifetimeDays, bestStreakDays: s.lifetimeBest }, abhyasDone: 0 }) };
   };
   const chapter = { ...profile, ...newChapter(profile, state.weights, TODAY) };
 

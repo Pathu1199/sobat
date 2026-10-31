@@ -69,8 +69,8 @@ export const DEFAULT_SETTINGS: Settings = {
   todayCards: DEFAULT_TODAY_CARDS.map((c) => ({ ...c })),
   // Off unless switched on: the screen breaks, the mantra and the plates the app makes up.
   features: { breaks: false, mantra: false, autoPlates: false },
-  // Only the meal-time prompt is on; the rest are a switch away.
-  reminders: { mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false },
+  // The meal-time prompt and the user's own Abhyas times are on; the rest are a switch away.
+  reminders: { mealPrompt: true, abhyas: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false },
   // Most of the people this is built for are vegetarian; the setting is one tap away.
   diet: 'veg',
   appearance: 'system',
@@ -109,6 +109,10 @@ export const EMPTY_STATE: AppState = {
   actionsDone: [],
   slotSkips: [],
   savedMeals: [],
+  abhyasItems: [],
+  abhyasSessions: [],
+  abhyasTicks: [],
+  abhyasRunning: null,
   // A new person's pattern: the four meals of the day, on, with no bhaji week, avoid list, budget or walk.
   // Every list is a copy of NEUTRAL_ROUTINE's, so no two states ever share a list.
   routine: {

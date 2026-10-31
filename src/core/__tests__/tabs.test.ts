@@ -22,9 +22,9 @@ describe('normalizeTabs', () => {
 });
 
 describe('DEFAULT_TODAY_CARDS', () => {
-  it('has the menu, the coach line and water and walk on, in that order, and every other card off', () => {
-    expect(DEFAULT_TODAY_CARDS.map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk', 'weight', 'sleep', 'steps', 'climb', 'mantra']);
-    expect(DEFAULT_TODAY_CARDS.filter((c) => c.on).map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk']);
+  it('has the menu, the coach line, water and walk and Abhyas on, in that order, and every other card off', () => {
+    expect(DEFAULT_TODAY_CARDS.map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk', 'abhyas', 'weight', 'sleep', 'steps', 'climb', 'mantra']);
+    expect(DEFAULT_TODAY_CARDS.filter((c) => c.on).map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk', 'abhyas']);
   });
 });
 
@@ -36,6 +36,10 @@ describe('normalizeTodayCards', () => {
     expect(normalizeTodayCards(stored)).toEqual(stored);
   });
 
+  it('keeps the Abhyas card as stored', () => {
+    expect(normalizeTodayCards([{ id: 'abhyas', on: true }, { id: 'menu', on: true }]).slice(0, 2)).toEqual([{ id: 'abhyas', on: true }, { id: 'menu', on: true }]);
+  });
+
   it('drops unknown ids and a second copy of a card; the first copy stays where it was', () => {
     const out = normalizeTodayCards([{ id: 'sleep', on: true }, { id: 'today', on: true }, { id: 'menu', on: true }, { id: 'sleep', on: false }, { id: 42, on: true }, null, 'coach']);
     expect(out.slice(0, 2)).toEqual([{ id: 'sleep', on: true }, { id: 'menu', on: true }]);
@@ -45,7 +49,7 @@ describe('normalizeTodayCards', () => {
 
   it('adds every known card missing from the list at the end, switched off, so a card added in an update never appears on its own', () => {
     const out = normalizeTodayCards([{ id: 'mantra', on: true }, { id: 'menu', on: true }]);
-    expect(ids(out)).toEqual(['mantra', 'menu', 'coach', 'waterWalk', 'weight', 'sleep', 'steps', 'climb']);
+    expect(ids(out)).toEqual(['mantra', 'menu', 'coach', 'waterWalk', 'abhyas', 'weight', 'sleep', 'steps', 'climb']);
     expect(out.filter((c) => c.on).map((c) => c.id)).toEqual(['mantra', 'menu']);
     expect([...ids(out)].sort()).toEqual([...TODAY_CARD_IDS].sort());
   });

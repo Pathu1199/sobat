@@ -41,7 +41,7 @@ describe('extra tabs', () => {
 describe("Today's cards", () => {
   it('a card switched on joins the end of the ones that are on; switched off it keeps its place', () => {
     const on = toggleCard(DEFAULT_TODAY_CARDS, 'climb');
-    expect(onIds(on)).toEqual(['menu', 'coach', 'waterWalk', 'climb']);
+    expect(onIds(on)).toEqual(['menu', 'coach', 'waterWalk', 'abhyas', 'climb']);
     expect(toggleCard(on, 'coach').map((c) => c.id)).toEqual(on.map((c) => c.id));
     expect(toggleCard(on, 'coach').find((c) => c.id === 'coach')?.on).toBe(false);
     // Every card is still there once.
@@ -49,9 +49,10 @@ describe("Today's cards", () => {
   });
 
   it('moves among the cards that are on, and not past either end', () => {
-    expect(onIds(moveCard(DEFAULT_TODAY_CARDS, 'waterWalk', -1))).toEqual(['menu', 'waterWalk', 'coach']);
+    expect(onIds(moveCard(DEFAULT_TODAY_CARDS, 'waterWalk', -1))).toEqual(['menu', 'waterWalk', 'coach', 'abhyas']);
+    expect(onIds(moveCard(DEFAULT_TODAY_CARDS, 'waterWalk', 1))).toEqual(['menu', 'coach', 'abhyas', 'waterWalk']);
     expect(moveCard(DEFAULT_TODAY_CARDS, 'menu', -1)).toEqual(DEFAULT_TODAY_CARDS);
-    expect(moveCard(DEFAULT_TODAY_CARDS, 'waterWalk', 1)).toEqual(DEFAULT_TODAY_CARDS);
+    expect(moveCard(DEFAULT_TODAY_CARDS, 'abhyas', 1)).toEqual(DEFAULT_TODAY_CARDS);
     // A card that is off does not move.
     expect(moveCard(DEFAULT_TODAY_CARDS, 'climb', -1)).toEqual(DEFAULT_TODAY_CARDS);
   });
@@ -69,15 +70,15 @@ describe("Today's cards", () => {
 
   it('cleans a damaged list from sync before it changes anything', () => {
     const cards = toggleCard([{ id: 'coach', on: true }, { id: 'menu', on: true }, { id: 'coach', on: false }, { id: 'nope', on: true }], 'weight');
-    expect(cards.map((c) => c.id)).toEqual(['coach', 'menu', 'weight', 'waterWalk', 'sleep', 'steps', 'climb', 'mantra']);
+    expect(cards.map((c) => c.id)).toEqual(['coach', 'menu', 'weight', 'waterWalk', 'abhyas', 'sleep', 'steps', 'climb', 'mantra']);
     expect(onIds(cards)).toEqual(['coach', 'menu', 'weight']);
     expect(toggleCard('x', 'coach')).toEqual(DEFAULT_TODAY_CARDS.map((c) => (c.id === 'coach' ? { ...c, on: false } : c)));
   });
 
   it('lists the cards on and off for the page, the day\'s line only while it is switched on in Settings', () => {
     const cards = toggleCard(DEFAULT_TODAY_CARDS, 'mantra');
-    expect(cardsShown(cards, true).on.map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk', 'mantra']);
-    expect(cardsShown(cards, false).on.map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk']);
+    expect(cardsShown(cards, true).on.map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk', 'abhyas', 'mantra']);
+    expect(cardsShown(cards, false).on.map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk', 'abhyas']);
     expect(cardsShown(DEFAULT_TODAY_CARDS, true).off.map((c) => c.id)).toEqual(['weight', 'sleep', 'steps', 'climb', 'mantra']);
     expect(cardsShown(DEFAULT_TODAY_CARDS, false).off.map((c) => c.id)).toEqual(['weight', 'sleep', 'steps', 'climb']);
   });
@@ -85,12 +86,12 @@ describe("Today's cards", () => {
   it('after a move says the card\'s new place among those shown, and which of its buttons keeps the focus', () => {
     const cards = moveCard(DEFAULT_TODAY_CARDS, 'waterWalk', -1);
     // Moved up to the middle: up is still there, so the focus stays on it.
-    expect(afterMove(cards, 'waterWalk', -1, true)).toEqual({ n: 2, m: 3, focus: 'up' });
+    expect(afterMove(cards, 'waterWalk', -1, true)).toEqual({ n: 2, m: 4, focus: 'up' });
     // Moved up to the top: up is gone there, so the focus goes to its down button.
-    expect(afterMove(moveCard(cards, 'waterWalk', -1), 'waterWalk', -1, true)).toEqual({ n: 1, m: 3, focus: 'down' });
+    expect(afterMove(moveCard(cards, 'waterWalk', -1), 'waterWalk', -1, true)).toEqual({ n: 1, m: 4, focus: 'down' });
     // Moved down to the bottom: down is gone, so up.
-    expect(afterMove(DEFAULT_TODAY_CARDS, 'waterWalk', 1, true)).toEqual({ n: 3, m: 3, focus: 'up' });
-    expect(afterMove(moveCard(DEFAULT_TODAY_CARDS, 'menu', 1), 'menu', 1, true)).toEqual({ n: 2, m: 3, focus: 'down' });
+    expect(afterMove(moveCard(DEFAULT_TODAY_CARDS, 'waterWalk', 1), 'waterWalk', 1, true)).toEqual({ n: 4, m: 4, focus: 'up' });
+    expect(afterMove(moveCard(DEFAULT_TODAY_CARDS, 'menu', 1), 'menu', 1, true)).toEqual({ n: 2, m: 4, focus: 'down' });
     // The day's line, on but not shown, is not counted.
     const withLine = [
       { id: 'menu' as const, on: true },

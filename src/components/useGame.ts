@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { doneCount } from '../core/abhyas';
 import { gameView } from '../core/game';
 import { useApp } from '../store/AppProvider';
 
@@ -7,10 +8,12 @@ import { useApp } from '../store/AppProvider';
  * Journey page, Progress and the celebration of a win. Lost, To go and the
  * climb are the chapter's, at the weight Progress shows; points and badges are
  * the whole journey's, the streak badges and the points counting the streak
- * over the whole journey.
+ * and the Abhyas items done over the whole journey.
  */
 export function useGame() {
   const { state, targets, today, streakDays, bestStreakDays, lifetimeStreakDays, lifetimeBestStreakDays } = useApp();
+  // Counted again only when the list, its ticks or its finished minutes change, never for a bottle of water.
+  const abhyasDone = useMemo(() => doneCount({ items: state.abhyasItems, ticks: state.abhyasTicks, sessions: state.abhyasSessions }, today), [state.abhyasItems, state.abhyasTicks, state.abhyasSessions, today]);
   return useMemo(
     () =>
       gameView({
@@ -30,7 +33,8 @@ export function useGame() {
         streakDays,
         bestStreakDays,
         lifetime: { streakDays: lifetimeStreakDays, bestStreakDays: lifetimeBestStreakDays },
+        abhyasDone,
       }),
-    [state.profile, state.weights, state.meals, state.water, state.sleep, state.steps, state.workouts, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, state.celebrated, streakDays, bestStreakDays, lifetimeStreakDays, lifetimeBestStreakDays, targets, today],
+    [state.profile, state.weights, state.meals, state.water, state.sleep, state.steps, state.workouts, state.settings.waterGoalMl, state.settings.weighDay, state.settings.offDays, state.celebrated, streakDays, bestStreakDays, lifetimeStreakDays, lifetimeBestStreakDays, targets, today, abhyasDone],
   );
 }

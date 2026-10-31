@@ -5,14 +5,15 @@ import type { AppState, ISODate, Meal, Settings, SleepLog, StepLog, WaterLog, We
 import { weekSummary } from './week';
 
 /**
- * The game around the climb: points for the things that move the weight,
- * camps reached on the way up, badges for firsts and streaks, and one
- * challenge a week. All derived from the logs, nothing stored, so it can
- * never disagree with the data. The streak is the record's (core/record.ts):
- * full days eaten at or above the safe minimum, a day of meals all skipped
- * ending the run. The streak tile shows it from a new chapter's first day;
- * the points and the streak badges count it over the whole journey
- * (`gameView`). A badge already won (celebrated) is kept.
+ * The game around the climb: points for the things that move the weight and
+ * for each job on the user's own list done (Abhyas), camps reached on the way
+ * up, badges for firsts and streaks, and one challenge a week. All derived
+ * from the logs, nothing stored, so it can never disagree with the data. The
+ * streak is the record's (core/record.ts): full days eaten at or above the
+ * safe minimum, a day of meals all skipped ending the run. The streak tile
+ * shows it from a new chapter's first day; the points and the streak badges
+ * count it over the whole journey (`gameView`). A badge already won
+ * (celebrated) is kept.
  */
 export type GameInput = {
   today: ISODate;
@@ -35,6 +36,8 @@ export type GameInput = {
   bestStreakDays: number;
   /** Wins already celebrated (badge:, level:, challenge: ids): a badge among them stays earned. */
   celebrated?: string[] | null;
+  /** Abhyas items done, each item on each day once (`doneCount` in core/abhyas.ts). */
+  abhyasDone: number;
 };
 
 export const LEVELS = ['base', 'camp1', 'camp2', 'camp3', 'camp4', 'summit'] as const;
@@ -50,10 +53,10 @@ function dayCounts(input: GameInput) {
   return { waterByDay, waterGoalDays };
 }
 
-/** Points: meals 10 each, a water-goal day 15, a weigh-in 25, a night logged 10, a workout 20, plus 5 per day of the record streak. */
+/** Points: meals 10 each, a water-goal day 15, an Abhyas item done 15, a weigh-in 25, a night logged 10, a workout 20, plus 5 per day of the record streak. */
 export function xp(input: GameInput): number {
   const { waterGoalDays } = dayCounts(input);
-  return input.meals.length * 10 + waterGoalDays * 15 + input.weights.length * 25 + input.sleep.length * 10 + input.workouts.length * 20 + input.streakDays * 5;
+  return input.meals.length * 10 + waterGoalDays * 15 + input.abhyasDone * 15 + input.weights.length * 25 + input.sleep.length * 10 + input.workouts.length * 20 + input.streakDays * 5;
 }
 
 export function level(points: number): Level {
@@ -236,7 +239,8 @@ export type GameView = {
  * journey's: the kilo badges count from the very first start and the points
  * and the streak badges count the streak over the whole journey (`lifetime`),
  * so a new chapter takes none away; a badge already celebrated stays earned,
- * and so does a camp of the points' level (`keptLevel`).
+ * and so does a camp of the points' level (`keptLevel`). The Abhyas items
+ * done count the whole journey too, as the meals do.
  */
 export function gameView(o: {
   state: Pick<AppState, 'profile' | 'weights' | 'meals' | 'water' | 'sleep' | 'steps' | 'workouts' | 'celebrated'> & { settings: Pick<Settings, 'waterGoalMl' | 'weighDay' | 'offDays'> };
@@ -247,6 +251,8 @@ export function gameView(o: {
   bestStreakDays: number;
   /** The streak and the best run over the whole journey, a chapter or not. */
   lifetime: { streakDays: number; bestStreakDays: number };
+  /** Abhyas items done over the whole journey (`doneCount`). */
+  abhyasDone: number;
 }): GameView {
   const { state, targets, today } = o;
   const plan = shownPlan(state.profile, state.weights, targets, today);
@@ -268,6 +274,7 @@ export function gameView(o: {
     streakDays: o.streakDays,
     bestStreakDays: o.bestStreakDays,
     celebrated: state.celebrated,
+    abhyasDone: o.abhyasDone,
   };
   const lifetime: GameInput = { ...input, startKg: state.profile.firstStartWeightKg ?? plan.startKg, since: undefined, ...o.lifetime };
   const total = Math.max(0, plan.startKg - plan.goalKg);

@@ -22,6 +22,7 @@ const EXTRA: Record<TabId, BarItem> = {
   body: { key: 'body', route: 'body', icon: 'body-outline', labelKey: 'tab_body' },
   sleep: { key: 'sleep', route: 'sleep-tab', icon: 'moon-outline', labelKey: 'sleep_title' },
   plan: { key: 'plan', route: 'plan-tab', icon: 'calendar-outline', labelKey: 'tab_plan' },
+  abhyas: { key: 'abhyas', route: 'abhyas', icon: 'book-outline', labelKey: 'tab_abhyas' },
 };
 
 /** Today, the extras, Me, with ➕ inserted in the middle: Today · ➕ · Progress · Me by default. */

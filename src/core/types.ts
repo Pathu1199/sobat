@@ -57,9 +57,11 @@ export type Settings = {
   todayCards: { id: TodayCardId; on: boolean }[];
   /** Parts of the app that stay off unless switched on in Settings. */
   features: { breaks: boolean; mantra: boolean; autoPlates: boolean };
-  /** Which reminders go out, one switch each. Only the meal-time prompt is on by default. */
+  /** Which reminders go out, one switch each. The meal-time prompt and Abhyas are on by default. */
   reminders: {
     mealPrompt: boolean;
+    /** Each Abhyas item at its own times, until it is done. */
+    abhyas: boolean;
     fillYesterday: boolean;
     planWeek: boolean;
     weeklyReport: boolean;
@@ -97,9 +99,9 @@ export type Settings = {
 export type Diet = 'veg' | 'egg' | 'nonveg';
 
 /** A tab the person may add beside Today, ➕ and Me. */
-export type TabId = 'progress' | 'coach' | 'body' | 'sleep' | 'plan';
+export type TabId = 'progress' | 'coach' | 'body' | 'sleep' | 'plan' | 'abhyas';
 /** A card the person may show on Today, under the calories left. */
-export type TodayCardId = 'coach' | 'waterWalk' | 'menu' | 'weight' | 'sleep' | 'steps' | 'climb' | 'mantra';
+export type TodayCardId = 'coach' | 'waterWalk' | 'menu' | 'weight' | 'sleep' | 'steps' | 'climb' | 'mantra' | 'abhyas';
 
 export type MealItem = {
   foodId?: string;
@@ -174,6 +176,34 @@ export type NudgeLog = { id: string; at: string; date: ISODate; type: string; ac
 export type SlotSkip = { id: string; date: ISODate; slotId: string };
 /** A meal the person logs often, saved under their own name ("my usual thali"). */
 export type SavedMeal = { id: string; name: string; lines: PlanLine[] };
+
+/** One job on the user's own list (Abhyas): repeating on chosen weekdays, or for one date. */
+export type AbhyasItem = {
+  id: string;
+  name: string;
+  /** An Ionicons name from the picker's short list. */
+  icon: string;
+  kind: 'repeat' | 'once';
+  /** Weekdays it repeats on, 0 = Sunday. Empty for a one-off. */
+  days: number[];
+  /** The one day a one-off belongs to. */
+  date?: ISODate;
+  /** Minutes a day the timer fills toward; absent for a tick-only item. */
+  targetMin?: number;
+  /** Reminder times, "HH:MM", at most three. */
+  times: string[];
+  order: number;
+  createdAt: string;
+  /** Set when the user removes it; history stays readable. */
+  archivedAt?: string;
+};
+
+/** Minutes the timer counted for an item, on the date it started. */
+export type AbhyasSession = { id: string; itemId: string; date: ISODate; startedAt: string; endedAt: string; minutes: number };
+/** An item ticked done on a date. */
+export type AbhyasTick = { id: string; itemId: string; date: ISODate; at: string };
+/** The one timer running: which item, and when it started. */
+export type AbhyasRunning = { itemId: string; startedAt: string };
 export type ChatOption = { foodId: string; name_en: string; name_mr: string; grams: number; kcal: number; protein: number };
 
 export type ChatMsg = {
@@ -257,6 +287,12 @@ export type AppState = {
   slotSkips: SlotSkip[];
   /** Meals saved to log again in one tap. */
   savedMeals: SavedMeal[];
+  /** The user's own list (Abhyas): the items, removed ones included, the minutes the timer counted, and the ticks. */
+  abhyasItems: AbhyasItem[];
+  abhyasSessions: AbhyasSession[];
+  abhyasTicks: AbhyasTick[];
+  /** The timer running now, started on any device; null when none is. */
+  abhyasRunning: AbhyasRunning | null;
   /** The fixed daily food routine: weekly bhaji, meal slots, avoid list, budget. */
   routine: Routine;
   /** Rupees spent on food. */

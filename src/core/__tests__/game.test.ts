@@ -30,6 +30,7 @@ const base: GameInput = {
   // The record streak, as the store works it out (full days eaten at or above the safe minimum), and its best run.
   streakDays: 7,
   bestStreakDays: 7,
+  abhyasDone: 0,
 };
 
 describe('game', () => {
@@ -42,6 +43,10 @@ describe('game', () => {
     expect(l.next).toBe(300);
     expect(level(950).key).toBe('camp2');
     expect(level(99999).next).toBeNull();
+  });
+
+  it('gives 15 points for each Abhyas item done, as for a day the water goal was met', () => {
+    expect(xp({ ...base, abhyasDone: 4 }) - xp(base)).toBe(4 * 15);
   });
 
   it('never takes a camp away once it was reached and celebrated, when a run ends and its points go, as a badge stays', () => {

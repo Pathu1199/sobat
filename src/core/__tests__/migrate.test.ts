@@ -206,8 +206,8 @@ describe('migrateState', () => {
     expect(s.settings.walkGoalMin).toBe(30);
     expect(s.settings.tabs).toEqual(['progress']);
     expect(s.settings.features).toEqual({ breaks: false, mantra: false, autoPlates: false });
-    expect(s.settings.reminders).toEqual({ mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false });
-    expect(s.settings.todayCards.filter((c) => c.on).map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk']);
+    expect(s.settings.reminders).toEqual({ mealPrompt: true, abhyas: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false });
+    expect(s.settings.todayCards.filter((c) => c.on).map((c) => c.id)).toEqual(['menu', 'coach', 'waterWalk', 'abhyas']);
   });
 
   it('version 7: a choice made after the migration survives the next load, and a bad tab list is cleaned', () => {
@@ -721,11 +721,11 @@ describe('settings in an odd shape, from sync or an old file', () => {
   const v6 = (settings: Record<string, unknown>) => ({ ...v1, version: 6, settings: { ...v1.settings, glassMl: undefined, ...settings } });
   const settingsOf = (settings: Record<string, unknown>) => migrateState(v6(settings), NOW).settings;
   const FEATURES = { breaks: false, mantra: false, autoPlates: false };
-  const REMINDERS = { mealPrompt: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false };
+  const REMINDERS = { mealPrompt: true, abhyas: true, fillYesterday: false, planWeek: false, weeklyReport: false, away: false, water: false, sleepCheckin: false, dayReview: false };
 
   it('the Today cards: every known card once, in the order stored, the unknown and second copies dropped, the missing ones added off', () => {
     const cards = settingsOf({ todayCards: [{ id: 'steps', on: true }, { id: 'nope', on: true }, { id: 'menu', on: 'yes' }, { id: 'steps', on: false }] }).todayCards;
-    expect(cards.map((c) => c.id)).toEqual(['steps', 'menu', 'coach', 'waterWalk', 'weight', 'sleep', 'climb', 'mantra']);
+    expect(cards.map((c) => c.id)).toEqual(['steps', 'menu', 'coach', 'waterWalk', 'abhyas', 'weight', 'sleep', 'climb', 'mantra']);
     expect(cards.filter((c) => c.on).map((c) => c.id)).toEqual(['steps']);
     expect(settingsOf({ todayCards: { menu: true } }).todayCards).toEqual(DEFAULT_TODAY_CARDS);
   });

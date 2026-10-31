@@ -695,10 +695,11 @@ describe('the phone\'s cap on pending notifications', () => {
 });
 
 describe('Settings: a switch for every reminder', () => {
-  it('lists each reminder once, in the order they come in a day and a week, the meal-time prompt first and the only one on to begin with', () => {
-    expect(REMINDER_ROWS.map((r) => r.key).sort()).toEqual(Object.keys(DEFAULT_SETTINGS.reminders).sort());
+  it('lists each reminder once, in the order they come in a day and a week, the meal-time prompt first and the only one listed on to begin with', () => {
+    // The Abhyas switch, on from the start, gets its row with the Abhyas reminders themselves (spec Part 4).
+    expect(REMINDER_ROWS.map((r) => r.key).sort()).toEqual(Object.keys(DEFAULT_SETTINGS.reminders).filter((k) => k !== 'abhyas').sort());
     expect(REMINDER_ROWS.map((r) => r.key)).toEqual(['mealPrompt', 'fillYesterday', 'planWeek', 'weeklyReport', 'sleepCheckin', 'water', 'dayReview', 'away']);
-    expect(Object.entries(DEFAULT_SETTINGS.reminders).filter(([, on]) => on).map(([k]) => k)).toEqual(['mealPrompt']);
+    expect(Object.entries(DEFAULT_SETTINGS.reminders).filter(([, on]) => on).map(([k]) => k)).toEqual(['mealPrompt', 'abhyas']);
     expect(Object.values(DEFAULT_SETTINGS.features)).toEqual([false, false, false]);
   });
 

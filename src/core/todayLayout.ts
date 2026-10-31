@@ -28,13 +28,15 @@ export function todayBlocks(cards: unknown, mode: DayMode = 'today', mantraOn = 
     pending = [];
   };
   for (const { id } of normalizeTodayCards(cards).filter((c) => c.on && !(mode === 'future' && c.id === 'sleep') && (mantraOn || c.id !== 'mantra'))) {
+    // The Abhyas card keeps its place and its switch, and shows once its card is built (src/components/AbhyasCard.tsx).
+    if (id === 'abhyas') continue;
     if (SINGLE_TILES.includes(id)) {
       pending.push(id as PairTile);
       if (pending.length === 2) flush();
       continue;
     }
     flush();
-    out.push({ kind: id as Exclude<TodayCardId, PairTile> });
+    out.push({ kind: id as Exclude<TodayCardId, PairTile | 'abhyas'> });
   }
   flush();
   return out;
