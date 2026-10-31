@@ -1,4 +1,6 @@
 import { isAbhyasSession, ranOut, sessionId, stop, withSession } from './abhyas';
+import { addDays, isIsoDate } from './date';
+import { CHALLENGE_IDS_KEEP_DAYS, challengeWinId } from './medals';
 import type { AbhyasRunning, AbhyasSession, AppState, Settings } from './types';
 
 /**
@@ -110,13 +112,33 @@ function pick<T>(b: unknown, l: T, r: T): T {
  * The celebrated ids of both sides as one set, so a medal celebrated on the phone and another on the PC both stay on both,
  * and a device that pruned old challenge ids never takes a medal the other added. Nothing but that pruning ever takes an id
  * out, so no base is needed, and an id both sides dropped stays dropped; one pruned on a single device comes back with the
- * other's copy, which the next prune there takes out again. In sorted order, whichever side is this device: in each side's
- * own order the two devices would merge to two different files, and every round would write the other's order back. Null
- * means "never seeded": kept while neither side has an array, and gone as soon as one side has been seeded.
+ * other's copy, so the union itself drops a day's challenge id more than a fortnight older than the newest one in it
+ * (`withoutOldChallenges`): a device that never celebrates never prunes, and would otherwise keep every old id alive. In
+ * sorted order, whichever side is this device: in each side's own order the two devices would merge to two different
+ * files, and every round would write the other's order back. Null means "never seeded": kept while neither side has an
+ * array, and gone as soon as one side has been seeded.
  */
 function mergeCelebrated(l: string[] | null | undefined, r: string[] | null | undefined): string[] | null | undefined {
   if (!Array.isArray(l) || !Array.isArray(r)) return Array.isArray(l) ? l : Array.isArray(r) ? r : l ?? r;
-  return stable(l) === stable(r) ? l : [...new Set([...l, ...r])].sort();
+  return stable(l) === stable(r) ? l : withoutOldChallenges([...new Set([...l, ...r])].sort());
+}
+
+/**
+ * The ids without a day's challenge more than CHALLENGE_IDS_KEEP_DAYS before the newest day's challenge among them. Worked
+ * out from the ids alone, never this device's clock, so every device lands on the same file. Medals and every other id
+ * stay, however old; only today's challenge id is ever read, so nothing that counts goes.
+ */
+function withoutOldChallenges(ids: string[]): string[] {
+  const prefix = challengeWinId('');
+  const newest = ids
+    .filter((id) => id.startsWith(prefix))
+    .map((id) => id.slice(prefix.length))
+    .filter(isIsoDate)
+    .sort()
+    .at(-1);
+  if (newest === undefined) return ids;
+  const from = addDays(newest, -CHALLENGE_IDS_KEEP_DAYS);
+  return ids.filter((id) => !id.startsWith(prefix) || id.slice(prefix.length) >= from);
 }
 
 /** Each field picked on its own against the base (`pick`), the `nested` ones key by key; a field taken out on one side stays out. */

@@ -289,6 +289,19 @@ describe('the celebrated ids', () => {
     expect(idsOf(both)?.filter((id) => id.startsWith('challenge:'))).toEqual([]);
   });
 
+  it("drops a day's challenge id more than a fortnight older than the newest one in the union, so a device that never prunes cannot keep old ids alive", () => {
+    // The PC never celebrates, so it never prunes: it still holds the challenge ids the phone pruned long ago.
+    const days = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => `challenge:day:2026-10-${String(from + i).padStart(2, '0')}`);
+    const phone = withIds(['medals:seeded', 'medal:meals:3', ...days(16, 30)]);
+    const pc = withIds(['medals:seeded', 'medal:meals:3', ...days(1, 29)]);
+    const kept = ['challenge:day:2026-10-16', ...days(17, 30), 'medal:meals:3', 'medals:seeded'];
+    for (const out of [merge3(null, phone, pc), merge3(null, pc, phone)]) expect(idsOf(out)).toEqual([...kept].sort());
+    // Every device works it out from the ids alone, not its own clock, so both sides land on the same file.
+    expect(sameCloud(merge3(null, phone, pc), merge3(null, pc, phone))).toBe(true);
+    // Medals and the other ids are never dropped, however old.
+    expect(idsOf(merge3(null, withIds(['medal:kg:1', 'challenge:day:2026-01-01']), withIds(['challenge:day:2026-10-30'])))).toEqual(['challenge:day:2026-10-30', 'medal:kg:1']);
+  });
+
   it('is the union with no base too, each id once', () => {
     const out = merge3(null, withIds(['medals:seeded', 'medal:meals:3']), withIds(['medals:seeded', 'badge:streak_7']));
     expect(idsOf(out)).toEqual(['badge:streak_7', 'medal:meals:3', 'medals:seeded']);
