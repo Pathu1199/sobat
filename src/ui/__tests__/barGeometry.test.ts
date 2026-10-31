@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BAR_HEIGHT, barHeight, PLUS_LIFT, PLUS_SIZE, TAB_GAP, TAB_ICON, TAB_LABEL, TAB_PAD, TAB_PILL, tabLabelSize } from '../barGeometry';
+import { BAR_HEIGHT, barHeight, PLUS_LIFT, PLUS_SIZE, TAB_ICON, TAB_LABEL, TAB_PILL, tabLabelSize } from '../barGeometry';
 import { lh, S, TEXT_SCALES } from '../theme';
 
 describe('the tab bar', () => {
