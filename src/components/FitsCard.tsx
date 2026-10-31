@@ -152,7 +152,6 @@ export function FitsCard({ compact }: { compact?: boolean }) {
           <Micro color={C.accentText}>{allMeals ? `${t('fits_hide_rest')} ‹` : `${fill(t('fits_show_rest'), { n: plan.slots.length - 1 })} ›`}</Micro>
         </Pressable>
       ) : null}
-      {open ? <Micro color={C.textFaint}>{t('fits_hint')}</Micro> : null}
     </Card>
   );
 }

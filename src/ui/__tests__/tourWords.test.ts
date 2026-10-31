@@ -7,11 +7,11 @@ const TOUR = ['tour_1_t', 'tour_1_b', 'tour_2_t', 'tour_2_b', 'tour_3_t', 'tour_
 const LATIN = /[A-Za-z]/;
 
 describe('the tour and the Guide describe the app as it is', () => {
-  it('the tour names Calories left, the menu and Ate as planned, ➕, the week strip, the Weight tile on Progress and the Guide in Me', () => {
+  it('the tour names Calories left, the menu and Ate as planned, ➕, the week strip, the weight card on Progress and the Guide in Me', () => {
     const tour = TOUR.map((k) => t('en', k)).join(' ');
-    for (const words of ['Calories left', 'menu', 'Ate as planned', '➕', 'week strip', 'Weight tile', 'Progress', 'Guide', 'Me']) expect(tour).toContain(words);
-    // Names of screens and cards that are gone.
-    expect(tour).not.toMatch(/\bring\b|plan card|Log on a meal|\? guide/i);
+    for (const words of ['Calories left', 'menu', 'Ate as planned', '➕', 'week strip', 'weight card on Progress', 'Guide', 'Me']) expect(tour).toContain(words);
+    // Names of screens and cards that are gone, the Weight tile on Progress among them.
+    expect(tour).not.toMatch(/\bring\b|plan card|Log on a meal|\? guide|Weight tile/i);
   });
 
   it('the coach\'s day plan no longer points to a card on Today', () => {
@@ -22,7 +22,8 @@ describe('the tour and the Guide describe the app as it is', () => {
     const lines = GUIDE.en.flatMap((s) => s.lines).join(' ');
     expect(lines).not.toMatch(/Log screen|plan card|The ring|routine screen|Move tab/);
     expect(lines).toMatch(/Ate as planned/);
-    expect(lines).toMatch(/Weight tile/);
+    expect(lines).toMatch(/weight card on Progress/);
+    expect(lines).not.toMatch(/Weight tile on Progress/);
   });
 
   it('in Marathi and Hindi, the tour, the Guide and the day plan\'s last line carry no word in Latin letters', () => {

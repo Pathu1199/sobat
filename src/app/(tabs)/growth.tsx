@@ -361,7 +361,7 @@ function MetricTile({ metric, label, lang, wide }: { metric: Metric; label: stri
         <Text style={{ color: C.text, fontSize: F.title, fontWeight: '500' }}>{value}</Text>
         {unit ? <Text style={{ color: C.textFaint, fontSize: F.small }}>{unit}</Text> : null}
       </Row>
-      <View style={{ alignSelf: 'flex-start', backgroundColor: C.cardAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, borderWidth: S.hairline, borderColor: C.border }}>
+      <View style={{ alignSelf: 'flex-start', backgroundColor: C.cardAlt, borderRadius: S.radiusXs, paddingHorizontal: 8, paddingVertical: 3, borderWidth: S.hairline, borderColor: C.border }}>
         <Text style={{ color: deltaColor, fontSize: F.small, fontWeight: '500' }}>{pct === null ? t('vs_previous') : `${pct > 0 ? '+' : ''}${pct}% ${t('vs_previous')}`}</Text>
       </View>
     </View>

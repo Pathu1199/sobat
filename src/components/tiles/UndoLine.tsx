@@ -73,7 +73,7 @@ export function UndoLine({ text, undoLabel, onUndo }: { text: string; undoLabel:
         onPress={onUndo}
         accessibilityRole="button"
         accessibilityLabel={`${undoLabel}: ${text}`}
-        style={({ pressed }) => ({ minHeight: S.touch, minWidth: S.touch, paddingHorizontal: 16, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.accentSoft : C.accentDim })}>
+        style={({ pressed }) => ({ minHeight: S.touch, minWidth: S.touch, paddingHorizontal: 16, borderRadius: S.radiusSm, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.accentSoft : C.accentDim })}>
         <Text style={{ color: C.accentText, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{undoLabel}</Text>
       </Pressable>
     </View>

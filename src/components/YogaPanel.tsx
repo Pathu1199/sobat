@@ -74,7 +74,6 @@ export function YogaPanel() {
           </View>
           <Text style={{ fontSize: 32 }}>🧘</Text>
         </Row>
-        <Small color={C.textDim}>{t('yoga_intro')}</Small>
       </Card>
 
       {/* Routines: a ready set for someone who does not want to choose. */}

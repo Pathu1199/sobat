@@ -90,7 +90,6 @@ export default function FoodsScreen() {
           );
         })}
       </Card>
-      <Micro>{t('foods_note')}</Micro>
       <Text style={{ height: 1 }} />
       <FoodDetailSheet food={detail} onAdd={add} onClose={() => setDetail(null)} />
     </Screen>

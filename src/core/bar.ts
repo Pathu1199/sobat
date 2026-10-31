@@ -1,6 +1,8 @@
+import { fill } from '../i18n';
 import { isIsoDate } from './date';
 import { normalizeTabs } from './tabs';
-import type { ISODate, TabId } from './types';
+import { shortDecimal } from './tileText';
+import type { ISODate, Profile, TabId } from './types';
 
 /**
  * The tab bar and the Me list, from the extra tabs the person chose. Today
@@ -68,6 +70,20 @@ export function meRows(tabs: unknown): MeRow[] {
   // Progress taken off the bar stays one tap away.
   if (!normalizeTabs(tabs).includes('progress')) rows.splice(1, 0, { key: 'progress', icon: 'trending-up-outline', labelKey: 'tab_progress', href: '/progress' });
   return rows;
+}
+
+/** The first word of the user's name, for Me's header; null when they gave none. */
+export function firstName(name: string): string | null {
+  return name.trim().split(/\s+/)[0] || null;
+}
+
+/**
+ * The line under the name on Me: the goal weight and the pace, "Goal 80 kg ·
+ * 0.5 a week", in the user's language. The pace keeps its second place, as
+ * the paces Settings offers include 0.25 and 0.75.
+ */
+export function goalLine(profile: Pick<Profile, 'goalWeightKg' | 'rateKgPerWeek'>, t: (key: string) => string): string {
+  return fill(t('me_goal_line'), { kg: shortDecimal(profile.goalWeightKg), rate: String(Math.round(profile.rateKgPerWeek * 100) / 100) });
 }
 
 /** A tab route's address: Today is the root, every other tab its own name. */

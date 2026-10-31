@@ -154,7 +154,8 @@ function ToastView({ text, opacity, action, onAction }: { text: string; opacity:
           backgroundColor: C.cardHigh,
           borderWidth: S.hairline,
           borderColor: C.borderStrong,
-          borderRadius: 999,
+          // A floating surface with a card's corners: 20 is its button's 14 plus the 6 between them, so the two curves stay parallel.
+          borderRadius: S.radius,
           paddingVertical: action ? 6 : 10,
           paddingLeft: 16,
           paddingRight: action ? 6 : 16,
@@ -165,7 +166,7 @@ function ToastView({ text, opacity, action, onAction }: { text: string; opacity:
         <Text style={{ color: C.text, fontSize: F.small, fontWeight: '500' }}>{text}</Text>
         {action ? (
           // A finger wide, like every other control.
-          <Pressable onPress={onAction} accessibilityRole="button" style={({ pressed }) => ({ minHeight: S.touch, minWidth: S.touch, paddingHorizontal: 16, borderRadius: 999, backgroundColor: pressed ? C.accentSoft : C.accentDim, alignItems: 'center', justifyContent: 'center' })}>
+          <Pressable onPress={onAction} accessibilityRole="button" style={({ pressed }) => ({ minHeight: S.touch, minWidth: S.touch, paddingHorizontal: 16, borderRadius: S.radiusSm, backgroundColor: pressed ? C.accentSoft : C.accentDim, alignItems: 'center', justifyContent: 'center' })}>
             <Text style={{ color: C.accentText, fontSize: F.small, fontWeight: '500' }}>{action.label}</Text>
           </Pressable>
         ) : null}

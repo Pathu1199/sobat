@@ -27,16 +27,16 @@ export function TileArt({ children }: { children: React.ReactNode }) {
  * The one frame every tracker sits in: a square with a card's corners and
  * soft shadow and no outline, two to a row. The words are pinned to the top,
  * 14 from the top and 15 from the sides, in the same place in every tile: the
- * icon and name, the number with its unit smaller, and one short line. The art has the
- * bottom 42% and never reaches the words; `behind` is the one exception, drawn
- * under the words across the whole tile (the water tank). The tile grows
- * taller than square only when the text size needs the room. Each tracker
- * brings its art, its words and its tap; a tile with no tap and no hold is
- * not a button, just the tile, read by a screen reader as one phrase (its
- * label), on the web too (`tileRole`). The hold is also an action a screen
- * reader offers by name (`holdLabel`), and on the web the context menu key,
- * Shift+F10, Shift+Enter (for a Mac, which has no context menu key) or a right
- * click opens it, since a key held down is no hold.
+ * icon and name, the number with its unit smaller, and one short line. The
+ * art has the bottom 42% and never reaches the words; `behind` is the one
+ * exception, drawn under the words across the whole tile (the water tank).
+ * The tile grows taller than square only when the text size needs the room.
+ * Each tracker brings its art, its words and its tap; a tile with no tap and
+ * no hold is not a button, just the tile, read by a screen reader as one
+ * phrase (its label), on the web too (`tileRole`). The hold is also an action
+ * a screen reader offers by name (`holdLabel`), and on the web the context
+ * menu key, Shift+F10, Shift+Enter (for a Mac, which has no context menu key)
+ * or a right click opens it, since a key held down is no hold.
  */
 export function LivingTile({
   icon,

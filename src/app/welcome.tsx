@@ -108,7 +108,7 @@ export default function Welcome() {
         <View
           style={{
             marginTop: 40,
-            backgroundColor: C.cardAlt,
+            backgroundColor: C.card,
             borderRadius: S.radius,
             ...S.shadow,
             padding: wide ? 32 : 22,

@@ -15,7 +15,7 @@ const en: GuideSection[] = [
     lines: [
       'Once a week, same day, same scale. Sunday morning works well.',
       'Morning, after the toilet, before food or water, light clothes.',
-      'Tap the Weight tile on Progress, or on Today if you added it in Me → Customize, and enter the number. The weight sheet shows what has changed and whether the plan is working.',
+      'Tap the weight card on Progress, or the Weight tile on Today if you added it in Me → Customize, and enter the number. The weight sheet shows what has changed and whether the plan is working.',
       'Day-to-day swings of 1 to 2 kg are water and food in the gut, not fat. Only the weekly line matters.',
       'If the weekly number has not moved for 3 weeks, tighten the log for a week before changing the plan.',
     ],
@@ -99,7 +99,7 @@ const en: GuideSection[] = [
     title: 'Reading your numbers',
     lines: [
       'Calories left, the big number at the top of Today, is what you can still eat today. Once the day is over its target, it says by how much.',
-      'Tap the Weight tile for what you have lost, what is left to go, and whether the plan is working, in plain words, with one change to make when it is not. Progress shows the smoothed line.',
+      'Tap the weight card on Progress for what you have lost, what is left to go, and whether the plan is working, in plain words, with one change to make when it is not. Progress shows the smoothed line.',
       'The target is never below a safe floor. If the app raised it, that is on purpose.',
       'Protein matters as much as calories: it keeps muscle while fat goes. Dal, curd, eggs, paneer, chana.',
     ],
@@ -124,7 +124,7 @@ const mr: GuideSection[] = [
     lines: [
       'आठवड्यातून एकदा, त्याच दिवशी, त्याच काट्यावर. रविवार सकाळ चांगली.',
       'सकाळी, शौचानंतर, खाण्या-पिण्याआधी, हलके कपडे.',
-      'प्रगती पानावरच्या, किंवा मी → मांडणी मधून आजच्या पानावर घेतली असेल तर तिथल्या, वजनाच्या चौकटीवर दाबा आणि आकडा लिहा. वजनाचं पान किती बदललं आणि नियोजन चालतंय का ते दाखवतं.',
+      'प्रगती पानावरच्या वजनाच्या कार्डवर, किंवा मी → मांडणी मधून आजच्या पानावर घेतली असेल तर तिथल्या वजनाच्या चौकटीवर, दाबा आणि आकडा लिहा. वजनाचं पान किती बदललं आणि नियोजन चालतंय का ते दाखवतं.',
       'रोजचे 1–2 किलोचे चढउतार म्हणजे पाणी आणि पोटातले अन्न, चरबी नाही. फक्त आठवड्याची रेषा महत्त्वाची.',
       'तीन आठवडे आकडा हलला नाही तर नियोजन बदलण्याआधी एक आठवडा नोंद काटेकोर करा.',
     ],
@@ -208,7 +208,7 @@ const mr: GuideSection[] = [
     title: 'आकडे कसे वाचावे',
     lines: [
       'आजच्या पानाच्या वरचा मोठा आकडा, उरलेल्या कॅलरी, म्हणजे आज अजून किती खाता येईल. दिवसाचे लक्ष्य ओलांडले की किती जास्त झाले ते सांगतो.',
-      'वजनाच्या चौकटीवर दाबा: किती कमी झाले, किती बाकी, आणि नियोजन चालतंय का ते साध्या शब्दांत, नसेल तर एक बदल सुचवून. प्रगती पान सरासरी रेषा दाखवते.',
+      'प्रगती पानावरच्या वजनाच्या कार्डवर दाबा: किती कमी झाले, किती बाकी, आणि नियोजन चालतंय का ते साध्या शब्दांत, नसेल तर एक बदल सुचवून. प्रगती पान सरासरी रेषा दाखवते.',
       'लक्ष्य कधीच सुरक्षित किमानाखाली जात नाही. अ‍ॅपने ते वाढवले असेल तर ते मुद्दाम.',
       'प्रथिने कॅलरीइतकीच महत्त्वाची: चरबी जाताना स्नायू टिकवतात. डाळ, दही, अंडी, पनीर, चणे.',
     ],
@@ -233,7 +233,7 @@ const hi: GuideSection[] = [
     lines: [
       'हफ़्ते में एक बार, उसी दिन, उसी तराज़ू पर. रविवार सुबह ठीक रहती है.',
       'सुबह, शौच के बाद, खाने-पीने से पहले, हल्के कपड़े.',
-      'प्रगति पन्ने पर, या मैं → अपनी पसंद से आज वाले पन्ने पर लिया हो तो वहाँ, वज़न वाले खाने को दबाएँ और अंक लिखें. वज़न का पन्ना बताता है कितना बदला और प्लान काम कर रहा है या नहीं.',
+      'प्रगति पन्ने पर वज़न वाले कार्ड को, या मैं → अपनी पसंद से आज वाले पन्ने पर लिया हो तो वहाँ वज़न वाले खाने को, दबाएँ और अंक लिखें. वज़न का पन्ना बताता है कितना बदला और प्लान काम कर रहा है या नहीं.',
       'रोज़ के 1–2 किलो के उतार-चढ़ाव पानी और पेट का खाना हैं, चर्बी नहीं. सिर्फ़ हफ़्ते की रेखा मायने रखती है.',
       'तीन हफ़्ते आँकड़ा न हिले तो योजना बदलने से पहले एक हफ़्ता दर्ज करना कड़ा करें.',
     ],
@@ -317,7 +317,7 @@ const hi: GuideSection[] = [
     title: 'अपने आँकड़े पढ़ना',
     lines: [
       'आज वाले पन्ने के ऊपर का बड़ा अंक, बची कैलोरी, बताता है कि आज और कितना खा सकते हैं. दिन का लक्ष्य पार होने पर बताता है कितना ज़्यादा हुआ.',
-      'वज़न वाले खाने को दबाएँ: कितना घटा, कितना बाकी, और प्लान काम कर रहा है या नहीं, सीधे शब्दों में, न हो तो एक बदलाव के साथ. प्रगति पन्ना औसत रेखा दिखाता है.',
+      'प्रगति पन्ने पर वज़न वाले कार्ड को दबाएँ: कितना घटा, कितना बाकी, और प्लान काम कर रहा है या नहीं, सीधे शब्दों में, न हो तो एक बदलाव के साथ. प्रगति पन्ना औसत रेखा दिखाता है.',
       'लक्ष्य कभी सुरक्षित न्यूनतम से नीचे नहीं जाता. ऐप ने बढ़ाया हो तो जानबूझकर.',
       'प्रोटीन कैलोरी जितना ही ज़रूरी: चर्बी जाते समय मांसपेशी बचाता है. दाल, दही, अंडे, पनीर, चना.',
     ],

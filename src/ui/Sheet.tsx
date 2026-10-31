@@ -45,7 +45,8 @@ export function SheetFrame({ open, onClose, maxWidth = 520, tall = false, childr
             width: '100%',
             maxWidth: wide ? maxWidth : undefined,
             ...(tall ? { height: wide ? '86%' : '92%' } : { maxHeight: '88%' }),
-            backgroundColor: C.card,
+            // The page one step lighter, so a card inside the sheet stands apart from it in daylight too.
+            backgroundColor: C.pageAlt,
             borderWidth: S.hairline,
             borderColor: C.borderStrong,
             borderTopLeftRadius: radius,

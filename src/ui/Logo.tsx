@@ -9,10 +9,10 @@ import { C, F } from './theme';
  * sharp at any size; the PNG icons in assets/images are made from the same
  * geometry by scripts/make-logo.py.
  */
-export function Logo({ size = 28, mono }: { size?: number; mono?: boolean }) {
+export function Logo({ size = 28, mono, ink: monoInk }: { size?: number; mono?: boolean; ink?: string }) {
   // A 100-unit square, matching the script: a teal tile with the white mark,
-  // or, in mono, the mark alone in the accent colour on whatever is behind it.
-  const ink = mono ? C.accent : C.white;
+  // or, in mono, the mark alone in the accent colour (or `ink`) on whatever is behind it.
+  const ink = mono ? (monoInk ?? C.accent) : C.white;
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="Dhyey">
       {mono ? null : <Rect width={100} height={100} rx={22} fill={C.accent} />}

@@ -5,24 +5,38 @@ import { View } from 'react-native';
 import { ChapterSheet } from '../../components/ChapterSheet';
 import { GrocerySheet } from '../../components/GrocerySheet';
 import { SavedMealsSheet } from '../../components/SavedMealsSheet';
-import { meRows, type MeSheet } from '../../core/bar';
+import { firstName, goalLine, meRows, type MeSheet } from '../../core/bar';
 import { mondayOf } from '../../core/date';
 import { makeT } from '../../i18n';
 import { useApp } from '../../store/AppProvider';
 import { Card, Divider, ListRow } from '../../ui/components';
+import { Logo } from '../../ui/Logo';
 import { C } from '../../ui/theme';
 import { Page } from '../../ui/TopBar';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-/** Me: a plain list of everything that is not on the bar, each one tap from its page or its sheet. */
+/**
+ * Me: the user's first name with their goal and pace under it and the
+ * Dhyey mark beside them ("Me" when no name was given), then a plain list of
+ * everything that is not on the bar, each one tap from its page or its sheet.
+ */
 export default function MeScreen() {
   const app = useApp();
   const router = useRouter();
-  const t = makeT(app.state.profile.lang);
+  const { profile } = app.state;
+  const t = makeT(profile.lang);
   const [sheet, setSheet] = useState<MeSheet | null>(null);
   return (
-    <Page title={t('tab_me')}>
+    <Page
+      title={firstName(profile.name) ?? t('tab_me')}
+      subtitle={goalLine(profile, t)}
+      right={
+        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+          {/* The mark in the accent's word colour, which holds 4.5:1 on the soft circle in both themes. */}
+          <Logo mono ink={C.accentText} size={26} />
+        </View>
+      }>
       <Card>
         {meRows(app.state.settings.tabs).map((row, i) => (
           <View key={row.key}>

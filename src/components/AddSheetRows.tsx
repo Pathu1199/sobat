@@ -232,7 +232,6 @@ export function SaveAsOffer({ lang, logged, onSave, onSkip }: { lang: Lang; logg
       <Text accessibilityRole="header" style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500' }}>
         {t('add_save_as_title')}
       </Text>
-      <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>{t('add_save_as_body')}</Text>
       {/* Field grows to fill its row; in a column it would grow tall instead. */}
       <View style={{ flexDirection: 'row' }}>
         <Field label={t('add_meal_name')} value={name} onChangeText={setName} placeholder={t('add_meal_name_hint')} autoFocus />

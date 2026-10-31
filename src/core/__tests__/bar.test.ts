@@ -3,7 +3,8 @@
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { addSlot, barItems, extraItem, hrefOf, meRows, routeAt, viewedDate } from '../bar';
+import { makeT } from '../../i18n';
+import { addSlot, barItems, extraItem, firstName, goalLine, hrefOf, meRows, routeAt, viewedDate } from '../bar';
 import { TAB_IDS } from '../tabs';
 
 /** The screens expo-router can open: the files under src/app and under src/app/(tabs), by name without the extension. */
@@ -110,5 +111,25 @@ describe('meRows', () => {
       const name = r.href.slice(1).split('?')[0];
       expect([...TAB_SCREENS, ...STACK_SCREENS]).toContain(name);
     }
+  });
+});
+
+describe("Me's header", () => {
+  it('greets by the first word of the name, whatever the spacing, and falls back when there is no name', () => {
+    expect(firstName('Varad Shinde')).toBe('Varad');
+    expect(firstName('  वरद   शिंदे ')).toBe('वरद');
+    expect(firstName('Varad')).toBe('Varad');
+    expect(firstName('')).toBeNull();
+    expect(firstName('   ')).toBeNull();
+  });
+
+  it('says the goal and the weekly pace in each language, without a needless ".0", the pace to its quarter kilo', () => {
+    const profile = { goalWeightKg: 80, rateKgPerWeek: 0.5 };
+    expect(goalLine(profile, makeT('en'))).toBe('Goal 80 kg · 0.5 a week');
+    expect(goalLine(profile, makeT('mr'))).toBe('लक्ष्य 80 किलो · आठवड्याला 0.5');
+    expect(goalLine(profile, makeT('hi'))).toBe('लक्ष्य 80 किलो · हफ़्ते में 0.5');
+    expect(goalLine({ goalWeightKg: 72.5, rateKgPerWeek: 1 }, makeT('en'))).toBe('Goal 72.5 kg · 1 a week');
+    expect(goalLine({ goalWeightKg: 68.04, rateKgPerWeek: 0.25 }, makeT('en'))).toBe('Goal 68 kg · 0.25 a week');
+    expect(goalLine({ goalWeightKg: 90, rateKgPerWeek: 0.75 }, makeT('mr'))).toBe('लक्ष्य 90 किलो · आठवड्याला 0.75');
   });
 });

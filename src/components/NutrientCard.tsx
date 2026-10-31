@@ -56,7 +56,7 @@ export function NutrientCard({ bare, onNavigate }: { bare?: boolean; onNavigate?
               accessibilityRole="button"
               accessibilityLabel={fill(t(had.length ? 'nut_had_a11y' : 'nut_none_a11y'), { name })}
               style={({ pressed }) => ({ minHeight: S.touch, justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, backgroundColor: had.length ? C.cardAlt : 'transparent', borderWidth: 1, borderColor: had.length ? C.border : C.borderStrong }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 10, borderRadius: S.radiusXs, backgroundColor: had.length ? C.cardAlt : 'transparent', borderWidth: 1, borderColor: had.length ? C.border : C.borderStrong }}>
                 <Text style={{ color: had.length ? C.green : C.textDim, fontSize: F.small, lineHeight: lh(F.small) }}>{had.length ? '✓' : '–'}</Text>
                 <Text style={{ color: had.length ? C.text : C.textDim, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{name}</Text>
               </View>

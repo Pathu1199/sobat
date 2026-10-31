@@ -3,7 +3,7 @@ import {} from 'react-native';
 import type { FoodItem } from '../core/types';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
-import { Btn, Card, Divider, Field, Micro, Pill, Row, Small } from '../ui/components';
+import { Btn, Card, Divider, Field, Micro, Pill, Row } from '../ui/components';
 import { C } from '../ui/theme';
 
 const CATEGORIES = ['grain', 'dal', 'veg', 'nonveg', 'dairy', 'snack', 'sweet', 'beverage', 'fruit', 'fast_food', 'other'];
@@ -73,7 +73,6 @@ export function CustomFoodForm({ initialName, onSaved, onCancel }: { initialName
   return (
     <Card tone={C.accent}>
       <Micro color={C.accentText}>{t('custom_food')}</Micro>
-      <Small>{t('custom_food_hint')}</Small>
 
       <Field label={t('custom_name_en')} value={nameEn} onChangeText={setNameEn} placeholder="Aunty's poha" />
       <Field label={t('custom_name_mr')} value={nameMr} onChangeText={setNameMr} placeholder="पोहे" />

@@ -230,7 +230,7 @@ export default function SettingsScreen() {
         <ReminderSettings />
         <Card>
           {/* One switch for everything that speaks up while Dhyey is open: the nudges, water among them, the coach's tips, and the relay's water. */}
-          <Toggle title={t('rem_nudges')} desc={t(push ? 'rem_nudges_desc' : 'rem_nudges_desc_open')} on={s.nudgesEnabled} onToggle={() => app.setSettings({ nudgesEnabled: !s.nudgesEnabled })} />
+          <Toggle title={t('rem_nudges')} desc={t('rem_nudges_desc')} on={s.nudgesEnabled} onToggle={() => app.setSettings({ nudgesEnabled: !s.nudgesEnabled })} />
           <Micro>{t('nudge_every')}</Micro>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[30, 60, 90, 120].map((m) => (

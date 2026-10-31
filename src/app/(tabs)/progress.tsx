@@ -7,7 +7,6 @@ import { NutrientCard } from '../../components/NutrientCard';
 import { RecordCalendar } from '../../components/RecordCalendar';
 import { StreakTile } from '../../components/tiles/StreakTile';
 import { TileRow } from '../../components/tiles/TileRow';
-import { WeightTile } from '../../components/tiles/WeightTile';
 import { TopBarActions } from '../../components/TopBarActions';
 import { WeightTrendCard } from '../../components/WeightTrendCard';
 import { mondayOf, weekDates } from '../../core/date';
@@ -46,11 +45,12 @@ export default function ProgressTab() {
 }
 
 /**
- * Five blocks: the Weight and Streak tiles; the weight trend with the goal's
- * date; Lost, To go and this week's full days; the record calendar; and one
- * card with the last seven days' average against the goal, today's
- * nutrition a tap away, the climb as one row (the mountain and every badge
- * on the climb page) and History and Charts as links.
+ * Five blocks: the one weight card (the smoothed weight, its change, the line
+ * and the goal; a tap opens the weight entry); the Streak tile; Lost, To go
+ * and this week's full days; the record calendar; and one card with the last
+ * seven days' average against the goal, today's nutrition a tap away, the
+ * climb as one row (the mountain and every badge on the climb page) and
+ * History and Charts as links.
  */
 function Progress() {
   const app = useApp();
@@ -76,13 +76,13 @@ function Progress() {
 
   return (
     <Page title={t('tab_progress')} alt={lang === 'en' ? undefined : t('tab_progress')} right={<TopBarActions />}>
+      <WeightTrendCard />
+
       {/* On Progress the Streak tile is only the tile: a tap here would open the page it is on. */}
       <TileRow>
-        <WeightTile />
         <StreakTile />
+        <View style={{ flex: 1 }} />
       </TileRow>
-
-      <WeightTrendCard />
 
       <Card>
         <StatQuad

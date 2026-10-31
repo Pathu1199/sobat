@@ -275,9 +275,20 @@ describe("a future day's line under its total", () => {
       }
     }
     // Marathi and Hindi name the Balance button in their own words, as it reads on the button.
-    for (const lang of ['mr', 'hi'] as const) {
-      expect(t(lang, 'plan_suggested_floor'), lang).toContain(t(lang, 'plan_balance'));
-      expect(t(lang, 'plan_suggested_floor'), lang).not.toMatch(/Balance/);
+    for (const lang of ['mr', 'hi'] as const) expect(t(lang, 'plan_suggested_floor_here'), lang).not.toMatch(/Balance/);
+  });
+
+  it('away from the plan screen the suggested plan and its low line only say what is so, with no button to tap', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const low = t(lang, 'plan_suggested_floor');
+      expect(low, lang).toContain('{floor}');
+      expect(low, lang).not.toContain(t(lang, 'plan_balance'));
+      expect(t(lang, 'plan_suggested'), lang).toContain('{kcal}');
+      for (const k of ['plan_suggested', 'plan_suggested_floor']) {
+        // One plain sentence: a full stop only at the end, and no tap, press or "change it".
+        expect(t(lang, k).replace(/\.$/, ''), `${lang} ${k}`).not.toMatch(/\. /);
+        expect(t(lang, k), `${lang} ${k}`).not.toMatch(/\btap\b|Balance|टॅप|टैप|दाबा|दबाएँ|बदला|बदलें/i);
+      }
     }
   });
 });

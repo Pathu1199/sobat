@@ -727,9 +727,49 @@ describe('Settings: a switch for every reminder', () => {
         if (lang !== 'en') expect(words(k), `${lang} ${k}`).not.toBe(makeT('en')(k));
       }
     }
-    // The evening review says where its tap goes, and the nudges name the switch they speak of, as Settings shows it.
+    // The evening review says where it goes.
     expect(makeT('en')('rem_review_desc')).toContain('opens Today');
-    for (const lang of ['en', 'mr', 'hi'] as const) expect(makeT(lang)('rem_nudges_desc'), lang).toContain(`"${makeT(lang)('push_title')}"`);
+  });
+
+  it('says each Settings description in one short line, with no word about tapping', () => {
+    const keys = [
+      ...REMINDER_ROWS.map((r) => `rem_${r.name}_desc`),
+      'rem_web_note',
+      'rem_nudges_desc',
+      'notify_gap_desc',
+      'push_desc',
+      'push_privacy',
+      'feat_breaks_desc',
+      'feat_mantra_desc',
+      'feat_plates_desc',
+      'break_monitor_desc',
+      'brk_fullscreen_desc',
+      'brk_gentle_desc',
+      'brk_normal_desc',
+      'brk_oncall_desc',
+      'brk_schedule_desc',
+      'brk_sound_desc',
+      'brk_strict_desc',
+      'sched_desc',
+      'sched_phone_note',
+      'data_where',
+      'diet_hint',
+      'plan_free_desc',
+      'drive_note',
+      'drive_restore_confirm',
+      'advanced_desc',
+      'local_ai_body',
+    ];
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const words = makeT(lang);
+      for (const k of keys) {
+        expect(words(k), `${lang} ${k}`).not.toBe(k);
+        // One sentence: a full stop, if any, only at the end.
+        expect(words(k).replace(/[.।]$/, ''), `${lang} ${k}`).not.toMatch(/[.।] /);
+        expect(words(k), `${lang} ${k}`).not.toMatch(/\btap\b|टॅप|टैप/i);
+      }
+    }
+    for (const k of keys) expect(makeT('en')(k).length, k).toBeLessThanOrEqual(75);
   });
 });
 

@@ -8,7 +8,7 @@ import { useApp } from '../store/AppProvider';
 import { Btn } from '../ui/components';
 import { Banner } from '../ui/Banner';
 import { Sheet } from '../ui/Sheet';
-import { C, F, lh } from '../ui/theme';
+import { C, F, lh, S } from '../ui/theme';
 import { useAddSheetOpen } from './AddSheet';
 import { useGame } from './useGame';
 
@@ -63,7 +63,7 @@ export function Celebration() {
         <Text style={{ fontSize: 64 }}>{icon}</Text>
         <Text style={{ color: C.text, fontSize: F.title, lineHeight: lh(F.title), fontWeight: '500', textAlign: 'center' }}>{title}</Text>
         <Text style={{ color: C.textDim, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '400', textAlign: 'center' }}>{sub}</Text>
-        <View style={{ backgroundColor: C.accentDim, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6, marginTop: 4 }}>
+        <View style={{ backgroundColor: C.accentDim, borderRadius: S.radiusXs, paddingHorizontal: 14, paddingVertical: 6, marginTop: 4 }}>
           <Text style={{ color: C.accentText, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{`${fill(t('points_n'), { n: g.points })} · ${t(`level_${g.level.key}`)}`}</Text>
         </View>
       </Banner>
