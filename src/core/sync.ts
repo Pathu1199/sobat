@@ -300,9 +300,10 @@ function stoppedAtOnce(b: AbhyasRunning, state: CloudState, timer: AbhyasRunning
  * - a different item started on each: the later start runs, and the earlier timer ends where the later began. The same
  *   item started on both counts from the first start, as one timer would.
  * - stopped on both: no timer, and the same timer's session is one, the stop that came first (`COLLECTIONS`). A stop inside
- *   the first minute writes no session but still came first, so when one side stopped the base's timer that way, a session
- *   the other side wrote for it is dropped. Start and Stop tapped by mistake on the phone, then the PC, closed meanwhile,
- *   stopping that timer at its three hours when it opens (`closeStale`), leave no three hours nobody spent.
+ *   the first minute writes no session, so when one side stopped the base's timer that way, a session the other side wrote
+ *   for it because it ran out by itself (three hours or midnight, `closeStale`) is dropped: Start and Stop tapped by
+ *   mistake on the phone, then the PC, closed meanwhile, closing that timer when it opens, leave no three hours nobody
+ *   spent. One the other side stopped by hand stays, since the user was at it there.
  * At the same moment a start beats a stop, and of two starts the item first by id, so every device ends on the same timer.
  * With no base every session on a side is new and the same rule applies; with none written, a timer on either side is
  * kept, and of two the later start runs.
@@ -314,7 +315,7 @@ function mergeRunning(base: Partial<CloudState>, local: CloudState, remote: Clou
   const before = toMap(base.abhyasSessions, (x) => String(x.id));
   const [lm, rm] = [movesOf(local, before, b), movesOf(remote, before, b)];
   const once = b && (stoppedAtOnce(b, local, l) || stoppedAtOnce(b, remote, r)) ? sessionId(b) : null;
-  const sessions = once ? merged.filter((s) => String(s.id) !== once) : merged;
+  const sessions = once ? merged.filter((s) => !(s.id === once && isAbhyasSession(s) && ranOut(s))) : merged;
   const [movedL, movedR] = [stable(l) !== stable(b) || lm.length > 0, stable(r) !== stable(b) || rm.length > 0];
   if (!movedR || stable(l) === stable(r)) return { abhyasRunning: l, abhyasSessions: sessions };
   if (!movedL) return { abhyasRunning: r, abhyasSessions: sessions };

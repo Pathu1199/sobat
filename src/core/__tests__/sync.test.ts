@@ -954,7 +954,7 @@ describe("the user's own list (Abhyas)", () => {
     }
   });
 
-  it('a timer stopped inside its first minute on one device has no minutes, though another device stopped it later or let it run out', () => {
+  it('a timer stopped inside its first minute on one device has no minutes, though another device, closed meanwhile, let it run out', () => {
     const on = after(file(), startAt('study', '07:00'));
     const quick = after(on, (s) => withStopped(s, new Date(T('07:00').getTime() + 30_000)));
     expect(quick.abhyasSessions).toEqual([]);
@@ -964,8 +964,16 @@ describe("the user's own list (Abhyas)", () => {
     const out = both(on, quick, ranOut);
     expect(out.abhyasRunning).toBeNull();
     expect(out.abhyasSessions).toEqual([]);
-    // Stopped by hand on the PC at 07:20, it was still stopped first on the phone.
-    expect(both(on, quick, after(on, stopAt('07:20'))).abhyasSessions).toEqual([]);
+    // Run out at midnight, the same.
+    const late = after(file(), (s) => withStarted(s, 'study', new Date(`${DAY}T23:50:00`)));
+    const lateQuick = after(late, (s) => withStopped(s, new Date(`${DAY}T23:50:30`)));
+    const lateRanOut = after(late, (s) => withStaleClosed(s, new Date('2026-11-01T08:00:00')));
+    expect(minutes(lateRanOut)).toEqual(['study:10']);
+    expect(both(late, lateQuick, lateRanOut).abhyasSessions).toEqual([]);
+    // Stopped by hand on the PC at 07:20, the user was really at it there: those minutes stay.
+    const byHand = both(on, quick, after(on, stopAt('07:20')));
+    expect(byHand.abhyasRunning).toBeNull();
+    expect(minutes(byHand)).toEqual(['study:20']);
     // Started again on the phone at 07:05: that timer runs, and the first still has no minutes.
     const again = after(quick, startAt('study', '07:05'));
     const re = both(on, again, ranOut);

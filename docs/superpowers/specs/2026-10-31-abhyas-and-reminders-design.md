@@ -205,11 +205,13 @@ whatever was running at the last sync:
 - A timer that ran out by itself (three hours, or midnight), or one stopped
   inside its first minute, leaves no time to go by, so it never ends a timer
   started on the other device.
-- A stop inside the first minute writes no session but still came first. So
-  when one device stopped the last sync's timer that way, a session another
-  device wrote for it is dropped: Start and Stop tapped by mistake on the
-  phone, then the PC, closed meanwhile, stopping that timer at three hours
-  when it opens, leave no three hours nobody spent.
+- A stop inside the first minute writes no session. When one device stopped
+  the last sync's timer that way, a session another device wrote for it
+  because it ran out by itself (three hours or midnight) is dropped: Start
+  and Stop tapped by mistake on the phone, then the PC, closed meanwhile,
+  closing that timer when it opens, leave no three hours nobody spent. A
+  session the other device stopped by hand stays, since the user was at it
+  there.
 - Moves from before the last sync's timer started (a third device's older
   sessions, merged in since) do not count.
 - Ties: a start beats a stop; of two starts, the item with the lower id.
