@@ -6,6 +6,7 @@ import {
   dayStatus,
   doneCount,
   draftProblem,
+  isAbhyasSession,
   isDone,
   itemsOn,
   MAX_SESSION_MIN,
@@ -194,6 +195,14 @@ describe('the timer', () => {
     const kept = [other, first];
     expect(withSession(kept, later)).toBe(kept);
     expect(withSession([other, later], first)).toEqual([other, first]);
+  });
+
+  it('reads a session from a file or another device only with every field there, its minutes a number', () => {
+    const s = stop(start('study', at(TODAY, '07:00')), at(TODAY, '07:30'))!;
+    expect(isAbhyasSession(s)).toBe(true);
+    const { endedAt, ...noEnd } = s;
+    void endedAt;
+    for (const bad of [null, 'study', [], noEnd, { ...s, endedAt: null }, { ...s, minutes: '30' }, { ...s, minutes: NaN }, { ...s, itemId: 7 }]) expect(isAbhyasSession(bad)).toBe(false);
   });
 });
 

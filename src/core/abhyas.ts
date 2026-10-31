@@ -103,6 +103,18 @@ export function start(itemId: string, now: Date): AbhyasRunning {
   return { itemId, startedAt: now.toISOString() };
 }
 
+/** A session's id: its timer's item and start (`stop`), so the same timer stopped on two devices is one session. */
+export function sessionId(running: Pick<AbhyasRunning, 'itemId' | 'startedAt'>): string {
+  return `${running.itemId}@${running.startedAt}`;
+}
+
+/** A session as the app reads it, from a file or another device: every field there, its minutes a number. Anything else is left out. */
+export function isAbhyasSession(v: unknown): v is AbhyasSession {
+  if (typeof v !== 'object' || v === null) return false;
+  const s = v as Record<string, unknown>;
+  return typeof s.id === 'string' && typeof s.itemId === 'string' && typeof s.date === 'string' && typeof s.startedAt === 'string' && typeof s.endedAt === 'string' && typeof s.minutes === 'number' && Number.isFinite(s.minutes);
+}
+
 /**
  * The session a timer stopped now leaves: on the date it started, ended now
  * or where it stops by itself (three hours, or midnight after its day), with
@@ -115,7 +127,7 @@ export function stop(running: AbhyasRunning, now: Date): AbhyasSession | null {
   const minutes = Math.floor((end - Date.parse(running.startedAt)) / 60000);
   if (!(minutes >= 1)) return null;
   return {
-    id: `${running.itemId}@${running.startedAt}`,
+    id: sessionId(running),
     itemId: running.itemId,
     date: localDate(running.startedAt),
     startedAt: running.startedAt,

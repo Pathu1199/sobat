@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { isAbhyasSession } from '../core/abhyas';
 import { DEFAULT_BREAK_SETTINGS, type BreakLog, type BreakSettings } from '../core/breaks';
 import { addDays, isIsoDate, mondayOf, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
@@ -7,7 +8,7 @@ import { slotShare } from '../core/pattern';
 import { canPlace, DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
 import { forCloud, stable, type CloudState } from '../core/sync';
 import { normalizeTabs, normalizeTodayCards } from '../core/tabs';
-import type { AbhyasItem, AbhyasRunning, AbhyasSession, AbhyasTick, AppState, Diet, FoodItem, ISODate, Meal, SavedMeal, SlotSkip } from '../core/types';
+import type { AbhyasItem, AbhyasRunning, AbhyasTick, AppState, Diet, FoodItem, ISODate, Meal, SavedMeal, SlotSkip } from '../core/types';
 import { alignWeekPlan, type WeekPlan } from '../core/weekPlan';
 import { allFoods, DEFAULT_OLLAMA_URL, EMPTY_STATE, OLD_OLLAMA_PLACEHOLDER, STATE_VERSION } from './defaults';
 
@@ -261,10 +262,6 @@ function isAbhyasItem(v: unknown): v is AbhyasItem {
   if (!Array.isArray(v.days) || !v.days.every((d) => Number.isInteger(d)) || !Array.isArray(v.times) || !v.times.every((t) => typeof t === 'string')) return false;
   if ((v.targetMin !== undefined && !isCount(v.targetMin)) || (v.archivedAt !== undefined && typeof v.archivedAt !== 'string')) return false;
   return v.kind === 'repeat' || (v.kind === 'once' && typeof v.date === 'string');
-}
-
-function isAbhyasSession(v: unknown): v is AbhyasSession {
-  return isRecord(v) && typeof v.id === 'string' && typeof v.itemId === 'string' && typeof v.date === 'string' && typeof v.startedAt === 'string' && typeof v.endedAt === 'string' && isCount(v.minutes);
 }
 
 function isAbhyasTick(v: unknown): v is AbhyasTick {

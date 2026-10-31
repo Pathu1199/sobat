@@ -172,8 +172,50 @@ tick, so the card's "12 of 30 min" moves without a session being written.
 ### Sync: `src/core/sync.ts`
 
 Items, sessions and ticks merge per id like the other collections.
-`abhyasRunning` merges as one object by `startedAt` (the newer start wins),
-so a timer started on the phone shows on the PC and can be stopped there.
+
+- **Items** stay in the user's order (`order`). Two items in the same place,
+  one added on each device, go by id, so every device holds the list the
+  same way.
+- **Ticks:** the id is the item's and the date's, so the same tick made on
+  two devices is one tick.
+- **Sessions:** the id is the item's and the start's. The same timer stopped
+  on two devices is one session, the stop that came first. A copy the app
+  cannot read (a field missing, or an end that is not a time) never wins
+  over one it can.
+- Sessions and ticks at the same time go by id, so the round after a merge
+  writes nothing.
+
+**The running timer** (`abhyasRunning`, `mergeRunning`) has one rule,
+whatever was running at the last sync:
+
+- A device has moved when its timer is not the last sync's, or it started
+  or stopped a timer since. A timer started and stopped between two syncs
+  counts as a move.
+- Moved on one device only: that device's timer. A timer started on the
+  phone shows on the PC and can be stopped there.
+- Moved on both: the moves go in time order, as one device would have made
+  them. The device that moved last decides, and a timer still running on
+  the other stops at the first move made after it started, keeping its
+  minutes.
+  - A stop made after the other device's start ends that timer there. A
+    start made after a stop keeps running.
+  - A different item started on each: the later start runs, and the earlier
+    timer ends where it began.
+  - Stopped on both: no timer, and one session, the first stop's.
+- A timer that ran out by itself (three hours, or midnight), or one stopped
+  inside its first minute, leaves no time to go by, so it never ends a timer
+  started on the other device.
+- A stop inside the first minute writes no session but still came first. So
+  when one device stopped the last sync's timer that way, a session another
+  device wrote for it is dropped: Start and Stop tapped by mistake on the
+  phone, then the PC, closed meanwhile, stopping that timer at three hours
+  when it opens, leave no three hours nobody spent.
+- Moves from before the last sync's timer started (a third device's older
+  sessions, merged in since) do not count.
+- Ties: a start beats a stop; of two starts, the item with the lower id.
+- Known limit: sessions already written stay as written. Timers that ran on
+  two devices at once, neither knowing of the other, can overlap for that
+  time, three hours at most.
 
 ## Part 3: screens
 
