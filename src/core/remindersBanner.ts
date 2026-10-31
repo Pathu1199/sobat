@@ -6,9 +6,10 @@ import type { ISODate, Settings } from './types';
  * notifications only from the Home Screen, so a browser tab there is told to
  * add it; from the Home Screen, with the relay set up, one tap asks for
  * permission and switches on reminders while the app is closed; a permission
- * refused is pointed to the Guide, which says where to allow it. The Android
- * app asks for permission itself. Nothing shows while every reminder is
- * switched off, or on the day the user put the line away on this device. Pure.
+ * refused there is pointed to the Guide, which says where to allow it. A
+ * computer's browser tab shows nothing. The Android app asks for permission
+ * itself. Nothing shows while every reminder is switched off, or on the day
+ * the user put the line away on this device. Pure.
  */
 export type BannerKind = 'install' | 'enable' | 'blocked';
 
@@ -39,8 +40,10 @@ export function bannerState(input: BannerInput): BannerKind | null {
   const anyOn = Object.values(input.reminders).some((on) => on === true);
   if (!anyOn || input.hiddenOn === input.today) return null;
   if (input.platform === 'web') {
-    if (input.permission === 'denied') return 'blocked';
+    // A browser tab: an iPhone or iPad gets notifications only from the Home Screen; a computer's tab is not where reminders
+    // are meant to come, so a permission it refused is not brought up every day.
     if (!input.standalone) return input.appleMobile ? 'install' : null;
+    if (input.permission === 'denied') return 'blocked';
     if (!input.pushConfigured) return null;
     if (input.permission === 'default') return 'enable';
     // Allowed before (the test in Settings asks too) but never switched on reaches the device no better than never asked: the same tap turns it on.

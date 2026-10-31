@@ -27,10 +27,19 @@ describe('bannerState', () => {
     expect(bannerState({ ...pinned, permission: 'granted', pushRelay: true })).toBeNull();
   });
 
-  it('a permission refused on the web points to the Guide, from the Home Screen or in a tab', () => {
+  it('a permission refused in the app opened from the Home Screen points to the Guide, on an iPhone or a computer, the relay set up or not', () => {
     expect(bannerState({ ...pinned, permission: 'denied' })).toBe('blocked');
-    expect(bannerState({ ...pinned, permission: 'denied', standalone: false, appleMobile: false })).toBe('blocked');
     expect(bannerState({ ...pinned, permission: 'denied', pushRelay: true })).toBe('blocked');
+    expect(bannerState({ ...pinned, permission: 'denied', appleMobile: false })).toBe('blocked');
+    expect(bannerState({ ...pinned, permission: 'denied', pushConfigured: false })).toBe('blocked');
+  });
+
+  it('a permission refused in a browser tab shows nothing on a computer, day after day, and the Home Screen line on an iPhone', () => {
+    const tab: BannerInput = { ...pinned, permission: 'denied', standalone: false, appleMobile: false };
+    expect(bannerState(tab)).toBeNull();
+    expect(bannerState({ ...tab, today: '2026-11-01' })).toBeNull();
+    expect(bannerState({ ...tab, pushRelay: true })).toBeNull();
+    expect(bannerState({ ...tab, appleMobile: true })).toBe('install');
   });
 
   it('the Android app asks while it may, points to the Guide once the phone no longer asks, and says nothing once allowed', () => {

@@ -72,7 +72,8 @@ reminders cannot reach this device:
 |---|---|---|
 | Web, not standalone, iPhone or iPad | "Add Sobat to your Home Screen to get reminders" | opens Me → Guide, which gains a short "Add to Home Screen" section |
 | Web, standalone, permission not asked, relay configured | "Turn on reminders" | `requestPermission()` inside the tap (iOS needs a gesture), then `setSettings({ pushRelay: true })` |
-| Web, permission denied | "Reminders are blocked in Settings" | opens Me → Guide, section on allowing notifications |
+| Web, standalone, permission denied | "Reminders are blocked in Settings" | opens Me → Guide, section on allowing notifications |
+| Web, not standalone, a computer (permission denied or not) | not shown: a desktop tab is not where reminders come, and would otherwise say "blocked" every day | |
 | Android, permission not granted | "Turn on reminders" | `requestPermission()` |
 | Anything else | not shown | |
 
