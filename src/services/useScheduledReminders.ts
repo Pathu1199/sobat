@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
+import { streakRun } from '../core/abhyas';
 import { breaksAsSwitched, type BreakSettings } from '../core/breaks';
 import { checklistTimes, dayChecklist } from '../core/checklist';
 import { addDays } from '../core/date';
@@ -199,13 +200,16 @@ export function useScheduledReminders() {
   // "Day so far" for each day it can come, as the day stands now, as one string: a meal, a skip, a bottle, a walk, a tick
   // or a stopped timer changes its words, and so the pending one is replaced. The running timer is left out, as above, so
   // the words do not change every minute it runs. Water and the walk are listed while their card is on Today; a meal not
-  // late yet at the last of its times is left out. The times by value, as the rest.
+  // late yet at the last of its times is left out. The times by value, as the rest. Today's opens with the kind line a
+  // streak of three days or more gets while the day is not complete (the streaks with the shield, on finished timers).
   const waterWalk = todayCards.some((c) => c.id === 'waterWalk' && c.on);
   const timesKey = checklistTimes(storedTimes).join(',');
+  const mealStreak = app.streakDays;
   const checklistJson = useMemo(() => {
     if (Platform.OS === 'web' || !reminders.checklist) return '';
     const t = makeT(lang);
     const data = { items: abhyasItems, ticks: abhyasTicks, sessions: abhyasSessions, running: null };
+    const streaks = { meals: mealStreak, routine: streakRun(data, today, new Date(0), true).days };
     const texts: Record<ISODate, { title: string; body: string } | null> = {};
     for (let k = 0; k < OWN_DAYS; k++) {
       const date = addDays(today, k);
@@ -224,12 +228,13 @@ export function useScheduledReminders() {
         walkGoalMin,
         waterWalk,
         times: timesKey.split(','),
+        ...(date === today ? { streaks } : {}),
         lang,
         t,
       });
     }
     return JSON.stringify(texts);
-  }, [reminders.checklist, lang, abhyasItems, abhyasTicks, abhyasSessions, today, routine, menuOn, meals, slotSkips, waterLogs, activities, waterGoalMl, bottleMl, walkGoalMin, waterWalk, timesKey]);
+  }, [reminders.checklist, lang, abhyasItems, abhyasTicks, abhyasSessions, today, routine, menuOn, meals, slotSkips, waterLogs, activities, waterGoalMl, bottleMl, walkGoalMin, waterWalk, timesKey, mealStreak]);
 
   const anyOn = reminders.mealPrompt || reminders.away || reminders.fillYesterday || reminders.planWeek || reminders.weeklyReport || reminders.abhyas || reminders.checklist;
   const wanted = useMemo(() => {

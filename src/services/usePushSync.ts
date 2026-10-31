@@ -31,7 +31,7 @@ export function usePushSync() {
 
   const tz = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Asia/Kolkata';
   // Compared by value below: a render that builds the same schedule sends nothing.
-  const payload = configured && relayOn && active ? JSON.stringify(buildPushSchedule(state, today, makeT(state.profile.lang), tz, menuOn(today))) : '';
+  const payload = configured && relayOn && active ? JSON.stringify(buildPushSchedule(state, today, makeT(state.profile.lang), tz, menuOn(today), app.streakDays)) : '';
 
   useEffect(() => {
     const step = pushStep({ configured, relayOn, known, active, payload, lastSent: lastSent.current });

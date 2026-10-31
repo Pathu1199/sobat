@@ -72,6 +72,11 @@ export type ChecklistInput = {
    * every slot is listed.
    */
   times?: readonly string[];
+  /**
+   * The streaks as they stand (with the shield): from `STREAK_NUDGE_DAYS` days, a day not complete yet starts with one
+   * kind line that the streak needs today too. The phone and the relay pass them for today only.
+   */
+  streaks?: { meals: number; routine: number };
   lang: Lang;
   t: (key: string) => string;
 };
@@ -130,14 +135,32 @@ function waterWalkMarks(input: ChecklistInput): Mark[] {
   return out;
 }
 
+/** A streak this long or longer gets the kind line on a day not complete yet. */
+export const STREAK_NUDGE_DAYS = 3;
+
+/** The kind line for a streak: the routine's while jobs are left today, else the meal record's while a meal is; null otherwise. */
+function streakLine(input: ChecklistInput, meals: Mark[], jobs: Mark[]): string | null {
+  const s = input.streaks;
+  if (!s) return null;
+  const left = jobs.filter((m) => !m.done).length;
+  if (s.routine >= STREAK_NUDGE_DAYS && left > 0) return left === 1 ? fill(input.t('rem_streak_job_one'), { n: s.routine }) : fill(input.t('rem_streak_jobs'), { n: s.routine, k: left });
+  if (s.meals >= STREAK_NUDGE_DAYS && meals.some((m) => !m.done)) return fill(input.t('rem_streak_meals'), { n: s.meals });
+  return null;
+}
+
 /**
  * The day so far, in the user's language: the title, and up to three lines
- * (meals, the Abhyas list, water and the walk), each part marked ✓ or ○, as
- * `✓ Breakfast · ✓ Lunch · ○ Dinner`. Null when every part is done or there
- * is nothing to list: nothing is sent then.
+ * (meals, the routine list, water and the walk), each part marked ✓ or ○, as
+ * `✓ Breakfast · ✓ Lunch · ○ Dinner`. With a streak of three days or more
+ * and the day not complete yet, one kind line comes first ("Your 21-day
+ * routine streak needs one more job today."). Null when every part is done
+ * or there is nothing to list: nothing is sent then.
  */
 export function dayChecklist(input: ChecklistInput): { title: string; body: string } | null {
-  const lines = [mealMarks(input), abhyasMarks(input), waterWalkMarks(input)].filter((marks) => marks.length > 0);
+  const meals = mealMarks(input);
+  const jobs = abhyasMarks(input);
+  const lines = [meals, jobs, waterWalkMarks(input)].filter((marks) => marks.length > 0);
   if (lines.every((marks) => marks.every((m) => m.done))) return null;
-  return { title: input.t('rem_checklist_title'), body: lines.map(line).join('\n') };
+  const lead = streakLine(input, meals, jobs);
+  return { title: input.t('rem_checklist_title'), body: [...(lead ? [lead] : []), ...lines.map(line)].join('\n') };
 }

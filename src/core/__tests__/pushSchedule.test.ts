@@ -270,6 +270,14 @@ describe('buildPushSchedule: Abhyas and the day so far (version 2)', () => {
     expect(build(withSettings(state, { checklistTimes: ['21:00', 'x', '13:00'] })).checklist!.times).toEqual(['13:00', '21:00']);
   });
 
+  it("opens the day so far with a streak's kind line, the meal streak passed in, and keeps the schedule's shape", () => {
+    const s = buildPushSchedule({ ...state, meals: [meal('breakfast')] }, TODAY, en, 'Asia/Kolkata', null, 5);
+    expect(s.checklist!.body.split('\n')[0]).toBe("Your 5-day streak needs today's meals too.");
+    expect(Object.keys(s)).toEqual(Object.keys(build(state)));
+    // Under three days, no line.
+    expect(buildPushSchedule({ ...state, meals: [meal('breakfast')] }, TODAY, en, 'Asia/Kolkata', null, 2).checklist!.body.split('\n')[0]).toMatch(/^✓ Breakfast/);
+  });
+
   it('says what the day so far says on the phone, from the same menu', () => {
     const menu: DayMenu = {
       date: TODAY,

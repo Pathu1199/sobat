@@ -1,4 +1,4 @@
-import { cleanDays, cleanTimes, isDone, MAX_TIMES, minutesOn } from './abhyas';
+import { cleanDays, cleanTimes, isDone, MAX_TIMES, minutesOn, streakRun } from './abhyas';
 import { breaksAsSwitched } from './breaks';
 import { checklistTimes, dayChecklist } from './checklist';
 import { addDays, isIsoDate } from './date';
@@ -144,9 +144,11 @@ function abhyasPart(state: AppState, today: ISODate, t: (k: string) => string): 
 
 /**
  * "Day so far" for today as it stands, at its times, while it is switched on: none on the day setup was finished
- * or on an off day, as on the phone, and none when everything is done. `menu` is today's, as Today shows it.
+ * or on an off day, as on the phone, and none when everything is done. `menu` is today's, as Today shows it;
+ * `mealStreak` the meal record's streak, for the kind line a streak of three days or more gets (the routine's is
+ * worked out here, on finished timers, as the rest of the schedule is).
  */
-function checklistPart(state: AppState, today: ISODate, t: (k: string) => string, menu: DayMenu | null): PushSchedule['checklist'] {
+function checklistPart(state: AppState, today: ISODate, t: (k: string) => string, menu: DayMenu | null, mealStreak: number): PushSchedule['checklist'] {
   const s = state.settings;
   if (!s.reminders.checklist || today === state.profile.onboardedOn || isOffDay(s.offDays, today)) return null;
   const text = dayChecklist({
@@ -165,6 +167,7 @@ function checklistPart(state: AppState, today: ISODate, t: (k: string) => string
     waterWalk: s.todayCards.some((c) => c.id === 'waterWalk' && c.on),
     // As on the phone: a meal still open, or not open yet, at the last of the times is left out rather than shown as not done.
     times: checklistTimes(s.checklistTimes),
+    streaks: { meals: mealStreak, routine: streakRun({ items: state.abhyasItems, ticks: state.abhyasTicks, sessions: state.abhyasSessions, running: null }, today, NO_TIMER_CLOCK, true).days },
     lang: state.profile.lang,
     t,
   });
@@ -178,8 +181,11 @@ function addMinutes(hhmm: string, mins: number): string {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
-/** The schedule for the relay as of `today`; `menu` is today's menu as Today shows it, for "Day so far" (null lists every meal). */
-export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string) => string, tz: string, menu: DayMenu | null = null): PushSchedule {
+/**
+ * The schedule for the relay as of `today`; `menu` is today's menu as Today shows it, for "Day so far" (null lists every
+ * meal), and `mealStreak` the meal record's streak (the store's `streakDays`), for its kind line. Its shape is unchanged.
+ */
+export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string) => string, tz: string, menu: DayMenu | null = null, mealStreak = 0): PushSchedule {
   const lang = state.profile.lang;
   const sched: WorkSchedule = state.schedule;
   const routine: Routine = state.routine;
@@ -225,7 +231,7 @@ export function buildPushSchedule(state: AppState, today: ISODate, t: (k: string
     // The weigh day is a nudge, as water is: it goes out only while the nudges are switched on.
     weigh: state.settings.nudgesEnabled ? { weekday: state.settings.weighDay ?? 1, title: t('weigh_q'), body: t('weigh_hint') } : null,
     ...abhyasPart(state, today, t),
-    checklist: checklistPart(state, today, t, menu),
+    checklist: checklistPart(state, today, t, menu, mealStreak),
   };
 }
 

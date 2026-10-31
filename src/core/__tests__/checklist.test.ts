@@ -212,3 +212,29 @@ describe('checklistTimes: when "Day so far" comes', () => {
     expect(withTimeAt(['13:00', '20:30'], 2, '10:30')).toBeNull();
   });
 });
+
+describe('dayChecklist: the kind line for a streak', () => {
+  const list = { items: [yoga, coding], ticks: [tick('coding')], sessions: [], running: null };
+
+  it("opens with the routine streak's line while jobs are left today, from three days", () => {
+    const r = dayChecklist({ ...base, meals: [meal('morning'), meal('lunch'), meal('dinner')], abhyas: list, streaks: { meals: 5, routine: 21 } });
+    expect(r!.body.split('\n')[0]).toBe('Your 21-day routine streak needs one more job today.');
+    const two = dayChecklist({ ...base, abhyas: { ...list, ticks: [] }, streaks: { meals: 0, routine: 3 } });
+    expect(two!.body.split('\n')[0]).toBe('Your 3-day routine streak needs 2 more jobs today.');
+  });
+
+  it("else the meal record's while a meal is left, and nothing under three days or with the jobs and meals done", () => {
+    const jobsDone = { ...list, ticks: [tick('coding'), tick('yoga')] };
+    expect(dayChecklist({ ...base, abhyas: jobsDone, streaks: { meals: 7, routine: 9 } })!.body.split('\n')[0]).toBe("Your 7-day streak needs today's meals too.");
+    expect(dayChecklist({ ...base, abhyas: list, streaks: { meals: 2, routine: 2 } })!.body.split('\n')[0]).toBe('○ Breakfast · ○ Lunch · ○ Dinner');
+    // Meals and jobs done, the water left: no line, the list as ever.
+    const r = dayChecklist({ ...base, meals: [meal('morning'), meal('lunch'), meal('dinner')], abhyas: jobsDone, streaks: { meals: 7, routine: 9 } });
+    expect(r!.body.split('\n')[0]).toBe('✓ Breakfast · ✓ Lunch · ✓ Dinner');
+    // Everything done: nothing is sent, streak or not.
+    expect(dayChecklist({ ...base, meals: [meal('morning'), meal('lunch'), meal('dinner')], abhyas: jobsDone, water: [bottle(3000)], activities: [walk(30)], streaks: { meals: 7, routine: 9 } })).toBeNull();
+  });
+
+  it('in Marathi', () => {
+    expect(dayChecklist({ ...base, lang: 'mr', t: makeT('mr'), abhyas: list, streaks: { meals: 0, routine: 21 } })!.body.split('\n')[0]).toBe('तुमच्या 21 दिवसांच्या दिनक्रम मालिकेला आज अजून एक काम हवं.');
+  });
+});
