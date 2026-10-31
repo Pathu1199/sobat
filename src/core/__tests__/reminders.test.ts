@@ -899,8 +899,10 @@ describe('Settings: a switch for every reminder', () => {
         if (lang !== 'en') expect(words(k), `${lang} ${k}`).not.toBe(makeT('en')(k));
       }
     }
-    // The evening review says where it goes.
+    // The evening review says where it goes, in each language.
     expect(makeT('en')('rem_review_desc')).toContain('opens Today');
+    expect(makeT('mr')('rem_review_desc')).toContain('आजचं पान उघडतं');
+    expect(makeT('hi')('rem_review_desc')).toContain('आज का पन्ना खोलता है');
   });
 
   it('says each Settings description in one short line, with no word about tapping', () => {
@@ -938,7 +940,7 @@ describe('Settings: a switch for every reminder', () => {
         expect(words(k), `${lang} ${k}`).not.toBe(k);
         // One sentence: a full stop, if any, only at the end.
         expect(words(k).replace(/[.।]$/, ''), `${lang} ${k}`).not.toMatch(/[.।] /);
-        expect(words(k), `${lang} ${k}`).not.toMatch(/\btap\b|टॅप|टैप/i);
+        expect(words(k), `${lang} ${k}`).not.toMatch(/\btap\b|टॅप|टैप|दाबा|दबाएँ|दबाएं/i);
       }
     }
     for (const k of keys) expect(makeT('en')(k).length, k).toBeLessThanOrEqual(75);

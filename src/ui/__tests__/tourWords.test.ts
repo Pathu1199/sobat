@@ -14,8 +14,11 @@ describe('the tour and the Guide describe the app as it is', () => {
     expect(tour).not.toMatch(/\bring\b|plan card|Log on a meal|\? guide|Weight tile/i);
   });
 
-  it('the coach\'s day plan no longer points to a card on Today', () => {
-    for (const lang of ['en', 'mr', 'hi'] as const) expect(t(lang, 'oc_day_plan_tip'), lang).not.toMatch(/What fits|काय बसेल|क्या फ़िट|card|कार्ड/);
+  it('the coach\'s day plan no longer points to a card on Today, and says nothing about what to tap', () => {
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      expect(t(lang, 'oc_day_plan_tip'), lang).not.toMatch(/What fits|काय बसेल|क्या फ़िट|card|कार्ड/);
+      expect(t(lang, 'oc_day_plan_tip'), lang).not.toMatch(/\btap\b|टॅप|टैप|दाबा|दबाएँ|दबाएं/i);
+    }
   });
 
   it('the Guide speaks of the screens there are: no Log screen, plan card or ring', () => {
@@ -51,6 +54,8 @@ describe('the tour and the Guide describe the app as it is', () => {
     expect(steps('en', 'homescreen')).toContain('Turn on reminders');
     expect(steps('en', 'notifications')).toMatch(/Settings → Notifications → Dhyey/);
     expect(steps('en', 'notifications')).toMatch(/Android/);
+    // The check names the relay's test button by its own words, not the one that tries a reminder while the app is open.
+    for (const lang of ['en', 'mr', 'hi'] as const) expect(steps(lang, 'homescreen'), lang).toContain(t(lang, 'push_test'));
     for (const lang of ['mr', 'hi'] as const) {
       // The line's own words, so the step names what the user sees on Today.
       expect(steps(lang, 'homescreen'), lang).toContain(t(lang, 'rem_banner_enable'));

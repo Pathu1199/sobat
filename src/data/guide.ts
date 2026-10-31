@@ -122,7 +122,7 @@ const en: GuideSection[] = [
       'An iPhone or iPad shows reminders only when the app is opened from the Home Screen, on iOS 16.4 or newer.',
       'Open the app in Safari, tap Share, then Add to Home Screen, then Add.',
       'Open Dhyey from its new icon, tap Turn on reminders at the top of Today, then tap Allow.',
-      'To check, tap Send a test in Settings → Reminders, then go to the Home Screen; it arrives within a minute.',
+      'To check, tap Send a test (close the app first) in Settings → Reminders, then go to the Home Screen; it arrives within a minute.',
     ],
   },
   {
@@ -253,7 +253,7 @@ const mr: GuideSection[] = [
       'आयफोन किंवा आयपॅडवर आठवणी अ‍ॅप होम स्क्रीनवरून उघडलं तरच येतात, आयओएस 16.4 किंवा नवीन असेल तर.',
       'सफारीमध्ये अ‍ॅप उघडा, शेअर दाबा, मग "अ‍ॅड टू होम स्क्रीन", मग "अ‍ॅड".',
       'नव्या आयकॉनवरून ध्येय उघडा, आजच्या पानावर वरती "आठवणी चालू करा" दाबा, मग परवानगी द्या.',
-      'तपासायचं असेल तर सेटिंग → आठवणी इथे "चाचणी पाठवा" दाबा, मग होम स्क्रीनवर जा; एका मिनिटात सूचना येईल.',
+      'तपासायचं असेल तर सेटिंग → आठवणी इथे "चाचणी पाठवा (आधी अ‍ॅप बंद करा)" दाबा, मग होम स्क्रीनवर जा; एका मिनिटात सूचना येईल.',
     ],
   },
   {
@@ -384,7 +384,7 @@ const hi: GuideSection[] = [
       'आईफ़ोन या आईपैड पर याद दिलाना तभी आता है जब ऐप होम स्क्रीन से खोला जाए, आईओएस 16.4 या नए पर.',
       'सफ़ारी में ऐप खोलें, शेयर दबाएँ, फिर "ऐड टू होम स्क्रीन", फिर "ऐड".',
       'नए आइकॉन से ध्येय खोलें, आज के पन्ने पर ऊपर "याद दिलाना चालू करें" दबाएँ, फिर अनुमति दें.',
-      'जाँचने के लिए सेटिंग → याद दिलाना में "परीक्षण भेजें" दबाएँ, फिर होम स्क्रीन पर जाएँ; एक मिनट में सूचना आएगी.',
+      'जाँचने के लिए सेटिंग → याद दिलाना में "परीक्षण भेजें (पहले ऐप बंद करें)" दबाएँ, फिर होम स्क्रीन पर जाएँ; एक मिनट में सूचना आएगी.',
     ],
   },
   {

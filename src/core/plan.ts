@@ -110,8 +110,9 @@ export function planFrom(profile: Profile, weights: WeightLog[], targets: Target
 /**
  * The plan read at the weight Progress shows (smoothed over a week,
  * `shownWeight`) rather than the latest weigh-in alone, from the start weight
- * of the chapter: Lost, To go and the goal's date agree with the weight on the
- * Weight tile and the trend card. With no weigh-in it is the plan as it was.
+ * of the chapter: Lost, To go and the goal's date agree with the weight on
+ * Progress's weight card and Today's Weight tile. With no weigh-in it is the
+ * plan as it was.
  */
 export function shownPlan(profile: Profile, weights: WeightLog[], targets: Targets, today: ISODate): Plan {
   return planFrom(profile, weights, targets, today, shownWeight(weights, today)?.kg);

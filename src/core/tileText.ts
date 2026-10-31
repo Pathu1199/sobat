@@ -99,11 +99,11 @@ function changeInWeeks(kg: number, weeks: number): TileLine {
 }
 
 /**
- * The one weight Progress and the Weight tile both show: the weight smoothed
- * over a week (`weightTrend`), its change over three weeks or more with the
- * weeks it really spans, and whether the latest weigh-in is more than thirty
- * days old, when it shows no change (it no longer speaks for now). Null with
- * no weigh-in on or before today.
+ * The one weight Progress's weight card and Today's Weight tile both show:
+ * the weight smoothed over a week (`weightTrend`), its change over three
+ * weeks or more with the weeks it really spans, and whether the latest
+ * weigh-in is more than thirty days old, when it shows no change (it no
+ * longer speaks for now). Null with no weigh-in on or before today.
  */
 export function shownWeight(weights: WeightLog[], today: ISODate): { kg: number; change: { kg: number; weeks: number } | null; asOf: ISODate; stale: boolean } | null {
   const trend = weightTrend(weights, today);
