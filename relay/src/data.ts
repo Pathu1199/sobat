@@ -146,6 +146,8 @@ export async function handleData(req: Request, env: DataEnv, pathname: string): 
     return await adminRoutes(req, env, who, admin![1] ? decodeURIComponent(admin![1]) : null);
   } catch (e) {
     if (e instanceof DriveError) return json({ error: 'drive', status: e.status }, e.status === 503 ? 503 : 502);
+    // Only the error's own name and message: never the request, its token, or anyone's data.
+    console.error('data route failed', e instanceof Error ? `${e.name}: ${e.message}` : String(e));
     return json({ error: 'internal' }, 500);
   }
 }

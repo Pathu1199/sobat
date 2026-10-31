@@ -98,3 +98,24 @@ describe('Drive', () => {
     await expect(new Drive('tok', fetchFn).download('abc')).rejects.toMatchObject({ status: 429 });
   });
 });
+
+describe('Drive on Cloudflare Workers', () => {
+  // Workers' own fetch throws "Illegal invocation" when it is called as a method of another object, so a Drive that
+  // calls `this.fetchFn(...)` fails on the first folder lookup in production while every test with a plain stub passes.
+  function workersFetch(answers: (() => Response)[]) {
+    return function (this: unknown, _input: RequestInfo | URL, _init?: RequestInit) {
+      if (this !== undefined && this !== globalThis) throw new TypeError("Illegal invocation: function called with incorrect `this` reference.");
+      const next = answers.shift();
+      return Promise.resolve(next ? next() : new Response('{}', { status: 500 }));
+    } as typeof fetch;
+  }
+
+  it('calls fetch as a plain function, so finding the folder, reading, saving and deleting work there', async () => {
+    const drive = new Drive('at', workersFetch([ok({ files: [{ id: 'f1' }] }), ok({ files: [] }), ok({ id: 'new' }), ok('{"a":1}'), () => new Response(null, { status: 204 })]));
+    await expect(drive.findFolder('Sobat')).resolves.toBe('f1');
+    await expect(drive.findFile('f1', 'u.json')).resolves.toBeNull();
+    await expect(drive.createFolder('Sobat')).resolves.toBe('new');
+    await expect(drive.download('x')).resolves.toBe('{"a":1}');
+    await expect(drive.delete('x')).resolves.toBeUndefined();
+  });
+});

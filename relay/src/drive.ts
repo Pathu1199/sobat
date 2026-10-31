@@ -63,10 +63,16 @@ export function multipartBody(meta: object, json: string, boundary: string): str
 }
 
 export class Drive {
+  private readonly fetchFn: Fetch;
+
   constructor(
     private readonly token: string,
-    private readonly fetchFn: Fetch = fetch,
-  ) {}
+    fetchFn: Fetch = fetch,
+  ) {
+    // Always called as a plain function: Workers' fetch throws "Illegal invocation" when it is called as a method of
+    // another object (`this.fetchFn(...)` with the bare global stored), which failed every Drive call in production.
+    this.fetchFn = (input, init) => fetchFn(input, init);
+  }
 
   private headers(extra: Record<string, string> = {}): Record<string, string> {
     return { Authorization: `Bearer ${this.token}`, ...extra };
