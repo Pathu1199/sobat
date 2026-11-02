@@ -56,7 +56,7 @@ export default function ProgressTab() {
  * a gold star on each perfect day; and one card with the last seven days'
  * average against the goal, the routine row while the user has a list,
  * today's nutrition a tap away, the climb as one row (the mountain on the
- * climb page) and History and Charts as links.
+ * climb page) and History and Reports as links.
  */
 function Progress() {
   const app = useApp();
@@ -130,7 +130,7 @@ function Progress() {
         <Divider />
         <Row style={{ gap: 8 }}>
           <Btn small tone="ghost" label={t('history')} onPress={() => router.push('/history')} style={{ flex: 1 }} />
-          <Btn small tone="ghost" label={t('charts')} onPress={() => router.push('/growth')} style={{ flex: 1 }} />
+          <Btn small tone="ghost" label={t('rep_title')} onPress={() => router.push('/reports')} style={{ flex: 1 }} />
         </Row>
       </Card>
 

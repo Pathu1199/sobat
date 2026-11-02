@@ -137,6 +137,15 @@ describe('reportDoc: the stats', () => {
     expect(by.jobs.sub).toBe('jobs');
   });
 
+  it('says the time spent on jobs in minutes under an hour, and in hours and minutes from there', () => {
+    const week = periodOf('week', '2026-10-15');
+    const jobsSub = (minutes: number) => byId(statLines(periodReport(week, inputOf({ shape: (d) => ({ jobs: { done: 1, total: 1, minutes: d === '2026-10-14' ? minutes : 0 } }) })), null, GOALS, makeT('en'), false)).jobs.sub;
+    expect(jobsSub(20)).toBe('jobs · 20 min');
+    expect(jobsSub(59)).toBe('jobs · 59 min');
+    expect(jobsSub(60)).toBe('jobs · 1h 00m');
+    expect(jobsSub(130)).toBe('jobs · 2h 10m');
+  });
+
   it('gives a bar for a goal and none for a plain number', () => {
     const by = byId(build().stats);
     expect(by.meals.bar).toBeCloseTo(21 / 31);

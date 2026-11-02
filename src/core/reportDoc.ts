@@ -84,7 +84,7 @@ export function markWord(mark: StripMark, t: T): string {
 }
 
 /** A count against the earlier one: "2 more than last week" in the good colour, a fall or no change plainly. `unit` follows the number ("20 min"). */
-function versus(kind: ReportKind, now: number, before: number, t: T, unit?: string): DocDelta {
+export function versus(kind: ReportKind, now: number, before: number, t: T, unit?: string): DocDelta {
   const d = delta(now, before);
   if (d.word === 'same') return { text: t(`rep_same_${kind}`), good: false };
   const n = unit ? `${numberText(d.diff)} ${unit}` : numberText(d.diff);
@@ -92,11 +92,16 @@ function versus(kind: ReportKind, now: number, before: number, t: T, unit?: stri
 }
 
 /** What the earlier period was, as a plain number with no colour: calories, protein and weight, where more is not better. */
-function was(kind: ReportKind, value: string, t: T): DocDelta {
+export function was(kind: ReportKind, value: string, t: T): DocDelta {
   return { text: fill(t(`rep_was_${kind}`), { value }), good: false };
 }
 
 const share = (n: number, of: number): number => (of > 0 ? Math.min(1, n / of) : 0);
+
+/** Minutes as the reader says them: "20 min" under an hour, hours and minutes ("7h 50m") from there. */
+export function minutesText(minutes: number, t: T): string {
+  return minutes < 60 ? `${numberText(minutes)} ${t('tile_unit_min')}` : formatMinutes(minutes, t);
+}
 
 /**
  * The figures of a week or a month, as the goals card gives them: meals, perfect days, calories, protein, water, walk, routine and
@@ -164,7 +169,7 @@ export function statLines(report: PeriodReport, before: PeriodReport | null, goa
       id: 'jobs',
       label: t('abhyas'),
       value: fill(t('rep_of'), { n: numberText(report.jobs.done), of: numberText(report.jobs.due) }),
-      sub: report.jobs.minutes > 0 ? fill(t('rep_jobs_sub'), { time: formatMinutes(report.jobs.minutes, t) }) : t('rep_jobs_sub_plain'),
+      sub: report.jobs.minutes > 0 ? fill(t('rep_jobs_sub'), { time: minutesText(report.jobs.minutes, t) }) : t('rep_jobs_sub_plain'),
       bar: share(report.jobs.done, report.jobs.due),
       delta: before?.jobs ? versus(kind, report.jobs.done, before.jobs.done, t) : null,
     });

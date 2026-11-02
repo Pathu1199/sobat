@@ -171,6 +171,7 @@ function AppShell() {
         <Stack.Screen name="admin" options={{ title: t('hdr_admin') }} />
         <Stack.Screen name="journey" options={{ title: t('hdr_journey') }} />
         <Stack.Screen name="history" options={{ title: t('hdr_history') }} />
+        <Stack.Screen name="reports" options={{ title: t('rep_title') }} />
         <Stack.Screen name="plan" options={{ title: t('hdr_plan') }} />
         <Stack.Screen name="settings" options={{ title: t('hdr_settings') }} />
         <Stack.Screen name="customize" options={{ title: t('hdr_customize') }} />

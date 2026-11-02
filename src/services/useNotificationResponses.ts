@@ -21,7 +21,7 @@ let handled: ReadonlySet<string> = new Set();
 /**
  * Acts on a tap on a notification. The body opens the page it is about:
  * Today on that day for a meal-time prompt or "fill in yesterday", next
- * week's plan, or Progress for the report; a daily one opens its own page
+ * week's plan, or Reports on the week for the report; a daily one opens its own page
  * (the check-in, and Today for the rest, the day's line included).
  * "Ate as planned" logs that date's slot from its plan through the store
  * (database calories, with an Undo), or confirms the meal the app filled in

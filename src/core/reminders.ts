@@ -424,16 +424,17 @@ export function weeklyReport(input: {
 
 /**
  * Where a tap on a notification goes: Today on the day it is about, the plan
- * screen at next week, or Progress for the report; for a daily one, the
- * check-in for the morning check-in, and Today for the rest, the day's line
- * included. An Abhyas reminder and "Day so far" open Today; bringing the
- * Abhyas card into view (by `data.itemId`) is Today's to do.
+ * screen at next week, or Reports on the week the report is about (the week
+ * before the Monday it is shown on); for a daily one, the check-in for the
+ * morning check-in, and Today for the rest, the day's line included. An
+ * Abhyas reminder and "Day so far" open Today; bringing the Abhyas card into
+ * view (by `data.itemId`) is Today's to do.
  */
 export function tapRoute(data: Record<string, unknown>, today: ISODate): string {
   const date = isIsoDate(data.date) ? data.date : null;
   if (data.kind === 'slot' || data.kind === 'fill') return date && date !== today ? `/?date=${date}` : '/';
   if (data.kind === 'planweek') return date ? `/plan?date=${date}` : '/plan';
-  if (data.kind === 'report') return '/progress';
+  if (data.kind === 'report') return date ? `/reports?p=week&d=${addDays(date, -7)}` : '/reports';
   if (data.kind === 'sleep') return '/sleep';
   return '/';
 }

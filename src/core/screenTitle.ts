@@ -18,6 +18,7 @@ export const TITLES: Record<string, string> = {
   '/settings': 'hdr_settings',
   '/customize': 'hdr_customize',
   '/history': 'hdr_history',
+  '/reports': 'rep_title',
   '/guide': 'hdr_guide',
   '/journey': 'hdr_journey',
   '/photo': 'hdr_photo',

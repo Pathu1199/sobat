@@ -571,12 +571,18 @@ describe('a tap on a notification', () => {
     expect(promptOutcome({ menu, meals: [], skips: [], slotId: 'nope' })).toEqual({ kind: 'none' });
   });
 
-  it('opens the day it is about, next week\'s plan, or Progress', () => {
+  it('opens the day it is about, next week\'s plan, or the week the report is about', () => {
     expect(tapRoute({ kind: 'slot', date: '2026-10-12', slotId: 'lunch' }, '2026-10-12')).toBe('/');
     expect(tapRoute({ kind: 'slot', date: '2026-10-13', slotId: 'lunch' }, '2026-10-12')).toBe('/?date=2026-10-13');
     expect(tapRoute({ kind: 'fill', date: '2026-10-11' }, '2026-10-12')).toBe('/?date=2026-10-11');
     expect(tapRoute({ kind: 'planweek', date: '2026-10-19' }, '2026-10-12')).toBe('/plan?date=2026-10-19');
-    expect(tapRoute({ kind: 'report', date: '2026-10-19' }, '2026-10-19')).toBe('/progress');
+    // The report is shown on a Monday and is about the week before it: Reports opens on that week.
+    expect(tapRoute({ kind: 'report', date: '2026-10-19' }, '2026-10-19')).toBe('/reports?p=week&d=2026-10-12');
+    expect(tapRoute({ kind: 'report', date: '2026-10-19' }, '2026-10-22')).toBe('/reports?p=week&d=2026-10-12');
+    expect(tapRoute({ kind: 'report', date: '2026-01-05' }, '2026-01-05')).toBe('/reports?p=week&d=2025-12-29');
+    expect(tapRoute({ kind: 'report' }, '2026-10-19')).toBe('/reports');
+    expect(tapRoute({ kind: 'report', date: 'soon' }, '2026-10-19')).toBe('/reports');
+    expect(tapRoute({ kind: 'report', date: '2026-02-30' }, '2026-10-19')).toBe('/reports');
     expect(tapRoute({ kind: 'away', date: 'soon' }, '2026-10-12')).toBe('/');
     expect(tapRoute({ kind: 'fill', date: '2026-02-30' }, '2026-10-12')).toBe('/');
     expect(tapRoute({ kind: 'planweek', date: 7 }, '2026-10-12')).toBe('/plan');

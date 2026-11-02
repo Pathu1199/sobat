@@ -1023,6 +1023,16 @@ const en: Dict = {
   rep_more_day: '{n} more than the day before', rep_fewer_day: '{n} fewer than the day before', rep_same_day: 'Same as the day before', rep_was_day: 'The day before: {value}',
   rep_more_week: '{n} more than last week', rep_fewer_week: '{n} fewer than last week', rep_same_week: 'Same as last week', rep_was_week: 'Last week: {value}',
   rep_more_month: '{n} more than last month', rep_fewer_month: '{n} fewer than last month', rep_same_month: 'Same as last month', rep_was_month: 'Last month: {value}',
+  rep_title: 'Reports', rep_day: 'Day', rep_this_week: 'This week', rep_this_month: 'This month',
+  rep_prev_day: 'Previous day', rep_next_day: 'Next day',
+  rep_best: 'Best day: {day} · {n} of {of} done',
+  rep_day_partial: 'Some meals logged', rep_day_empty: 'No meals logged', rep_day_future: 'This day has not started yet',
+  rep_none_week: 'Nothing to report for this week yet.',
+  rep_logged: 'logged',
+  rep_medals: 'Perfect-week medals: {n}',
+  rep_pdf_button: 'Download monthly report', rep_pdf_preparing: 'Preparing…', rep_pdf_share: 'Share PDF', rep_pdf_save: 'Save PDF',
+  rep_pdf_error: 'Could not make the report. Try again.',
+  rep_all_charts: 'All charts',
 };
 
 const mr: Dict = {
@@ -2048,6 +2058,16 @@ const mr: Dict = {
   rep_more_day: 'आदल्या दिवसापेक्षा {n} जास्त', rep_fewer_day: 'आदल्या दिवसापेक्षा {n} कमी', rep_same_day: 'आदल्या दिवसासारखंच', rep_was_day: 'आदला दिवस: {value}',
   rep_more_week: 'मागच्या आठवड्यापेक्षा {n} जास्त', rep_fewer_week: 'मागच्या आठवड्यापेक्षा {n} कमी', rep_same_week: 'मागच्या आठवड्यासारखंच', rep_was_week: 'मागचा आठवडा: {value}',
   rep_more_month: 'मागच्या महिन्यापेक्षा {n} जास्त', rep_fewer_month: 'मागच्या महिन्यापेक्षा {n} कमी', rep_same_month: 'मागच्या महिन्यासारखंच', rep_was_month: 'मागचा महिना: {value}',
+  rep_title: 'अहवाल', rep_day: 'दिवस', rep_this_week: 'हा आठवडा', rep_this_month: 'हा महिना',
+  rep_prev_day: 'मागचा दिवस', rep_next_day: 'पुढचा दिवस',
+  rep_best: 'सर्वोत्तम दिवस: {day} · {of} पैकी {n} झालं',
+  rep_day_partial: 'काही जेवणं नोंदली', rep_day_empty: 'एकही जेवण नोंदलेलं नाही', rep_day_future: 'हा दिवस अजून सुरू झालेला नाही',
+  rep_none_week: 'या आठवड्यात अजून सांगण्यासारखं काही नाही.',
+  rep_logged: 'नोंदली',
+  rep_medals: 'सोनेरी आठवड्यांची पदकं: {n}',
+  rep_pdf_button: 'मासिक अहवाल डाउनलोड करा', rep_pdf_preparing: 'तयार होत आहे…', rep_pdf_share: 'PDF शेअर करा', rep_pdf_save: 'PDF सेव्ह करा',
+  rep_pdf_error: 'अहवाल तयार करता आला नाही. पुन्हा प्रयत्न करा.',
+  rep_all_charts: 'सर्व आलेख',
 };
 
 const hi: Dict = {
@@ -3072,6 +3092,16 @@ const hi: Dict = {
   rep_more_day: 'एक दिन पहले से {n} ज़्यादा', rep_fewer_day: 'एक दिन पहले से {n} कम', rep_same_day: 'एक दिन पहले जितना ही', rep_was_day: 'एक दिन पहले: {value}',
   rep_more_week: 'पिछले हफ़्ते से {n} ज़्यादा', rep_fewer_week: 'पिछले हफ़्ते से {n} कम', rep_same_week: 'पिछले हफ़्ते जितना ही', rep_was_week: 'पिछला हफ़्ता: {value}',
   rep_more_month: 'पिछले महीने से {n} ज़्यादा', rep_fewer_month: 'पिछले महीने से {n} कम', rep_same_month: 'पिछले महीने जितना ही', rep_was_month: 'पिछला महीना: {value}',
+  rep_title: 'रिपोर्ट', rep_day: 'दिन', rep_this_week: 'यह हफ़्ता', rep_this_month: 'यह महीना',
+  rep_prev_day: 'पिछला दिन', rep_next_day: 'अगला दिन',
+  rep_best: 'सबसे अच्छा दिन: {day} · {of} में से {n} हुआ',
+  rep_day_partial: 'कुछ खाने दर्ज', rep_day_empty: 'कोई खाना दर्ज नहीं', rep_day_future: 'यह दिन अभी शुरू नहीं हुआ',
+  rep_none_week: 'इस हफ़्ते अभी बताने लायक कुछ नहीं है.',
+  rep_logged: 'दर्ज',
+  rep_medals: 'सुनहरे हफ़्तों के पदक: {n}',
+  rep_pdf_button: 'मासिक रिपोर्ट डाउनलोड करें', rep_pdf_preparing: 'तैयार हो रही है…', rep_pdf_share: 'PDF शेयर करें', rep_pdf_save: 'PDF सेव करें',
+  rep_pdf_error: 'रिपोर्ट नहीं बन सकी. फिर से कोशिश करें.',
+  rep_all_charts: 'सभी चार्ट',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
