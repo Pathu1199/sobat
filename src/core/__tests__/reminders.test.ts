@@ -535,7 +535,22 @@ describe('weekReport: the week before a Monday, by the rules Progress uses', () 
       expect(words, lang).not.toBe('rem_report_ready');
       expect(words, lang).not.toMatch(/[0-9\u0966-\u096F\u2014{}]/);
     }
-    expect(makeT('en')('rem_report_ready')).toBe('Your week is ready. See how it went on Progress.');
+    expect(makeT('en')('rem_report_ready')).toBe('Your week is ready. See how it went in Reports.');
+  });
+
+  it('names Reports, where the tap goes, in the notification and in the settings line, in all three languages', () => {
+    // The screen's own title word in each language, as the stack header says it.
+    const title = { en: 'Reports', mr: 'अहवाल', hi: 'रिपोर्ट' } as const;
+    for (const lang of ['en', 'mr', 'hi'] as const) {
+      const t = makeT(lang);
+      expect(t('rep_title'), lang).toBe(title[lang]);
+      for (const key of ['rem_report_ready', 'rem_report_desc']) expect(t(key), `${lang} ${key}`).toContain(title[lang]);
+    }
+    expect(makeT('en')('rem_report_desc')).toBe('Monday at 9:00: last week, in Reports.');
+    expect(makeT('mr')('rem_report_ready')).toBe('तुमचा आठवडा तयार आहे. तो कसा गेला ते अहवालात पाहा.');
+    expect(makeT('hi')('rem_report_ready')).toBe('आपका हफ़्ता तैयार है. कैसा रहा, रिपोर्ट में देखें.');
+    expect(makeT('mr')('rem_report_desc')).toBe('सोमवारी सकाळी 9 वाजता: मागचा आठवडा, अहवालात.');
+    expect(makeT('hi')('rem_report_desc')).toBe('सोमवार सुबह 9 बजे: पिछला हफ़्ता, रिपोर्ट में.');
   });
 
   it('goes out on the coming Monday: today until nine has passed', () => {

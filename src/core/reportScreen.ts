@@ -1,8 +1,8 @@
 import { fill, numberText } from '../i18n';
 import { addDays, formatDayLong, formatDayMonth, formatDayMonthYear, formatMonthYear, isIsoDate } from './date';
 import type { DayFacts, PeriodReport, ReportInput, ReportKind, ReportPeriod } from './report';
-import { shiftPeriod } from './report';
-import { kcalBarTone, minutesText, versus, was, type DocStat } from './reportDoc';
+import { delta, periodOf, shiftPeriod } from './report';
+import { kcalBarTone, minutesText, versus, was, type DocDelta, type DocStat } from './reportDoc';
 import { NO_VALUE, oneDecimal } from './tileText';
 import type { ISODate, Lang, WeightLog } from './types';
 import type { StripMark } from './weekStrip';
@@ -41,6 +41,17 @@ export function stepAnchor(period: ReportPeriod, by: -1 | 1, today: ISODate): IS
   return end > today ? today : end;
 }
 
+/**
+ * The day a view rests on after the person changes its kind. A week becomes the month of its Thursday (the month most of its days
+ * are in; today when that Thursday is still to come, and never before the day the user started), so "26 Oct – 1 Nov" opens October.
+ * Every other switch keeps the day.
+ */
+export function switchAnchor(view: ReportView, kind: ReportKind, today: ISODate, since: ISODate): ISODate {
+  if (view.kind !== 'week' || kind !== 'month') return view.anchor;
+  const thursday = addDays(periodOf('week', view.anchor).start, 3);
+  return thursday > today ? today : thursday < since ? since : thursday;
+}
+
 /** The name between the chevrons: Today, Yesterday or the day in full; This week or its first and last day; This month or the month and year. */
 export function periodName(period: ReportPeriod, today: ISODate, lang: Lang, t: T): string {
   if (period.kind === 'day') {
@@ -76,11 +87,19 @@ export function dayWord(day: DayFacts, t: T): string {
 
 const share = (n: number, of: number): number => (of > 0 ? Math.min(1, n / of) : 0);
 
+/** Water against the day before, as walk is: more is toward the goal, so it is the good colour; fewer and the same are plain. */
+function waterVersus(ml: number, earlier: number, t: T): DocDelta {
+  const d = delta(Math.round(ml / 100), Math.round(earlier / 100));
+  if (d.word === 'same') return { text: t('rep_same_day'), good: false };
+  return { text: fill(t(`rep_${d.word}_day`), { n: `${oneDecimal(d.diff / 10)} ${t('tile_unit_l')}` }), good: d.word === 'more' };
+}
+
 /**
  * The goals card of a day: meals logged, calories, protein, water, walk, routine and the weigh-in, each with its value, its goal, a bar
  * toward it where there is one, and a line against the day before (`before`, null when that day does not count). A count that is good
- * to have more of says more, fewer or the same; calories, protein and water say what the day before was, plainly. A row with nothing
- * to say is left out (no meal due, no job, no goal for water or walk, no weigh-in that day), and a day that does not count has none.
+ * to have more of (meals, water, walk, routine) says more, fewer or the same; calories and protein say what the day before was,
+ * plainly. A row with nothing to say is left out (no meal due, no job, no goal for water or walk, no weigh-in that day), and a day
+ * that does not count has none.
  */
 export function dayStats(day: DayFacts, before: DayFacts | null, goals: ReportInput['goals'], weights: WeightLog[], t: T): DocStat[] {
   if (!day.counts) return [];
@@ -89,7 +108,7 @@ export function dayStats(day: DayFacts, before: DayFacts | null, goals: ReportIn
   const grams = (n: number) => `${numberText(n)} g`;
   const litres = (ml: number) => `${oneDecimal(ml / 1000)} ${t('tile_unit_l')}`;
   const goalOf = (goal: string) => fill(t('rep_goal_only'), { goal });
-  /** What the day before was, when it had any: calories, protein and water are not better for being more. */
+  /** What the day before was, when it had any: calories and protein are not better for being more. */
   const plain = (earlier: number | undefined, text: (n: number) => string) => (earlier !== undefined && earlier > 0 ? was('day', text(earlier), t) : null);
 
   const meals = day.score.meals;
@@ -130,7 +149,8 @@ export function dayStats(day: DayFacts, before: DayFacts | null, goals: ReportIn
       sub: goalOf(litres(goals.waterMl)),
       bar: share(day.waterMl, goals.waterMl),
       barTone: 'accent',
-      delta: plain(before?.waterMl, litres),
+      // To the nearest tenth of a litre, the way the amounts are said, so a little more or less never reads "0.0 L"; none when neither day drank.
+      delta: before && (day.waterMl > 0 || before.waterMl > 0) ? waterVersus(day.waterMl, before.waterMl, t) : null,
     });
   }
   if (goals.walkMin > 0) {
@@ -198,4 +218,31 @@ export function calorieBars(report: PeriodReport, t: T): { bars: { date: ISODate
       return day === 1 || day % 5 === 0 ? String(day) : '';
     }),
   };
+}
+
+/**
+ * The monthly PDF button's state, for the period it was started on: idle, working (`busy`), ready to share (the web's second tap, with
+ * the file made) or failed. `key` is the period the state is for; a result that comes back for another one is ignored, so a month the
+ * person has left cannot change the one they are on. `P` is the prepared file, which the screen's service makes.
+ */
+export type PdfState<P> = { key: string; status: 'idle' | 'busy' | 'error' } | { key: string; status: 'ready'; prepared: P };
+
+export type PdfEvent<P> =
+  /** The person moved to another period: whatever was made or failed was for the one before. */
+  | { type: 'period'; key: string }
+  | { type: 'start'; key: string }
+  | { type: 'ready'; key: string; prepared: P }
+  /** The phone apps have made the file and are opening the Share sheet. */
+  | { type: 'done'; key: string }
+  /** Making the file or sharing it failed (a share can fail after `done`). */
+  | { type: 'fail'; key: string };
+
+export function pdfStep<P>(state: PdfState<P>, event: PdfEvent<P>): PdfState<P> {
+  if (event.type === 'period') return state.key === event.key ? state : { key: event.key, status: 'idle' };
+  if (event.type === 'start') return { key: event.key, status: 'busy' };
+  // A result counts only for the period it was started on, and a file or the end of the wait only for a tap still waiting on it.
+  if (state.key !== event.key) return state;
+  if (event.type === 'fail') return { key: event.key, status: 'error' };
+  if (state.status !== 'busy') return state;
+  return event.type === 'ready' ? { key: event.key, status: 'ready', prepared: event.prepared } : { key: event.key, status: 'idle' };
 }

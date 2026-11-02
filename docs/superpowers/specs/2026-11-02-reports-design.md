@@ -108,6 +108,7 @@ delta(now: number, before: number): { diff: number; word: 'more' | 'fewer' | 'sa
 From the top:
 
 1. **The period switch.** A `Segmented` control: Day · Week · Month. The default is Week.
+   - Switching keeps the day, except Week to Month, which opens the month of the week's Thursday (today when that is still to come, and never before the day the user started), so "26 Oct – 1 Nov" opens October.
 2. **The stepper row.**
    - A back chevron, the period's name, and a forward chevron. Each chevron is hidden when `periodSteps` says no.
    - The period's name:

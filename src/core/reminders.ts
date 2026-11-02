@@ -398,7 +398,7 @@ export function reportMonday(today: ISODate, nowMinutes: number, atMinutes = MOR
  * never states numbers Progress would contradict: only a report worked out
  * once the week has ended (on the Monday itself, before its moment) carries
  * them, judged on that Monday; one worked out earlier says only that the
- * week is ready to see on Progress, since days logged after this open would
+ * week is ready to see in Reports, since days logged after this open would
  * change them. None for a week with nothing in it, or when every part of it
  * would be left out.
  */

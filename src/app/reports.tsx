@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useReducer, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { toTabs } from '../components/toTabs';
-import { periodOf, periodReport, periodSteps, compareReport, type ReportKind } from '../core/report';
+import { periodOf, periodReport, periodSteps, compareReport, type ReportKind, type ReportPeriod } from '../core/report';
 import { reportColors, reportDoc, statLines, type DocStat } from '../core/reportDoc';
-import { calorieBars, dayStats, dayWord, headline, medalLine, periodName, reportView, stepAnchor, type Headline, type ReportView } from '../core/reportScreen';
+import { calorieBars, dayStats, dayWord, headline, medalLine, pdfStep, periodName, reportView, stepAnchor, switchAnchor, type Headline, type PdfState, type ReportView } from '../core/reportScreen';
 import { stripSince } from '../core/weekStrip';
 import { fill, makeT, numberText } from '../i18n';
 import { prepareReport, shareReport, type PreparedReport } from '../services/reportPdf';
@@ -40,8 +40,11 @@ function stepWords(kind: ReportKind, t: T): { prev: string; next: string } {
 /** A pause for the screen to draw ("Preparing…") before the PDF's work, which holds the page for a moment on the web, begins. */
 const afterPaint = () => new Promise<void>((resolve) => setTimeout(resolve, 50));
 
-/** The PDF button's state, for the month it was started on: working, ready to share (the web's second tap), or failed. */
-type Pdf = { key: string; status: 'busy' } | { key: string; status: 'ready'; prepared: PreparedReport } | { key: string; status: 'error' };
+/** The file the web's first tap made, with the title its Share sheet is given on the second. */
+type Made = { file: PreparedReport; dialogTitle: string };
+
+/** The period a prepared PDF belongs to: a result or a file for another one is not this one's. */
+const pdfKeyOf = (p: ReportPeriod) => `${p.kind}:${p.start}`;
 
 /**
  * Reports: a day, a week or a month, read the way Progress reads a day (core/report.ts), with the figures against the day, week or
@@ -60,7 +63,11 @@ export default function Reports() {
   const opened = useMemo(() => reportView(params.p, params.d, today, since), [params.p, params.d, today, since]);
   const [moved, setMoved] = useState<{ from: ReportView; to: ReportView } | null>(null);
   const view = moved && moved.from.kind === opened.kind && moved.from.anchor === opened.anchor ? moved.to : opened;
-  const go = (to: ReportView) => setMoved({ from: opened, to });
+  const go = (to: ReportView) => {
+    setMoved({ from: opened, to });
+    // A file made for the month left is not offered again on coming back to it: the days may have changed since.
+    dispatchPdf({ type: 'period', key: pdfKeyOf(periodOf(to.kind, to.anchor)) });
+  };
 
   const period = useMemo(() => periodOf(view.kind, view.anchor), [view.kind, view.anchor]);
   const { input, medalsHeld } = useReportInput(period);
@@ -77,35 +84,37 @@ export default function Reports() {
     [period.kind, day, report, before, input.goals, input.weights, running, t],
   );
 
-  const [pdf, setPdf] = useState<Pdf | null>(null);
-  const pdfKey = `${period.kind}:${period.start}`;
-  const here = pdf && pdf.key === pdfKey ? pdf : null;
+  const pdfKey = pdfKeyOf(period);
+  const [pdf, dispatchPdf] = useReducer(pdfStep<Made>, { key: pdfKey, status: 'idle' } as PdfState<Made>);
+  // A state for another period (the address moved it, not a chevron) is no state for this one.
+  const here = pdf.key === pdfKey ? pdf : null;
   const palette = state.settings.palette;
   const makePdf = async () => {
     const key = pdfKey;
-    const doc = reportDoc({ report, before, goals: input.goals, name: state.profile.name, lang, medalsHeld, madeOn: today });
-    const dialogTitle = `${doc.title} ${doc.month}`;
     try {
       if (here?.status === 'ready') {
         // The web's second tap: the file is made, and a tap is what lets the browser share it.
-        await shareReport(here.prepared, dialogTitle);
+        await shareReport(here.prepared.file, here.prepared.dialogTitle);
         return;
       }
-      setPdf({ key, status: 'busy' });
+      dispatchPdf({ type: 'start', key });
+      const doc = reportDoc({ report, before, goals: input.goals, name: state.profile.name, lang, medalsHeld, madeOn: today });
+      const dialogTitle = `${doc.title} ${doc.month}`;
       await afterPaint();
-      const prepared = await prepareReport(doc, reportColors(palette));
-      if (prepared.kind === 'web') {
-        setPdf({ key, status: 'ready', prepared });
+      const file = await prepareReport(doc, reportColors(palette));
+      if (file.kind === 'web') {
+        dispatchPdf({ type: 'ready', key, prepared: { file, dialogTitle } });
         return;
       }
       // The phone apps make it and open the Share sheet on one tap.
-      setPdf(null);
-      await shareReport(prepared, dialogTitle);
+      dispatchPdf({ type: 'done', key });
+      await shareReport(file, dialogTitle);
     } catch {
-      setPdf({ key, status: 'error' });
+      dispatchPdf({ type: 'fail', key });
     }
   };
-  const pdfLabel = here?.status === 'busy' ? t('rep_pdf_preparing') : here?.status === 'ready' ? t(here.prepared.kind === 'web' && here.prepared.canShare ? 'rep_pdf_share' : 'rep_pdf_save') : t('rep_pdf_button');
+  const pdfLabel =
+    here?.status === 'busy' ? t('rep_pdf_preparing') : here?.status === 'ready' ? t(here.prepared.file.kind === 'web' && here.prepared.file.canShare ? 'rep_pdf_share' : 'rep_pdf_save') : t('rep_pdf_button');
 
   const head = report.counted > 0 && period.kind !== 'day' ? headline(report, lang, t, running) : null;
   const medals = period.kind !== 'day' ? medalLine(report, t) : null;
@@ -117,7 +126,7 @@ export default function Reports() {
     <Screen>
       <Segmented<ReportKind>
         value={view.kind}
-        onChange={(kind) => go({ kind, anchor: view.anchor })}
+        onChange={(kind) => go({ kind, anchor: switchAnchor(view, kind, today, since) })}
         options={[
           { key: 'day', label: t('rep_day') },
           { key: 'week', label: t('period_week') },
@@ -152,15 +161,18 @@ export default function Reports() {
 
           {chart ? (
             <Card>
-              <Micro color={C.textDim}>{t('calories')}</Micro>
-              <BarChart
-                data={chart.bars}
-                labels={chart.labels}
-                target={input.goals.kcal}
-                color={C.accent}
-                overColor={C.accent}
-                format={(v) => fill(t('rep_goal_only'), { goal: `${numberText(v)} kcal` })}
-              />
+              {/* The bars are a picture to a screen reader: one line says what they show (the PDF's caption, and its goal). */}
+              <View accessible accessibilityRole="image" accessibilityLabel={fill(t('rep_chart_caption'), { goal: numberText(input.goals.kcal) })} style={{ gap: 12 }}>
+                <Micro color={C.textDim}>{t('calories')}</Micro>
+                <BarChart
+                  data={chart.bars}
+                  labels={chart.labels}
+                  target={input.goals.kcal}
+                  color={C.accent}
+                  overColor={C.accent}
+                  format={(v) => fill(t('rep_goal_only'), { goal: `${numberText(v)} kcal` })}
+                />
+              </View>
             </Card>
           ) : null}
 
@@ -172,11 +184,12 @@ export default function Reports() {
           ) : null}
 
           {period.kind === 'month' ? (
-            <View style={{ gap: 8 }}>
+            <View>
               <Btn label={pdfLabel} tone="primary" disabled={here?.status === 'busy'} onPress={makePdf} icon={<Ionicons name="document-text-outline" size={18} color={C.onAccent} />} />
-              {here?.status === 'error' ? (
-                <Small color={C.textDim}>{t('rep_pdf_error')}</Small>
-              ) : null}
+              {/* Always there, even empty, so a screen reader hears the line as it appears. */}
+              <View aria-live="polite" style={{ paddingTop: here?.status === 'error' ? 8 : 0 }}>
+                {here?.status === 'error' ? <Small color={C.textDim}>{t('rep_pdf_error')}</Small> : null}
+              </View>
             </View>
           ) : null}
         </>

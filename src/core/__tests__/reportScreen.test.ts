@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { keysOf, makeT } from '../../i18n';
 import { formatDayLong, formatDayMonth, formatDayMonthYear, formatMonthYear } from '../date';
 import { periodOf, periodReport, type DayFacts, type ReportInput } from '../report';
-import { calorieBars, dayStats, dayWord, headline, medalLine, periodName, reportView, stepAnchor } from '../reportScreen';
+import { calorieBars, dayStats, dayWord, headline, medalLine, pdfStep, periodName, reportView, stepAnchor, switchAnchor, type PdfState } from '../reportScreen';
 import type { DayScore } from '../teacher';
 
 // Monday 2 November 2026, and the user started on 1 October.
@@ -43,7 +43,9 @@ describe('reportView: the route\'s p and d', () => {
     expect(reportView(undefined, undefined, TODAY, SINCE)).toEqual({ kind: 'week', anchor: TODAY });
     expect(reportView('year', 'soon', TODAY, SINCE)).toEqual({ kind: 'week', anchor: TODAY });
     expect(reportView('', '', TODAY, SINCE)).toEqual({ kind: 'week', anchor: TODAY });
-    expect(reportView('Week', undefined, TODAY, SINCE).kind).toBe('week');
+    // A name is read as written: a capital makes it one the screen does not know.
+    expect(reportView('Month', undefined, TODAY, SINCE).kind).toBe('week');
+    expect(reportView('MONTH', '2026-10-14', TODAY, SINCE)).toEqual({ kind: 'week', anchor: '2026-10-14' });
   });
 
   it('takes day, week or month, and the first of a list (a link may carry the name twice)', () => {
@@ -88,6 +90,33 @@ describe('stepAnchor: the date a view opens on after a step', () => {
     expect(stepAnchor(periodOf('month', '2026-09-10'), 1, today)).toBe(today);
     expect(stepAnchor(periodOf('day', today), -1, today)).toBe('2026-10-28');
     expect(stepAnchor(periodOf('day', '2026-10-28'), 1, today)).toBe(today);
+  });
+});
+
+describe('switchAnchor: the day a view opens on when the person changes the kind', () => {
+  it('week to month opens the month of the week\'s Thursday, so 26 Oct – 1 Nov is October', () => {
+    expect(switchAnchor({ kind: 'week', anchor: '2026-11-01' }, 'month', TODAY, SINCE)).toBe('2026-10-29');
+    expect(switchAnchor({ kind: 'week', anchor: '2026-10-26' }, 'month', TODAY, SINCE)).toBe('2026-10-29');
+    expect(switchAnchor({ kind: 'week', anchor: '2026-10-14' }, 'month', TODAY, SINCE)).toBe('2026-10-15');
+    // 29 Dec to 4 Jan has its Thursday on 1 January; 28 Dec to 3 Jan has it on 31 December.
+    expect(switchAnchor({ kind: 'week', anchor: '2025-12-30' }, 'month', '2026-01-20', '2025-10-01')).toBe('2026-01-01');
+    expect(switchAnchor({ kind: 'week', anchor: '2026-12-29' }, 'month', '2027-01-20', '2025-10-01')).toBe('2026-12-31');
+  });
+
+  it('is today when that Thursday is still to come, and never before the day the user started', () => {
+    // This week, Monday 2 Nov: its Thursday is the 5th.
+    expect(switchAnchor({ kind: 'week', anchor: TODAY }, 'month', TODAY, SINCE)).toBe(TODAY);
+    expect(switchAnchor({ kind: 'week', anchor: '2026-11-04' }, 'month', '2026-11-04', SINCE)).toBe('2026-11-04');
+    expect(switchAnchor({ kind: 'week', anchor: '2026-10-27' }, 'month', TODAY, '2026-10-30')).toBe('2026-10-30');
+  });
+
+  it('every other switch keeps the day', () => {
+    expect(switchAnchor({ kind: 'week', anchor: '2026-11-01' }, 'day', TODAY, SINCE)).toBe('2026-11-01');
+    expect(switchAnchor({ kind: 'week', anchor: '2026-11-01' }, 'week', TODAY, SINCE)).toBe('2026-11-01');
+    expect(switchAnchor({ kind: 'month', anchor: '2026-10-31' }, 'week', TODAY, SINCE)).toBe('2026-10-31');
+    expect(switchAnchor({ kind: 'month', anchor: '2026-10-31' }, 'day', TODAY, SINCE)).toBe('2026-10-31');
+    expect(switchAnchor({ kind: 'day', anchor: '2026-10-14' }, 'month', TODAY, SINCE)).toBe('2026-10-14');
+    expect(switchAnchor({ kind: 'day', anchor: '2026-10-14' }, 'week', TODAY, SINCE)).toBe('2026-10-14');
   });
 });
 
@@ -193,15 +222,23 @@ describe('dayStats: the goals card for one day', () => {
     expect(byId.meals.delta).toEqual({ text: '1 fewer than the day before', good: false });
     expect(byId.kcal.delta).toEqual({ text: 'The day before: 1,500 kcal', good: false });
     expect(byId.protein.delta).toEqual({ text: 'The day before: 80 g', good: false });
-    expect(byId.water.delta).toEqual({ text: 'The day before: 2.5 L', good: false });
+    expect(byId.water.delta).toEqual({ text: '0.5 L fewer than the day before', good: false });
     expect(byId.walk.delta).toEqual({ text: '5 min fewer than the day before', good: false });
     expect(byId.jobs.delta).toEqual({ text: '1 fewer than the day before', good: false });
     const up = Object.fromEntries(dayStats(before, day, GOALS, [], en).map((r) => [r.id, r]));
     expect(up.meals.delta).toEqual({ text: '1 more than the day before', good: true });
     expect(up.walk.delta).toEqual({ text: '5 min more than the day before', good: true });
+    expect(up.water.delta).toEqual({ text: '0.5 L more than the day before', good: true });
     expect(up.jobs.delta).toEqual({ text: '1 more than the day before', good: true });
     expect(up.kcal.delta?.good).toBe(false);
-    expect(up.water.delta?.good).toBe(false);
+    expect(dayStats({ ...day, waterMl: 2500 }, before, GOALS, [], en).find((r) => r.id === 'water')?.delta).toEqual({ text: 'Same as the day before', good: false });
+  });
+
+  it('says the water against the day before to the nearest tenth of a litre, so it never reads 0.0 L', () => {
+    const water = (ml: number, earlier: number) => dayStats({ ...day, waterMl: ml }, { ...before, waterMl: earlier }, GOALS, [], en).find((r) => r.id === 'water')?.delta;
+    expect(water(2540, 2500)).toEqual({ text: 'Same as the day before', good: false });
+    expect(water(2750, 2500)?.text).toBe('0.3 L more than the day before');
+    expect(water(1000, 0)).toEqual({ text: '1.0 L more than the day before', good: true });
   });
 
   it('has no comparison line without an earlier day, or where either day has nothing of that figure', () => {
@@ -237,6 +274,7 @@ describe('dayStats: the goals card for one day', () => {
     expect(rows.find((r) => r.id === 'meals')?.sub).toBe(mr('rep_logged'));
     expect(rows.find((r) => r.id === 'kcal')?.delta?.text).toContain('1,500');
     expect(rows.find((r) => r.id === 'kcal')?.delta?.text).not.toMatch(/The day before/);
+    expect(rows.find((r) => r.id === 'water')?.delta?.text).toBe(mr('rep_fewer_day').replace('{n}', `0.5 ${mr('tile_unit_l')}`));
   });
 });
 
@@ -295,6 +333,13 @@ describe('headline', () => {
     expect(h.best?.text).toContain('3');
     expect(h.best?.text).not.toMatch(/Best day/);
   });
+
+  it('says the best day as Today\'s teacher does, in Marathi and Hindi: n of of, done', () => {
+    const r = periodReport(periodOf('week', '2026-10-28'), inputOf({ '2026-10-29': { score: score({ meals: { done: 3, of: 4 } }) } }));
+    const day = formatDayLong('2026-10-29', 'mr');
+    expect(headline(r, 'mr', mr, false).best?.text).toBe(`सर्वोत्तम दिवस: ${day} · 4 पैकी 3 पूर्ण`);
+    expect(headline(r, 'hi', makeT('hi'), false).best?.text).toBe(`सबसे अच्छा दिन: ${formatDayLong('2026-10-29', 'hi')} · 4 में से 3 पूरे`);
+  });
 });
 
 describe('medalLine', () => {
@@ -336,6 +381,48 @@ describe('calorieBars', () => {
     const c = calorieBars(m, en);
     expect(c.bars[4].value).toBe(0);
     expect(c.bars[1].value).toBe(800);
+  });
+});
+
+describe('pdfStep: the monthly PDF button\'s states', () => {
+  const idle = (key: string): PdfState<string> => ({ key, status: 'idle' });
+  const OCT = 'month:2026-10-01';
+  const SEP = 'month:2026-09-01';
+
+  it('idle, then busy, then ready with the file, then idle again when the period changes', () => {
+    const busy = pdfStep(idle(OCT), { type: 'start', key: OCT });
+    expect(busy).toEqual({ key: OCT, status: 'busy' });
+    const ready = pdfStep(busy, { type: 'ready', key: OCT, prepared: 'file' });
+    expect(ready).toEqual({ key: OCT, status: 'ready', prepared: 'file' });
+    expect(pdfStep(ready, { type: 'period', key: SEP })).toEqual(idle(SEP));
+    // Coming back to the month does not find the old file.
+    expect(pdfStep(pdfStep(ready, { type: 'period', key: SEP }), { type: 'period', key: OCT })).toEqual(idle(OCT));
+  });
+
+  it('a failure shows the error, and the next tap starts again from it', () => {
+    const failed = pdfStep(pdfStep(idle(OCT), { type: 'start', key: OCT }), { type: 'fail', key: OCT });
+    expect(failed).toEqual({ key: OCT, status: 'error' });
+    expect(pdfStep(failed, { type: 'start', key: OCT })).toEqual({ key: OCT, status: 'busy' });
+  });
+
+  it('a phone app that has opened the Share sheet is idle again, and a share that then fails still shows the error', () => {
+    const opening = pdfStep<string>({ key: OCT, status: 'busy' }, { type: 'done', key: OCT });
+    expect(opening).toEqual(idle(OCT));
+    expect(pdfStep(opening, { type: 'fail', key: OCT })).toEqual({ key: OCT, status: 'error' });
+  });
+
+  it('a result for a month the person has left is ignored', () => {
+    const away = pdfStep({ key: OCT, status: 'busy' }, { type: 'period', key: SEP });
+    expect(away).toEqual(idle(SEP));
+    expect(pdfStep(away, { type: 'ready', key: OCT, prepared: 'file' })).toEqual(idle(SEP));
+    expect(pdfStep(away, { type: 'fail', key: OCT })).toEqual(idle(SEP));
+    expect(pdfStep(away, { type: 'done', key: OCT })).toEqual(idle(SEP));
+  });
+
+  it('a result needs a tap that started it, and a moved period to the same one changes nothing', () => {
+    expect(pdfStep(idle(OCT), { type: 'ready', key: OCT, prepared: 'file' })).toEqual(idle(OCT));
+    const ready: PdfState<string> = { key: OCT, status: 'ready', prepared: 'file' };
+    expect(pdfStep(ready, { type: 'period', key: OCT })).toBe(ready);
   });
 });
 

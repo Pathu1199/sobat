@@ -46,7 +46,8 @@ export function useReportInput(period: ReportPeriod): { input: ReportInput; meda
         since,
         offDays: offDays ?? [],
         record: recordOn(date),
-        perfect: perfectOn(date),
+        // A day still to come can never be a perfect one; the record's mark ('planned') is still read.
+        perfect: date > today ? false : perfectOn(date),
         meals: dayMeals,
         waterMl: waterMlOn(water, date),
         walkMin: walkMinutesOn(activities ?? [], date),
