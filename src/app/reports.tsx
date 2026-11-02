@@ -253,7 +253,7 @@ function StatRow({ row }: { row: DocStat }) {
       {row.bar !== null || row.delta ? (
         // Under the label, so the bar and the comparison read as part of this figure and not the next.
         <View style={{ marginLeft: 44, gap: 6 }}>
-          {row.bar !== null ? <Bar value={row.bar} max={1} color={C.accent} /> : null}
+          {row.bar !== null ? <Bar value={row.bar} max={1} color={row.barTone === 'faint' ? C.textFaint : C.accent} /> : null}
           {row.delta ? <Micro color={row.delta.good ? C.accentText : C.textDim}>{row.delta.text}</Micro> : null}
         </View>
       ) : null}

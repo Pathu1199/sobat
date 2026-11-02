@@ -29,6 +29,7 @@ body { font-family: ${REPORT_FONTS}; color: ${esc(c.text)}; background: ${esc(c.
 .stat .value { font-size: 17pt; font-weight: 600; line-height: 1.2; margin-top: 0.6mm }
 .track { height: 1.3mm; border-radius: 1mm; background: ${esc(c.accentSoft)}; margin: 1.6mm 0 }
 .fill { height: 100%; border-radius: 1mm; background: ${esc(c.accent)} }
+.fill.faint { background: ${esc(c.textFaint)} }
 .stat .note { font-size: 8pt; color: ${esc(c.textDim)} }
 .delta { font-size: 8pt; color: ${esc(c.textDim)}; margin-top: 0.6mm }
 .delta.good { color: ${esc(c.accent)}; font-weight: 600 }
@@ -65,7 +66,7 @@ function logo(c: ReportColors): string {
 }
 
 function statCard(s: DocStat): string {
-  const bar = s.bar === null ? '' : `<div class="track"><div class="fill" style="width:${(Math.min(1, Math.max(0, s.bar)) * 100).toFixed(1)}%"></div></div>`;
+  const bar = s.bar === null ? '' : `<div class="track"><div class="fill${s.barTone === 'faint' ? ' faint' : ''}" style="width:${(Math.min(1, Math.max(0, s.bar)) * 100).toFixed(1)}%"></div></div>`;
   return (
     `<div class="stat"><div class="label">${esc(s.label)}</div><div class="value">${esc(s.value)}</div>${bar}` +
     (s.sub === null ? '' : `<div class="note">${esc(s.sub)}</div>`) +

@@ -22,6 +22,7 @@ const stat = (id: DocStat['id'], i: number): DocStat => ({
   value: `${i + 1} of 31`,
   sub: `sub ${id}`,
   bar: 0.5,
+  barTone: 'accent',
   delta: i % 2 === 0 ? { text: `${i} more than last month`, good: true } : { text: `${i} fewer than last month`, good: false },
 });
 

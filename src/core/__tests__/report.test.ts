@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { addDays } from '../date';
 import type { DayRecord } from '../record';
 import { compareReport, compareSpan, countedDates, dayFacts, delta, periodOf, periodReport, periodSteps, shiftPeriod, type DayFacts, type ReportInput } from '../report';
+import { completeIntake, fullDays } from '../progress';
 import type { DayScore } from '../teacher';
 
 // Thursday 29 October 2026; the user started on 1 October. The week is 26 Oct to 1 Nov.
@@ -278,6 +279,19 @@ describe('periodReport', () => {
     expect(none.avgProtein).toBeNull();
   });
 
+  it('walk minutes leave out a free day and a day still to come, however much they say', () => {
+    const r = periodReport(
+      week,
+      input({
+        '2026-10-26': { walkMin: 30 },
+        '2026-10-27': { counts: false, mark: 'off', walkMin: 50 },
+        '2026-10-28': { walkMin: 12 },
+        '2026-10-30': { counts: false, mark: 'planned', walkMin: 40 },
+      }),
+    );
+    expect(r.walk).toEqual({ minutes: 42, n: 1, of: 3 });
+  });
+
   it('jobs add up what was done, what was due and the minutes, over the days that count', () => {
     const r = periodReport(
       week,
@@ -331,6 +345,56 @@ describe('periodReport', () => {
   });
 });
 
+describe('periodReport against Progress', () => {
+  const rec = (state: DayRecord['state'], nothingEaten = false, more: Partial<DayRecord> = {}): DayRecord => ({ state, fromPlan: false, nothingEaten, ...more });
+  const meals = [
+    { date: '2026-10-19', kcal: 900, protein: 40 },
+    { date: '2026-10-20', kcal: 1800, protein: 90 },
+    { date: '2026-10-21', kcal: 100, protein: 5 },
+    { date: '2026-10-22', kcal: 700, protein: 30 },
+    { date: '2026-10-24', kcal: 2000, protein: 80 },
+  ];
+  // Monday 19 October to Sunday 25 October 2026, the user started on the 20th and Sundays are free.
+  const since = '2026-10-20';
+  const records: Record<string, DayRecord> = {
+    '2026-10-19': rec('full'),
+    '2026-10-20': rec('full'),
+    '2026-10-21': rec('full', true, { skipped: true }),
+    '2026-10-22': rec('partial'),
+    '2026-10-23': rec('empty'),
+    '2026-10-24': rec('full'),
+    '2026-10-25': rec('off'),
+  };
+  const built = (today: string) => {
+    const p = periodOf('week', '2026-10-22');
+    const recordOn = (d: string) => (d > today && records[d].state !== 'off' ? rec('planned') : records[d]);
+    const factsOn = (date: string) =>
+      dayFacts({ date, today, since, offDays: [0], record: recordOn(date), perfect: false, meals, waterMl: 0, walkMin: 0, jobs: { done: 0, total: 0, minutes: 0 }, score: score() });
+    return { p, recordOn, report: periodReport(p, input({}, { today, since, offDays: [0], factsOn })) };
+  };
+
+  it('a finished week has the full days and the average Progress gives it, over the same days', () => {
+    const { p, recordOn, report } = built('2026-10-29');
+    const progress = fullDays(p.dates, recordOn, '2026-10-29', since);
+    expect(report.full).toEqual(progress);
+    expect(report.full).toEqual({ n: 2, of: 5 });
+    const intake = completeIntake({ dates: p.dates, today: '2026-10-29', since, meals, recordOn });
+    expect(report.avgKcal).toBe(intake?.avg);
+    expect(report.avgKcal).toBe(1300);
+  });
+
+  it('a running week counts the days that count: Progress\'s days that can be full, less the ones still to come', () => {
+    const { p, recordOn, report } = built('2026-10-22');
+    const progress = fullDays(p.dates, recordOn, '2026-10-22', since);
+    const planned = p.dates.filter((d) => report.days.find((f) => f.date === d)?.mark === 'planned').length;
+    expect(planned).toBe(2);
+    expect(report.full.n).toBe(progress.n);
+    expect(report.full.of).toBe(progress.of - planned);
+    expect(report.full).toEqual({ n: 1, of: 3 });
+    expect(report.avgKcal).toBe(completeIntake({ dates: p.dates, today: '2026-10-22', since, meals, recordOn })?.avg);
+  });
+});
+
 describe('the best day', () => {
   // Meals due, jobs due and a water goal: possible 8 (4 + 3 + 1), a score is meals done + jobs done + 1 for the water goal met.
   const day = (meals: number, jobs: number, water = false, ofMeals = 4, ofJobs = 3): Partial<DayFacts> => ({
@@ -360,7 +424,7 @@ describe('the best day', () => {
   });
 
   it('a lower day that qualifies beats a higher one that does not hold half', () => {
-    // 5 of 12 does not qualify; 4 of 6 does.
+    // 5 of 13 does not qualify; 4 of 6 does.
     const best = bestOf({ '2026-10-26': day(3, 2, false, 8, 4), '2026-10-27': day(2, 2, false, 3, 2) });
     expect(best).toEqual({ date: '2026-10-27', done: 4, of: 6, perfect: false });
   });

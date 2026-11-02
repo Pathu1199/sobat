@@ -179,6 +179,15 @@ describe('dayStats: the goals card for one day', () => {
     expect(byId.weight).toMatchObject({ label: 'Weight', value: '81.8 kg', sub: null, bar: null, delta: null });
   });
 
+  it('draws a day\'s calories bar in the muted tone when the day was well over the goal, and in the accent otherwise', () => {
+    const tone = (kcal: number) => dayStats({ ...day, kcal }, null, GOALS, [], en).find((r) => r.id === 'kcal')!;
+    expect(tone(1640).barTone).toBe('accent');
+    expect(tone(1936).barTone).toBe('accent');
+    expect(tone(2400)).toMatchObject({ bar: 1, barTone: 'faint' });
+    expect(tone(900).barTone).toBe('faint');
+    expect(dayStats({ ...day, protein: 300 }, null, GOALS, [], en).find((r) => r.id === 'protein')).toMatchObject({ bar: 1, barTone: 'accent' });
+  });
+
   it('is compared with the day before: a rise in a count in the good colour, a fall plainly, calories, protein and water as plain numbers', () => {
     const byId = Object.fromEntries(dayStats(day, before, GOALS, weights, en).map((r) => [r.id, r]));
     expect(byId.meals.delta).toEqual({ text: '1 fewer than the day before', good: false });

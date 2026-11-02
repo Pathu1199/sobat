@@ -2,7 +2,7 @@ import { fill, numberText } from '../i18n';
 import { addDays, formatDayLong, formatDayMonth, formatDayMonthYear, formatMonthYear, isIsoDate } from './date';
 import type { DayFacts, PeriodReport, ReportInput, ReportKind, ReportPeriod } from './report';
 import { shiftPeriod } from './report';
-import { minutesText, versus, was, type DocStat } from './reportDoc';
+import { kcalBarTone, minutesText, versus, was, type DocStat } from './reportDoc';
 import { NO_VALUE, oneDecimal } from './tileText';
 import type { ISODate, Lang, WeightLog } from './types';
 import type { StripMark } from './weekStrip';
@@ -100,6 +100,7 @@ export function dayStats(day: DayFacts, before: DayFacts | null, goals: ReportIn
       value: fill(t('rep_of'), { n: numberText(meals.done), of: numberText(meals.of) }),
       sub: t('rep_logged'),
       bar: share(meals.done, meals.of),
+      barTone: 'accent',
       delta: before && before.score.meals.of > 0 ? versus('day', meals.done, before.score.meals.done, t) : null,
     });
   }
@@ -109,6 +110,7 @@ export function dayStats(day: DayFacts, before: DayFacts | null, goals: ReportIn
     value: day.kcal > 0 ? kcal(day.kcal) : NO_VALUE,
     sub: goalOf(numberText(goals.kcal)),
     bar: day.kcal > 0 && goals.kcal > 0 ? share(day.kcal, goals.kcal) : null,
+    barTone: kcalBarTone(day.kcal, goals.kcal),
     delta: plain(before?.kcal, kcal),
   });
   out.push({
@@ -117,6 +119,7 @@ export function dayStats(day: DayFacts, before: DayFacts | null, goals: ReportIn
     value: day.protein > 0 ? grams(day.protein) : NO_VALUE,
     sub: goalOf(grams(goals.protein)),
     bar: day.protein > 0 && goals.protein > 0 ? share(day.protein, goals.protein) : null,
+    barTone: 'accent',
     delta: plain(before?.protein, grams),
   });
   if (goals.waterMl > 0) {
@@ -126,6 +129,7 @@ export function dayStats(day: DayFacts, before: DayFacts | null, goals: ReportIn
       value: litres(day.waterMl),
       sub: goalOf(litres(goals.waterMl)),
       bar: share(day.waterMl, goals.waterMl),
+      barTone: 'accent',
       delta: plain(before?.waterMl, litres),
     });
   }
@@ -137,6 +141,7 @@ export function dayStats(day: DayFacts, before: DayFacts | null, goals: ReportIn
       value: `${numberText(day.walkMin)} ${unit}`,
       sub: goalOf(`${numberText(goals.walkMin)} ${unit}`),
       bar: share(day.walkMin, goals.walkMin),
+      barTone: 'accent',
       // Nothing to compare when neither day walked: "same as the day before" under a zero is only noise.
       delta: before && (day.walkMin > 0 || before.walkMin > 0) ? versus('day', day.walkMin, before.walkMin, t, unit) : null,
     });
@@ -148,11 +153,12 @@ export function dayStats(day: DayFacts, before: DayFacts | null, goals: ReportIn
       value: fill(t('rep_of'), { n: numberText(day.jobs.done), of: numberText(day.jobs.total) }),
       sub: day.jobs.minutes > 0 ? fill(t('rep_jobs_sub'), { time: minutesText(day.jobs.minutes, t) }) : t('rep_jobs_sub_plain'),
       bar: share(day.jobs.done, day.jobs.total),
+      barTone: 'accent',
       delta: before && before.jobs.total > 0 ? versus('day', day.jobs.done, before.jobs.done, t) : null,
     });
   }
   const weighed = weights.find((w) => w.date === day.date);
-  if (weighed) out.push({ id: 'weight', label: t('weight_title'), value: `${oneDecimal(weighed.kg)} ${t('unit_kg')}`, sub: null, bar: null, delta: null });
+  if (weighed) out.push({ id: 'weight', label: t('weight_title'), value: `${oneDecimal(weighed.kg)} ${t('unit_kg')}`, sub: null, bar: null, barTone: 'accent', delta: null });
   return out;
 }
 

@@ -20,6 +20,9 @@ export type ReportColors = { accent: string; accentSoft: string; text: string; t
 /** A figure against the period before: its words, and whether they are in the good colour (only a rise in a count that is good to have more of). */
 export type DocDelta = { text: string; good: boolean };
 
+/** The colour of a stat's bar: the accent, or a neutral tone for a figure that is nothing to be glad of by being full. */
+export type BarTone = 'accent' | 'faint';
+
 export type DocStat = {
   /** Which figure it is, for the screen's icon. */
   id: 'meals' | 'perfect' | 'kcal' | 'protein' | 'water' | 'walk' | 'jobs' | 'weight';
@@ -28,6 +31,8 @@ export type DocStat = {
   sub: string | null;
   /** How far toward its goal, 0 to 1, for the thin bar; null where there is no goal to fill. */
   bar: number | null;
+  /** The bar's colour; the calories bar is `kcalBarTone`'s, every other is the accent. */
+  barTone: BarTone;
   delta: DocDelta | null;
 };
 
@@ -96,6 +101,15 @@ export function was(kind: ReportKind, value: string, t: T): DocDelta {
   return { text: fill(t(`rep_was_${kind}`), { value }), good: false };
 }
 
+/**
+ * The calories bar's colour: the accent while the average is on target, from 70% of the goal (below it is under the safe range) to 10%
+ * over it, as the week's grid bands a day, and the neutral tone outside that. The bar is full from the goal up, so a colour is all that
+ * tells 1,921 against a goal of 1,567 from a good week. Whole numbers only, so a goal in tenths cannot tip an edge.
+ */
+export function kcalBarTone(avg: number, goal: number): BarTone {
+  return goal > 0 && avg * 10 >= goal * 7 && avg * 10 <= goal * 11 ? 'accent' : 'faint';
+}
+
 const share = (n: number, of: number): number => (of > 0 ? Math.min(1, n / of) : 0);
 
 /** Minutes as the reader says them: "20 min" under an hour, hours and minutes ("7h 50m") from there. */
@@ -123,6 +137,7 @@ export function statLines(report: PeriodReport, before: PeriodReport | null, goa
     value: avg === null ? NO_VALUE : text(avg),
     sub: fill(t(avg === null ? 'rep_goal_only' : 'rep_avg_goal'), { goal: goalText }),
     bar: avg !== null && goal > 0 ? share(avg, goal) : null,
+    barTone: id === 'kcal' && avg !== null ? kcalBarTone(avg, goal) : 'accent',
     delta: earlier === null || earlier === undefined ? null : was(kind, text(earlier), t),
   });
 
@@ -132,6 +147,7 @@ export function statLines(report: PeriodReport, before: PeriodReport | null, goa
     value: fill(t('rep_of'), { n: numberText(report.full.n), of: numberText(report.full.of) }),
     sub: t(running ? 'rep_sub_full_sofar' : 'rep_sub_full'),
     bar: share(report.full.n, report.full.of),
+    barTone: 'accent',
     delta: before ? versus(kind, report.full.n, before.full.n, t) : null,
   });
   out.push({
@@ -140,6 +156,7 @@ export function statLines(report: PeriodReport, before: PeriodReport | null, goa
     value: numberText(report.perfect),
     sub: t('rep_stat_perfect_sub'),
     bar: null,
+    barTone: 'accent',
     delta: before ? versus(kind, report.perfect, before.perfect, t) : null,
   });
   out.push(average('kcal', report.avgKcal, before?.avgKcal, goals.kcal, kcal, numberText(goals.kcal)));
@@ -151,6 +168,7 @@ export function statLines(report: PeriodReport, before: PeriodReport | null, goa
       value: fill(t('rep_of'), { n: numberText(report.water.n), of: numberText(report.water.of) }),
       sub: t('rep_water_sub'),
       bar: share(report.water.n, report.water.of),
+      barTone: 'accent',
       delta: before ? versus(kind, report.water.n, before.water.n, t) : null,
     });
   }
@@ -161,6 +179,7 @@ export function statLines(report: PeriodReport, before: PeriodReport | null, goa
       value: `${numberText(report.walk.minutes)} ${t('tile_unit_min')}`,
       sub: report.walk.n === 1 ? t('rep_walk_sub_one') : fill(t('rep_walk_sub'), { n: numberText(report.walk.n) }),
       bar: share(report.walk.n, report.walk.of),
+      barTone: 'accent',
       delta: before ? versus(kind, report.walk.minutes, before.walk.minutes, t, t('tile_unit_min')) : null,
     });
   }
@@ -171,6 +190,7 @@ export function statLines(report: PeriodReport, before: PeriodReport | null, goa
       value: fill(t('rep_of'), { n: numberText(report.jobs.done), of: numberText(report.jobs.due) }),
       sub: report.jobs.minutes > 0 ? fill(t('rep_jobs_sub'), { time: minutesText(report.jobs.minutes, t) }) : t('rep_jobs_sub_plain'),
       bar: share(report.jobs.done, report.jobs.due),
+      barTone: 'accent',
       delta: before?.jobs ? versus(kind, report.jobs.done, before.jobs.done, t) : null,
     });
   }
@@ -181,6 +201,7 @@ export function statLines(report: PeriodReport, before: PeriodReport | null, goa
       value: `${signedKg(report.weight.change)} ${t('unit_kg')}`,
       sub: `${oneDecimal(report.weight.from)} → ${oneDecimal(report.weight.to)}`,
       bar: null,
+      barTone: 'accent',
       delta: before?.weight ? was(kind, `${signedKg(before.weight.change)} ${t('unit_kg')}`, t) : null,
     });
   }

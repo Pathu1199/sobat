@@ -124,6 +124,7 @@ From the top:
      - The day's mark in words: full, partial, empty, free day, or not started yet.
      - Then a ★ line when it was perfect.
 4. **The goals card.** One row each for meals, calories, protein, water, walk, routine and weight. Each row has its icon, its label, its value, a 4 pt `Bar` where a goal exists, and under it a comparison line in `Micro`.
+   - The calories bar is full from the goal up, so it is the accent only while the average is on target (from 70% of the goal to 10% over it, as the week's grid bands a day) and `textFaint` outside that, in the app and in the PDF. Every other bar is the accent.
    - Week and month:
      - Meals: "5 of 7 full days".
      - Calories: "1,720 avg · goal 1,760".

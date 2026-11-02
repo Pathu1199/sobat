@@ -141,7 +141,7 @@ export function layoutReport(doc: ReportDoc, colors: ReportColors, measure: Meas
     text(x + CARD_PAD, top + 88, s.value, 44, 600, colors.text, 'left', inner);
     if (s.bar !== null) {
       rect(x + CARD_PAD, top + 104, inner, 8, colors.accentSoft, 4);
-      if (s.bar > 0) rect(x + CARD_PAD, top + 104, Math.max(8, inner * Math.min(1, s.bar)), 8, colors.accent, 4);
+      if (s.bar > 0) rect(x + CARD_PAD, top + 104, Math.max(8, inner * Math.min(1, s.bar)), 8, s.barTone === 'faint' ? colors.textFaint : colors.accent, 4);
     }
     if (s.sub !== null) text(x + CARD_PAD, top + 138, s.sub, 20, 400, colors.textDim, 'left', inner);
     if (s.delta !== null) text(x + CARD_PAD, top + 164, s.delta.text, 20, s.delta.good ? 500 : 400, s.delta.good ? colors.accent : colors.textDim, 'left', inner);

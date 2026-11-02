@@ -160,13 +160,16 @@ function possibleOf(s: DayScore): number {
   return s.meals.of + s.jobs.of + (s.water.goal > 0 ? 1 : 0);
 }
 
+/** A day in the running for the best: its facts, what it did (`scoreOf`) and what it held (`possibleOf`). */
+type Candidate = { facts: DayFacts; done: number; of: number };
+
 /**
  * The best of the days that count (today included). A day qualifies when it did something and at least half of what it held, as the
  * teacher card says it. A perfect day ranks above any that is not; then the higher score, then the higher share of what the day held,
  * then the later day.
  */
 function bestDay(days: DayFacts[]): PeriodReport['best'] {
-  let best: { facts: DayFacts; done: number; of: number } | null = null;
+  let best: Candidate | null = null;
   for (const d of days) {
     if (!d.counts) continue;
     const done = scoreOf(d.score);
@@ -179,7 +182,7 @@ function bestDay(days: DayFacts[]): PeriodReport['best'] {
 }
 
 /** Whether `a` ranks above `b`, a later day than `b`: ties go to `a`. */
-function beats(a: { facts: DayFacts; done: number; of: number }, b: { facts: DayFacts; done: number; of: number }): boolean {
+function beats(a: Candidate, b: Candidate): boolean {
   if (a.facts.perfect !== b.facts.perfect) return a.facts.perfect;
   if (a.done !== b.done) return a.done > b.done;
   // The shares done/of compared without dividing: a.done / a.of against b.done / b.of.
@@ -219,7 +222,6 @@ export function periodReport(p: ReportPeriod, input: ReportInput): PeriodReport 
 /** The same figures over the earlier span (`compareSpan`), or null when it has no day that counts: the first week has nothing to be compared with. */
 export function compareReport(now: PeriodReport, input: ReportInput): PeriodReport | null {
   const dates = compareSpan(now.period, input.today);
-  if (dates.length === 0) return null;
   const report = periodReport({ kind: now.period.kind, start: dates[0], end: dates[dates.length - 1], dates }, input);
   return report.counted > 0 ? report : null;
 }

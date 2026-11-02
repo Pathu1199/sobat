@@ -114,6 +114,18 @@ describe('layoutReport: page one', () => {
     for (const c of colours) expect(Object.values(COLORS)).toContain(c);
   });
 
+  it('fills a bar in the muted tone where the stat says so, and in the accent otherwise', () => {
+    const fills = (doc: ReturnType<typeof makeDoc>) =>
+      layoutReport(doc, COLORS, measure)[0].ops.filter((o): o is Extract<Op, { kind: 'rect' }> => o.kind === 'rect' && o.h === 8 && (o.fill === COLORS.accent || o.fill === COLORS.textFaint));
+    const doc = makeDoc({ statCount: 3 });
+    expect(fills(doc).map((o) => o.fill)).toEqual([COLORS.accent, COLORS.accent, COLORS.accent]);
+    doc.stats[2] = { ...doc.stats[2], barTone: 'faint' };
+    const bars = fills(doc);
+    expect(bars.map((o) => o.fill)).toEqual([COLORS.accent, COLORS.accent, COLORS.textFaint]);
+    // Still a bar as long as the stat's share says, full at most.
+    expect(bars[2].w).toBeCloseTo(bars[1].w);
+  });
+
   it('draws a stat with no comparison or no sub line without one', () => {
     const doc = makeDoc({ statCount: 2 });
     doc.stats[0] = { ...doc.stats[0], sub: null, delta: null, bar: null };

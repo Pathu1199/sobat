@@ -4,7 +4,7 @@ import { PALETTE_IDS } from '../palette';
 import { PALETTE_SETS } from '../../ui/theme';
 import { formatDayLabel, formatDayLong, formatDayMonthYear } from '../date';
 import { compareReport, periodOf, periodReport, type DayFacts, type ReportInput } from '../report';
-import { markWord, reportColors, reportDoc, statLines } from '../reportDoc';
+import { kcalBarTone, markWord, reportColors, reportDoc, statLines } from '../reportDoc';
 import type { DayScore } from '../teacher';
 import type { Lang } from '../types';
 import { isOffDay } from '../week';
@@ -62,6 +62,21 @@ function build(over: Parameters<typeof inputOf>[0] = {}, extra: Partial<DocInput
   return reportDoc({ report, before: compareReport(report, inp), goals: inp.goals, name: 'Varad Shinde', lang, medalsHeld: 9, madeOn: inp.today, ...extra });
 }
 const byId = (stats: { id: string }[]) => Object.fromEntries(stats.map((s) => [s.id, s])) as Record<string, ReturnType<typeof statLines>[number]>;
+
+describe('kcalBarTone', () => {
+  it('is the accent from 70% of the goal to 10% over it, and faint outside that', () => {
+    expect(kcalBarTone(1000, 1000)).toBe('accent');
+    expect(kcalBarTone(1100, 1000)).toBe('accent');
+    expect(kcalBarTone(1101, 1000)).toBe('faint');
+    expect(kcalBarTone(700, 1000)).toBe('accent');
+    expect(kcalBarTone(699, 1000)).toBe('faint');
+    expect(kcalBarTone(1921, 1567)).toBe('faint');
+  });
+
+  it('is faint without a goal to be on target for', () => {
+    expect(kcalBarTone(1500, 0)).toBe('faint');
+  });
+});
 
 describe('reportDoc: the header and the summary', () => {
   it('names the file, the title and the month, and the person by their first name', () => {
@@ -156,6 +171,19 @@ describe('reportDoc: the stats', () => {
     expect(by.perfect.bar).toBeNull();
     const over = byId(statLines(periodReport(OCT, inputOf({ shape: () => ({ kcal: 5000 }) })), null, GOALS, makeT('en'), false));
     expect(over.kcal.bar).toBe(1);
+  });
+
+  it('draws the calories bar in the accent only while the average is on target, and in the muted tone over it or under the safe range', () => {
+    const tone = (kcal: number) => byId(statLines(periodReport(OCT, inputOf({ shape: () => ({ kcal }) })), null, GOALS, makeT('en'), false)).kcal;
+    // The goal is 1,760: on target from 70% of it (1,232) to 110% (1,936).
+    expect(tone(1700).barTone).toBe('accent');
+    expect(tone(1936).barTone).toBe('accent');
+    expect(tone(1937).barTone).toBe('faint');
+    expect(tone(5000)).toMatchObject({ bar: 1, barTone: 'faint' });
+    expect(tone(1232).barTone).toBe('accent');
+    expect(tone(1231).barTone).toBe('faint');
+    // Protein is better for being nearer its goal, whatever it is.
+    expect(byId(build({ shape: () => ({ protein: 400 }) }).stats).protein).toMatchObject({ bar: 1, barTone: 'accent' });
   });
 
   it('puts each count against the month before in words that are good when it rose', () => {

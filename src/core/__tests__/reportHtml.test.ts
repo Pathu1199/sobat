@@ -73,6 +73,16 @@ describe('reportHtml: the stats', () => {
     expect(plain).not.toContain('sub meals');
   });
 
+  it('colours a bar in the muted tone where the stat says so, and in the accent otherwise', () => {
+    expect(count(html, 'class="fill faint"')).toBe(0);
+    const doc = makeDoc({ statCount: 3 });
+    doc.stats[2] = { ...doc.stats[2], barTone: 'faint' };
+    const muted = reportHtml(doc, COLORS);
+    expect(count(muted, 'class="fill faint"')).toBe(1);
+    expect(count(muted, 'class="fill"')).toBe(2);
+    expect(muted).toContain(`.fill.faint { background: ${COLORS.textFaint} }`);
+  });
+
   it('has no stats grid when there is nothing to report', () => {
     expect(reportHtml(makeDoc({ statCount: 0 }), COLORS)).not.toContain('class="stats"');
   });
