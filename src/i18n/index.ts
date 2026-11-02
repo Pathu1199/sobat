@@ -2079,13 +2079,13 @@ const mr: Dict = {
   rep_pdf_error: 'अहवाल तयार करता आला नाही. पुन्हा प्रयत्न करा.',
   rep_all_charts: 'सर्व आलेख',
   // आजचं कोडं (Zip): दिनक्रमाचं बक्षीस, कधीच सक्तीचं नाही.
-  zip_title: 'आजचं कोडं', zip_open_title: 'आजचं कोडं खुलं आहे',
+  zip_title: 'आजचं कोडं', zip_open_title: 'आजचं कोडं तयार आहे',
   zip_closed_routine: 'आजचा दिनक्रम पूर्ण झाल्यावर उघडेल\u00A0·\u00A0{m}\u00A0पैकी\u00A0{n}', zip_closed_meals: 'आजचं जेवण नोंदवल्यावर उघडेल',
   zip_level_about: 'स्तर {n} · {about}', zip_about_one: 'साधारण एक मिनिट', zip_about_n: 'साधारण {n} मिनिटे',
   zip_level_grows: 'स्तर {n} · दिनक्रमाच्या सलग दिवसांसोबत वाढतो',
   zip_solved_in: '{time} मध्ये सोडवलं', zip_new_tomorrow: 'उद्या नवीन कोडं',
   zip_play: 'खेळा', zip_start_again: 'पुन्हा सुरू करा', zip_preparing: 'तयार होत आहे…', zip_to_routine: 'दिनक्रमाकडे परत',
-  zip_how: '1 पासून {n} पर्यंत एकाच रेषेने जा: प्रत्येक चौकोनातून, आकडे क्रमाने.',
+  zip_how: '1 पासून {n} पर्यंत एकच रेषा काढा: प्रत्येक चौकोनातून, आकडे क्रमाने.',
   zip_board: 'कोडं, {n} बाय {n} चौकोन',
   zip_cell: 'ओळ {r}, स्तंभ {c}', zip_cell_number: 'आकडा {n}', zip_cell_on: 'रेषेवर', zip_cell_end: 'रेषेचे टोक',
 };

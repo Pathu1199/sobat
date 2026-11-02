@@ -1170,6 +1170,13 @@ describe("the solved puzzles of Today's puzzle", () => {
     expect(migrateState(s, NOW)).toEqual(s);
   });
 
+  it('keeps a record whose level is higher than this build knows: a newer build\'s level is not dropped, or the next sync would delete it everywhere', () => {
+    const newer = { date: '2026-11-03', seconds: 140, level: 7 };
+    const s = migrateState({ ...v8, puzzles: [solved, newer] }, NOW);
+    expect(s.puzzles).toEqual([solved, newer]);
+    expect(migrateState(s, NOW)).toEqual(s);
+  });
+
   it('drops a record in another shape and keeps the rest; a list that is not a list is empty', () => {
     const s = migrateState(
       {
@@ -1185,7 +1192,7 @@ describe("the solved puzzles of Today's puzzle", () => {
           { ...solved, seconds: Number.NaN },
           { ...solved, seconds: '83' },
           { ...solved, level: 0 },
-          { ...solved, level: 7 },
+          { ...solved, level: -2 },
           { ...solved, level: 1.5 },
         ],
       },

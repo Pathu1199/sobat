@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
+import { ScrollView as GestureScrollView } from 'react-native-gesture-handler';
 import Svg, { Circle } from 'react-native-svg';
 import { numberText } from '../i18n';
 import { useEased, useEntrance } from './animated';
@@ -21,18 +22,38 @@ export const OnBand = BandContext.Provider;
 /**
  * A scrolling page. `onBand`: it sits over a tab's tint band (`Page`), so it lets the band show through instead of painting the page colour.
  * Inside a `BandedTab` (Food, Body, Plan, Sleep) it is over the band whichever page the section shows, and the same page opened on its own stays opaque.
+ *
+ * `scrollRef`: a page with a gesture inside it that must beat the page's own scroll (a board drawn with a finger) passes a ref here and the
+ * same ref to the gesture's `blocksExternalGesture`. On a phone the page then scrolls with Gesture Handler's `ScrollView`, which the
+ * gesture can block by that ref (https://docs.swmansion.com/react-native-gesture-handler/docs/fundamentals/gesture-composition,
+ * "Cross-component interactions", `blocksExternalGesture`); on the web it is the plain `ScrollView` as ever (a touch there is kept from
+ * the page by the board's `touch-action`), and the ref only holds the scroll view.
  */
-export function Screen({ children, refreshing, wide, onBand }: { children: React.ReactNode; refreshing?: boolean; wide?: boolean; onBand?: boolean }) {
+export function Screen({
+  children,
+  refreshing,
+  wide,
+  onBand,
+  scrollRef,
+}: {
+  children: React.ReactNode;
+  refreshing?: boolean;
+  wide?: boolean;
+  onBand?: boolean;
+  scrollRef?: React.RefObject<GestureScrollView | null>;
+}) {
   const underBand = useContext(BandContext);
+  const Scroller = scrollRef && Platform.OS !== 'web' ? GestureScrollView : ScrollView;
   return (
-    <ScrollView
+    <Scroller
+      ref={scrollRef}
       style={[st.screen, (onBand ?? underBand) ? { backgroundColor: 'transparent' } : null]}
       contentContainerStyle={[st.screenContent, wide && { maxWidth: S.maxWide, paddingHorizontal: S.gutterWide, paddingTop: 4 }]}
       keyboardShouldPersistTaps="handled">
       {refreshing ? <ActivityIndicator color={C.accent} /> : null}
       {children}
       <View style={{ height: 56 }} />
-    </ScrollView>
+    </Scroller>
   );
 }
 

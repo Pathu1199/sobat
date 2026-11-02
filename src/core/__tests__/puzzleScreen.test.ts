@@ -3,23 +3,30 @@ import { makeT } from '../../i18n';
 import type { PuzzleToday } from '../puzzleDay';
 import {
   aboutText,
+  boardPx,
   boardSide,
+  canUndo,
   cardWords,
   cellAt,
   cellLabel,
   cellState,
+  keepPlay,
+  keptPlay,
   levelLine,
   linePoints,
   NEW_PLAY,
+  PRESS_QUIET_MS,
   PUZZLE_CACHE,
+  pressAllowed,
   playSeconds,
   playStep,
   puzzleBuilt,
   puzzleCached,
   timeText,
+  TOUCH_STALE_MS,
   type Play,
 } from '../puzzleScreen';
-import { buildPuzzle, puzzleFor, step, type Cell, type ZipLevel } from '../zip';
+import { buildPuzzle, puzzleFor, solved, step, type Cell, type ZipLevel } from '../zip';
 
 const en = makeT('en');
 const mr = makeT('mr');
@@ -35,6 +42,53 @@ describe('boardSide', () => {
 
   it('is never negative on a screen narrower than its gutters', () => {
     expect(boardSide(30, 20)).toBe(0);
+  });
+});
+
+describe('boardPx', () => {
+  it('is the whole squares that fit the room, as many points wide as the board is tall', () => {
+    expect(boardPx(350, 7)).toBe(350);
+    expect(boardPx(350, 6)).toBe(348);
+    expect(boardPx(350, 8)).toBe(344);
+    expect(boardPx(320, 5)).toBe(320);
+  });
+
+  it('gives every square at least a point, and is never a fraction of a square', () => {
+    expect(boardPx(0, 5)).toBe(5);
+    expect(boardPx(3, 8)).toBe(8);
+    expect(boardPx(Number.NaN, 5)).toBe(5);
+    expect(boardPx(351.9, 7) % 7).toBe(0);
+  });
+});
+
+describe('pressAllowed', () => {
+  it('lets a square\'s press through when no touch is active and the last one ended more than a moment ago', () => {
+    expect(pressAllowed(10_000, 10_000 - PRESS_QUIET_MS - 1, false)).toBe(true);
+    expect(pressAllowed(10_000, Number.NEGATIVE_INFINITY, false)).toBe(true);
+  });
+
+  it('holds it back while the finger is down and for a moment after it lifts: that press belongs to the stroke', () => {
+    expect(pressAllowed(10_000, 9_990, true)).toBe(false);
+    expect(pressAllowed(10_000, 10_000, false)).toBe(false);
+    expect(pressAllowed(10_000, 10_000 - PRESS_QUIET_MS, false)).toBe(false);
+    expect(pressAllowed(10_000, 10_000 - PRESS_QUIET_MS + 1, false)).toBe(false);
+  });
+
+  it('is a function of the clock alone: a second stroke soon after the first holds its own press back, whatever any timer did', () => {
+    // A stroke ended at 1000; a second began at 1100 (active, last touch 1100) and ends at 1850. Throughout, and 300 ms after, no press.
+    for (const now of [1100, 1500, 1849]) expect(pressAllowed(now, 1100, true), `during, at ${now}`).toBe(false);
+    for (const now of [1850, 1900, 2150]) expect(pressAllowed(now, 1850, false), `after, at ${now}`).toBe(false);
+    expect(pressAllowed(2151, 1850, false)).toBe(true);
+  });
+
+  it('does not let a lost end of touch block the keyboard and the screen reader for ever', () => {
+    expect(pressAllowed(1000 + TOUCH_STALE_MS - 1, 1000, true)).toBe(false);
+    expect(pressAllowed(1000 + TOUCH_STALE_MS + 1, 1000, true)).toBe(true);
+  });
+
+  it('is false for a clock that is not a number: no press rather than a cut line', () => {
+    expect(pressAllowed(Number.NaN, 0, false)).toBe(false);
+    expect(pressAllowed(1000, Number.NaN, false)).toBe(false);
   });
 });
 
@@ -113,21 +167,21 @@ describe('aboutText and levelLine', () => {
 describe('cardWords', () => {
   const closedRoutine: PuzzleToday = { kind: 'closed', by: 'routine', done: 2, total: 4 };
 
-  it('closed by the Routine: the title, and when it opens with how many jobs are done, and no Play', () => {
-    expect(cardWords(closedRoutine, en)).toEqual({ tone: 'closed', title: "Today's puzzle", line: "Opens when today's Routine is done\u00A0·\u00A02\u00A0of\u00A04", play: false });
+  it('closed by the Routine: the title, and when it opens with how many jobs are done', () => {
+    expect(cardWords(closedRoutine, en)).toEqual({ tone: 'closed', title: "Today's puzzle", line: "Opens when today's Routine is done\u00A0·\u00A02\u00A0of\u00A04" });
   });
 
   it('closed by the meals on a day with no job: opens when the meals are logged', () => {
-    expect(cardWords({ kind: 'closed', by: 'meals' }, en)).toEqual({ tone: 'closed', title: "Today's puzzle", line: "Opens when today's meals are logged", play: false });
+    expect(cardWords({ kind: 'closed', by: 'meals' }, en)).toEqual({ tone: 'closed', title: "Today's puzzle", line: "Opens when today's meals are logged" });
   });
 
-  it('open: says so, with the level and about how long, and offers Play', () => {
-    expect(cardWords({ kind: 'open', level: 3 }, en)).toEqual({ tone: 'open', title: "Today's puzzle is open", line: 'Level 3 · about 2 minutes', play: true });
+  it('open: says so, with the level and about how long', () => {
+    expect(cardWords({ kind: 'open', level: 3 }, en)).toEqual({ tone: 'open', title: "Today's puzzle is open", line: 'Level 3 · about 2 minutes' });
     expect(cardWords({ kind: 'open', level: 1 }, en).line).toBe('Level 1 · about a minute');
   });
 
-  it('solved: the time it took and that a new one comes tomorrow, with no Play', () => {
-    expect(cardWords({ kind: 'solved', level: 2, seconds: 83 }, en)).toEqual({ tone: 'solved', title: 'Solved in 1:23', line: 'A new puzzle tomorrow', play: false });
+  it('solved: the time it took and that a new one comes tomorrow', () => {
+    expect(cardWords({ kind: 'solved', level: 2, seconds: 83 }, en)).toEqual({ tone: 'solved', title: 'Solved in 1:23', line: 'A new puzzle tomorrow' });
   });
 
   it('is in Marathi and Hindi too, with the numbers as the app writes them', () => {
@@ -191,21 +245,28 @@ describe('linePoints', () => {
 });
 
 describe('the built puzzle cache', () => {
-  it('builds a puzzle the first time and hands the same one back after', () => {
+  it('builds a puzzle the first time and hands the same one back after, with the line it was built from', () => {
     expect(puzzleCached('2031-01-01', 2)).toBeUndefined();
     const built = puzzleBuilt('2031-01-01', 2);
-    expect(built).toEqual(puzzleFor('2031-01-01', 2));
+    expect(built.puzzle).toEqual(puzzleFor('2031-01-01', 2));
+    expect(built.path).toEqual(buildPuzzle('2031-01-01', 2).path);
     expect(puzzleCached('2031-01-01', 2)).toBe(built);
     expect(puzzleBuilt('2031-01-01', 2)).toBe(built);
+  });
+
+  it('the line kept with the puzzle is its one answer: it wins, whole', () => {
+    const { puzzle, path } = puzzleBuilt('2031-01-02', 3);
+    expect(solved(puzzle, path)).toBe(true);
+    expect(path).toHaveLength(puzzle.size * puzzle.size);
   });
 
   it('keeps a puzzle for each date and level apart', () => {
     const a = puzzleBuilt('2031-02-01', 1);
     const b = puzzleBuilt('2031-02-01', 3);
     const c = puzzleBuilt('2031-02-02', 1);
-    expect(a.level).toBe(1);
-    expect(b.level).toBe(3);
-    expect(c.date).toBe('2031-02-02');
+    expect(a.puzzle.level).toBe(1);
+    expect(b.puzzle.level).toBe(3);
+    expect(c.puzzle.date).toBe('2031-02-02');
     expect(puzzleCached('2031-02-01', 1)).toBe(a);
   });
 
@@ -231,13 +292,13 @@ describe('the line being played', () => {
   const playAll = (now: number): Play => path.reduce<Play>((p, cell, i) => reach(p, cell, now + i * 1000), NEW_PLAY);
 
   it('starts with no line and no time', () => {
-    expect(NEW_PLAY).toEqual({ path: [], startedAt: null, solvedAt: null });
+    expect(NEW_PLAY).toEqual({ path: [], startedAt: null, solvedAt: null, cleared: null });
     expect(playSeconds(NEW_PLAY)).toBeNull();
   });
 
   it('the first square of the line starts the clock, and later ones leave it', () => {
     const one = reach(NEW_PLAY, path[0], 5000);
-    expect(one).toEqual({ path: [path[0]], startedAt: 5000, solvedAt: null });
+    expect(one).toEqual({ path: [path[0]], startedAt: 5000, solvedAt: null, cleared: null });
     const two = reach(one, path[1], 9000);
     expect(two.path).toEqual([path[0], path[1]]);
     expect(two.startedAt).toBe(5000);
@@ -274,9 +335,9 @@ describe('the line being played', () => {
   });
 
   it('seconds are whole, and a win in under a second is 0', () => {
-    expect(playSeconds({ path, startedAt: 1000, solvedAt: 1400 })).toBe(0);
-    expect(playSeconds({ path, startedAt: 1000, solvedAt: 1600 })).toBe(1);
-    expect(playSeconds({ path, startedAt: 1000, solvedAt: 84_000 })).toBe(83);
+    expect(playSeconds({ startedAt: 1000, solvedAt: 1400 })).toBe(0);
+    expect(playSeconds({ startedAt: 1000, solvedAt: 1600 })).toBe(1);
+    expect(playSeconds({ startedAt: 1000, solvedAt: 84_000 })).toBe(83);
   });
 
   it('a won line is left as it is: no move, undo or start again changes it', () => {
@@ -289,7 +350,7 @@ describe('the line being played', () => {
   it('undo takes the line back one square, and back to no line stops the clock', () => {
     let play = reach(reach(NEW_PLAY, path[0], 5000), path[1], 6000);
     play = playStep(play, { type: 'undo' });
-    expect(play).toEqual({ path: [path[0]], startedAt: 5000, solvedAt: null });
+    expect(play).toEqual({ path: [path[0]], startedAt: 5000, solvedAt: null, cleared: null });
     play = playStep(play, { type: 'undo' });
     expect(play).toEqual(NEW_PLAY);
   });
@@ -298,10 +359,50 @@ describe('the line being played', () => {
     expect(playStep(NEW_PLAY, { type: 'undo' })).toBe(NEW_PLAY);
   });
 
-  it('start again clears the line and the clock', () => {
+  it('start again clears the line and the clock, and keeps the line it cleared', () => {
     const play = reach(reach(NEW_PLAY, path[0], 5000), path[1], 6000);
-    expect(playStep(play, { type: 'again' })).toEqual(NEW_PLAY);
+    const again = playStep(play, { type: 'again' });
+    expect(again).toEqual({ path: [], startedAt: null, solvedAt: null, cleared: { path: [path[0], path[1]], startedAt: 5000 } });
     expect(playStep(NEW_PLAY, { type: 'again' })).toBe(NEW_PLAY);
+  });
+
+  it('undo on an empty line right after start again brings the line back, with its clock, once', () => {
+    const play = reach(reach(reach(NEW_PLAY, path[0], 5000), path[1], 6000), path[2], 7000);
+    const again = playStep(play, { type: 'again' });
+    const back = playStep(again, { type: 'undo' });
+    expect(back).toEqual({ path: [path[0], path[1], path[2]], startedAt: 5000, solvedAt: null, cleared: null });
+    // Once: with the line back, undo is one step back as always, and start again can be taken back again.
+    expect(playStep(back, { type: 'undo' }).path).toEqual([path[0], path[1]]);
+    const twice = playStep(playStep(NEW_PLAY, { type: 'undo' }), { type: 'undo' });
+    expect(twice).toBe(NEW_PLAY);
+  });
+
+  it('a second start again on the empty line changes nothing, so the line it cleared is still there to bring back', () => {
+    const play = reach(reach(NEW_PLAY, path[0], 5000), path[1], 6000);
+    const again = playStep(play, { type: 'again' });
+    expect(playStep(again, { type: 'again' })).toBe(again);
+    expect(playStep(playStep(again, { type: 'again' }), { type: 'undo' }).path).toEqual([path[0], path[1]]);
+  });
+
+  it('any new move forgets the cleared line: the next undo goes back along the new line, then to nothing', () => {
+    const play = reach(reach(NEW_PLAY, path[0], 5000), path[1], 6000);
+    const again = playStep(play, { type: 'again' });
+    // A move the puzzle does not allow is no move: the cleared line waits.
+    expect(reach(again, path[5], 8000)).toBe(again);
+    const fresh = reach(again, path[0], 9000);
+    expect(fresh).toEqual({ path: [path[0]], startedAt: 9000, solvedAt: null, cleared: null });
+    const undone = playStep(fresh, { type: 'undo' });
+    expect(undone).toEqual(NEW_PLAY);
+    expect(playStep(undone, { type: 'undo' })).toBe(undone);
+  });
+
+  it('canUndo: a line to take a step back from, or a cleared one to bring back; not an empty play nor a won one', () => {
+    const one = reach(NEW_PLAY, path[0], 5000);
+    expect(canUndo(NEW_PLAY)).toBe(false);
+    expect(canUndo(one)).toBe(true);
+    expect(canUndo(playStep(one, { type: 'again' }))).toBe(true);
+    expect(canUndo(playStep(playStep(one, { type: 'again' }), { type: 'undo' }))).toBe(true);
+    expect(canUndo(playAll(1000))).toBe(false);
   });
 
   it('never changes the line it was given', () => {
@@ -310,5 +411,59 @@ describe('the line being played', () => {
     reach(play, path[2], 7000);
     playStep(play, { type: 'undo' });
     expect(play.path).toEqual(before);
+  });
+});
+
+describe('the line kept when leaving', () => {
+  const { puzzle, path } = buildPuzzle('2026-11-02', 1);
+  const reach = (play: Play, cell: Cell, now: number) => playStep(play, { type: 'reach', puzzle, cell, now });
+  const two = reach(reach(NEW_PLAY, path[0], 5000), path[1], 6000);
+
+  it('hands back the play that was kept for a date and level, as it was, and nothing for one that was not', () => {
+    expect(keptPlay('2032-01-01', 1)).toBeUndefined();
+    keepPlay('2032-01-01', 1, two);
+    expect(keptPlay('2032-01-01', 1)).toBe(two);
+    expect(keptPlay('2032-01-01', 2)).toBeUndefined();
+  });
+
+  it('keeps each level of the day apart, and the latest play of one', () => {
+    const one = reach(NEW_PLAY, path[0], 5000);
+    keepPlay('2032-01-02', 1, one);
+    keepPlay('2032-01-02', 2, two);
+    expect(keptPlay('2032-01-02', 1)).toBe(one);
+    keepPlay('2032-01-02', 1, two);
+    expect(keptPlay('2032-01-02', 1)).toBe(two);
+    expect(keptPlay('2032-01-02', 2)).toBe(two);
+  });
+
+  it('keeps the cleared line with it, so start again can still be taken back after coming back', () => {
+    const again = playStep(two, { type: 'again' });
+    keepPlay('2032-01-03', 1, again);
+    const back = playStep(keptPlay('2032-01-03', 1) ?? NEW_PLAY, { type: 'undo' });
+    expect(back.path).toEqual(two.path);
+    expect(back.startedAt).toBe(5000);
+  });
+
+  it('forgets the play when it wins, and when there is nothing left to keep', () => {
+    const won = path.reduce<Play>((p, cell, i) => reach(p, cell, 1000 + i), NEW_PLAY);
+    expect(won.solvedAt).not.toBeNull();
+    keepPlay('2032-01-04', 1, two);
+    keepPlay('2032-01-04', 1, won);
+    expect(keptPlay('2032-01-04', 1)).toBeUndefined();
+    keepPlay('2032-01-04', 1, two);
+    keepPlay('2032-01-04', 1, NEW_PLAY);
+    expect(keptPlay('2032-01-04', 1)).toBeUndefined();
+  });
+
+  it('only the latest date lives: reading a new date drops the others, and an older date is never kept over a newer', () => {
+    keepPlay('2032-02-01', 1, two);
+    keepPlay('2032-02-01', 3, two);
+    expect(keptPlay('2032-02-02', 1)).toBeUndefined();
+    // The day before is gone, and it stays gone.
+    expect(keptPlay('2032-02-01', 1)).toBeUndefined();
+    keepPlay('2032-02-02', 1, two);
+    keepPlay('2032-02-01', 1, two);
+    expect(keptPlay('2032-02-01', 1)).toBeUndefined();
+    expect(keptPlay('2032-02-02', 1)).toBe(two);
   });
 });

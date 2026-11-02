@@ -5,7 +5,6 @@ import type { QueuedPhoto } from './queue';
 import type { PlanLine, Routine, SpendLog } from './routine';
 import type { WorkSchedule } from './schedule';
 import type { UsageBucket } from './usage';
-import type { ZipLevel } from './zip';
 
 export type Lang = 'en' | 'mr' | 'hi';
 export type ISODate = string;
@@ -326,7 +325,10 @@ export type AppState = {
   puzzles: PuzzleLog[];
 };
 
-/** A day's puzzle solved: the date, the seconds from the first move to the last square, and the level it was built at. */
-export type PuzzleLog = { date: ISODate; seconds: number; level: ZipLevel };
+/**
+ * A day's puzzle solved: the date, the seconds from the first move to the last square, and the level it was built at. The level is a
+ * whole number from 1, not only a `ZipLevel`: a record from a newer build may have a level this one lacks, and is kept (core/puzzleDay.ts).
+ */
+export type PuzzleLog = { date: ISODate; seconds: number; level: number };
 
 export type StepLog = { date: ISODate; count: number };

@@ -1,18 +1,22 @@
 import { isIsoDate } from './date';
 import type { ISODate, PuzzleLog } from './types';
-import { LEVELS, levelFor, type ZipLevel } from './zip';
+import { levelFor, type ZipLevel } from './zip';
 
 /**
  * Today's puzzle, the day around it: whether it is open, what a solved day stores, and what a record must look like.
  * Pure; the store and the screen only call it.
  */
 
-/** Where today's puzzle stands: closed (by the Routine's jobs left, or by the meals on a day with no job), open at a level, or solved in so many seconds. */
+/**
+ * Where today's puzzle stands: closed (by the Routine's jobs left, or by the meals on a day with no job), open at a level, or solved in
+ * so many seconds at the level it was solved at. That one is a plain number: a record from a newer build may carry a level this build
+ * has not (`isLevel`, `clampLevel` in zip.ts), and it is kept all the same.
+ */
 export type PuzzleToday =
   | { kind: 'closed'; by: 'routine'; done: number; total: number }
   | { kind: 'closed'; by: 'meals' }
   | { kind: 'open'; level: ZipLevel }
-  | { kind: 'solved'; level: ZipLevel; seconds: number };
+  | { kind: 'solved'; level: number; seconds: number };
 
 /**
  * Today's puzzle from the Routine's jobs due today (`done` of `total`, a running timer's minutes counted), whether today's meals
@@ -20,27 +24,33 @@ export type PuzzleToday =
  * today's record if it was solved. A solved day stays solved, whatever the Routine says afterwards (a tick undone changes
  * nothing) and at the level it was solved at. Otherwise a day with jobs opens when every job is done (the Routine rule wins, on
  * a free day too), and a day with none opens when the meals are settled, or at once on a free day: a rest day's small treat.
- * The level is the streak's (`levelFor`). Nothing here is stored: undo a tick and an unsolved puzzle closes again.
+ * The level is the streak's (`levelFor`); `streak` may be a function, called only when the puzzle is open and needs the level, so a closed
+ * or solved day never counts it. Nothing here is stored: undo a tick and an unsolved puzzle closes again.
  */
 export function puzzleToday(o: {
   routine: { done: number; total: number };
   mealsComplete: boolean;
   freeDay: boolean;
-  streak: number;
+  streak: number | (() => number);
   solved: PuzzleLog | undefined;
 }): PuzzleToday {
+  const open = (): PuzzleToday => ({ kind: 'open', level: levelFor(typeof o.streak === 'function' ? o.streak() : o.streak) });
   if (o.solved) return { kind: 'solved', level: o.solved.level, seconds: o.solved.seconds };
   if (o.routine.total > 0) {
-    return o.routine.done >= o.routine.total ? { kind: 'open', level: levelFor(o.streak) } : { kind: 'closed', by: 'routine', done: o.routine.done, total: o.routine.total };
+    return o.routine.done >= o.routine.total ? open() : { kind: 'closed', by: 'routine', done: o.routine.done, total: o.routine.total };
   }
-  return o.mealsComplete || o.freeDay ? { kind: 'open', level: levelFor(o.streak) } : { kind: 'closed', by: 'meals' };
+  return o.mealsComplete || o.freeDay ? open() : { kind: 'closed', by: 'meals' };
 }
 
-/** A solved record as the app reads it: a real date, a time in seconds that is a number from 0 up, and a level the puzzle has (a whole number that is a key of `LEVELS`). */
+/**
+ * A solved record as the app reads it: a real date, a time in seconds that is a number from 0 up, and a whole level from 1. Any such
+ * level, not only the ones this build has: a record from a newer build with a level this one lacks must survive the load, or the next
+ * sync would delete it on every device (the screen clamps the level it builds a puzzle at).
+ */
 export function isPuzzleLog(v: unknown): v is PuzzleLog {
   if (typeof v !== 'object' || v === null) return false;
   const r = v as Record<string, unknown>;
-  return isIsoDate(r.date) && typeof r.seconds === 'number' && Number.isFinite(r.seconds) && r.seconds >= 0 && typeof r.level === 'number' && Number.isInteger(r.level) && r.level in LEVELS;
+  return isIsoDate(r.date) && typeof r.seconds === 'number' && Number.isFinite(r.seconds) && r.seconds >= 0 && typeof r.level === 'number' && Number.isInteger(r.level) && r.level >= 1;
 }
 
 /**

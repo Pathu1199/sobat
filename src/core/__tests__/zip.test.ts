@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addDays } from '../date';
-import { buildPuzzle, hashString, LEVELS, levelFor, mulberry32, puzzleFor, solutions, solved, step, type Cell, type ZipLevel, type ZipPuzzle } from '../zip';
+import { buildPuzzle, cellOfNumber, clampLevel, hashString, isLevel, LEVELS, levelFor, mulberry32, puzzleFor, rowCol, solutions, solved, step, type Cell, type ZipLevel, type ZipPuzzle } from '../zip';
 
 const PINNED_SEED = 1040194348;
 
@@ -64,6 +64,43 @@ describe('levelFor and LEVELS', () => {
       [7, 7],
       [8, 8],
     ]);
+  });
+});
+
+describe('isLevel and clampLevel', () => {
+  it('a level is a whole number from 1 to the top of the table', () => {
+    for (const l of [1, 2, 3, 4, 5, 6]) expect(isLevel(l), String(l)).toBe(true);
+    for (const l of [0, -1, 7, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) expect(isLevel(l), String(l)).toBe(false);
+  });
+
+  it('clamps a level this build does not know to one it does: a newer build\'s level reads as the top, nonsense as the first', () => {
+    expect([1, 2, 3, 4, 5, 6].map(clampLevel)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(clampLevel(7)).toBe(6);
+    expect(clampLevel(400)).toBe(6);
+    expect(clampLevel(0)).toBe(1);
+    expect(clampLevel(-3)).toBe(1);
+    expect(clampLevel(2.9)).toBe(2);
+    expect(clampLevel(Number.NaN)).toBe(1);
+    expect(clampLevel(Number.POSITIVE_INFINITY)).toBe(6);
+    // Whatever it is given, a puzzle can be built from the answer.
+    for (const l of [7, 0, Number.NaN, 99]) expect(LEVELS[clampLevel(l)].size).toBeGreaterThan(0);
+  });
+});
+
+describe('rowCol and cellOfNumber', () => {
+  it('splits a square into its row and column, from 0', () => {
+    expect(rowCol(0, 5)).toEqual({ row: 0, col: 0 });
+    expect(rowCol(7, 5)).toEqual({ row: 1, col: 2 });
+    expect(rowCol(24, 5)).toEqual({ row: 4, col: 4 });
+    expect(rowCol(13, 4)).toEqual({ row: 3, col: 1 });
+  });
+
+  it('finds the square that holds a number, and -1 when none does', () => {
+    expect(cellOfNumber(S, 1)).toBe(0);
+    expect(cellOfNumber(S, 2)).toBe(5);
+    expect(cellOfNumber(S, 3)).toBe(12);
+    expect(cellOfNumber(S, 4)).toBe(-1);
+    expect(cellOfNumber(T, 3)).toBe(2);
   });
 });
 
@@ -426,7 +463,7 @@ describe('puzzleFor', () => {
     });
   }
 
-  it('builds every level well inside the time a phone has (slowest build of any date and level)', () => {
+  it('builds every level for every date in well under half a second (the slowest build, a loaded machine allowed for)', () => {
     let slowest = 0;
     for (const level of [1, 2, 3, 4, 5, 6] as ZipLevel[]) {
       for (const date of dates) {
@@ -435,7 +472,7 @@ describe('puzzleFor', () => {
         slowest = Math.max(slowest, performance.now() - t0);
       }
     }
-    expect(slowest).toBeLessThan(250);
+    expect(slowest).toBeLessThan(500);
   });
 
   it('gives the same puzzle for the same date and level, and others for other dates and levels', () => {

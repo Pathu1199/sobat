@@ -1,13 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { cardWords } from '../core/puzzleScreen';
+import { cardWords, puzzleBuilt } from '../core/puzzleScreen';
 import { makeT } from '../i18n';
 import { useApp } from '../store/AppProvider';
 import { usePuzzleToday } from '../store/usePuzzleToday';
 import { Btn, Card } from '../ui/components';
 import { C, F, lh, S } from '../ui/theme';
+import { PuzzleTile } from './PuzzleTile';
+
+/** How long after the card shows the open puzzle it is built in the background, in ms: after the tab has settled, so the build is never felt. */
+const WARM_AFTER_MS = 800;
 
 /**
  * Today's puzzle on the Routine tab, under Today's list: one card. Closed, a quiet puzzle icon with when it opens ("Opens when today's
@@ -22,11 +26,15 @@ export function PuzzleCard() {
   const words = cardWords(today, t);
   const open = () => router.push('/puzzle');
 
-  const tile = (
-    <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: words.tone === 'solved' ? C.goldSoft : words.tone === 'open' ? C.accentDim : C.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
-      <Ionicons name="extension-puzzle-outline" size={18} color={words.tone === 'solved' ? C.goldInk : words.tone === 'open' ? C.accentText : C.textDim} />
-    </View>
-  );
+  // While the puzzle is open the user is likely to play it next: build it (and keep it, in the cache) once the tab is quiet, so Play shows the board at once.
+  const warm = today.kind === 'open' ? today.level : null;
+  useEffect(() => {
+    if (warm === null) return;
+    const id = setTimeout(() => puzzleBuilt(app.today, warm), WARM_AFTER_MS);
+    return () => clearTimeout(id);
+  }, [app.today, warm]);
+
+  const tile = <PuzzleTile tone={words.tone} />;
   const texts = (
     <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
       <Text style={{ color: words.tone === 'closed' ? C.textDim : C.text, fontSize: F.body, lineHeight: lh(F.body), fontWeight: '500' }}>{words.title}</Text>

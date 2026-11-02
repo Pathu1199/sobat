@@ -41,6 +41,21 @@ export function levelFor(streak: number): ZipLevel {
   return 6;
 }
 
+/** The highest level this build has. */
+const TOP_LEVEL = Object.keys(LEVELS).length;
+
+/** Whether a number is a level this build has: a whole number that is a key of `LEVELS`. A record from a newer build may carry one it has not. */
+export function isLevel(n: number): n is ZipLevel {
+  return Number.isInteger(n) && n in LEVELS;
+}
+
+/** The level to build a puzzle at for a stored one: itself when this build has it, the top level for a higher one (a newer build's), the first for anything unreadable. */
+export function clampLevel(n: number): ZipLevel {
+  if (isLevel(n)) return n;
+  if (Number.isNaN(n)) return 1;
+  return Math.min(TOP_LEVEL, Math.max(1, Math.trunc(n))) as ZipLevel;
+}
+
 /** FNV-1a over the characters of a string, as an unsigned 32-bit number. */
 export function hashString(s: string): number {
   let h = 0x811c9dc5;
@@ -62,9 +77,19 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
+/** The row and the column (from 0) of a square of a `size` grid. */
+export function rowCol(cell: Cell, size: number): { row: number; col: number } {
+  return { row: Math.floor(cell / size), col: cell % size };
+}
+
+/** How many moves apart two squares of a `size` grid are (rows plus columns). Plain arithmetic, no allocation: the solver asks it in its loops. */
+function apart(size: number, a: Cell, b: Cell): number {
+  return Math.abs(Math.floor(a / size) - Math.floor(b / size)) + Math.abs((a % size) - (b % size));
+}
+
 /** Whether two squares of a `size` grid share an edge. */
 function adjacent(size: number, a: Cell, b: Cell): boolean {
-  return Math.abs(Math.floor(a / size) - Math.floor(b / size)) + Math.abs((a % size) - (b % size)) === 1;
+  return apart(size, a, b) === 1;
 }
 
 /** Whether a value is a square of the grid. */
@@ -78,7 +103,7 @@ function numberAt(p: ZipPuzzle, cell: Cell): number {
 }
 
 /** The square holding a number, or -1 when none does. */
-function cellOfNumber(p: ZipPuzzle, n: number): Cell {
+export function cellOfNumber(p: ZipPuzzle, n: number): Cell {
   for (const key of Object.keys(p.clues)) if (p.clues[Number(key)] === n) return Number(key);
   return -1;
 }
@@ -127,8 +152,10 @@ export function step(p: ZipPuzzle, path: Cell[], cell: Cell): Cell[] {
   const end = path.length > 0 ? path[path.length - 1] : -1;
   // A square of the line, wherever it is, cuts the line back to it; so does a square next to the end.
   if (end < 0 || path.includes(cell) || adjacent(p.size, end, cell)) return stepOne(p, path, cell);
-  const dr = Math.floor(cell / p.size) - Math.floor(end / p.size);
-  const dc = (cell % p.size) - (end % p.size);
+  const to = rowCol(cell, p.size);
+  const from = rowCol(end, p.size);
+  const dr = to.row - from.row;
+  const dc = to.col - from.col;
   if (dr !== 0 && dc !== 0) return path;
   // Along one row or column: the squares between, then the target, one at a time from the end.
   const stride = dr !== 0 ? Math.sign(dr) * p.size : Math.sign(dc);
@@ -169,8 +196,7 @@ function around(size: number): Cell[][] {
   if (!table) {
     table = [];
     for (let c = 0; c < size * size; c++) {
-      const r = Math.floor(c / size);
-      const col = c % size;
+      const { row: r, col } = rowCol(c, size);
       const next: Cell[] = [];
       if (r > 0) next.push(c - size);
       if (col > 0) next.push(c - 1);
@@ -216,10 +242,9 @@ function search(p: ZipPuzzle, cap: number, budget: number): { found: Cell[][]; c
   if (n === 1) return { found: [[start]], complete: true };
 
   const nbrs = around(p.size);
-  const apart = (a: Cell, b: Cell): number => Math.abs(Math.floor(a / p.size) - Math.floor(b / p.size)) + Math.abs((a % p.size) - (b % p.size));
   // chain[k]: the moves it takes at the least to go from number k through every number up to N.
   const chain = new Int32Array(p.last + 1);
-  for (let k = p.last - 1; k >= 1; k--) chain[k] = chain[k + 1] + apart(cells[k], cells[k + 1]);
+  for (let k = p.last - 1; k >= 1; k--) chain[k] = chain[k + 1] + apart(p.size, cells[k], cells[k + 1]);
   const seen = new Uint8Array(n);
   const reached = new Int32Array(n);
   const stack = new Int32Array(n);
@@ -290,7 +315,7 @@ function search(p: ZipPuzzle, cap: number, budget: number): { found: Cell[][]; c
         if (found.length >= cap) stopped = true;
       } else {
         const next = k !== 0 ? due + 1 : due;
-        if (apart(nb, cells[next]) + chain[next] <= left - 1 && viable(end, nb, left - 1)) go(nb, next, left - 1);
+        if (apart(p.size, nb, cells[next]) + chain[next] <= left - 1 && viable(end, nb, left - 1)) go(nb, next, left - 1);
       }
       route.pop();
       seen[nb] = 0;

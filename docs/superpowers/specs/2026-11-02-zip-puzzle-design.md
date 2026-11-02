@@ -27,8 +27,9 @@ It grows harder as the Routine streak grows, so it keeps pace with the user.
   streak, no medal, no reminder, no "missed" word. A day without a puzzle is a
   day without a puzzle.
 - **Opens with the day's Routine.** Today's puzzle is open when every Routine
-  job due today is done (`dayStatus(app.abhyas, today, now)`: `total > 0` and
-  `done === total`, the running timer's minutes included). On a day with no
+  job due today is done (`abhyasCard(app.abhyas, today, today, now)`, the count
+  the Routine tab's header shows: `total > 0` and `done >= total`, the running
+  timer's minutes included). On a day with no
   Routine job due, it opens when today's meals are all logged or skipped (the
   record's complete mark, `isCompleteMark` on today's `markOf`), and on a free
   (off) day with no job due it is simply open: a rest day's small treat. Nothing about
@@ -67,7 +68,7 @@ than one answer needs, never fewer than 1 and N.
 ```ts
 export type ZipLevel = 1 | 2 | 3 | 4 | 5 | 6;
 export type Cell = number;                       // index = row * size + col
-export type ZipPuzzle = { date: ISODate; level: ZipLevel; size: number; clues: Map<Cell, number> | Record<number, number>; last: number };
+export type ZipPuzzle = { date: ISODate; level: ZipLevel; size: number; clues: Record<number, number>; last: number };
 
 levelFor(streak: number): ZipLevel
 puzzleFor(date: ISODate, level: ZipLevel): ZipPuzzle   // deterministic
@@ -91,15 +92,20 @@ solved(p: ZipPuzzle, path: Cell[]): boolean
   passed, pruning when the squares left are no longer one connected piece or
   when a square left has fewer than two ways in (one for the last square).
   It stops at `cap` answers or `budget` steps.
-- **Speed.** `puzzleFor` returns in well under 150 ms for every level on a
-  phone; the tests build each level for 60 dates and check every result is a
-  valid puzzle with one answer.
+- **Speed.** `puzzleFor` takes about 5 ms at the hardest level with a
+  compiling JavaScript engine, and up to roughly 170 ms where the engine does
+  not compile ahead (measured with the JIT switched off; a phone is slower than
+  a laptop). So the screen builds it after its first paint and keeps it in a
+  small cache; the tests build each level for 60 dates, check every result is a
+  valid puzzle with one answer, and bound the slowest build generously (500 ms)
+  so a loaded machine does not flake.
 - **The line (`step`).** The finger is on `cell`:
   - on the line's last square: nothing changes;
   - on the square before it: the line steps back one;
   - on another square of the line: the line is cut back to it;
   - next to the line's end, not on the line, and either no number or the next
-    number due: the line goes there;
+    number due: the line goes there; the last number N is accepted only as the
+    last free square (it ends the line, so until then it waits);
   - an empty line accepts only square 1;
   - a jump along a row or column (a fast finger) is taken square by square
     while each square is allowed; anything else changes nothing.
@@ -122,6 +128,10 @@ AppState.puzzles: PuzzleLog[]
   that matters.
 - A store action `solvePuzzle(log)` adds today's record once; a second solve
   of the same date keeps the faster time.
+- A record's level is any whole number from 1, not only the levels this build
+  has: a record from a newer build with a level this one lacks must survive the
+  load, or the next sync would delete it on every device. The screen builds a
+  puzzle for a stored level at the nearest level it has (`clampLevel`).
 
 ## Screen: `/puzzle` (`src/app/puzzle.tsx`)
 
@@ -133,16 +143,39 @@ AppState.puzzles: PuzzleLog[]
   react-native-svg as one thick rounded stroke in the accent colour over a
   light accent tint on the squares it covers.
 - Drawing: a pan gesture (react-native-gesture-handler, works on the web)
-  maps the finger to a square and feeds `step`. A tap on a square does the
+  maps the finger to a square and feeds `step`. On a phone the page scrolls
+  with Gesture Handler's `ScrollView` and the pan blocks it
+  (`blocksExternalGesture` with the scroll view's ref, as the library's
+  "Cross-component interactions" docs say), so a vertical stroke draws instead
+  of scrolling; on the web the board's `touch-action: none` does that.
+  A square's own press (a screen reader's activation, a key) is told from the
+  press that comes with a finger lifting by a clock, not a timer: it counts
+  only when no touch is active and the last one ended more than 300 ms ago. A tap on a square does the
   same, so it can be played one tap at a time and with a screen reader
   (each square has a label: "Row 2, column 3, number 4, on the line").
-- Below: Undo (one step back) and Start again (back to an empty line).
+- Below: Undo (one step back) and Start again (back to an empty line). Start
+  again can be taken back once: it keeps the line it cleared, and Undo on the
+  empty line right after it brings that line (and its clock) back; any new
+  move forgets it.
+- The line is kept when the user leaves (Back, a back swipe, a sync turning the
+  day) and is there when they return: the line, the clock's start and the
+  cleared line, in a small module-level map keyed by date and level (only
+  today's lives). It is forgotten when the line wins.
 - Won: a light success haptic, the line turns gold, and a sheet: a gold
   check, "Solved in 1:23", "A new puzzle tomorrow", and Done. The record is
-  saved once. Opening the screen again on a solved day shows the solved board
-  and "Solved in 1:23 · a new puzzle tomorrow".
+  saved once. Opening the screen again on a solved day shows the solved board,
+  the one answer drawn in gold (the puzzle has no other, so it is
+  `buildPuzzle(date, level).path`, kept in the cache beside the puzzle), each
+  square read "on the line" to a screen reader, and "Solved in 1:23 · a new
+  puzzle tomorrow". A day solved at a level this build does not know (see
+  Stored) shows the nearest level's board with its numbers only.
 - Not open yet (reached by a link while the Routine is unfinished): a short
   kind line and a button back to Routine.
+- The board is built after the first paint (a frame, then a turn of the event
+  loop, no wait on top) and shows "Preparing…" only if it is still not there
+  after about 150 ms; a build already in the cache shows at once.
+- The tint under the line is the accent's soft tone by day and its dim tone in
+  the dark, where the soft one is heavy; solved, it is the reward colours.
 - With reduce motion on, nothing animates.
 
 ## Where it shows
@@ -152,6 +185,8 @@ AppState.puzzles: PuzzleLog[]
     is done · 2 of 4" (on a day with no job due: "Opens when today's meals
     are logged").
   - Open: "Today's puzzle is open", "Level 3 · about a minute", and Play.
+    Once the card has shown it for a moment the puzzle is built and cached in
+    the background, so Play opens the board at once.
   - Solved: "Solved in 1:23" with a gold check, "A new puzzle tomorrow".
 - **Today, the Routine card:** when the puzzle is open and not solved, one
   line at the foot: "Today's puzzle is open ›", which opens `/puzzle`.
@@ -172,7 +207,10 @@ puzzle" is आजचं कोडं / आज की पहेली. Times use 
    `puzzleToday` (pure, in `core/zip.ts` or a small `core/puzzleDay.ts`):
    from the Routine status, today's complete mark, the streak and the stored
    records, it says closed (with why), open (with the level) or solved
-   (with the time). A hook `usePuzzleToday()` in `store/` feeds it.
+   (with the time). A hook `usePuzzleToday()` in `store/` feeds it: it reads
+   the jobs with `abhyasCard(…)` as the Routine header does and today's mark as
+   Progress and Reports do, and counts the streak only when the puzzle is open
+   and needs its level.
 3. The screen, the Routine card, the line on Today's Routine card, and the
    words.
 

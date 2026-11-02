@@ -22,6 +22,7 @@ export function usePuzzleToday(): PuzzleToday {
   const { done, total } = abhyasCard(abhyas, today, today, now);
   const since = stripSince(profile, meals, today);
   const { mark } = markOf(recordOn(today), today, today, since);
-  const streak = streakRun(abhyas, today, now, true).days;
+  // The streak only sets the level of an open puzzle, so it is counted when the puzzle asks for it: a closed or solved day (most renders) never does.
+  const streak = () => streakRun(abhyas, today, now, true).days;
   return puzzleToday({ routine: { done, total }, mealsComplete: isCompleteMark(mark), freeDay: mark === 'off', streak, solved: puzzles.find((p) => p.date === today) });
 }
