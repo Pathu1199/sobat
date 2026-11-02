@@ -6,7 +6,7 @@ import { PuzzleTile } from '../components/PuzzleTile';
 import { toTabs } from '../components/toTabs';
 import { ZipBoard } from '../components/ZipBoard';
 import type { PuzzleToday } from '../core/puzzleDay';
-import { boardPx, boardSide, canUndo, cardWords, keepPlay, keptPlay, levelLine, NEW_PLAY, playSeconds, playStep, puzzleBuilt, puzzleCached, timeText, type Built } from '../core/puzzleScreen';
+import { boardPx, boardSide, canUndo, cardWords, keepPlay, keptPlay, leavePlay, levelLine, NEW_PLAY, playSeconds, playStep, puzzleBuilt, puzzleCached, timeText, type Built } from '../core/puzzleScreen';
 import type { ISODate } from '../core/types';
 import { clampLevel, isLevel, LEVELS, type ZipLevel } from '../core/zip';
 import { fill, makeT } from '../i18n';
@@ -100,10 +100,12 @@ function Play({ date, today, t }: { date: ISODate; today: Extract<PuzzleToday, {
   const { built, late } = usePuzzle(date, level);
   const puzzle = built?.puzzle ?? null;
   // The line is kept when the user leaves and read back when they come: the play starts from what was kept for this day and level.
-  const [play, dispatch] = useReducer(playStep, { date, level }, (o) => keptPlay(o.date, o.level) ?? NEW_PLAY);
+  // The time away is not counted: leaving notes when, and coming back moves the clock on by it.
+  const [play, dispatch] = useReducer(playStep, { date, level }, (o) => keptPlay(o.date, o.level, Date.now()) ?? NEW_PLAY);
   useEffect(() => {
     keepPlay(date, level, play);
   }, [date, level, play]);
+  useEffect(() => () => leavePlay(date, level, Date.now()), [date, level]);
   const [sheetClosed, setSheetClosed] = useState(false);
   const scrollRef = useRef<GestureScrollView>(null);
 

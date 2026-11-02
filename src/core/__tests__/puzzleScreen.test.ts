@@ -12,6 +12,7 @@ import {
   cellState,
   keepPlay,
   keptPlay,
+  leavePlay,
   levelLine,
   linePoints,
   NEW_PLAY,
@@ -442,6 +443,24 @@ describe('the line kept when leaving', () => {
     const back = playStep(keptPlay('2032-01-03', 1) ?? NEW_PLAY, { type: 'undo' });
     expect(back.path).toEqual(two.path);
     expect(back.startedAt).toBe(5000);
+  });
+
+  it('does not count the time away: the clock picks up where it was when the user left', () => {
+    keepPlay('2032-01-05', 1, two);
+    leavePlay('2032-01-05', 1, 9000);
+    const back = keptPlay('2032-01-05', 1, 69000);
+    expect(back?.path).toEqual(two.path);
+    expect(back?.startedAt).toBe(65000);
+    // Read without a leave in between (still on the screen), or with no clock, the play is as it was.
+    keepPlay('2032-01-05', 1, two);
+    expect(keptPlay('2032-01-05', 1, 69000)).toBe(two);
+  });
+
+  it('moves the cleared line’s clock on by the time away too, so taking Start again back after coming back does not count it', () => {
+    keepPlay('2032-01-06', 1, playStep(two, { type: 'again' }));
+    leavePlay('2032-01-06', 1, 9000);
+    const back = playStep(keptPlay('2032-01-06', 1, 19000) ?? NEW_PLAY, { type: 'undo' });
+    expect(back.startedAt).toBe(15000);
   });
 
   it('forgets the play when it wins, and when there is nothing left to keep', () => {

@@ -199,18 +199,35 @@ export function playSeconds(play: Pick<Play, 'startedAt' | 'solvedAt'>): number 
   return Math.max(0, Math.round((play.solvedAt - play.startedAt) / 1000));
 }
 
-/** The plays kept for the day being played, by "date:level", and the date they are for. */
-const KEPT = new Map<string, Play>();
+/** The plays kept for the day being played, by "date:level", with when the user left the screen (null while on it), and the date they are for. */
+const KEPT = new Map<string, { play: Play; leftAt: number | null }>();
 let keptDate: ISODate | null = null;
 
 /**
  * The play kept for a date and level when the user left the screen (or a sync turned the day), to start from when they come back: the
- * line, the clock's start and the cleared line, as they were. Undefined when none was kept. Only the latest day's plays live: reading a
+ * line, the clock's start and the cleared line, as they were. Read at `now` after a `leavePlay`, both clocks move on by the time away, so
+ * "Solved in" counts only the time spent on the puzzle. Undefined when none was kept. Only the latest day's plays live: reading a
  * newer date than the one kept drops the older plays, and an older date finds nothing and drops nothing.
  */
-export function keptPlay(date: ISODate, level: ZipLevel): Play | undefined {
+export function keptPlay(date: ISODate, level: ZipLevel, now?: number): Play | undefined {
   if (!seeDate(date)) return undefined;
-  return KEPT.get(keyOf(date, level));
+  const kept = KEPT.get(keyOf(date, level));
+  if (!kept) return undefined;
+  const { play, leftAt } = kept;
+  if (leftAt === null || now === undefined) return play;
+  const away = Math.max(0, now - leftAt);
+  return {
+    ...play,
+    startedAt: play.startedAt === null ? null : play.startedAt + away,
+    cleared: play.cleared ? { ...play.cleared, startedAt: play.cleared.startedAt + away } : null,
+  };
+}
+
+/** Notes that the user left the screen at `now`, so the time until they come back is not counted (`keptPlay`). Nothing kept, nothing noted. */
+export function leavePlay(date: ISODate, level: ZipLevel, now: number): void {
+  const key = keyOf(date, level);
+  const kept = KEPT.get(key);
+  if (kept && kept.leftAt === null) KEPT.set(key, { ...kept, leftAt: now });
 }
 
 /**
@@ -221,7 +238,7 @@ export function keepPlay(date: ISODate, level: ZipLevel, play: Play): void {
   if (!seeDate(date)) return;
   const key = keyOf(date, level);
   if (play.solvedAt !== null || (play.path.length === 0 && play.cleared === null)) KEPT.delete(key);
-  else KEPT.set(key, play);
+  else KEPT.set(key, { play, leftAt: null });
 }
 
 /** Notes the date being read or kept: a newer one than before clears the plays of the day before. False for an older date, which nothing is kept for. */
