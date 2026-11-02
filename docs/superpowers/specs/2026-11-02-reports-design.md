@@ -79,7 +79,7 @@ export type PeriodReport = {
   period: ReportPeriod;
   days: DayFacts[];                    // every date of the period, in order
   counted: number;                     // days that count
-  full: { n: number; of: number };     // fullDays's rule
+  full: { n: number; of: number };     // n by fullDays's rule; of = the days that count (a running period says "so far")
   perfect: number;
   avgKcal: number | null;              // complete days only, as completeIntake
   avgProtein: number | null;           // the same complete days
@@ -88,7 +88,7 @@ export type PeriodReport = {
   jobs: { done: number; due: number; minutes: number } | null;   // null when no job was due
   weight: { from: number; to: number; change: number } | null;   // first and last weigh-in in the period, 2 or more
   best: { date: ISODate; done: number; of: number; perfect: boolean } | null;
-  perfectWeeks: number;                // perfect-week medals whose Monday is in the period
+  perfectWeeks: number;                // perfect-week medals (one per job per week) whose Monday is in the period; worded as medals
 };
 
 periodReport(p, input): PeriodReport
