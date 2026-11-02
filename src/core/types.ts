@@ -5,6 +5,7 @@ import type { QueuedPhoto } from './queue';
 import type { PlanLine, Routine, SpendLog } from './routine';
 import type { WorkSchedule } from './schedule';
 import type { UsageBucket } from './usage';
+import type { ZipLevel } from './zip';
 
 export type Lang = 'en' | 'mr' | 'hi';
 export type ISODate = string;
@@ -321,6 +322,11 @@ export type AppState = {
   groceryTicks?: Record<string, string[]> | { week: string; ids: string[] } | null;
   /** The menu of each date that was written: edited, or carried over from the old week plan. Other dates show as they start (see core/menu.ts). */
   menus: import('./menu').DayMenu[];
+  /** The days Today's puzzle was solved: one record a day, the seconds it took and the level it was (core/puzzleDay.ts). */
+  puzzles: PuzzleLog[];
 };
+
+/** A day's puzzle solved: the date, the seconds from the first move to the last square, and the level it was built at. */
+export type PuzzleLog = { date: ISODate; seconds: number; level: ZipLevel };
 
 export type StepLog = { date: ISODate; count: number };

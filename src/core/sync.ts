@@ -79,6 +79,9 @@ export const COLLECTIONS: {
   { key: 'abhyasItems', idOf: (r) => String(r.id), orderOf: (r) => (typeof r.order === 'number' && Number.isFinite(r.order) ? r.order : Infinity) },
   { key: 'abhyasSessions', idOf: (r) => String(r.id), stampOf: (r) => String(r.endedAt ?? ''), firstWins: true, valid: isAbhyasSession },
   { key: 'abhyasTicks', idOf: (r) => String(r.id) },
+  // Today's puzzle: one solved record per date, so a day solved on two devices is one record (the usual rule picks which: this
+  // device's when both sides have one, else whichever side changed it). A record is the user's own win and is kept like any other.
+  { key: 'puzzles', idOf: (r) => String(r.date) },
 ];
 
 /**

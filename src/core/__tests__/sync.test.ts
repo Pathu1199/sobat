@@ -1081,3 +1081,53 @@ describe("the user's own list (Abhyas)", () => {
     expect(sameCloud(merge3(a, a, ab), ab)).toBe(true);
   });
 });
+
+describe("the solved puzzles of Today's puzzle", () => {
+  const solved = (date: string, seconds: number, level: 1 | 2 | 3 = 1) => ({ date, seconds, level });
+  const withPuzzles = (puzzles: AppState['puzzles']) => cloudOf(used([], { puzzles }));
+
+  it('goes up with the account and comes back as it went', () => {
+    const s = used([], { puzzles: [solved('2026-11-01', 80)] });
+    expect(cloudOf(s).puzzles).toEqual([solved('2026-11-01', 80)]);
+    expect(applyCloud(used([]), cloudOf(s)).puzzles).toEqual([solved('2026-11-01', 80)]);
+  });
+
+  it('a day solved on the phone and another on the PC both stay, in date order', () => {
+    const base = withPuzzles([]);
+    const phone = withPuzzles([solved('2026-11-02', 75)]);
+    const pc = withPuzzles([solved('2026-11-01', 90)]);
+    const out = merge3(base, phone, pc);
+    expect(out.puzzles).toEqual([solved('2026-11-01', 90), solved('2026-11-02', 75)]);
+    expect(stable(merge3(base, pc, phone).puzzles)).toBe(stable(out.puzzles));
+  });
+
+  it('a day solved on both ends as one record, whichever device merges, and the devices then agree', () => {
+    const base = withPuzzles([]);
+    const phone = withPuzzles([solved('2026-11-02', 75, 2)]);
+    const pc = withPuzzles([solved('2026-11-02', 110, 2)]);
+    for (const [a, b] of [[phone, pc], [pc, phone]]) {
+      const out = merge3(base, a, b);
+      expect(out.puzzles).toHaveLength(1);
+      expect([a.puzzles, b.puzzles].map(stable)).toContain(stable(out.puzzles));
+    }
+    // The phone merges first and writes; the PC then merges that file with its own and lands on the same record.
+    const file = merge3(base, phone, pc);
+    const landed = merge3(pc, pc, file);
+    expect(landed.puzzles).toEqual(file.puzzles);
+    expect(sameCloud(merge3(file, file, landed), file)).toBe(true);
+  });
+
+  it('a record only one side has, from a device that has not synced since, stays on the other', () => {
+    const base = withPuzzles([solved('2026-10-30', 60)]);
+    const phone = withPuzzles([solved('2026-10-30', 60), solved('2026-11-02', 75)]);
+    expect(merge3(base, phone, base).puzzles).toEqual(phone.puzzles);
+    expect(merge3(base, base, phone).puzzles).toEqual(phone.puzzles);
+  });
+
+  it('a file from a build that has no puzzles takes nothing from this device away: its own records stay', () => {
+    const phone = withPuzzles([solved('2026-11-02', 75)]);
+    const older = { ...withPuzzles([]) } as unknown as Record<string, unknown>;
+    delete older.puzzles;
+    expect(merge3(null, phone, older as unknown as CloudState).puzzles).toEqual(phone.puzzles);
+  });
+});

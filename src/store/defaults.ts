@@ -133,4 +133,5 @@ export const EMPTY_STATE: AppState = {
   activities: [],
   groceryTicks: null,
   menus: [],
+  puzzles: [],
 };

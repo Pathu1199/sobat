@@ -1151,6 +1151,59 @@ describe("version 8: the user's own list (Abhyas)", () => {
   });
 });
 
+describe("the solved puzzles of Today's puzzle", () => {
+  const v8 = { ...v1, version: 8, settings: { ...v1.settings, glassMl: undefined } };
+  const solved = { date: '2026-11-01', seconds: 83, level: 2 };
+
+  it('an older file has none and loads with an empty list, the version unchanged', () => {
+    const s = migrateState(v8, NOW);
+    expect(s.puzzles).toEqual([]);
+    expect(s.version).toBe(STATE_VERSION);
+    expect(STATE_VERSION).toBe(8);
+    expect(EMPTY_STATE.puzzles).toEqual([]);
+    expect(migrateState({ ...v1, version: 7 }, NOW).puzzles).toEqual([]);
+  });
+
+  it('keeps a record as it was, and a second load changes nothing', () => {
+    const s = migrateState({ ...v8, puzzles: [solved, { date: '2026-11-02', seconds: 0, level: 6 }] }, NOW);
+    expect(s.puzzles).toEqual([solved, { date: '2026-11-02', seconds: 0, level: 6 }]);
+    expect(migrateState(s, NOW)).toEqual(s);
+  });
+
+  it('drops a record in another shape and keeps the rest; a list that is not a list is empty', () => {
+    const s = migrateState(
+      {
+        ...v8,
+        puzzles: [
+          solved,
+          null,
+          'solved',
+          { date: '2026-11-02' },
+          { ...solved, date: '1 Nov' },
+          { ...solved, date: '2026-02-31' },
+          { ...solved, seconds: -5 },
+          { ...solved, seconds: Number.NaN },
+          { ...solved, seconds: '83' },
+          { ...solved, level: 0 },
+          { ...solved, level: 7 },
+          { ...solved, level: 1.5 },
+        ],
+      },
+      NOW,
+    );
+    expect(s.puzzles).toEqual([solved]);
+    for (const bad of ['none', 3, { a: solved }, null]) expect(migrateState({ ...v8, puzzles: bad }, NOW).puzzles, JSON.stringify(bad)).toEqual([]);
+  });
+
+  it('an account file from before the puzzles comes up with an empty list through a sync round', () => {
+    const file = forCloud(migrateState(v8, NOW)) as unknown as Record<string, unknown>;
+    delete file.puzzles;
+    const up = upgradeFile(NOW)(file as unknown as CloudState);
+    expect(up.puzzles).toEqual([]);
+    expect(up.version).toBe(8);
+  });
+});
+
 describe('a new chapter in the profile', () => {
   it('an older store has none and reads unchanged; a chapter already started is kept as it was', () => {
     const old = migrateState({ ...v1, version: 7 }, NOW);

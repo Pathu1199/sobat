@@ -6,6 +6,7 @@ import { addDays, isIsoDate, mondayOf, toISODate } from '../core/date';
 import { foodsForDiet } from '../core/foods';
 import { addSkip, menusFromTemplate, NOT_EDITED, settleAuto, type DayMenu } from '../core/menu';
 import { paletteOf } from '../core/palette';
+import { isPuzzleLog } from '../core/puzzleDay';
 import { slotShare } from '../core/pattern';
 import { canPlace, DEFAULT_ROUTINE, DEFAULT_SLOTS, DINNER_SLOT, NEUTRAL_ROUTINE, SKIP_PREFIX, type RoutineSlot } from '../core/routine';
 import { forCloud, stable, type CloudState } from '../core/sync';
@@ -427,6 +428,8 @@ export function migrateState(raw: unknown, now: Date = new Date(), movedOn: ISOD
     abhyasSessions: wellFormed(raw.abhyasSessions, isAbhyasSession),
     abhyasTicks: wellFormed(raw.abhyasTicks, isAbhyasTick),
     abhyasRunning: readRunning(raw.abhyasRunning),
+    // Today's puzzle: an older store has no solved days; a record in another shape is dropped.
+    puzzles: wellFormed(raw.puzzles, isPuzzleLog),
     openedDates: Array.isArray(raw.openedDates) ? raw.openedDates.filter((d): d is string => typeof d === 'string') : [],
   };
 }

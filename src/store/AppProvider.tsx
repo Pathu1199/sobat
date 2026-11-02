@@ -50,11 +50,12 @@ import { withWaterAdded, withWaterRemoved } from '../core/tiles';
 import { isOffDay } from '../core/week';
 import { stripSince } from '../core/weekStrip';
 import { groceryThisWeek, toggleTick } from '../core/grocery';
+import { withSolved } from '../core/puzzleDay';
 import { pruneSpend, spentOn, type PlanLine, type Routine, type SpendLog } from '../core/routine';
 import type { WorkSchedule } from '../core/schedule';
 import type { PlanMeal, WeekPlan } from '../core/weekPlan';
 import type { BreakKind, BreakSettings } from '../core/breaks';
-import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MealSource, MoodLog, Profile, SavedMeal, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
+import type { ActivityLog, AppState, ChatMsg, Exercise, FoodItem, ISODate, Meal, MealSource, MoodLog, Profile, PuzzleLog, SavedMeal, Settings, SleepLog, WeightLog, WorkoutLog } from '../core/types';
 import { allFoods, EMPTY_STATE } from './defaults';
 import { migrateState } from './migrate';
 
@@ -193,6 +194,8 @@ type Ctx = {
   startAbhyas: (itemId: string) => void;
   /** The timer stopped, its minutes kept on the day it started. */
   stopAbhyas: () => void;
+  /** Today's puzzle solved: the record of its date added once; a date already solved keeps the faster time. Nothing else is stored about the puzzle. */
+  solvePuzzle: (log: PuzzleLog) => void;
   toggleGrocery: (week: string, foodId: string) => void;
   setSchedule: (s: Partial<WorkSchedule>) => void;
   addSpend: (s: Pick<SpendLog, 'category' | 'rupees' | 'spreadDays'>) => void;
@@ -669,6 +672,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       untickAbhyas: (itemId, date) => update((s) => withoutTick(s, itemId, date)),
       startAbhyas: (itemId) => update((s) => withStarted(s, itemId, new Date())),
       stopAbhyas: () => update((s) => withStopped(s, new Date())),
+      solvePuzzle: (log) =>
+        update((s) => {
+          const puzzles = withSolved(s.puzzles, log);
+          return puzzles === s.puzzles ? s : { ...s, puzzles };
+        }),
       setSchedule: (x) => update((s) => ({ ...s, schedule: { ...s.schedule, ...x } })),
       addSpend: (x) =>
         update((s) => ({
