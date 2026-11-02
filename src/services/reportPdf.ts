@@ -18,9 +18,12 @@ export type PreparedReport = { kind: 'native'; uri: string } | { kind: 'web'; fi
 
 const isWeb = Platform.OS === 'web';
 
+/** 14 mm of paper round the page, in points. iOS prints the HTML without its `@page` margin and takes these instead; Android does the opposite, so the HTML's 14 mm and this are the same. */
+const PAGE_MARGINS = { top: 40, right: 40, bottom: 40, left: 40 };
+
 export async function prepareReport(doc: ReportDoc, colors: ReportColors): Promise<PreparedReport> {
   if (!isWeb) {
-    const { uri } = await Print.printToFileAsync({ html: reportHtml(doc, colors), width: A4_PT.width, height: A4_PT.height });
+    const { uri } = await Print.printToFileAsync({ html: reportHtml(doc, colors), width: A4_PT.width, height: A4_PT.height, margins: PAGE_MARGINS });
     return { kind: 'native', uri };
   }
   const bytes = pdfFromJpegs(await reportJpegPages(doc, colors), `${doc.title} ${doc.month}`);
@@ -56,10 +59,12 @@ export async function shareReport(prepared: PreparedReport, dialogTitle: string)
   if (prepared.canShare) {
     try {
       await navigator.share({ files: [prepared.file], title: dialogTitle });
+      return;
     } catch (error) {
-      if (!cancelled(error)) throw error;
+      // A cancelled sheet is the end of it. Any other refusal (NotAllowedError when the tap's allowance has run out, TypeError when the
+      // browser will not take the file) is no reason to leave the user with nothing: the file is saved instead.
+      if (cancelled(error)) return;
     }
-    return;
   }
   download(prepared.file);
 }

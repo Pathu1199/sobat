@@ -179,7 +179,7 @@ From the top:
   - The table runs on to further pages as needed.
 - **`src/services/reportPdf.ts` (native) and `reportPdf.web.ts` (web).** Both export `prepareReport(doc, colors) → Promise<PreparedReport>` and `shareReport(prepared) → Promise<void>`.
   - Native:
-    - `expo-print`'s `printToFileAsync({ html, width: 595, height: 842 })` makes the file.
+    - `expo-print`'s `printToFileAsync({ html, width: 595, height: 842, margins: { top: 40, right: 40, bottom: 40, left: 40 } })` makes the file (iOS ignores the HTML's `@page` margin, Android ignores `margins`, so both are set to the same 14 mm).
     - `expo-sharing`'s `shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle })` shares it.
   - Web:
     - The canvases go to JPEG (quality 0.9), then `pdfFromJpegs` turns them into a `File` named `dhyey-report-2026-10.pdf`.
