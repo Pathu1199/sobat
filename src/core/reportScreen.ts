@@ -2,7 +2,7 @@ import { fill, numberText } from '../i18n';
 import { addDays, formatDayLong, formatDayMonth, formatDayMonthYear, formatMonthYear, isIsoDate } from './date';
 import type { DayFacts, PeriodReport, ReportInput, ReportKind, ReportPeriod } from './report';
 import { delta, periodOf, shiftPeriod } from './report';
-import { kcalBarTone, minutesText, versus, was, type DocDelta, type DocStat } from './reportDoc';
+import { kcalBarTone, minutesText, share, versus, was, type DocDelta, type DocStat } from './reportDoc';
 import { NO_VALUE, oneDecimal } from './tileText';
 import type { ISODate, Lang, WeightLog } from './types';
 import type { StripMark } from './weekStrip';
@@ -84,8 +84,6 @@ export function dayWord(day: DayFacts, t: T): string {
   };
   return words[day.mark];
 }
-
-const share = (n: number, of: number): number => (of > 0 ? Math.min(1, n / of) : 0);
 
 /** Water against the day before, as walk is: more is toward the goal, so it is the good colour; fewer and the same are plain. */
 function waterVersus(ml: number, earlier: number, t: T): DocDelta {

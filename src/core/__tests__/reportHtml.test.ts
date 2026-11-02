@@ -36,6 +36,12 @@ describe('reportHtml: the document', () => {
     expect(reportHtml(makeDoc({ name: '' }), COLORS)).not.toContain('class="who"');
   });
 
+  it('names the logo for a screen reader as the app is named, escaped', () => {
+    expect(html).toContain('role="img" aria-label="Dhyey"');
+    expect(reportHtml(makeDoc({ app: 'ध्येय' }), COLORS)).toContain('aria-label="ध्येय"');
+    expect(reportHtml(makeDoc({ app: 'A"B' }), COLORS)).toContain('aria-label="A&quot;B"');
+  });
+
   it('writes the summary and the footer', () => {
     expect(html).toContain('21 of 31 full days · 6 perfect days · best day Thursday, 30 October');
     expect(html).toContain('Made with Dhyey on 2 Nov 2026 · Dhyey is not a doctor');

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DayRecord } from '../record';
 import { t } from '../../i18n';
 import { formatDayLabel } from '../date';
-import { markOf, stripDayLabel, stripSince, swipeStep, WHEEL_IDLE, WHEEL_REST_MS, wheelStep, weekStrip, type WheelRun } from '../weekStrip';
+import { isCompleteMark, markOf, stripDayLabel, stripSince, swipeStep, WHEEL_IDLE, WHEEL_REST_MS, wheelStep, weekStrip, type WheelRun } from '../weekStrip';
 
 const r = (state: DayRecord['state'], fromPlan = false, nothingEaten = false): DayRecord => ({ state, fromPlan, nothingEaten });
 const MON = '2026-10-26';
@@ -193,5 +193,13 @@ describe('wheelStep: a two-finger swipe on a trackpad', () => {
     // A short nudge, a rest, and another short nudge do not add up.
     const nudge = swipe([[50, 0]]);
     expect(swipe([[50, 0]], nudge.run, 1000 + WHEEL_REST_MS + 1).steps).toEqual([0]);
+  });
+});
+
+describe('isCompleteMark', () => {
+  it('is a day whose meals are all logged or all skipped', () => {
+    expect(isCompleteMark('full')).toBe(true);
+    expect(isCompleteMark('skipped')).toBe(true);
+    for (const mark of ['missing', 'today', 'planned', 'off', 'unplanned', 'none'] as const) expect(isCompleteMark(mark), mark).toBe(false);
   });
 });

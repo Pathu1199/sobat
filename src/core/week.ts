@@ -6,6 +6,11 @@ export function isOffDay(offDays: number[] | undefined, date: ISODate): boolean 
   return !!offDays?.length && offDays.includes(new Date(date + 'T12:00:00').getDay());
 }
 
+/** Whether a day's calories are on target: from 70% of the target (below it is under the safe range) to 10% over it. Whole numbers, so a target in tenths cannot tip an edge. */
+export function kcalOnTarget(kcal: number, target: number): boolean {
+  return kcal * 10 >= target * 7 && kcal * 10 <= target * 11;
+}
+
 /**
  * The last seven days as columns: what each day did on the things that
  * decide the week. Pure, so the picture is the same wherever it is drawn.
@@ -14,7 +19,7 @@ export type WeekDay = {
   date: ISODate;
   kcal: number;
   logged: boolean;
-  /** Against target: 'none' (nothing logged), 'under', 'on' (within 10%), 'over', 'heavy' (20%+); 'off' on a free day. */
+  /** Against target: 'none' (nothing logged), 'under', 'on' (`kcalOnTarget`), 'over', 'heavy' (20%+); 'off' on a free day. */
   kcalBand: 'none' | 'under' | 'on' | 'over' | 'heavy' | 'off';
   off: boolean;
   waterMl: number;
@@ -52,7 +57,8 @@ export function weekSummary(input: {
   const dates = lastNDates(7, input.today);
   const days: WeekDay[] = dates.map((date) => {
     const kcal = input.meals.filter((m) => m.date === date).reduce((a, m) => a + m.kcal, 0);
-    const ratio = kcal / Math.max(1, input.kcalTarget);
+    const target = Math.max(1, input.kcalTarget);
+    const ratio = kcal / target;
     const waterMl = input.water.filter((w) => w.date === date).reduce((a, w) => a + w.ml, 0);
     const off = isOffDay(input.offDays, date);
     return {
@@ -60,7 +66,7 @@ export function weekSummary(input: {
       kcal,
       off,
       logged: kcal > 0,
-      kcalBand: off ? 'off' : kcal === 0 ? 'none' : ratio > 1.2 ? 'heavy' : ratio > 1.1 ? 'over' : ratio >= 0.7 ? 'on' : 'under',
+      kcalBand: off ? 'off' : kcal === 0 ? 'none' : ratio > 1.2 ? 'heavy' : kcalOnTarget(kcal, target) ? 'on' : ratio > 1.1 ? 'over' : 'under',
       waterMl,
       waterGoal: waterMl >= input.waterGoalMl,
       sleepMinutes: input.sleep.find((s) => s.date === date)?.minutes ?? null,

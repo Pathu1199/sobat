@@ -2,7 +2,7 @@ import { addDays, lastNDates } from './date';
 import type { DayRecord } from './record';
 import { weekdayOf } from './routine';
 import type { ISODate, Meal } from './types';
-import { markOf, type StripMark } from './weekStrip';
+import { isCompleteMark, markOf, type StripMark } from './weekStrip';
 
 /**
  * Progress, worked out: the record calendar (a month as weeks of seven days,
@@ -68,10 +68,7 @@ export function recentIntake(input: { today: ISODate; since: ISODate; meals: Pic
 
 /** The same average over any dates, as the weekly report takes it for a week: only the complete days of them count. */
 export function completeIntake(input: { dates: ISODate[]; today: ISODate; since: ISODate; meals: Pick<Meal, 'date' | 'kcal'>[]; recordOn: (date: ISODate) => DayRecord }): { avg: number; days: number } | null {
-  const days = input.dates.filter((d) => {
-    const mark = markOf(input.recordOn(d), d, input.today, input.since).mark;
-    return mark === 'full' || mark === 'skipped';
-  });
+  const days = input.dates.filter((d) => isCompleteMark(markOf(input.recordOn(d), d, input.today, input.since).mark));
   if (days.length === 0) return null;
   const kcal = input.meals.reduce((a, m) => (days.includes(m.date) ? a + m.kcal : a), 0);
   return { avg: Math.round(kcal / days.length), days: days.length };

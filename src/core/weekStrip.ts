@@ -15,6 +15,12 @@ import type { ISODate, Lang, Meal, Profile } from './types';
  * no dot. Pure.
  */
 export type StripMark = 'full' | 'skipped' | 'missing' | 'today' | 'planned' | 'off' | 'unplanned' | 'none';
+
+/** A complete day is one whose meals are all logged or all skipped: the marks the averages are taken over. */
+export function isCompleteMark(mark: StripMark): boolean {
+  return mark === 'full' || mark === 'skipped';
+}
+
 export type StripDay = {
   date: ISODate;
   /** Date.getDay(): 0 is Sunday, for the weekday's short name. */

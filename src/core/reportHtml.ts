@@ -55,9 +55,9 @@ tr.dim td { color: ${esc(c.textFaint)} }
 `.trim();
 }
 
-function logo(c: ReportColors): string {
+function logo(c: ReportColors, app: string): string {
   return (
-    `<svg class="logo" viewBox="0 0 ${LOGO.box} ${LOGO.box}" role="img" aria-label="Dhyey">` +
+    `<svg class="logo" viewBox="0 0 ${LOGO.box} ${LOGO.box}" role="img" aria-label="${esc(app)}">` +
     `<rect width="${LOGO.box}" height="${LOGO.box}" rx="${LOGO.radius}" fill="${esc(c.accent)}"/>` +
     `<path d="${LOGO.path}" fill="none" stroke="${esc(c.white)}" stroke-width="${LOGO.stroke}" stroke-linecap="round" stroke-linejoin="round"/>` +
     `<circle cx="${LOGO.dot.cx}" cy="${LOGO.dot.cy}" r="${LOGO.dot.r}" fill="${esc(c.white)}"/>` +
@@ -114,7 +114,7 @@ export function reportHtml(doc: ReportDoc, colors: ReportColors): string {
     `<!doctype html>\n<html lang="${esc(doc.lang)}"><head><meta charset="utf-8">` +
     `<meta name="viewport" content="width=device-width, initial-scale=1">` +
     `<title>${esc(`${doc.title} ${doc.month}`)}</title><style>\n${css(colors)}\n</style></head><body>\n` +
-    `<div class="head">${logo(colors)}<div class="brand"><div class="app">${esc(doc.app)}</div><div class="sub">${esc(`${doc.title} · ${doc.month}`)}</div></div>` +
+    `<div class="head">${logo(colors, doc.app)}<div class="brand"><div class="app">${esc(doc.app)}</div><div class="sub">${esc(`${doc.title} · ${doc.month}`)}</div></div>` +
     (doc.name === '' ? '' : `<div class="who">${esc(doc.name)}</div>`) +
     `</div>\n` +
     `<div class="summary">${esc(doc.summary)}</div>\n` +

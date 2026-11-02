@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { keysOf, makeT, t as tr } from '../../i18n';
-import { PALETTE_IDS } from '../palette';
-import { PALETTE_SETS } from '../../ui/theme';
 import { formatDayLabel, formatDayLong, formatDayMonthYear } from '../date';
 import { compareReport, periodOf, periodReport, type DayFacts, type ReportInput } from '../report';
-import { kcalBarTone, markWord, reportColors, reportDoc, statLines } from '../reportDoc';
+import { kcalBarTone, markWord, reportDoc, statLines } from '../reportDoc';
 import type { DayScore } from '../teacher';
 import type { Lang } from '../types';
 import { isOffDay } from '../week';
@@ -324,15 +322,6 @@ describe('markWord', () => {
     expect(markWord('off', t)).toBe('Free day');
     expect(markWord('none', t)).toBe('–');
     expect(markWord('planned', t)).toBe('–');
-  });
-});
-
-describe('reportColors', () => {
-  it('reads the daylight colours of the palette', () => {
-    for (const id of PALETTE_IDS) {
-      const p = PALETTE_SETS[id].light;
-      expect(reportColors(id), id).toEqual({ accent: p.accent, accentSoft: p.accentSoft, text: p.text, textDim: p.textDim, textFaint: p.textFaint, border: p.border, gold: p.gold, goldSoft: p.goldSoft, card: p.card, bg: p.bg, white: p.white });
-    }
   });
 });
 

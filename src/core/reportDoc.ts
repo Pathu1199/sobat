@@ -1,10 +1,9 @@
 import { fill, makeT, numberText } from '../i18n';
-import { PALETTE_SETS } from '../ui/theme';
 import { formatDayLabel, formatDayLong, formatDayMonthYear, formatMinutes, formatMonthYear } from './date';
-import { paletteOf, type PaletteId } from './palette';
 import { delta, type PeriodReport, type ReportInput, type ReportKind } from './report';
 import { NO_VALUE, oneDecimal, signedKg } from './tileText';
 import type { ISODate, Lang } from './types';
+import { kcalOnTarget } from './week';
 import type { StripMark } from './weekStrip';
 
 /**
@@ -14,7 +13,7 @@ import type { StripMark } from './weekStrip';
  */
 type T = (key: string) => string;
 
-/** The daylight colours of a palette that the report is drawn in, as plain CSS colours. */
+/** The daylight colours of a palette that the report is drawn in, as plain CSS colours (`reportColors` in `ui/` reads them from a palette). */
 export type ReportColors = { accent: string; accentSoft: string; text: string; textDim: string; textFaint: string; border: string; gold: string; goldSoft: string; card: string; bg: string; white: string };
 
 /** A figure against the period before: its words, and whether they are in the good colour (only a rise in a count that is good to have more of). */
@@ -62,12 +61,6 @@ export type ReportDoc = {
   footer: string;
 };
 
-/** The daylight colours of a palette (the default for one this build does not know): a report is printed, so it is always on white paper. */
-export function reportColors(palette: PaletteId): ReportColors {
-  const p = PALETTE_SETS[paletteOf(palette)].light;
-  return { accent: p.accent, accentSoft: p.accentSoft, text: p.text, textDim: p.textDim, textFaint: p.textFaint, border: p.border, gold: p.gold, goldSoft: p.goldSoft, card: p.card, bg: p.bg, white: p.white };
-}
-
 /** A day's mark as a short word for a table cell; a free day as the app says it everywhere, a day that is not judged as a dash. */
 export function markWord(mark: StripMark, t: T): string {
   switch (mark) {
@@ -107,10 +100,11 @@ export function was(kind: ReportKind, value: string, t: T): DocDelta {
  * tells 1,921 against a goal of 1,567 from a good week. Whole numbers only, so a goal in tenths cannot tip an edge.
  */
 export function kcalBarTone(avg: number, goal: number): BarTone {
-  return goal > 0 && avg * 10 >= goal * 7 && avg * 10 <= goal * 11 ? 'accent' : 'faint';
+  return goal > 0 && kcalOnTarget(avg, goal) ? 'accent' : 'faint';
 }
 
-const share = (n: number, of: number): number => (of > 0 ? Math.min(1, n / of) : 0);
+/** How far `n` is toward `of`, 0 to 1, for a bar; 0 when there is nothing to reach. */
+export const share = (n: number, of: number): number => (of > 0 ? Math.min(1, n / of) : 0);
 
 /** Minutes as the reader says them: "20 min" under an hour, hours and minutes ("7h 50m") from there. */
 export function minutesText(minutes: number, t: T): string {

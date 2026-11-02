@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keysOf, makeT } from '../../i18n';
+import { makeT } from '../../i18n';
 import { formatDayLong, formatDayMonth, formatDayMonthYear, formatMonthYear } from '../date';
 import { periodOf, periodReport, type DayFacts, type ReportInput } from '../report';
 import { calorieBars, dayStats, dayWord, headline, medalLine, pdfStep, periodName, reportView, stepAnchor, switchAnchor, type PdfState } from '../reportScreen';
@@ -423,15 +423,5 @@ describe('pdfStep: the monthly PDF button\'s states', () => {
     expect(pdfStep(idle(OCT), { type: 'ready', key: OCT, prepared: 'file' })).toEqual(idle(OCT));
     const ready: PdfState<string> = { key: OCT, status: 'ready', prepared: 'file' };
     expect(pdfStep(ready, { type: 'period', key: OCT })).toBe(ready);
-  });
-});
-
-describe('the words', () => {
-  it('every rep_ key the screen uses has its own Marathi and Hindi words', () => {
-    const own = (lang: 'mr' | 'hi') => new Set(keysOf(lang));
-    for (const key of ['rep_title', 'rep_day', 'rep_this_week', 'rep_this_month', 'rep_prev_day', 'rep_next_day', 'rep_best', 'rep_day_partial', 'rep_day_empty', 'rep_day_future', 'rep_none_week', 'rep_logged', 'rep_medals', 'rep_pdf_button', 'rep_pdf_preparing', 'rep_pdf_share', 'rep_pdf_save', 'rep_pdf_error', 'rep_all_charts']) {
-      expect(own('mr').has(key), `mr ${key}`).toBe(true);
-      expect(own('hi').has(key), `hi ${key}`).toBe(true);
-    }
   });
 });

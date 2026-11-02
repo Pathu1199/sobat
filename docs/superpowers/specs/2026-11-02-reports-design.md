@@ -166,28 +166,36 @@ From the top:
 - **A footer:** "Made with Dhyey on 2 Nov 2026 · Dhyey is not a doctor".
 
 **Pieces.**
+- **`src/core/report.ts` (pure, tested).** The periods, the days that count, each day's facts, the figures of a period, the best day and the earlier span to compare it with (`periodOf`, `dayFacts`, `periodReport`, `compareReport`, `delta`).
 - **`src/core/reportDoc.ts` (pure, tested).**
-  - `reportDoc(report, before, input) → ReportDoc` builds every string already translated and every number already formatted.
-  - `reportHtml(doc, colors) → string` writes one HTML document with inline CSS.
-    - The fonts are `-apple-system, "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif`.
-    - Every user string is escaped, including the name and job names.
+  - `reportDoc(...) → ReportDoc` builds every string already translated and every number already formatted.
+  - `statLines` is the goals card's figures for a week or a month, which the Reports screen draws too, so the screen and the PDF say the same things.
+  - `ReportColors` is the type of the colours the report is drawn in.
+- **`src/core/reportScreen.ts` (pure, tested).** What the Reports screen works out before it draws: the view its address opens, the period's name, a day's words and rows, the headline, the medal line, the calorie bars and the PDF button's states.
+- **`src/core/reportHtml.ts` (pure, tested).** `reportHtml(doc, colors) → string` writes one HTML document with inline CSS and the chart as inline SVG, for the phone apps.
+  - The fonts are `-apple-system, "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif`.
+  - Every user string is escaped, including the name and job names.
+- **`src/core/reportLayout.ts` (pure, tested).** `layoutReport(doc, colors, measure) → Page[]` lays the same document out as A4 pages of 1240 × 1754 px, as a list of drawing operations. Only how wide a text is comes from the canvas, so the layout is the same everywhere. The table runs on to further pages as needed.
 - **`src/core/pdfWriter.ts` (pure, tested).** `pdfFromJpegs(pages: { jpeg: Uint8Array; width: number; height: number }[]) → Uint8Array` writes a PDF 1.4.
   - Each page is one A4 page (595 × 842 pt) holding one DCT (JPEG) image.
   - It has a correct xref table and trailer.
   - It uses no library.
-- **`src/services/reportCanvas.web.ts` (web only).** `drawReportPages(doc, colors) → HTMLCanvasElement[]` draws the same document on A4 canvases at 1240 × 1754 px.
+- **`src/ui/reportColors.ts`.** `reportColors(palette) → ReportColors` reads the daylight colours of a palette (a report is printed, so it is always on white paper). It sits in `ui/` because the palettes do.
+- **`src/store/useReportInput.ts`.** `useReportInput(period)` reads each day the way Progress reads it, once, from the store's hooks, and gives `periodReport` and `compareReport` their input.
+- **`src/services/reportCanvas.ts` (web only).** Draws each laid-out page on a 1240 × 1754 px canvas and turns it into a JPEG (quality 0.9), one page at a time.
   - The browser draws the text, so Marathi and Hindi letters join correctly.
-  - The table runs on to further pages as needed.
-- **`src/services/reportPdf.ts` (native) and `reportPdf.web.ts` (web).** Both export `prepareReport(doc, colors) → Promise<PreparedReport>` and `shareReport(prepared) → Promise<void>`.
+  - Its use of the DOM is only in functions that are called on the web.
+- **`src/services/reportPdf.ts` (both platforms: one module with a `Platform.OS` switch).** Exports `prepareReport(doc, colors) → Promise<PreparedReport>` and `shareReport(prepared, dialogTitle) → Promise<void>`.
   - Native:
     - `expo-print`'s `printToFileAsync({ html, width: 595, height: 842, margins: { top: 40, right: 40, bottom: 40, left: 40 } })` makes the file (iOS ignores the HTML's `@page` margin, Android ignores `margins`, so both are set to the same 14 mm).
     - `expo-sharing`'s `shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle })` shares it.
   - Web:
-    - The canvases go to JPEG (quality 0.9), then `pdfFromJpegs` turns them into a `File` named `dhyey-report-2026-10.pdf`.
+    - The canvases go to JPEG, then `pdfFromJpegs` turns them into a `File` named `dhyey-report-2026-10.pdf`.
     - Sharing uses `navigator.share({ files })` when `navigator.canShare({ files })` says yes (the iPhone Share sheet).
-    - Otherwise it downloads through an object URL.
+    - Otherwise, and when the browser refuses the share, it downloads through an object URL.
     - A cancelled share (`AbortError`) is not an error.
   - New dependencies go through `npx expo install expo-print expo-sharing`.
+- **`src/app/reports.tsx`.** The screen: it reads the store through `useReportInput`, draws what `reportScreen.ts` and `reportDoc.ts` work out, and runs the PDF button.
 - **Two steps on the web.** Safari only allows a share from a tap, and making the PDF takes a moment.
   1. The first tap reads "Preparing…" while the file is made.
   2. The button then becomes "Share PDF" (or "Save PDF" where the browser cannot share files), and that tap shares at once.

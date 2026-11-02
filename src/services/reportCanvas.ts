@@ -96,11 +96,6 @@ function drawPage(page: Page): HTMLCanvasElement {
   return canvas;
 }
 
-/** The report's pages drawn on A4 canvases of 1240 x 1754 px. */
-export function drawReportPages(doc: ReportDoc, colors: ReportColors): HTMLCanvasElement[] {
-  return layoutReport(doc, colors, canvasMeasure()).map(drawPage);
-}
-
 function toJpeg(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('This browser could not make the picture of a page.'))), 'image/jpeg', JPEG_QUALITY);

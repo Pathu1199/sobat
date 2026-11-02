@@ -4,7 +4,7 @@ import type { DayRecord } from './record';
 import { scoreOf, type DayScore } from './teacher';
 import type { ISODate, Meal, WeightLog } from './types';
 import { isOffDay } from './week';
-import { markOf, type StripMark } from './weekStrip';
+import { isCompleteMark, markOf, type StripMark } from './weekStrip';
 
 /**
  * Reports, worked out: a day, a week or a month read the way Progress reads a
@@ -59,15 +59,10 @@ function dayCounts(date: ISODate, today: ISODate, since: ISODate, offDays: numbe
   return date <= today && date >= since && !isOffDay(offDays, date);
 }
 
-/** Of these dates, the ones that count. */
-export function countedDates(dates: ISODate[], today: ISODate, since: ISODate, offDays: number[]): ISODate[] {
-  return dates.filter((d) => dayCounts(d, today, since, offDays));
-}
-
 /** One day as a report reads it: what the record, the meals, the tiles and the routine say of that date, and how the teacher scores it. */
 export type DayFacts = {
   date: ISODate;
-  /** A day that counts: see `countedDates`. */
+  /** A day that counts: today or before, the start or after, and not a free day. */
   counts: boolean;
   /** The strip's mark for the day, `markOf(record, date, today, since).mark`. */
   mark: StripMark;
@@ -194,7 +189,7 @@ function beats(a: Candidate, b: Candidate): boolean {
 export function periodReport(p: ReportPeriod, input: ReportInput): PeriodReport {
   const days = p.dates.map((d) => input.factsOn(d));
   const counted = days.filter((d) => d.counts);
-  const complete = counted.filter((d) => d.mark === 'full' || d.mark === 'skipped');
+  const complete = counted.filter((d) => isCompleteMark(d.mark));
   const avg = (pick: (d: DayFacts) => number) => (complete.length > 0 ? Math.round(complete.reduce((a, d) => a + pick(d), 0) / complete.length) : null);
   const due = counted.reduce((a, d) => a + d.jobs.total, 0);
   const weighed = input.weights.filter((w) => p.dates.includes(w.date)).sort((a, b) => a.date.localeCompare(b.date));

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { addDays } from '../date';
 import type { DayRecord } from '../record';
-import { compareReport, compareSpan, countedDates, dayFacts, delta, periodOf, periodReport, periodSteps, shiftPeriod, type DayFacts, type ReportInput } from '../report';
+import { compareReport, compareSpan, dayFacts, delta, periodOf, periodReport, periodSteps, shiftPeriod, type DayFacts, type ReportInput } from '../report';
 import { completeIntake, fullDays } from '../progress';
 import type { DayScore } from '../teacher';
 
@@ -149,17 +148,6 @@ describe('compareSpan', () => {
   it('a day is compared with the day before it, whatever today is', () => {
     expect(compareSpan(periodOf('day', '2026-10-29'), '2026-10-29')).toEqual(['2026-10-28']);
     expect(compareSpan(periodOf('day', '2026-11-01'), '2026-11-20')).toEqual(['2026-10-31']);
-  });
-});
-
-describe('countedDates', () => {
-  it('keeps the dates from the start to today that are not free days', () => {
-    // Saturday 24 Oct to Monday 2 Nov; started Sunday 25th; today is Wednesday 28th.
-    const dates = Array.from({ length: 10 }, (_, i) => addDays('2026-10-24', i));
-    expect(countedDates(dates, '2026-10-28', '2026-10-25', [0])).toEqual(['2026-10-26', '2026-10-27', '2026-10-28']);
-    expect(countedDates(dates, '2026-10-28', '2026-10-25', [])).toEqual(['2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28']);
-    // Tuesdays free.
-    expect(countedDates(dates, '2026-10-28', '2026-10-25', [2])).toEqual(['2026-10-25', '2026-10-26', '2026-10-28']);
   });
 });
 

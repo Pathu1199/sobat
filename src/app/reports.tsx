@@ -3,9 +3,10 @@ import { useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useReducer, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { toTabs } from '../components/toTabs';
+import type { PaletteId } from '../core/palette';
 import { periodOf, periodReport, periodSteps, compareReport, type ReportKind, type ReportPeriod } from '../core/report';
-import { reportColors, reportDoc, statLines, type DocStat } from '../core/reportDoc';
-import { calorieBars, dayStats, dayWord, headline, medalLine, pdfStep, periodName, reportView, stepAnchor, switchAnchor, type Headline, type PdfState, type ReportView } from '../core/reportScreen';
+import { reportDoc, statLines, type DocStat, type ReportDoc } from '../core/reportDoc';
+import { calorieBars, dayStats, dayWord, headline, medalLine, pdfStep, periodName, reportView, stepAnchor, switchAnchor, type Headline, type PdfEvent, type PdfState, type ReportView } from '../core/reportScreen';
 import { stripSince } from '../core/weekStrip';
 import { fill, makeT, numberText } from '../i18n';
 import { prepareReport, shareReport, type PreparedReport } from '../services/reportPdf';
@@ -14,6 +15,7 @@ import { useReportInput } from '../store/useReportInput';
 import { BarChart } from '../ui/charts';
 import { Bar, Btn, Card, Divider, Micro, Screen, Segmented, Small } from '../ui/components';
 import { IconButton } from '../ui/IconButton';
+import { reportColors } from '../ui/reportColors';
 import { C, F, GOLD_NOTE, lh, S, TITLE_WEIGHT } from '../ui/theme';
 import { spokenLine } from '../ui/toastWords';
 
@@ -47,6 +49,36 @@ type Made = { file: PreparedReport; dialogTitle: string };
 const pdfKeyOf = (p: ReportPeriod) => `${p.kind}:${p.start}`;
 
 /**
+ * What a tap on the PDF button does, as plain async work outside the component (the React Compiler cannot compile a try/catch with
+ * conditions in it, and would then leave the whole screen alone). `ready` is the file the web's first tap made, when its second tap is
+ * waiting: that tap shares it at once, since a tap is what lets the browser share. Otherwise the report is built and the file made; the
+ * web hands it to the screen for the second tap, and the phone apps open the Share sheet on the same one. Any failure is `fail`, and
+ * the result of each step is for `key`, the period the tap started on.
+ */
+async function pdfTap(tap: { key: string; ready: Made | null; palette: PaletteId; doc: () => ReportDoc; dispatch: (event: PdfEvent<Made>) => void }): Promise<void> {
+  const { key, ready, dispatch } = tap;
+  try {
+    if (ready) {
+      await shareReport(ready.file, ready.dialogTitle);
+      return;
+    }
+    dispatch({ type: 'start', key });
+    const doc = tap.doc();
+    const dialogTitle = `${doc.title} ${doc.month}`;
+    await afterPaint();
+    const file = await prepareReport(doc, reportColors(tap.palette));
+    if (file.kind === 'web') {
+      dispatch({ type: 'ready', key, prepared: { file, dialogTitle } });
+      return;
+    }
+    dispatch({ type: 'done', key });
+    await shareReport(file, dialogTitle);
+  } catch {
+    dispatch({ type: 'fail', key });
+  }
+}
+
+/**
  * Reports: a day, a week or a month, read the way Progress reads a day (core/report.ts), with the figures against the day, week or
  * month before, the best day, the calories, the perfect-week medals and, for a month, a PDF to share. `/reports?p=week&d=2026-11-02`
  * opens on the period holding that day (week and today when the link says nothing usable); the chevrons and the switch move from there.
@@ -63,11 +95,6 @@ export default function Reports() {
   const opened = useMemo(() => reportView(params.p, params.d, today, since), [params.p, params.d, today, since]);
   const [moved, setMoved] = useState<{ from: ReportView; to: ReportView } | null>(null);
   const view = moved && moved.from.kind === opened.kind && moved.from.anchor === opened.anchor ? moved.to : opened;
-  const go = (to: ReportView) => {
-    setMoved({ from: opened, to });
-    // A file made for the month left is not offered again on coming back to it: the days may have changed since.
-    dispatchPdf({ type: 'period', key: pdfKeyOf(periodOf(to.kind, to.anchor)) });
-  };
 
   const period = useMemo(() => periodOf(view.kind, view.anchor), [view.kind, view.anchor]);
   const { input, medalsHeld } = useReportInput(period);
@@ -86,33 +113,22 @@ export default function Reports() {
 
   const pdfKey = pdfKeyOf(period);
   const [pdf, dispatchPdf] = useReducer(pdfStep<Made>, { key: pdfKey, status: 'idle' } as PdfState<Made>);
+  const go = (to: ReportView) => {
+    setMoved({ from: opened, to });
+    // A file made for the month left is not offered again on coming back to it: the days may have changed since.
+    dispatchPdf({ type: 'period', key: pdfKeyOf(periodOf(to.kind, to.anchor)) });
+  };
   // A state for another period (the address moved it, not a chevron) is no state for this one.
   const here = pdf.key === pdfKey ? pdf : null;
   const palette = state.settings.palette;
-  const makePdf = async () => {
-    const key = pdfKey;
-    try {
-      if (here?.status === 'ready') {
-        // The web's second tap: the file is made, and a tap is what lets the browser share it.
-        await shareReport(here.prepared.file, here.prepared.dialogTitle);
-        return;
-      }
-      dispatchPdf({ type: 'start', key });
-      const doc = reportDoc({ report, before, goals: input.goals, name: state.profile.name, lang, medalsHeld, madeOn: today });
-      const dialogTitle = `${doc.title} ${doc.month}`;
-      await afterPaint();
-      const file = await prepareReport(doc, reportColors(palette));
-      if (file.kind === 'web') {
-        dispatchPdf({ type: 'ready', key, prepared: { file, dialogTitle } });
-        return;
-      }
-      // The phone apps make it and open the Share sheet on one tap.
-      dispatchPdf({ type: 'done', key });
-      await shareReport(file, dialogTitle);
-    } catch {
-      dispatchPdf({ type: 'fail', key });
-    }
-  };
+  const makePdf = () =>
+    pdfTap({
+      key: pdfKey,
+      ready: here?.status === 'ready' ? here.prepared : null,
+      palette,
+      doc: () => reportDoc({ report, before, goals: input.goals, name: state.profile.name, lang, medalsHeld, madeOn: today }),
+      dispatch: dispatchPdf,
+    });
   const pdfLabel =
     here?.status === 'busy' ? t('rep_pdf_preparing') : here?.status === 'ready' ? t(here.prepared.file.kind === 'web' && here.prepared.file.canShare ? 'rep_pdf_share' : 'rep_pdf_save') : t('rep_pdf_button');
 

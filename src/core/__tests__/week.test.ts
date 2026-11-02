@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Meal } from '../types';
-import { isOffDay, weekSummary } from '../week';
+import { isOffDay, kcalOnTarget, weekSummary } from '../week';
 
 const TODAY = '2026-10-07';
 const meal = (date: string, kcal: number): Meal => ({ id: date + kcal, at: `${date}T13:00:00`, date, type: 'lunch', items: [], kcal, protein: 10 });
@@ -60,5 +60,20 @@ describe('weekSummary', () => {
     expect(s.loggedDays).toBe(1);
     expect(s.heavyDays).toBe(0);
     expect(s.avgKcal).toBe(1700);
+  });
+});
+
+describe('kcalOnTarget', () => {
+  it('is from 70% of the target to 10% over it, edges included', () => {
+    expect(kcalOnTarget(700, 1000)).toBe(true);
+    expect(kcalOnTarget(699, 1000)).toBe(false);
+    expect(kcalOnTarget(1000, 1000)).toBe(true);
+    expect(kcalOnTarget(1100, 1000)).toBe(true);
+    expect(kcalOnTarget(1101, 1000)).toBe(false);
+  });
+
+  it('is the band the week\'s grid gives a day', () => {
+    const band = (kcal: number) => weekSummary({ today: TODAY, meals: [meal(TODAY, kcal)], water: [], sleep: [], steps: [], weights: [], kcalTarget: 1000, waterGoalMl: 2000 }).days[6].kcalBand;
+    for (const kcal of [699, 700, 1000, 1100, 1101, 1200, 1201]) expect(band(kcal) === 'on', String(kcal)).toBe(kcalOnTarget(kcal, 1000));
   });
 });
