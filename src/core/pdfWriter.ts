@@ -15,7 +15,7 @@
 
 export type JpegPage = { jpeg: Uint8Array; width: number; height: number }; // pixel size of the JPEG
 
-export const A4_PT = { width: 595, height: 842 };
+export const A4_PT = { width: 595, height: 842 } as const;
 
 // The second line of the file: a comment of bytes 128 and over, which is how a
 // reader (and a file transfer tool) knows the file holds binary data.
