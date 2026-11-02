@@ -30,7 +30,8 @@ It grows harder as the Routine streak grows, so it keeps pace with the user.
   job due today is done (`dayStatus(app.abhyas, today, now)`: `total > 0` and
   `done === total`, the running timer's minutes included). On a day with no
   Routine job due, it opens when today's meals are all logged or skipped (the
-  record's complete mark, `isCompleteMark` on today's `markOf`). Nothing about
+  record's complete mark, `isCompleteMark` on today's `markOf`), and on a free
+  (off) day with no job due it is simply open: a rest day's small treat. Nothing about
   opening is stored: undo a tick and the unsolved puzzle closes again; a
   solved one stays solved.
 - **New every day, the same everywhere.** The puzzle is built from the date
@@ -46,17 +47,20 @@ It grows harder as the Routine streak grows, so it keeps pace with the user.
 
 ## Levels
 
-| Level | Routine streak | Grid | Numbers (about) |
+| Level | Routine streak | Grid | Numbers |
 |---|---|---|---|
-| 1 | 0–2 days | 5 × 5 | 9 |
-| 2 | 3–6 | 6 × 6 | 10 |
-| 3 | 7–20 | 6 × 6 | 7 |
-| 4 | 21–29 | 7 × 7 | 9 |
-| 5 | 30–65 | 7 × 7 | 7 |
-| 6 | 66 and more | 8 × 8 | 8 |
+| 1 | 0–2 days | 5 × 5 | generous: about 12 |
+| 2 | 3–6 | 6 × 6 | generous: about 16 |
+| 3 | 7–20 | 6 × 6 | only what one answer needs (about 11) |
+| 4 | 21–29 | 7 × 7 | generous: about 20 |
+| 5 | 30–65 | 7 × 7 | only what one answer needs (about 15) |
+| 6 | 66 and more | 8 × 8 | only what one answer needs (about 21) |
 
-The number count is a target. The generator adds numbers past it when that is
-what one answer needs (see below), never fewer than 1 and N.
+Without walls, one answer needs roughly a third of the squares numbered, so a
+grid's hardest form is the fewest numbers that keep one answer. The first
+level at each grid size is made gentler by giving more numbers than that (the
+target count), spread evenly along the line. The generator never gives fewer
+than one answer needs, never fewer than 1 and N.
 
 ## Core: `src/core/zip.ts` (pure, tested)
 

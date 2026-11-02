@@ -16,12 +16,17 @@ export type Cell = number;
 /** `clues` maps a square to its number, 1 to `last`; a plain record so a puzzle can be compared and saved. */
 export type ZipPuzzle = { date: ISODate; level: ZipLevel; size: number; clues: Record<number, number>; last: number };
 
-/** The grid and the count of numbers aimed for at each level. The generator adds numbers past the aim when one answer needs it. */
+/**
+ * The grid and the count of numbers aimed for at each level. Without walls one answer needs about a third of the squares
+ * numbered, so the generator adds numbers past the aim whenever that is what one answer needs: levels 3, 5 and 6 (the
+ * hardest form of their grids, 7, 7 and 8) end up with only what one answer needs. The first level at each grid size (1, 2
+ * and 4) aims higher (12, 16 and 20), numbers spread evenly along the line, which is the gentler form of that grid.
+ */
 export const LEVELS: Record<ZipLevel, { size: number; numbers: number }> = {
-  1: { size: 5, numbers: 9 },
-  2: { size: 6, numbers: 10 },
+  1: { size: 5, numbers: 12 },
+  2: { size: 6, numbers: 16 },
   3: { size: 6, numbers: 7 },
-  4: { size: 7, numbers: 9 },
+  4: { size: 7, numbers: 20 },
   5: { size: 7, numbers: 7 },
   6: { size: 8, numbers: 8 },
 };
@@ -78,7 +83,10 @@ function cellOfNumber(p: ZipPuzzle, n: number): Cell {
   return -1;
 }
 
-/** The number due next on a line: one more than the highest number it has passed, or 1 for an empty line. */
+/**
+ * The number due next on a line: one more than the highest number it has passed, or 1 for an empty line. The line `step` builds
+ * always meets the numbers in order, so this is also the smallest number not yet on the line.
+ */
 function nextDue(p: ZipPuzzle, path: Cell[]): number {
   let top = 0;
   for (const c of path) top = Math.max(top, numberAt(p, c));
@@ -123,11 +131,11 @@ export function step(p: ZipPuzzle, path: Cell[], cell: Cell): Cell[] {
   const dc = (cell % p.size) - (end % p.size);
   if (dr !== 0 && dc !== 0) return path;
   // Along one row or column: the squares between, then the target, one at a time from the end.
-  const along = dr !== 0 ? Math.sign(dr) * p.size : Math.sign(dc);
+  const stride = dr !== 0 ? Math.sign(dr) * p.size : Math.sign(dc);
   const count = Math.abs(dr !== 0 ? dr : dc);
   let line = path;
   for (let i = 1; i <= count; i++) {
-    const next = stepOne(p, line, end + along * i);
+    const next = stepOne(p, line, end + stride * i);
     if (next === line) break;
     line = next;
   }
@@ -225,7 +233,8 @@ function search(p: ZipPuzzle, cap: number, budget: number): { found: Cell[][]; c
   /** How many squares next to `u` are free or hold the line's end. */
   const ways = (u: Cell, end: Cell): number => {
     let w = 0;
-    for (const x of nbrs[u]) if (seen[x] === 0 || x === end) w++;
+    const beside = nbrs[u];
+    for (let i = 0; i < beside.length; i++) if (seen[beside[i]] === 0 || beside[i] === end) w++;
     return w;
   };
 
@@ -239,7 +248,9 @@ function search(p: ZipPuzzle, cap: number, budget: number): { found: Cell[][]; c
     while (top > 0) {
       const c = stack[--top];
       if (c === finish) continue;
-      for (const x of nbrs[c]) {
+      const beside = nbrs[c];
+      for (let i = 0; i < beside.length; i++) {
+        const x = beside[i];
         if (seen[x] === 1 || reached[x] === stamp) continue;
         reached[x] = stamp;
         count++;
@@ -250,14 +261,20 @@ function search(p: ZipPuzzle, cap: number, budget: number): { found: Cell[][]; c
     if (from < 0) {
       for (let u = 0; u < n; u++) if (seen[u] === 0 && ways(u, end) < (u === finish ? 1 : 2)) return false;
     } else {
-      for (const u of nbrs[from]) if (seen[u] === 0 && u !== end && ways(u, end) < (u === finish ? 1 : 2)) return false;
+      const beside = nbrs[from];
+      for (let i = 0; i < beside.length; i++) {
+        const u = beside[i];
+        if (seen[u] === 0 && u !== end && ways(u, end) < (u === finish ? 1 : 2)) return false;
+      }
     }
     return true;
   };
 
   /** The line is at `end`, the number `due` is next and `left` squares are free. */
   const go = (end: Cell, due: number, left: number): void => {
-    for (const nb of nbrs[end]) {
+    const beside = nbrs[end];
+    for (let i = 0; i < beside.length; i++) {
+      const nb = beside[i];
       if (seen[nb] === 1) continue;
       const k = num[nb];
       if (k !== 0 && k !== due) continue;
@@ -405,6 +422,21 @@ function middlesOfWidest(marks: number[], count: number): number[] {
 }
 
 /**
+ * The positions along the line to number next, after a check of the puzzle those marks give (`found`: the answers it found, which
+ * are the built line or another). A second answer: the square that loses it (`splitAt`), else the middle of the widest stretch.
+ * None found, which is a check that ran out of budget: the middles of a quarter more of the stretches, widest first. Empty only
+ * when every square already holds a number.
+ */
+function nextMarks(path: Cell[], found: Cell[][], marks: number[]): number[] {
+  const other = found.find((f) => f.some((c, i) => c !== path[i]));
+  if (other) {
+    const at = splitAt(path, other, marks);
+    return at >= 0 ? [at] : middlesOfWidest(marks, 1);
+  }
+  return middlesOfWidest(marks, Math.max(1, Math.floor(marks.length / 4)));
+}
+
+/**
  * Builds the puzzle for a date and level, and the line it was built from (for
  * tests; the line is never shown). The random generator is seeded from the date
  * and level alone. It draws a random line over the grid, numbers its two ends
@@ -422,9 +454,7 @@ export function buildPuzzle(date: ISODate, level: ZipLevel): { puzzle: ZipPuzzle
     const puzzle = along(date, level, path, marks);
     const { found, complete } = search(puzzle, 2, BUDGET);
     if (complete && found.length < 2) return { puzzle, path };
-    const other = found.find((f) => f.some((c, i) => c !== path[i]));
-    let add = other ? [splitAt(path, other, marks)] : middlesOfWidest(marks, Math.max(1, Math.floor(marks.length / 4)));
-    if (add[0] === undefined || add[0] < 0) add = middlesOfWidest(marks, 1);
+    const add = nextMarks(path, found, marks);
     // Every square numbered: nothing left to add, and the numbers fix the line.
     if (add.length === 0) return { puzzle, path };
     marks.push(...add);

@@ -57,10 +57,10 @@ describe('levelFor and LEVELS', () => {
   it('has the grid and the number target of the design for each level', () => {
     const rows = ([1, 2, 3, 4, 5, 6] as ZipLevel[]).map((l) => [LEVELS[l].size, LEVELS[l].numbers]);
     expect(rows).toEqual([
-      [5, 9],
-      [6, 10],
+      [5, 12],
+      [6, 16],
       [6, 7],
-      [7, 9],
+      [7, 20],
       [7, 7],
       [8, 8],
     ]);
@@ -304,18 +304,98 @@ describe('solutions', () => {
   });
 });
 
+/** A random line over every square of a small grid: a walk that turns to a random neighbour first and backs up when it is stuck. On a grid of odd size it starts on the colour the line must start on. */
+function randomLine(size: number, rand: () => number): Cell[] {
+  const n = size * size;
+  const seen = new Set<Cell>();
+  const line: Cell[] = [];
+  const go = (cell: Cell): boolean => {
+    seen.add(cell);
+    line.push(cell);
+    if (line.length === n) return true;
+    const r = Math.floor(cell / size);
+    const c = cell % size;
+    const next = [r > 0 ? cell - size : -1, r < size - 1 ? cell + size : -1, c > 0 ? cell - 1 : -1, c < size - 1 ? cell + 1 : -1].filter((x) => x >= 0 && !seen.has(x));
+    while (next.length > 0) {
+      const [nb] = next.splice(Math.floor(rand() * next.length), 1);
+      if (go(nb)) return true;
+    }
+    seen.delete(cell);
+    line.pop();
+    return false;
+  };
+  let start = Math.floor(rand() * n);
+  if (size % 2 === 1 && (Math.floor(start / size) + (start % size)) % 2 === 1) start = (start + 1) % n;
+  go(start);
+  return line;
+}
+
+/** `count` distinct values from 0 up to `below`, in random order. */
+function pickSome(count: number, below: number, rand: () => number): number[] {
+  const all = Array.from({ length: below }, (_, i) => i);
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  return all.slice(0, count);
+}
+
+describe('solutions against the plain count, on random small puzzles', () => {
+  // Seeded, so the same thousand puzzles every run. Half have their numbers on random squares (most cannot be met, a few have many
+  // answers); half have them along a real line over the grid (always at least one answer, often several, one when the numbers are enough).
+  const CASES = 1000;
+
+  it(`counts ${CASES} random 4 x 4 and 5 x 5 puzzles as the plain count does, whatever the number of answers`, () => {
+    const tally = { none: 0, one: 0, many: 0 };
+    const rand = mulberry32(20261102);
+    for (let i = 0; i < CASES; i++) {
+      const size = i % 2 === 0 ? 4 : 5;
+      const n = size * size;
+      const count = 2 + Math.floor(rand() * (size === 4 ? 5 : 7));
+      const clues: Record<number, number> = {};
+      if (i % 4 < 2) {
+        // On random squares: the numbers 1 to `count`, each on a square of its own.
+        pickSome(count, n, rand).forEach((cell, at) => {
+          clues[cell] = at + 1;
+        });
+      } else {
+        // Along a line over every square: its two ends and `count - 2` squares between.
+        const line = randomLine(size, rand);
+        const marks = [0, ...pickSome(count - 2, n - 2, rand).map((m) => m + 1).sort((a, b) => a - b), n - 1];
+        marks.forEach((at, k) => {
+          clues[line[at]] = k + 1;
+        });
+      }
+      const p: ZipPuzzle = { date: '2026-11-02', level: 1, size, clues, last: count };
+      const want = naiveCount(p);
+      expect(solutions(p, 1_000_000, BIG), `puzzle ${i}: ${JSON.stringify(clues)}`).toEqual({ count: want, complete: true });
+      expect(solutions(p, 2, BIG), `puzzle ${i}, up to two`).toEqual({ count: Math.min(2, want), complete: true });
+      if (want === 0) tally.none++;
+      else if (want === 1) tally.one++;
+      else tally.many++;
+    }
+    // The thousand are a fair mix: some with no answer, some with one and some with several.
+    expect(tally.none).toBeGreaterThan(100);
+    expect(tally.one).toBeGreaterThan(30);
+    expect(tally.many).toBeGreaterThan(100);
+  });
+
+  it('counts the 60 level-1 puzzles of November as the plain count does: one answer each', () => {
+    for (let i = 0; i < 60; i++) {
+      const date = addDays('2026-11-01', i);
+      expect(naiveCount(puzzleFor(date, 1)), date).toBe(1);
+    }
+  });
+});
+
 describe('puzzleFor', () => {
   const dates = Array.from({ length: 60 }, (_, i) => addDays('2026-11-01', i));
-  const timings: number[] = [];
 
   for (const level of [1, 2, 3, 4, 5, 6] as ZipLevel[]) {
     it(`builds a valid puzzle with one answer at level ${level}, for 60 dates`, () => {
       const { size, numbers } = LEVELS[level];
-      let slowest = 0;
       for (const date of dates) {
-        const t0 = performance.now();
         const { puzzle: p, path } = buildPuzzle(date, level);
-        slowest = Math.max(slowest, performance.now() - t0);
         const label = `${date} level ${level}`;
         expect(p.date, label).toBe(date);
         expect(p.level, label).toBe(level);
@@ -335,17 +415,27 @@ describe('puzzleFor', () => {
         expect(p.last, label).toBeLessThanOrEqual(Math.floor(0.6 * size * size));
         const along = path.map((c) => p.clues[c]).filter((n) => n !== undefined);
         expect(along, label).toEqual(Array.from({ length: p.last }, (_, i) => i + 1));
+        // Spread along the line: no stretch between two numbers is longer than an even spread, nudged a little, would leave.
+        const at = path.flatMap((c, i) => (p.clues[c] !== undefined ? [i] : []));
+        const widest = Math.max(...at.slice(1).map((x, i) => x - at[i]));
+        expect(widest, label).toBeLessThanOrEqual(Math.ceil((size * size - 1) / (numbers - 1)) + 4);
         expect(solved(p, path), label).toBe(true);
         // One answer, found by a search that was allowed to finish.
         expect(solutions(p, 2, BIG), label).toEqual({ count: 1, complete: true });
       }
-      timings.push(slowest);
     });
   }
 
   it('builds every level well inside the time a phone has (slowest build of any date and level)', () => {
-    expect(timings).toHaveLength(6);
-    expect(Math.max(...timings)).toBeLessThan(250);
+    let slowest = 0;
+    for (const level of [1, 2, 3, 4, 5, 6] as ZipLevel[]) {
+      for (const date of dates) {
+        const t0 = performance.now();
+        buildPuzzle(date, level);
+        slowest = Math.max(slowest, performance.now() - t0);
+      }
+    }
+    expect(slowest).toBeLessThan(250);
   });
 
   it('gives the same puzzle for the same date and level, and others for other dates and levels', () => {
@@ -372,12 +462,12 @@ describe('puzzleFor', () => {
       date: '2026-11-02',
       level: 1,
       size: 5,
-      clues: { 1: 3, 4: 1, 6: 2, 9: 8, 14: 9, 15: 6, 16: 5, 17: 4, 19: 7 },
-      last: 9,
+      clues: { 4: 1, 6: 3, 7: 2, 8: 10, 9: 11, 10: 4, 11: 5, 12: 6, 14: 12, 20: 7, 21: 8, 23: 9 },
+      last: 12,
     });
     // A fingerprint of the whole puzzle of that day at each level.
     const prints = ([1, 2, 3, 4, 5, 6] as ZipLevel[]).map((l) => hashString(JSON.stringify(puzzleFor('2026-11-02', l))));
-    expect(prints).toEqual([2125174122, 2944207107, 3031794404, 3723629840, 1270934230, 2081711117]);
+    expect(prints).toEqual([23060643, 1766694464, 3031794404, 2423127056, 1270934230, 2081711117]);
   });
 
   it('the puzzle is plain data: it survives being saved and read back', () => {
