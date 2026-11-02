@@ -1101,20 +1101,31 @@ describe("the solved puzzles of Today's puzzle", () => {
     expect(stable(merge3(base, pc, phone).puzzles)).toBe(stable(out.puzzles));
   });
 
-  it('a day solved on both ends as one record, whichever device merges, and the devices then agree', () => {
+  it('a day solved on both ends is one record: the device merging last keeps its own, the other adopts it on its next round, and then nothing moves', () => {
     const base = withPuzzles([]);
     const phone = withPuzzles([solved('2026-11-02', 75, 2)]);
     const pc = withPuzzles([solved('2026-11-02', 110, 2)]);
+    // One record whichever device merges, and it is one of the two.
     for (const [a, b] of [[phone, pc], [pc, phone]]) {
       const out = merge3(base, a, b);
       expect(out.puzzles).toHaveLength(1);
       expect([a.puzzles, b.puzzles].map(stable)).toContain(stable(out.puzzles));
     }
-    // The phone merges first and writes; the PC then merges that file with its own and lands on the same record.
-    const file = merge3(base, phone, pc);
-    const landed = merge3(pc, pc, file);
-    expect(landed.puzzles).toEqual(file.puzzles);
-    expect(sameCloud(merge3(file, file, landed), file)).toBe(true);
+    // The faster time is not guaranteed across devices: the collection's usual rule decides (`withSolved` keeps the faster only on
+    // a device that sees both through `solvePuzzle`). Both devices solved after the base, so each keeps its own when it merges.
+    // Round 1: the phone merges the PC's file and writes its own record.
+    const file1 = merge3(base, phone, pc);
+    expect(file1.puzzles).toEqual(phone.puzzles);
+    // Round 2: the PC, still at the pre-solve base, merges the phone's file and keeps its own record, the one that merges last.
+    const file2 = merge3(base, pc, file1);
+    expect(file2.puzzles).toEqual(pc.puzzles);
+    // Round 3: the phone's base is the file it wrote, so it changed nothing since and adopts the PC's record.
+    const phone3 = merge3(file1, file1, file2);
+    expect(phone3.puzzles).toEqual(pc.puzzles);
+    // Then stable: the PC's next round and the phone's both give the file as it is, so nothing is written back and forth.
+    expect(sameCloud(merge3(file2, file2, phone3), file2)).toBe(true);
+    expect(sameCloud(merge3(file2, phone3, file2), file2)).toBe(true);
+    expect(sameCloud(merge3(phone3, phone3, file2), file2)).toBe(true);
   });
 
   it('a record only one side has, from a device that has not synced since, stays on the other', () => {

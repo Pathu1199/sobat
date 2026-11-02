@@ -8,9 +8,10 @@ import { useRecordOn } from './useRecordOn';
 
 /**
  * Where Today's puzzle stands now (`puzzleToday`), from the store, each part read the way the screen that shows it reads it: the
- * Routine's jobs as the Routine tab's header counts them (a running timer's minutes included, at `useNow()`), today's complete
- * mark as Progress and Reports judge a day (`useRecordOn`, `markOf`, `stripSince`: never a second way of reading a day), the
- * streak as the Routine tab shows it (with its shield), and today's solved record. Nothing about opening is stored.
+ * Routine's jobs as the Routine tab's header counts them (a running timer's minutes included, at `useNow()`), today's mark as
+ * Progress and Reports judge a day (`useRecordOn`, `markOf`, `stripSince`: never a second way of reading a day), read for its
+ * complete mark and for a free (off) day, the streak as the Routine tab shows it (with its shield), and today's solved record.
+ * Nothing about opening is stored.
  */
 export function usePuzzleToday(): PuzzleToday {
   const app = useApp();
@@ -20,7 +21,7 @@ export function usePuzzleToday(): PuzzleToday {
   const { profile, meals, puzzles } = app.state;
   const { done, total } = abhyasCard(abhyas, today, today, now);
   const since = stripSince(profile, meals, today);
-  const mealsComplete = isCompleteMark(markOf(recordOn(today), today, today, since).mark);
+  const { mark } = markOf(recordOn(today), today, today, since);
   const streak = streakRun(abhyas, today, now, true).days;
-  return puzzleToday({ routine: { done, total }, mealsComplete, streak, solved: puzzles.find((p) => p.date === today) });
+  return puzzleToday({ routine: { done, total }, mealsComplete: isCompleteMark(mark), freeDay: mark === 'off', streak, solved: puzzles.find((p) => p.date === today) });
 }

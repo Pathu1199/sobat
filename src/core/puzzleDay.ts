@@ -1,6 +1,6 @@
 import { isIsoDate } from './date';
 import type { ISODate, PuzzleLog } from './types';
-import { levelFor, type ZipLevel } from './zip';
+import { LEVELS, levelFor, type ZipLevel } from './zip';
 
 /**
  * Today's puzzle, the day around it: whether it is open, what a solved day stores, and what a record must look like.
@@ -16,24 +16,31 @@ export type PuzzleToday =
 
 /**
  * Today's puzzle from the Routine's jobs due today (`done` of `total`, a running timer's minutes counted), whether today's meals
- * are all logged or skipped (`isCompleteMark`), the Routine streak with its shield, and today's record if it was solved.
- * A solved day stays solved, whatever the Routine says afterwards (a tick undone changes nothing) and at the level it was solved
- * at. Otherwise a day with jobs opens when every job is done, and a day with none when the meals are settled. The level is the
- * streak's (`levelFor`). Nothing here is stored: undo a tick and an unsolved puzzle closes again.
+ * are all logged or skipped (`isCompleteMark`), whether today is a free (off) day, the Routine streak with its shield, and
+ * today's record if it was solved. A solved day stays solved, whatever the Routine says afterwards (a tick undone changes
+ * nothing) and at the level it was solved at. Otherwise a day with jobs opens when every job is done (the Routine rule wins, on
+ * a free day too), and a day with none opens when the meals are settled, or at once on a free day: a rest day's small treat.
+ * The level is the streak's (`levelFor`). Nothing here is stored: undo a tick and an unsolved puzzle closes again.
  */
-export function puzzleToday(o: { routine: { done: number; total: number }; mealsComplete: boolean; streak: number; solved: PuzzleLog | undefined }): PuzzleToday {
+export function puzzleToday(o: {
+  routine: { done: number; total: number };
+  mealsComplete: boolean;
+  freeDay: boolean;
+  streak: number;
+  solved: PuzzleLog | undefined;
+}): PuzzleToday {
   if (o.solved) return { kind: 'solved', level: o.solved.level, seconds: o.solved.seconds };
   if (o.routine.total > 0) {
     return o.routine.done >= o.routine.total ? { kind: 'open', level: levelFor(o.streak) } : { kind: 'closed', by: 'routine', done: o.routine.done, total: o.routine.total };
   }
-  return o.mealsComplete ? { kind: 'open', level: levelFor(o.streak) } : { kind: 'closed', by: 'meals' };
+  return o.mealsComplete || o.freeDay ? { kind: 'open', level: levelFor(o.streak) } : { kind: 'closed', by: 'meals' };
 }
 
-/** A solved record as the app reads it: a real date, a time in seconds that is a number from 0 up, and a level from 1 to 6. */
+/** A solved record as the app reads it: a real date, a time in seconds that is a number from 0 up, and a level the puzzle has (a whole number that is a key of `LEVELS`). */
 export function isPuzzleLog(v: unknown): v is PuzzleLog {
   if (typeof v !== 'object' || v === null) return false;
   const r = v as Record<string, unknown>;
-  return isIsoDate(r.date) && typeof r.seconds === 'number' && Number.isFinite(r.seconds) && r.seconds >= 0 && typeof r.level === 'number' && Number.isInteger(r.level) && r.level >= 1 && r.level <= 6;
+  return isIsoDate(r.date) && typeof r.seconds === 'number' && Number.isFinite(r.seconds) && r.seconds >= 0 && typeof r.level === 'number' && Number.isInteger(r.level) && r.level in LEVELS;
 }
 
 /**

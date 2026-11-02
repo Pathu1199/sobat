@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { isPuzzleLog, puzzleToday, withSolved } from '../puzzleDay';
 import type { PuzzleLog } from '../types';
+import { LEVELS, type ZipLevel } from '../zip';
 
 const log = (date: string, seconds: number, level: PuzzleLog['level'] = 1): PuzzleLog => ({ date, seconds, level });
 
 describe('puzzleToday', () => {
-  const base = { routine: { done: 0, total: 0 }, mealsComplete: false, streak: 0, solved: undefined };
+  const base = { routine: { done: 0, total: 0 }, mealsComplete: false, freeDay: false, streak: 0, solved: undefined };
 
   it('is closed by the Routine while jobs are left, saying how many are done', () => {
     expect(puzzleToday({ ...base, routine: { done: 2, total: 4 } })).toEqual({ kind: 'closed', by: 'routine', done: 2, total: 4 });
@@ -38,6 +39,22 @@ describe('puzzleToday', () => {
     expect(puzzleToday({ ...base, mealsComplete: true, streak: 8 })).toEqual({ kind: 'open', level: 3 });
   });
 
+  it('on a free day with no job due is open at the streak\'s level, with the meals logged or not: a rest day\'s small treat', () => {
+    expect(puzzleToday({ ...base, freeDay: true })).toEqual({ kind: 'open', level: 1 });
+    expect(puzzleToday({ ...base, freeDay: true, mealsComplete: true, streak: 25 })).toEqual({ kind: 'open', level: 4 });
+    expect(puzzleToday({ ...base, freeDay: true, streak: 70 })).toEqual({ kind: 'open', level: 6 });
+  });
+
+  it('on a free day with a job due still needs the job: the Routine rule wins', () => {
+    expect(puzzleToday({ ...base, freeDay: true, routine: { done: 1, total: 2 } })).toEqual({ kind: 'closed', by: 'routine', done: 1, total: 2 });
+    expect(puzzleToday({ ...base, freeDay: true, routine: { done: 1, total: 2 }, mealsComplete: true })).toEqual({ kind: 'closed', by: 'routine', done: 1, total: 2 });
+    expect(puzzleToday({ ...base, freeDay: true, routine: { done: 2, total: 2 }, streak: 8 })).toEqual({ kind: 'open', level: 3 });
+  });
+
+  it('a solved day reads solved on a free day too', () => {
+    expect(puzzleToday({ ...base, freeDay: true, solved: log('2026-11-02', 61, 2) })).toEqual({ kind: 'solved', level: 2, seconds: 61 });
+  });
+
   it('shows the stored time and level once solved, whatever the Routine and the streak say now', () => {
     const solved = log('2026-11-02', 83, 2);
     expect(puzzleToday({ ...base, routine: { done: 4, total: 4 }, streak: 80, solved })).toEqual({ kind: 'solved', level: 2, seconds: 83 });
@@ -60,6 +77,27 @@ describe('isPuzzleLog', () => {
     for (const bad of [null, undefined, 'x', 7, [], {}, { ...good, date: '2026-13-40' }, { ...good, date: '02-11-2026' }, { ...good, date: 20261102 }, { ...good, seconds: -1 }, { ...good, seconds: Number.NaN }, { ...good, seconds: Number.POSITIVE_INFINITY }, { ...good, seconds: '83' }, { ...good, level: 0 }, { ...good, level: 7 }, { ...good, level: 2.5 }, { ...good, level: '3' }, { date: good.date, seconds: 83 }]) {
       expect(isPuzzleLog(bad), JSON.stringify(bad)).toBe(false);
     }
+  });
+});
+
+describe('isPuzzleLog and the levels', () => {
+  it('reads the level range from LEVELS, so a level added later is not dropped on load', () => {
+    const table = LEVELS as Record<number, (typeof LEVELS)[ZipLevel]>;
+    const seventh = { date: '2026-11-02', seconds: 90, level: 7 };
+    expect(isPuzzleLog(seventh)).toBe(false);
+    table[7] = { size: 9, numbers: 9 };
+    try {
+      expect(isPuzzleLog(seventh)).toBe(true);
+      expect(isPuzzleLog({ ...seventh, level: 8 })).toBe(false);
+    } finally {
+      delete table[7];
+    }
+    expect(isPuzzleLog(seventh)).toBe(false);
+  });
+
+  it('accepts exactly the levels LEVELS has, as whole numbers', () => {
+    for (const level of Object.keys(LEVELS).map(Number)) expect(isPuzzleLog(log('2026-11-02', 5, level as ZipLevel)), `level ${level}`).toBe(true);
+    for (const level of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 'constructor', '1']) expect(isPuzzleLog({ ...log('2026-11-02', 5), level }), String(level)).toBe(false);
   });
 });
 
