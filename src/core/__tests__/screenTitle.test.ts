@@ -8,6 +8,7 @@ describe('page titles', () => {
     expect(titleKeyFor('/food?s=plan')).toBe('tab_food');
     expect(titleKeyFor('/settings/')).toBe('hdr_settings');
     expect(titleKeyFor('/sleep-tab')).toBe('hdr_sleep');
+    expect(titleKeyFor('/puzzle')).toBe('zip_title');
     expect(titleKeyFor('/welcome')).toBeNull();
   });
 

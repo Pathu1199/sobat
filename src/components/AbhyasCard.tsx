@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { abhyasCard } from '../core/abhyasView';
@@ -7,6 +8,7 @@ import { fill, makeT } from '../i18n';
 import { useFeedback } from '../services/feedback';
 import { useNow } from '../services/useClock';
 import { useApp } from '../store/AppProvider';
+import { usePuzzleToday } from '../store/usePuzzleToday';
 import { Card, Divider } from '../ui/components';
 import { IconButton } from '../ui/IconButton';
 import { withUndoAt } from '../ui/listUndo';
@@ -36,6 +38,7 @@ export function AbhyasCard({ date }: { date: ISODate }) {
   const now = useNow();
   const t = makeT(app.state.profile.lang);
   const { rows, done, total } = abhyasCard(app.abhyas, date, app.today, now);
+  const puzzle = usePuzzleToday();
   // The sheet opens on fresh fields each time: a new key per opening, kept while it slides away.
   const [sheet, setSheet] = useState<{ item: AbhyasItem | null; n: number; open: boolean }>({ item: null, n: 0, open: false });
   const removed = useUndoable<{ item: AbhyasItem; index: number }>((r) => fill(t('abh_removed'), { name: r.item.name }), t('undo'));
@@ -101,6 +104,18 @@ export function AbhyasCard({ date }: { date: ISODate }) {
           <Ionicons name="add-circle-outline" size={22} color={C.accentText} />
           <Text style={{ flex: 1, color: C.textDim, fontSize: F.body, lineHeight: lh(F.body) }}>{empty}</Text>
         </Pressable>
+      ) : null}
+      {/* One line at the foot while today's puzzle is open and not yet played: never on another day, and nothing when it is closed or solved. */}
+      {date === app.today && puzzle.kind === 'open' ? (
+        <>
+          <Divider />
+          <Pressable
+            onPress={() => router.push('/puzzle')}
+            accessibilityRole="link"
+            style={({ pressed }) => ({ minHeight: S.touch, justifyContent: 'center', marginVertical: -8, opacity: pressed ? 0.7 : 1 })}>
+            <Text style={{ color: C.accentText, fontSize: F.small, lineHeight: lh(F.small), fontWeight: '500' }}>{`${t('zip_open_title')} ›`}</Text>
+          </Pressable>
+        </>
       ) : null}
       <AbhyasItemSheet
         key={sheet.n}

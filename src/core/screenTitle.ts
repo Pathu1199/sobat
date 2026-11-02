@@ -19,6 +19,7 @@ export const TITLES: Record<string, string> = {
   '/customize': 'hdr_customize',
   '/history': 'hdr_history',
   '/reports': 'rep_title',
+  '/puzzle': 'zip_title',
   '/guide': 'hdr_guide',
   '/journey': 'hdr_journey',
   '/photo': 'hdr_photo',

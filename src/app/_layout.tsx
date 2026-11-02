@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Platform, useColorScheme, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BreakOverlay } from '../components/BreakOverlay';
 import { BreakToast } from '../components/BreakToast';
 import { HeaderBack } from '../components/HeaderBack';
@@ -40,20 +41,23 @@ import { applyTextScale, applyTheme, C, paletteNow, themeMode, type ThemeMode } 
 export const unstable_settings = { anchor: '(tabs)' };
 
 export default function RootLayout() {
+  // Gesture Handler's root view: the puzzle board's pan is the app's one use of it, and on Android a gesture works only under a root.
   return (
-    <AppProvider>
-      <Themed>
-        <FeedbackProvider>
-          <BreakMonitorProvider>
-            <AIProvider>
-              <CloudSyncProvider>
-                <AppShell />
-              </CloudSyncProvider>
-            </AIProvider>
-          </BreakMonitorProvider>
-        </FeedbackProvider>
-      </Themed>
-    </AppProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppProvider>
+        <Themed>
+          <FeedbackProvider>
+            <BreakMonitorProvider>
+              <AIProvider>
+                <CloudSyncProvider>
+                  <AppShell />
+                </CloudSyncProvider>
+              </AIProvider>
+            </BreakMonitorProvider>
+          </FeedbackProvider>
+        </Themed>
+      </AppProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -172,6 +176,7 @@ function AppShell() {
         <Stack.Screen name="journey" options={{ title: t('hdr_journey') }} />
         <Stack.Screen name="history" options={{ title: t('hdr_history') }} />
         <Stack.Screen name="reports" options={{ title: t('rep_title') }} />
+        <Stack.Screen name="puzzle" options={{ title: t('zip_title') }} />
         <Stack.Screen name="plan" options={{ title: t('hdr_plan') }} />
         <Stack.Screen name="settings" options={{ title: t('hdr_settings') }} />
         <Stack.Screen name="customize" options={{ title: t('hdr_customize') }} />

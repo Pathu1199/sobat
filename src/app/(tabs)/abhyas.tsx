@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, Pressable, Text, View } from 'react-native';
 import { AbhyasItemRow } from '../../components/AbhyasItemRow';
 import { AbhyasItemSheet } from '../../components/AbhyasItemSheet';
+import { PuzzleCard } from '../../components/PuzzleCard';
 import { ShieldNote } from '../../components/ShieldNote';
 import { UndoLine, useUndoable } from '../../components/tiles/UndoLine';
 import { itemsOn, reorder, streakRun, type DayStatus } from '../../core/abhyas';
@@ -165,6 +166,8 @@ export default function AbhyasTab() {
           ) : null}
         </Card>
       </View>
+
+      <PuzzleCard />
 
       {reps.length > 0 || held?.from === 'repeat' ? (
         <View style={{ gap: 10 }}>

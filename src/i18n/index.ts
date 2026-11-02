@@ -1033,6 +1033,16 @@ const en: Dict = {
   rep_pdf_button: 'Download monthly report', rep_pdf_preparing: 'Preparing…', rep_pdf_share: 'Share PDF', rep_pdf_save: 'Save PDF',
   rep_pdf_error: 'Could not make the report. Try again.',
   rep_all_charts: 'All charts',
+  // Today's puzzle (Zip): the Routine's reward, never required. The closed line's "· 3 of 4" is joined with no-break spaces, so it never breaks apart across lines.
+  zip_title: "Today's puzzle", zip_open_title: "Today's puzzle is open",
+  zip_closed_routine: "Opens when today's Routine is done\u00A0·\u00A0{n}\u00A0of\u00A0{m}", zip_closed_meals: "Opens when today's meals are logged",
+  zip_level_about: 'Level {n} · {about}', zip_about_one: 'about a minute', zip_about_n: 'about {n} minutes',
+  zip_level_grows: 'Level {n} · grows with your Routine streak',
+  zip_solved_in: 'Solved in {time}', zip_new_tomorrow: 'A new puzzle tomorrow',
+  zip_play: 'Play', zip_start_again: 'Start again', zip_preparing: 'Preparing…', zip_to_routine: 'Back to Routine',
+  zip_how: 'Draw one line from 1 to {n}, through every square, meeting the numbers in order.',
+  zip_board: 'Puzzle, {n} by {n} squares',
+  zip_cell: 'Row {r}, column {c}', zip_cell_number: 'number {n}', zip_cell_on: 'on the line', zip_cell_end: 'end of the line',
 };
 
 const mr: Dict = {
@@ -2068,6 +2078,16 @@ const mr: Dict = {
   rep_pdf_button: 'मासिक अहवाल डाउनलोड करा', rep_pdf_preparing: 'तयार होत आहे…', rep_pdf_share: 'PDF शेअर करा', rep_pdf_save: 'PDF सेव्ह करा',
   rep_pdf_error: 'अहवाल तयार करता आला नाही. पुन्हा प्रयत्न करा.',
   rep_all_charts: 'सर्व आलेख',
+  // आजचं कोडं (Zip): दिनक्रमाचं बक्षीस, कधीच सक्तीचं नाही.
+  zip_title: 'आजचं कोडं', zip_open_title: 'आजचं कोडं खुलं आहे',
+  zip_closed_routine: 'आजचा दिनक्रम पूर्ण झाल्यावर उघडेल\u00A0·\u00A0{m}\u00A0पैकी\u00A0{n}', zip_closed_meals: 'आजचं जेवण नोंदवल्यावर उघडेल',
+  zip_level_about: 'स्तर {n} · {about}', zip_about_one: 'साधारण एक मिनिट', zip_about_n: 'साधारण {n} मिनिटे',
+  zip_level_grows: 'स्तर {n} · दिनक्रमाच्या सलग दिवसांसोबत वाढतो',
+  zip_solved_in: '{time} मध्ये सोडवलं', zip_new_tomorrow: 'उद्या नवीन कोडं',
+  zip_play: 'खेळा', zip_start_again: 'पुन्हा सुरू करा', zip_preparing: 'तयार होत आहे…', zip_to_routine: 'दिनक्रमाकडे परत',
+  zip_how: '1 पासून {n} पर्यंत एकाच रेषेने जा: प्रत्येक चौकोनातून, आकडे क्रमाने.',
+  zip_board: 'कोडं, {n} बाय {n} चौकोन',
+  zip_cell: 'ओळ {r}, स्तंभ {c}', zip_cell_number: 'आकडा {n}', zip_cell_on: 'रेषेवर', zip_cell_end: 'रेषेचे टोक',
 };
 
 const hi: Dict = {
@@ -3102,6 +3122,16 @@ const hi: Dict = {
   rep_pdf_button: 'मासिक रिपोर्ट डाउनलोड करें', rep_pdf_preparing: 'तैयार हो रही है…', rep_pdf_share: 'PDF शेयर करें', rep_pdf_save: 'PDF सेव करें',
   rep_pdf_error: 'रिपोर्ट नहीं बन सकी. फिर से कोशिश करें.',
   rep_all_charts: 'सभी चार्ट',
+  // आज की पहेली (Zip): दिनचर्या का इनाम, कभी ज़रूरी नहीं.
+  zip_title: 'आज की पहेली', zip_open_title: 'आज की पहेली खुली है',
+  zip_closed_routine: 'आज की दिनचर्या पूरी होने पर खुलेगी\u00A0·\u00A0{m}\u00A0में\u00A0से\u00A0{n}', zip_closed_meals: 'आज का खाना दर्ज होने पर खुलेगी',
+  zip_level_about: 'स्तर {n} · {about}', zip_about_one: 'लगभग एक मिनट', zip_about_n: 'लगभग {n} मिनट',
+  zip_level_grows: 'स्तर {n} · दिनचर्या के लगातार दिनों के साथ बढ़ता है',
+  zip_solved_in: '{time} में हल हुई', zip_new_tomorrow: 'कल नई पहेली',
+  zip_play: 'खेलें', zip_start_again: 'फिर से शुरू करें', zip_preparing: 'तैयार हो रही है…', zip_to_routine: 'दिनचर्या पर वापस',
+  zip_how: '1 से {n} तक एक ही रेखा खींचें: हर वर्ग से होकर, अंक क्रम से.',
+  zip_board: 'पहेली, {n} बाय {n} वर्ग',
+  zip_cell: 'पंक्ति {r}, स्तंभ {c}', zip_cell_number: 'अंक {n}', zip_cell_on: 'रेखा पर', zip_cell_end: 'रेखा का सिरा',
 };
 
 const DICTS: Record<Lang, Dict> = { en, mr, hi };
