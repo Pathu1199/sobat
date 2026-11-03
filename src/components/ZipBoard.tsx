@@ -104,7 +104,7 @@ export function ZipBoard({
       accessibilityLabel={fill(t('zip_board'), { n: size })}
       style={{ alignSelf: 'center', width: px, height: px, borderRadius: S.radiusSm, backgroundColor: C.card, ...S.shadow }}>
       <GestureDetector gesture={pan}>
-        <View style={{ width: px, height: px, borderRadius: S.radiusSm, overflow: 'hidden', userSelect: 'none' }}>
+        <View style={{ width: px, height: px, borderRadius: S.radiusSm, overflow: 'hidden' }}>
           {/* The squares: a light tint where the line is, and a thin line to the right of and under each. */}
           {cells.map((c) => (
             <ZipCell key={c} cell={c} size={size} side={side} state={cellState(path, c)} number={puzzle.clues[c] ?? 0} locked={locked} tint={tint} lang={lang} onPress={press} />
